@@ -1,0 +1,367 @@
+{% extends "page.html.twig" %}
+
+{% block content %}
+    <form action="{{ url_for("coursesSessionsFilter") }}" method="post" class="ui form filters">
+    <button type="button" class="ui labeled icon fluid button courses-filter-toggle-btn">
+        <i class="filter icon" aria-hidden="true"></i>
+        {{ _T("Filters", "courses") }}
+        <i class="chevron down icon courses-filter-chevron" aria-hidden="true"></i>
+    </button>
+    <div class="ui secondary yellow segment courses-filter-panel">
+        <div class="two fields">
+            <div class="field">
+                <label for="type_filter">{{ _T("Type", "courses") }}</label>
+                <select name="type_filter" id="type_filter" class="ui search dropdown">
+                    <option value="">{{ _T("All types", "courses") }}</option>
+                    {% for type in event_types %}
+                        <option value="{{ type.getId() }}"{% if filters.type_filter == type.getId() %} selected="selected"{% endif %}>{{ type.getLabel() }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="name_filter">{{ _T("Event name", "courses") }}</label>
+                <select name="name_filter" id="name_filter" class="ui search dropdown">
+                    <option value="">{{ _T("All events", "courses") }}</option>
+                    {% for item in available_names %}
+                        <option value="{{ item.name }}" data-type-id="{{ item.type_id }}"{% if filters.name_filter == item.name %} selected="selected"{% endif %}>{{ item.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="three fields">
+            <div class="field">
+                <label for="date_from">{{ _T("From", "courses") }}</label>
+                <input type="date" name="date_from" id="date_from" value="{{ filters.date_from }}"/>
+            </div>
+            <div class="field">
+                <label for="date_to">{{ _T("Until", "courses") }}</label>
+                <input type="date" name="date_to" id="date_to" value="{{ filters.date_to }}"/>
+            </div>
+            <div class="field">
+                <label for="status_filter">{{ _T("Status", "courses") }}</label>
+                <select name="status_filter" id="status_filter" class="ui search dropdown">
+                    <option value="">{{ _T("All statuses", "courses") }}</option>
+                    <option value="open"{% if filters.status_filter == 'open' %} selected="selected"{% endif %}>{{ _T("Open", "courses") }}</option>
+                    <option value="closed"{% if filters.status_filter == 'closed' %} selected="selected"{% endif %}>{{ _T("Closed", "courses") }}</option>
+                    <option value="cancelled"{% if filters.status_filter == 'cancelled' %} selected="selected"{% endif %}>{{ _T("Cancelled", "courses") }}</option>
+                </select>
+            </div>
+        </div>
+        <div class="courses-filter-btns">
+            <button type="submit" class="tooltip ui labeled icon primary button" title="{{ _T("Apply filters", "courses") }}" name="filter">
+                <i class="search icon" aria-hidden="true"></i>
+                {{ _T("Filter", "courses") }}
+            </button>
+            <button type="submit" id="clear_filter" name="clear_filter" class="tooltip ui small labeled icon button" title="{{ _T("Reset all filters to defaults", "courses") }}">
+                <i class="trash alt red icon" aria-hidden="true"></i>
+                {{ _T("Clear filter", "courses") }}
+            </button>
+        </div>
+    </div>
+    {% include "components/forms/csrf.html.twig" %}
+    </form>
+
+    <div class="infoline">
+        <div class="ui basic horizontal segments">
+            <div class="ui basic fitted segment">
+                <div class="ui label">{{ _Tn("%1$s session", "%1$s sessions", nb, "courses")|format(nb) }}</div>
+            </div>
+            <div class="ui basic right aligned fitted segment">
+                <div class="ui small compact buttons" id="sessions-view-toggle">
+                    <button class="ui button active" data-view="date">
+                        <i class="calendar icon" aria-hidden="true"></i>
+                        {{ _T("By date", "courses") }}
+                    </button>
+                    <button class="ui button" data-view="course">
+                        <i class="th icon" aria-hidden="true"></i>
+                        {{ _T("By course", "courses") }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if sessions|length > 0 %}
+        {# --- Build color map: assign a Fomantic color to each event --- #}
+        {% set color_palette = ['blue', 'teal', 'orange', 'violet', 'olive', 'pink', 'purple', 'brown', 'red'] %}
+        {% set event_colors = {} %}
+        {% set event_names = {} %}
+        {% set event_order = [] %}
+        {% for session in sessions %}
+            {% set event = session.getEvent() %}
+            {% set eid = 'e' ~ event.getId() %}
+            {% if event_colors[eid] is not defined %}
+                {% set event_colors = event_colors|merge({(eid): color_palette[event_colors|length % (color_palette|length)]}) %}
+                {% set event_names = event_names|merge({(eid): event.getName()}) %}
+                {% set event_order = event_order|merge([eid]) %}
+            {% endif %}
+        {% endfor %}
+
+        {# --- Split sessions into active (upcoming) and past --- #}
+        {% set sessions_active = [] %}
+        {% set sessions_past = [] %}
+        {% for session in sessions %}
+            {% if session.getSessionDate() < "now"|date("Y-m-d") %}
+                {% set sessions_past = sessions_past|merge([session]) %}
+            {% else %}
+                {% set sessions_active = sessions_active|merge([session]) %}
+            {% endif %}
+        {% endfor %}
+
+        {# --- Color legend --- #}
+        {% if event_colors|length > 1 %}
+            <div class="courses-legend">
+                {% for eid in event_order %}
+                    <span class="ui {{ event_colors[eid] }} empty circular label"></span>
+                    <span class="courses-legend-text">{{ event_names[eid] }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {# --- Macro: render a session card --- #}
+        {% macro session_card(session, event, eid, event_colors, sessions_has_instructor, sessions_instructor_names, is_past) %}
+            <div class="ui fluid {{ event_colors[eid] }} card courses-card{% if is_past %} courses-past{% endif %}{% if sessions_has_instructor[session.getId()] is defined and not sessions_has_instructor[session.getId()] %} courses-no-instructor{% endif %}">
+                <div class="content">
+                    <div class="right floated meta">
+                        {% if is_past %}
+                            <span class="ui grey label">{{ _T("Past", "courses") }}</span>
+                        {% elseif session.getStatus() == 'open' %}
+                            {% if sessions_has_instructor[session.getId()] is defined and not sessions_has_instructor[session.getId()] %}
+                                <span class="ui orange label">
+                                    <i class="clock icon" aria-hidden="true"></i>
+                                    {{ _T("Awaiting instructor", "courses") }}
+                                </span>
+                            {% else %}
+                                <span class="ui green label">{{ session.getStatusLabel() }}</span>
+                            {% endif %}
+                        {% elseif session.getStatus() == 'closed' %}
+                            <span class="ui grey label">{{ session.getStatusLabel() }}</span>
+                        {% else %}
+                            <span class="ui red label">{{ session.getStatusLabel() }}</span>
+                        {% endif %}
+                    </div>
+                    {% if not is_past %}
+                        <a class="header" href="{{ url_for("coursesEventShow", {"id": event.getId()}) }}">
+                            {{ event.getName() }}
+                        </a>
+                    {% else %}
+                        <div class="header">{{ event.getName() }}</div>
+                    {% endif %}
+                    <div class="meta">
+                        <i class="calendar icon" aria-hidden="true"></i>
+                        <span class="courses-date-day">{{ session.getSessionDate()|date("d") }}</span>
+                        <span class="courses-date-month">{{ session.getMonthYear() }}</span>
+                        &nbsp;&middot;&nbsp;
+                        {{ session.getFormattedStartTime() }} - {{ session.getFormattedEndTime() }}
+                    </div>
+                    {% if event.getLocation() %}
+                        <div class="meta">
+                            <i class="map pin icon" aria-hidden="true"></i>
+                            {{ event.getLocation() }}
+                        </div>
+                    {% endif %}
+                    <div class="meta">
+                        <i class="chalkboard teacher icon" aria-hidden="true"></i>
+                        {% if sessions_instructor_names[session.getId()] is defined %}
+                            {{ sessions_instructor_names[session.getId()] }}
+                        {% else %}
+                            <span class="ui orange label courses-label-offset">
+                                <i class="exclamation triangle icon" aria-hidden="true"></i>
+                                {{ _T("No instructor", "courses") }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="content">
+                    {% if session.getMaxCapacity() %}
+                        <div class="ui tiny progress{% if session.isFull() %} red{% elseif session.getCapacityPercent() > 75 %} yellow{% else %} green{% endif %}" data-percent="{{ session.getCapacityPercent() }}">
+                            <div class="bar" style="width: {{ session.getCapacityPercent() }}%">
+                                <div class="progress"></div>
+                            </div>
+                            <div class="label">{{ session.getCurrentRegistrations() }} / {{ session.getMaxCapacity() }}</div>
+                        </div>
+                    {% else %}
+                        <i class="users icon" aria-hidden="true"></i>
+                        {{ session.getCurrentRegistrations() }} {{ _T("registered", "courses") }}
+                    {% endif %}
+                </div>
+                <div class="extra content">
+                    <a href="{{ url_for("coursesSessionShow", {"id": session.getId()}) }}" class="ui tiny primary button">
+                        <i class="eye icon" aria-hidden="true"></i>
+                        {{ _T("Details", "courses") }}
+                    </a>
+                </div>
+            </div>
+        {% endmacro %}
+
+        {# --- View: By date (default) --- #}
+        <div id="sessions-view-date">
+            {# Active sessions #}
+            {% if sessions_active|length > 0 %}
+                <div class="ui stackable three column grid courses-cards-grid">
+                    {% for session in sessions_active %}
+                        {% set event = session.getEvent() %}
+                        {% set eid = 'e' ~ event.getId() %}
+                        <div class="column">
+                            {{ _self.session_card(session, event, eid, event_colors, sessions_has_instructor, sessions_instructor_names, false) }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="ui info message">
+                    <p>{{ _T("No upcoming session", "courses") }}</p>
+                </div>
+            {% endif %}
+
+            {# Past sessions collapsible #}
+            {% if sessions_past|length > 0 %}
+                <div class="courses-past-toggle courses-section-mt">
+                    <i class="dropdown icon" aria-hidden="true"></i>
+                    {{ _T("Past sessions", "courses") }} ({{ sessions_past|length }})
+                </div>
+                <div class="courses-past-content">
+                    <div class="ui stackable three column grid courses-cards-grid">
+                        {% for session in sessions_past %}
+                            {% set event = session.getEvent() %}
+                            {% set eid = 'e' ~ event.getId() %}
+                            <div class="column">
+                                {{ _self.session_card(session, event, eid, event_colors, sessions_has_instructor, sessions_instructor_names, true) }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        {# --- View: By course (hidden by default) --- #}
+        <div id="sessions-view-course" style="display: none;">
+            {% for eid in event_order %}
+                <h3 class="ui {{ event_colors[eid] }} dividing header courses-group-header">
+                    <span class="ui {{ event_colors[eid] }} empty circular label"></span>
+                    {{ event_names[eid] }}
+                </h3>
+                {# Active sessions for this course #}
+                {% set has_active = false %}
+                {% for session in sessions_active %}
+                    {% if ('e' ~ session.getEvent().getId()) == eid %}
+                        {% set has_active = true %}
+                    {% endif %}
+                {% endfor %}
+                {% if has_active %}
+                    <div class="ui stackable three column grid courses-cards-grid">
+                        {% for session in sessions_active %}
+                            {% if ('e' ~ session.getEvent().getId()) == eid %}
+                                {% set event = session.getEvent() %}
+                                <div class="column">
+                                    {{ _self.session_card(session, event, eid, event_colors, sessions_has_instructor, sessions_instructor_names, false) }}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="ui info message">
+                        <p>{{ _T("No upcoming session", "courses") }}</p>
+                    </div>
+                {% endif %}
+                {# Past sessions for this course #}
+                {% set has_past = false %}
+                {% for session in sessions_past %}
+                    {% if ('e' ~ session.getEvent().getId()) == eid %}
+                        {% set has_past = true %}
+                    {% endif %}
+                {% endfor %}
+                {% if has_past %}
+                    <div class="courses-past-toggle courses-group-mt">
+                        <i class="dropdown icon" aria-hidden="true"></i>
+                        {{ _T("Past sessions", "courses") }}
+                    </div>
+                    <div class="courses-past-content">
+                        <div class="ui stackable three column grid courses-cards-grid">
+                            {% for session in sessions_past %}
+                                {% if ('e' ~ session.getEvent().getId()) == eid %}
+                                    {% set event = session.getEvent() %}
+                                    <div class="column">
+                                        {{ _self.session_card(session, event, eid, event_colors, sessions_has_instructor, sessions_instructor_names, true) }}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="ui message">
+            <p>{{ _T("No session", "courses") }}</p>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        $(function() {
+            $('.ui.progress').progress();
+
+            // Auto-submit form on filter change
+            var $filterForm = $('form.filters');
+
+            // Cascade: type change → reset name and resubmit
+            $('#type_filter').on('change', function() {
+                $('#name_filter').val('');
+                $filterForm.submit();
+            });
+
+            $('#status_filter').on('change', function() {
+                $filterForm.submit();
+            });
+
+            // View toggle: By date / By course
+            var stored = localStorage.getItem('courses_sessions_view');
+            if (stored === 'course') {
+                switchView('course');
+            }
+
+            $('#sessions-view-toggle .button').on('click', function() {
+                var view = $(this).data('view');
+                switchView(view);
+                localStorage.setItem('courses_sessions_view', view);
+            });
+
+            function switchView(view) {
+                $('#sessions-view-toggle .button').removeClass('active');
+                $('#sessions-view-toggle .button[data-view="' + view + '"]').addClass('active');
+                if (view === 'course') {
+                    $('#sessions-view-date').hide();
+                    $('#sessions-view-course').show();
+                } else {
+                    $('#sessions-view-course').hide();
+                    $('#sessions-view-date').show();
+                }
+                // Re-init progress bars in the newly shown view
+                $('.ui.progress:visible').progress();
+            }
+
+            // Past sessions collapsible toggles
+            $('.courses-past-content').hide();
+            $('.courses-past-toggle').on('click', function() {
+                $(this).next('.courses-past-content').slideToggle(200);
+                $(this).find('.dropdown.icon').toggleClass('rotated');
+            });
+
+            // Date pickers (HTML5 natif) avec auto-submit
+            $('#date_from, #date_to').on('change', function() {
+                // Garantir date_from <= date_to avant soumission
+                var from = $('#date_from').val();
+                var to   = $('#date_to').val();
+                if (from && to && from > to) {
+                    if ($(this).attr('id') === 'date_from') {
+                        $('#date_to').val(from);
+                    } else {
+                        $('#date_from').val(to);
+                    }
+                }
+                $filterForm.submit();
+            });
+        });
+    </script>
+{% endblock %}

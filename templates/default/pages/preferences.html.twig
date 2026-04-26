@@ -1,0 +1,317 @@
+{% extends "page.html.twig" %}
+
+{% block content %}
+
+{# ===== Main preferences form ===== #}
+<form action="{{ url_for('coursesDoPreferences') }}" method="post" class="form">
+
+    {# --- Notifications (admin only) --- #}
+    {% if is_admin %}
+    <div class="ui segment">
+        <h3 class="ui header">
+            <i class="bell icon" aria-hidden="true"></i>
+            {{ _T('Notifications', 'courses') }}
+        </h3>
+        <div class="field">
+            <div class="ui toggle checkbox">
+                <input type="checkbox" name="notifications_enabled" id="notifications_enabled"
+                    {% if notifications_enabled %}checked="checked"{% endif %}
+                />
+                <label for="notifications_enabled">{{ _T('Enable email notifications', 'courses') }}</label>
+            </div>
+            <p class="ui small text">
+                {{ _T('When enabled, email notifications are sent for event submissions, validations, rejections, new sessions, waitlist promotions and session cancellations. Disabled by default.', 'courses') }}
+            </p>
+        </div>
+        <div class="field" style="margin-top:1em">
+            <label for="test_email">
+                <i class="flask icon" aria-hidden="true"></i>
+                {{ _T('Test email address', 'courses') }}
+            </label>
+            <div class="ui input">
+                <input type="email" name="test_email" id="test_email"
+                    value="{{ test_email }}"
+                    placeholder="{{ _T('Leave empty for normal sending', 'courses') }}"
+                    style="width:20em">
+            </div>
+            <p class="ui small {% if test_email %}orange{% else %}grey{% endif %} text" id="test-email-hint">
+                {% if test_email %}
+                    <i class="exclamation triangle icon" aria-hidden="true"></i>
+                    {{ _T('Test mode active: all emails are redirected to this address.', 'courses') }}
+                {% else %}
+                    {{ _T('When set, all emails are redirected to this address instead of the real recipients (subject will include the original recipients).', 'courses') }}
+                {% endif %}
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
+    {# --- Club closure dates --- #}
+    <div class="ui segment">
+        <h3 class="ui header">
+            <i class="calendar times icon" aria-hidden="true"></i>
+            {{ _T('Club closure dates', 'courses') }}
+            <span class="ui blue circular label" id="closure-count-badge"
+                {% if closure_dates|length == 0 %}style="display:none"{% endif %}>{{ closure_dates|length }}</span>
+        </h3>
+        <p class="ui small text">{{ _T('Sessions will not be generated automatically on these dates.', 'courses') }}</p>
+
+        <div id="closure-overlap-warning" class="ui warning message" style="display:none">
+            <i class="exclamation triangle icon" aria-hidden="true"></i>
+            {{ _T('Some closure periods overlap. They will be merged during session generation.', 'courses') }}
+        </div>
+
+        <div class="courses-table-scroll">
+            <table class="ui celled compact table" id="closure-table">
+                <thead>
+                    <tr>
+                        <th>{{ _T('From', 'courses') }}</th>
+                        <th>{{ _T('Until', 'courses') }}</th>
+                        <th class="collapsing center aligned">{{ _T('Duration', 'courses') }}</th>
+                        <th class="collapsing center aligned">{{ _T('Status', 'courses') }}</th>
+                        <th class="collapsing"></th>
+                    </tr>
+                </thead>
+                <tbody id="closure-rows">
+                    <tr id="closure-empty-row"{% if closure_dates|length > 0 %} style="display:none"{% endif %}>
+                        <td colspan="5" class="center aligned">
+                            <span class="ui grey text">
+                                <i class="calendar outline icon" aria-hidden="true"></i>
+                                {{ _T('No closure period configured.', 'courses') }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% for range in closure_dates %}
+                    <tr class="closure-row">
+                        <td><input type="date" name="closure_from[]" value="{{ range.from }}" class="closure-from-input"/></td>
+                        <td><input type="date" name="closure_to[]" value="{{ range.to }}" class="closure-to-input"/></td>
+                        <td class="collapsing center aligned closure-duration"></td>
+                        <td class="collapsing center aligned closure-status"></td>
+                        <td class="collapsing">
+                            <button type="button" class="ui tiny red icon button remove-closure-row">
+                                <i class="trash icon" aria-hidden="true"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <button type="button" class="ui tiny labeled icon button" id="add-closure-row">
+            <i class="plus icon" aria-hidden="true"></i>
+            {{ _T('Add a closure period', 'courses') }}
+        </button>
+    </div>
+
+    <div class="ui basic center aligned segment">
+        <button type="submit" class="ui small primary button">
+            <i class="save icon" aria-hidden="true"></i>
+            {{ _T('Save', 'courses') }}
+        </button>
+    </div>
+
+    {% include 'components/forms/csrf.html.twig' %}
+
+</form>
+
+{# ===== Cron section — admin only, outside main form ===== #}
+{% if is_admin %}
+<div class="ui segment">
+    <h3 class="ui header">
+        <i class="sync icon" aria-hidden="true"></i>
+        {{ _T('Automatic session generation', 'courses') }}
+    </h3>
+    <p class="ui small text">
+        {{ _T('Schedule this URL with a cron job to automatically generate sessions for all validated recurring events.', 'courses') }}
+    </p>
+
+    <div class="ui fluid action input">
+        <input type="text" id="cron-url" readonly
+            value="{{ url_for('coursesCronGenerateSessions')|replace({'http:': '', 'https:': ''}) ~ '?token=' ~ cron_token }}"
+            class="courses-cron-input"
+        />
+        <button type="button" class="ui small icon button" id="copy-cron-url" title="{{ _T('Copy', 'courses') }}">
+            <i class="copy icon" aria-hidden="true"></i>
+        </button>
+    </div>
+    <p class="ui tiny text courses-cron-note">
+        {{ _T('Example cron (every day at 1am):', 'courses') }}
+        <code>0 1 * * * curl -s "https://votre-site.fr{{ url_for('coursesCronGenerateSessions') }}?token={{ cron_token }}"</code>
+    </p>
+
+    <div class="courses-cron-regenerate">
+        <form action="{{ url_for('coursesDoRegenerateCronToken') }}" method="post" id="regenerate-token-form">
+            {% include 'components/forms/csrf.html.twig' %}
+            <button type="submit" class="ui tiny orange labeled icon button" id="regenerate-token-btn"
+                data-confirm="{{ _T('Regenerate the cron token? Any existing cron job configuration will need to be updated with the new URL.', 'courses') }}">
+                <i class="redo icon" aria-hidden="true"></i>
+                {{ _T('Regenerate token', 'courses') }}
+            </button>
+        </form>
+        <p class="ui tiny text courses-cron-note">
+            {{ _T('Warning: regenerating the token invalidates the current URL. Update any scheduled cron job afterwards.', 'courses') }}
+        </p>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block javascripts %}
+<script>
+$(function() {
+    var today = new Date().toISOString().slice(0, 10);
+
+    // --- Closure row helpers ---
+
+    function daysBetween(from, to) {
+        return Math.round((new Date(to) - new Date(from)) / 86400000) + 1;
+    }
+
+    function refreshRow($row) {
+        var from = $row.find('.closure-from-input').val();
+        var to   = $row.find('.closure-to-input').val();
+        var $dur = $row.find('.closure-duration');
+        var $sta = $row.find('.closure-status');
+
+        $row.removeClass('warning courses-closure-past');
+
+        if (!from || !to) {
+            $dur.text('–');
+            $sta.html('');
+            return;
+        }
+
+        if (from > to) {
+            $dur.html('<i class="exclamation triangle red icon" aria-hidden="true"></i>');
+            $sta.html('<span class="ui tiny red label">{{ _T("Error", "courses") }}</span>');
+            $row.addClass('warning');
+            return;
+        }
+
+        var days = daysBetween(from, to);
+        $dur.text(days + ' j');
+
+        if (to < today) {
+            $sta.html('<span class="ui tiny grey label">{{ _T("Past", "courses") }}</span>');
+            $row.addClass('courses-closure-past');
+        } else if (from <= today) {
+            $sta.html('<span class="ui tiny orange label">{{ _T("Ongoing", "courses") }}</span>');
+        } else {
+            $sta.html('<span class="ui tiny green label">{{ _T("Upcoming", "courses") }}</span>');
+        }
+    }
+
+    function updateEmptyState() {
+        var count = $('.closure-row').length;
+        $('#closure-empty-row').toggle(count === 0);
+        if (count > 0) {
+            $('#closure-count-badge').text(count).show();
+        } else {
+            $('#closure-count-badge').hide();
+        }
+        checkOverlaps();
+    }
+
+    function checkOverlaps() {
+        var ranges = [];
+        $('.closure-row').each(function() {
+            var from = $(this).find('.closure-from-input').val();
+            var to   = $(this).find('.closure-to-input').val();
+            if (from && to && from <= to) {
+                ranges.push({ from: from, to: to });
+            }
+        });
+
+        var overlap = false;
+        for (var i = 0; i < ranges.length && !overlap; i++) {
+            for (var j = i + 1; j < ranges.length && !overlap; j++) {
+                if (ranges[i].from <= ranges[j].to && ranges[j].from <= ranges[i].to) {
+                    overlap = true;
+                }
+            }
+        }
+        $('#closure-overlap-warning').toggle(overlap);
+    }
+
+    function newClosureRow() {
+        return $('<tr class="closure-row">' +
+            '<td><input type="date" name="closure_from[]" class="closure-from-input"/></td>' +
+            '<td><input type="date" name="closure_to[]" class="closure-to-input"/></td>' +
+            '<td class="collapsing center aligned closure-duration">–</td>' +
+            '<td class="collapsing center aligned closure-status"></td>' +
+            '<td class="collapsing">' +
+                '<button type="button" class="ui tiny red icon button remove-closure-row">' +
+                    '<i class="trash icon" aria-hidden="true"></i>' +
+                '</button>' +
+            '</td>' +
+        '</tr>');
+    }
+
+    // Initialize existing rows on page load
+    $('.closure-row').each(function() { refreshRow($(this)); });
+    updateEmptyState();
+
+    // Add closure row
+    $('#add-closure-row').on('click', function() {
+        var $row = newClosureRow();
+        $('#closure-rows').append($row);
+        updateEmptyState();
+        $row.find('.closure-from-input').focus();
+    });
+
+    // Remove closure row
+    $(document).on('click', '.remove-closure-row', function() {
+        $(this).closest('tr').remove();
+        updateEmptyState();
+    });
+
+    // Date change: auto-correct from > to, then refresh
+    $(document).on('change', '.closure-from-input, .closure-to-input', function() {
+        var $row = $(this).closest('tr');
+        var from = $row.find('.closure-from-input').val();
+        var to   = $row.find('.closure-to-input').val();
+        if (from && to && from > to) {
+            if ($(this).hasClass('closure-from-input')) {
+                $row.find('.closure-to-input').val(from);
+            } else {
+                $row.find('.closure-from-input').val(to);
+            }
+        }
+        refreshRow($row);
+        checkOverlaps();
+    });
+
+    // Sort rows by from-date before submitting
+    $('form').on('submit', function() {
+        var $rows = $('.closure-row').detach().toArray();
+        $rows.sort(function(a, b) {
+            var fa = $(a).find('.closure-from-input').val();
+            var fb = $(b).find('.closure-from-input').val();
+            return fa < fb ? -1 : fa > fb ? 1 : 0;
+        });
+        var $tbody = $('#closure-rows');
+        $.each($rows, function(i, row) { $tbody.append(row); });
+    });
+
+    // --- Copy cron URL ---
+    $('#copy-cron-url').on('click', function() {
+        navigator.clipboard.writeText($('#cron-url').val()).then(function() {
+            $('#copy-cron-url i').removeClass('copy').addClass('check green');
+            setTimeout(function() {
+                $('#copy-cron-url i').removeClass('check green').addClass('copy');
+            }, 1500);
+        });
+    });
+
+    // --- Regenerate token confirm ---
+    $('#regenerate-token-form').on('submit', function(e) {
+        var msg = $('#regenerate-token-btn').data('confirm');
+        if (!confirm(msg)) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

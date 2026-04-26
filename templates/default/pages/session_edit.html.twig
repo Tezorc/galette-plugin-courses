@@ -1,0 +1,80 @@
+{% extends "page.html.twig" %}
+
+{% block content %}
+
+<div class="ui segment">
+    <h3 class="ui header">
+        <i class="calendar alternate icon" aria-hidden="true"></i>
+        {{ event.getName() }}
+        <div class="sub header">{{ _T("Edit session", "courses") }}</div>
+    </h3>
+</div>
+
+<form action="{{ url_for('coursesDoSessionEdit', {'id': session.getId()}) }}" method="post" class="ui form">
+
+    <div class="ui segment">
+        <h4 class="ui header">
+            <i class="clock icon" aria-hidden="true"></i>
+            {{ _T("Planning", "courses") }}
+        </h4>
+
+        <div class="fields">
+            <div class="required field">
+                <label for="session_date">{{ _T("Date", "courses") }}</label>
+                <input type="date" name="session_date" id="session_date"
+                    value="{{ session.getSessionDate() }}"
+                    min="{{ "now"|date("Y-m-d") }}"
+                    required>
+            </div>
+            <div class="required field">
+                <label for="start_time">{{ _T("Start time", "courses") }}</label>
+                <input type="time" name="start_time" id="start_time"
+                    value="{{ session.getStartTime()|slice(0, 5) }}"
+                    required>
+            </div>
+            <div class="required field">
+                <label for="end_time">{{ _T("End time", "courses") }}</label>
+                <input type="time" name="end_time" id="end_time"
+                    value="{{ session.getEndTime()|slice(0, 5) }}"
+                    required>
+            </div>
+        </div>
+
+        <div class="field">
+            <label for="max_capacity">{{ _T("Maximum capacity", "courses") }}</label>
+            <div class="ui input">
+                <input type="number" name="max_capacity" id="max_capacity"
+                    value="{{ session.getMaxCapacity() ?? '' }}"
+                    min="{{ session.getMaxCapacity() ?? session.getCurrentRegistrations() }}"
+                    placeholder="{{ _T("Unlimited", "courses") }}"
+                    style="width: 8em">
+            </div>
+            {% if session.getMaxCapacity() %}
+            <p class="ui small grey text">
+                <i class="info circle icon" aria-hidden="true"></i>
+                {{ _T("Capacity cannot be decreased (current: %d).", "courses")|format(session.getMaxCapacity()) }}
+            </p>
+            {% elseif session.getCurrentRegistrations() > 0 %}
+            <p class="ui small grey text">
+                <i class="info circle icon" aria-hidden="true"></i>
+                {{ _T("Minimum: %d (current registrations)", "courses")|format(session.getCurrentRegistrations()) }}
+            </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="ui basic center aligned segment">
+        <button type="submit" class="ui small primary labeled icon button">
+            <i class="save icon" aria-hidden="true"></i>
+            {{ _T("Save", "courses") }}
+        </button>
+        <a href="{{ url_for('coursesSessionShow', {'id': session.getId()}) }}" class="ui small labeled icon button">
+            <i class="times icon" aria-hidden="true"></i>
+            {{ _T("Cancel", "courses") }}
+        </a>
+    </div>
+
+    {% include 'components/forms/csrf.html.twig' %}
+</form>
+
+{% endblock %}

@@ -1,0 +1,202 @@
+{% extends "page.html.twig" %}
+
+{% block content %}
+<div class="ui segment">
+    <h2 class="ui header">
+        <i class="envelope outline icon" aria-hidden="true"></i>
+        {{ _T("Email templates", "courses") }}
+    </h2>
+    <p>{{ _T("Customize the subject and body of each automatic email. Use {variable} placeholders to insert dynamic values.", "courses") }}</p>
+
+    {# --- Dropdown selector --- #}
+    <div class="ui form mailtpl-select-row">
+        <div class="field">
+            <label for="mailtpl-select">{{ _T("Email type", "courses") }}</label>
+            <select id="mailtpl-select" class="ui dropdown">
+                {% for ref in refs %}
+                    <option value="{{ ref }}"{% if loop.first %} selected{% endif %}>
+                        {{ templates[ref].getLabel() }}{% if templates[ref].isCustomized() %} ✎{% endif %}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    {# --- Editor panes (one per type) --- #}
+    {% for ref in refs %}
+        {% set tpl = templates[ref] %}
+        <div class="mailtpl-pane" id="pane-{{ ref }}"{% if not loop.first %} style="display:none;"{% endif %}>
+
+            {# Description + status badge #}
+            <div class="ui info message mailtpl-desc">
+                <div class="courses-results-header">
+                    <span>
+                        <i class="info circle icon" aria-hidden="true"></i>
+                        {{ tpl.getDescription() }}
+                    </span>
+                    {% if tpl.isCustomized() %}
+                        <span class="ui teal tiny label">
+                            <i class="edit outline icon" aria-hidden="true"></i>
+                            {{ _T("Customized", "courses") }}
+                        </span>
+                    {% else %}
+                        <span class="ui grey tiny label">{{ _T("Default", "courses") }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# Variable pills #}
+            <div class="mailtpl-vars-block">
+                <span class="mailtpl-vars-label">{{ _T("Available variables:", "courses") }}</span>
+                <div class="mailtpl-vars-pills">
+                    {% for var in tpl.getVars() %}
+                        <button type="button"
+                                class="mailtpl-var-pill"
+                                onclick="insertVar('tbody_{{ ref }}', '{{ var }}')"
+                                title="{{ _T("Click to insert at cursor", "courses") }}">{{"{"}}{{ var }}{{"}"}}</button>
+                    {% endfor %}
+                </div>
+                <div class="mailtpl-vars-hint">{{ _T("Variables in the subject line are also supported.", "courses") }}</div>
+            </div>
+
+            {# Save form #}
+            <form action="{{ url_for("coursesDoMailTemplates") }}" method="post" class="ui form">
+                <input type="hidden" name="tref" value="{{ ref }}">
+
+                <div class="field">
+                    <label for="tsubject_{{ ref }}">
+                        <i class="tag icon" aria-hidden="true"></i>
+                        {{ _T("Subject", "courses") }}
+                    </label>
+                    <input type="text"
+                           id="tsubject_{{ ref }}"
+                           name="tsubject"
+                           value="{{ tpl.getSubject()|e }}"
+                           placeholder="{{ _T("Email subject", "courses") }}">
+                </div>
+
+                <div class="field">
+                    <label for="tbody_{{ ref }}">
+                        <i class="align left icon" aria-hidden="true"></i>
+                        {{ _T("Body", "courses") }}
+                    </label>
+                    <textarea id="tbody_{{ ref }}"
+                              name="tbody"
+                              rows="13"
+                              class="mailtpl-textarea"
+                              placeholder="{{ _T("Email body", "courses") }}">{{ tpl.getBody()|e }}</textarea>
+                </div>
+
+                <div class="mailtpl-actions">
+                    <button type="submit" class="ui small primary labeled icon button">
+                        <i class="save icon" aria-hidden="true"></i>
+                        {{ _T("Save", "courses") }}
+                    </button>
+                    {% if tpl.isCustomized() %}
+                        <button type="button"
+                                class="ui red basic labeled icon button mailtpl-reset-btn"
+                                data-ref="{{ ref }}">
+                            <i class="undo icon" aria-hidden="true"></i>
+                            {{ _T("Reset to default", "courses") }}
+                        </button>
+                    {% endif %}
+                </div>
+
+                {% include "components/forms/csrf.html.twig" %}
+            </form>
+
+            {# Collapsible default text (only when customized) #}
+            {% if tpl.isCustomized() %}
+                <div class="mailtpl-default-section">
+                    <span class="mailtpl-default-toggle">
+                        <i class="dropdown icon" aria-hidden="true"></i>
+                        {{ _T("See default text", "courses") }}
+                    </span>
+                    <div class="mailtpl-default-content">
+                        <div class="ui secondary segment mailtpl-default-body">
+                            <strong>{{ _T("Subject", "courses") }}</strong>
+                            <code>{{ tpl.getDefaultSubjectText() }}</code>
+                            <strong>{{ _T("Body", "courses") }}</strong>
+                            <pre>{{ tpl.getDefaultBodyText() }}</pre>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+        </div>
+
+        {# Reset confirmation modal #}
+        {% if tpl.isCustomized() %}
+            <div class="ui small modal" id="reset-modal-{{ ref }}">
+                <div class="header">
+                    <i class="undo icon" aria-hidden="true"></i>
+                    {{ _T("Reset to default", "courses") }}
+                </div>
+                <div class="content">
+                    <p>{{ _T("Reset this template to the default text?", "courses") }}</p>
+                </div>
+                <div class="actions">
+                    <button class="ui small cancel button">{{ _T("Cancel", "courses") }}</button>
+                    <form action="{{ url_for("coursesDoMailTemplateReset", {"ref": ref}) }}" method="post" class="ui form courses-inline-form">
+                        <button type="submit" class="ui small red approve button">
+                            <i class="undo icon" aria-hidden="true"></i>
+                            {{ _T("Confirm", "courses") }}
+                        </button>
+                        {% include "components/forms/csrf.html.twig" %}
+                    </form>
+                </div>
+            </div>
+        {% endif %}
+
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+$(function() {
+    $('#mailtpl-select').dropdown();
+
+    // Dropdown change → switch pane
+    $('#mailtpl-select').on('change', function() {
+        var ref = $(this).val();
+        $('.mailtpl-pane').hide();
+        $('#pane-' + ref).show();
+        history.replaceState(null, '', window.location.pathname + '#' + ref);
+    });
+
+    // Restore from URL hash on load
+    var hash = window.location.hash.replace('#', '');
+    if (hash && $('#pane-' + hash).length) {
+        $('#mailtpl-select').val(hash);
+        $('.mailtpl-pane').hide();
+        $('#pane-' + hash).show();
+    }
+
+    // Collapsible default text
+    $(document).on('click', '.mailtpl-default-toggle', function() {
+        $(this).next('.mailtpl-default-content').slideToggle(200);
+        $(this).find('.dropdown.icon').toggleClass('rotated');
+    });
+
+    // Reset button → modal
+    $(document).on('click', '.mailtpl-reset-btn', function() {
+        var ref = $(this).data('ref');
+        $('#reset-modal-' + ref).modal('show');
+    });
+
+    $('[id^="reset-modal-"]').modal({ closable: true });
+});
+
+function insertVar(textareaId, varName) {
+    var ta = document.getElementById(textareaId);
+    if (!ta) return;
+    var start = ta.selectionStart;
+    var end   = ta.selectionEnd;
+    var placeholder = '{' + varName + '}';
+    ta.value = ta.value.substring(0, start) + placeholder + ta.value.substring(end);
+    ta.selectionStart = ta.selectionEnd = start + placeholder.length;
+    ta.focus();
+}
+</script>
+{% endblock %}

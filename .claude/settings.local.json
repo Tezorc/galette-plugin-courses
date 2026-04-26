@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find \"C:\\\\Users\\\\freda\\\\Downloads\\\\plugin-courses\" -name \"scripts.html.twig\" -exec cat {} \\\\;)",
+      "Bash(python:*)"
+    ]
+  }
+}

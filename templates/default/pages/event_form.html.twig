@@ -1,0 +1,247 @@
+{% extends "page.html.twig" %}
+
+{% block content %}
+    <form action="{% if event.getId() is null %}{{ url_for('coursesDoEventAdd') }}{% else %}{{ url_for('coursesDoEventEdit', {'id': event.getId()}) }}{% endif %}" method="post" class="ui form">
+        <div class="ui segment">
+            <h3 class="ui dividing header">
+                <i class="info circle icon" aria-hidden="true"></i>
+                {{ _T("Event information", "courses") }}
+            </h3>
+
+            <div class="required field">
+                <label for="name">{{ _T("Name", "courses") }}</label>
+                <input type="text" name="name" id="name" value="{{ event.getName() }}" required/>
+            </div>
+
+            <div class="field">
+                <label for="description">{{ _T("Description", "courses") }}</label>
+                <textarea name="description" id="description" rows="4">{{ event.getDescription() }}</textarea>
+            </div>
+
+            <div class="two fields">
+                <div class="required field">
+                    <label for="type_id">{{ _T("Type", "courses") }}</label>
+                    <select name="type_id" id="type_id" class="ui search dropdown" required>
+                        <option value="">{{ _T("Select a type", "courses") }}</option>
+                        {% for type in event_types %}
+                            <option value="{{ type.getId() }}"{% if event.getTypeId() == type.getId() %} selected="selected"{% endif %}>{{ type.getLabel() }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="location">{{ _T("Location", "courses") }}</label>
+                    <input type="text" name="location" id="location" value="{{ event.getLocation() }}"/>
+                </div>
+            </div>
+
+            <div class="three fields">
+                <div class="field">
+                    <label for="max_capacity">{{ _T("Max capacity", "courses") }}</label>
+                    <input type="number" name="max_capacity" id="max_capacity" value="{{ event.getMaxCapacity() }}" min="1"/>
+                    <span class="tip">{{ _T("Leave empty for unlimited", "courses") }}</span>
+                </div>
+
+                <div class="field">
+                    <label for="price">{{ _T("Price", "courses") }}</label>
+                    <input type="text" name="price" id="price" value="{{ event.getPrice() }}"/>
+                </div>
+
+                <div class="field">
+                    <label for="unregister_deadline_days">{{ _T("Unregistration deadline (days before)", "courses") }}</label>
+                    <input type="number" name="unregister_deadline_days" id="unregister_deadline_days" value="{{ event.getUnregisterDeadlineDays() }}" min="0"/>
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="ui toggle checkbox">
+                    <input type="hidden" name="is_restricted" value="0"/>
+                    <input type="checkbox" name="is_restricted" id="is_restricted" value="1"{% if event.isRestricted() %} checked{% endif %}/>
+                    <label for="is_restricted">{{ _T("Restrict to specific groups", "courses") }}</label>
+                </div>
+            </div>
+
+            <div id="groups-section"{% if not event.isRestricted() %} style="display:none"{% endif %}>
+                <div class="field">
+                    <label>{{ _T("Allowed groups", "courses") }}</label>
+                    <select name="groups[]" id="groups" class="ui search dropdown" multiple>
+                        {% for gid, gname in groups %}
+                            <option value="{{ gid }}"{% if gid in event.getGroups() %} selected{% endif %}>{{ gname }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="two fields">
+                <div class="field">
+                    <div class="ui toggle checkbox">
+                        <input type="hidden" name="is_free" value="0"/>
+                        <input type="checkbox" name="is_free" id="is_free" value="1"{% if event.isFree() %} checked{% endif %}/>
+                        <label for="is_free">{{ _T("Free event", "courses") }}</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="status">{{ _T("Status", "courses") }}</label>
+                    {% if login.isAdmin() or login.isStaff() %}
+                        <select name="status" id="status" class="ui dropdown">
+                            <option value="draft"{% if event.getStatus() == 'draft' %} selected{% endif %}>{{ _T("Draft", "courses") }}</option>
+                            <option value="pending"{% if event.getStatus() == 'pending' %} selected{% endif %}>{{ _T("Pending", "courses") }}</option>
+                            <option value="validated"{% if event.getStatus() == 'validated' %} selected{% endif %}>{{ _T("Validated", "courses") }}</option>
+                            <option value="cancelled"{% if event.getStatus() == 'cancelled' %} selected{% endif %}>{{ _T("Cancelled", "courses") }}</option>
+                        </select>
+                    {% else %}
+                        <input type="hidden" name="status" value="draft"/>
+                        <span class="ui grey label">{{ _T("Draft", "courses") }}</span>
+                        <span class="tip">{{ _T("Use 'Submit for validation' after saving to request staff approval.", "courses") }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="ui segment">
+            <h3 class="ui dividing header">
+                <i class="calendar icon" aria-hidden="true"></i>
+                {{ _T("Schedule", "courses") }}
+            </h3>
+
+            <div class="field">
+                <div class="ui toggle checkbox">
+                    <input type="hidden" name="is_recurring" value="0"/>
+                    <input type="checkbox" name="is_recurring" id="is_recurring" value="1"{% if event.isRecurring() %} checked{% endif %}/>
+                    <label for="is_recurring">{{ _T("Recurring event", "courses") }}</label>
+                </div>
+            </div>
+
+            <div id="recurrence-section"{% if not event.isRecurring() %} style="display:none"{% endif %}>
+                <div class="ui blue message">
+                    <i class="sync icon" aria-hidden="true"></i>
+                    {{ _T("Sessions will be generated automatically based on the recurrence settings.", "courses") }}
+                </div>
+
+                <div class="three fields">
+                    <div class="field">
+                        <label for="recurrence_type">{{ _T("Recurrence type", "courses") }}</label>
+                        <select name="recurrence_type" id="recurrence_type" class="ui dropdown">
+                            <option value="weekly"{% if event.getRecurrenceType() == 'weekly' %} selected{% endif %}>{{ _T("Weekly", "courses") }}</option>
+                            <option value="biweekly"{% if event.getRecurrenceType() == 'biweekly' %} selected{% endif %}>{{ _T("Biweekly", "courses") }}</option>
+                            <option value="monthly"{% if event.getRecurrenceType() == 'monthly' %} selected{% endif %}>{{ _T("Monthly", "courses") }}</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="recurrence_interval">{{ _T("Interval", "courses") }}</label>
+                        <input type="number" name="recurrence_interval" id="recurrence_interval" value="{{ event.getRecurrenceInterval() ?? 1 }}" min="1"/>
+                        <span class="tip">{{ _T("e.g. 1 = every week, 2 = every 2 weeks", "courses") }}</span>
+                    </div>
+
+                    <div class="field">
+                        <label for="advance_weeks">{{ _T("Generate ahead (weeks)", "courses") }}</label>
+                        <input type="number" name="advance_weeks" id="advance_weeks" value="{{ event.getAdvanceWeeks() ?? 4 }}" min="1" max="52"/>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="recurrence_end_date">{{ _T("Recurrence end date (optional)", "courses") }}</label>
+                    <input type="date" name="recurrence_end_date" id="recurrence_end_date" value="{{ event.getRecurrenceEndDate() }}"/>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="session_date">{{ _T("Start date", "courses") }}</label>
+                <input type="date" name="session_date" id="session_date"/>
+                <span class="tip" id="date-tip-single">{{ _T("Date of the session (only at creation)", "courses") }}</span>
+                <span class="tip" id="date-tip-recurring" style="display:none">{{ _T("First occurrence date - defines the recurrence pattern", "courses") }}</span>
+            </div>
+
+            <div id="slots-container">
+                <label>{{ _T("Time slots", "courses") }}</label>
+                {% set existing_slots = event.getSlots() %}
+                {% if existing_slots|length > 0 %}
+                    {% for slot in existing_slots %}
+                        <div class="two fields slot-row">
+                            <div class="field">
+                                <label>{{ _T("Start time", "courses") }}</label>
+                                <input type="time" name="slots[{{ loop.index0 }}][start_time]" value="{{ slot.start_time }}"/>
+                            </div>
+                            <div class="field">
+                                <label>{{ _T("End time", "courses") }}</label>
+                                <input type="time" name="slots[{{ loop.index0 }}][end_time]" value="{{ slot.end_time }}"/>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="two fields slot-row">
+                        <div class="field">
+                            <label>{{ _T("Start time", "courses") }}</label>
+                            <input type="time" name="slots[0][start_time]" value=""/>
+                        </div>
+                        <div class="field">
+                            <label>{{ _T("End time", "courses") }}</label>
+                            <input type="time" name="slots[0][end_time]" value=""/>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            <button type="button" id="add-slot" class="ui tiny labeled icon button">
+                <i class="plus icon" aria-hidden="true"></i>
+                {{ _T("Add a time slot", "courses") }}
+            </button>
+        </div>
+
+        <div class="ui basic center aligned segment">
+            <button type="submit" class="ui labeled icon primary button action">
+                <i class="save icon" aria-hidden="true"></i> {{ _T("Save", "courses") }}
+            </button>
+            <a href="{{ url_for("coursesEvents") }}" class="ui button">{{ _T("Cancel", "courses") }}</a>
+        </div>
+
+        {% include 'components/forms/csrf.html.twig' %}
+    </form>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        $(function() {
+            var slotIndex = {{ (event.getSlots()|length > 0) ? event.getSlots()|length : 1 }};
+            $('#add-slot').on('click', function() {
+                var html = '<div class="two fields slot-row">' +
+                    '<div class="field"><label>{{ _T("Start time", "courses") }}</label><input type="time" name="slots[' + slotIndex + '][start_time]" value=""/></div>' +
+                    '<div class="field"><label>{{ _T("End time", "courses") }}</label><input type="time" name="slots[' + slotIndex + '][end_time]" value=""/></div>' +
+                    '</div>';
+                $('#slots-container').append(html);
+                slotIndex++;
+            });
+
+            // Toggle groups section
+            $('#is_restricted').on('change', function() {
+                if ($(this).is(':checked')) {
+                    $('#groups-section').slideDown();
+                } else {
+                    $('#groups-section').slideUp();
+                }
+            });
+
+            // Toggle recurrence section
+            $('#is_recurring').on('change', function() {
+                if ($(this).is(':checked')) {
+                    $('#recurrence-section').slideDown();
+                    $('#date-tip-single').hide();
+                    $('#date-tip-recurring').show();
+                } else {
+                    $('#recurrence-section').slideUp();
+                    $('#date-tip-single').show();
+                    $('#date-tip-recurring').hide();
+                }
+            });
+
+            // Initialize tips on load
+            if ($('#is_recurring').is(':checked')) {
+                $('#date-tip-single').hide();
+                $('#date-tip-recurring').show();
+            }
+
+            activateHtmlEditor($('#description'), true);
+        });
+    </script>
+{% endblock %}

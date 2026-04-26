@@ -1,0 +1,35 @@
+{% extends "page.html.twig" %}
+
+{% block content %}
+{% if no_member_record %}
+<div class="ui warning message">
+    <i class="exclamation triangle icon"></i>
+    {{ _T('Preferences cannot be saved for the super-admin account.', 'courses') }}
+</div>
+{% else %}
+<form action="{{ url_for('coursesDoMemberPreferences') }}" method="post" class="form">
+    <div class="ui segment">
+        <h3 class="ui header">{{ _T('Email notifications', 'courses') }}</h3>
+        <div class="field">
+            <div class="ui toggle checkbox">
+                <input type="checkbox" name="notifications_enabled" id="notifications_enabled"
+                    {% if notifications_enabled %}checked="checked"{% endif %}
+                />
+                <label for="notifications_enabled">{{ _T('Receive email notifications', 'courses') }}</label>
+            </div>
+            <p class="ui small text">
+                {{ _T('When enabled, you will receive email notifications for new events, session updates, waitlist promotions, and cancellations. Disabled by default.', 'courses') }}
+            </p>
+        </div>
+    </div>
+    <div class="ui basic center aligned segment">
+        <button type="submit" class="ui small primary button">
+            <i class="save icon" aria-hidden="true"></i> {{ _T('Save', 'courses') }}
+        </button>
+    </div>
+
+    {% include 'components/forms/csrf.html.twig' %}
+
+</form>
+{% endif %}
+{% endblock %}

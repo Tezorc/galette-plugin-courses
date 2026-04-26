@@ -1,0 +1,58 @@
+{% extends "page.html.twig" %}
+
+{% block content %}
+    <div class="ui segment">
+        <h3 class="ui dividing header">
+            <i class="user plus icon" aria-hidden="true"></i>
+            {{ _T("Register a linked member", "courses") }}
+        </h3>
+
+        <div class="ui message">
+            <p>
+                <strong>{{ event.getName() }}</strong> &mdash;
+                {{ session.getSessionDate()|date("d/m/Y") }}
+                ({{ session.getFormattedStartTime() }} - {{ session.getFormattedEndTime() }})
+            </p>
+        </div>
+
+        {% if eligible_children|length > 0 %}
+            <form action="{{ url_for("coursesDoParentRegister", {"id": session.getId()}) }}" method="post" class="ui form">
+                <div class="field">
+                    <label>{{ _T("Select a linked member to register", "courses") }}</label>
+                    <select name="member_id" class="ui search dropdown" required>
+                        <option value="">{{ _T("Select a linked member to register", "courses") }}</option>
+                        {% for mid, child in eligible_children %}
+                            <option value="{{ mid }}">
+                                {{ child.name }}{% if child.nickname %} &mdash; {{ child.nickname }}{% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="ui primary labeled icon button">
+                    <i class="check icon" aria-hidden="true"></i>
+                    {{ _T("Register", "courses") }}
+                </button>
+                <a href="{{ url_for("coursesSessionShow", {"id": session.getId()}) }}" class="ui button">
+                    {{ _T("Cancel", "courses") }}
+                </a>
+                {% include 'components/forms/csrf.html.twig' %}
+            </form>
+        {% else %}
+            <div class="ui info message">
+                <i class="info circle icon" aria-hidden="true"></i>
+                <p>{{ _T("No linked member eligible for this session (already registered or not in the required group).", "courses") }}</p>
+            </div>
+            <a href="{{ url_for("coursesSessionShow", {"id": session.getId()}) }}" class="ui button">
+                {{ _T("Back", "courses") }}
+            </a>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        $(function() {
+            $('.ui.dropdown').dropdown();
+        });
+    </script>
+{% endblock %}

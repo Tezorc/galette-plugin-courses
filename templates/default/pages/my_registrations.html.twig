@@ -1,0 +1,735 @@
+{% extends "page.html.twig" %}
+
+{% block content %}
+
+{# =========================================================
+   Préparer les données
+   ========================================================= #}
+{% set upcoming_active    = [] %}
+{% set upcoming_cancelled = [] %}
+{% set past               = [] %}
+{% for reg in registrations %}
+    {% set s = sessions[reg.getSessionId()] %}
+    {% if s.getSessionDate() >= "now"|date("Y-m-d") %}
+        {% if s.getStatus() == 'cancelled' %}
+            {% set upcoming_cancelled = upcoming_cancelled|merge([reg]) %}
+        {% else %}
+            {% set upcoming_active = upcoming_active|merge([reg]) %}
+        {% endif %}
+    {% else %}
+        {% set past = past|merge([reg]) %}
+    {% endif %}
+{% endfor %}
+
+{# Grouper les prochaines séances : next_group = toutes celles à la date la plus proche, rest_group = le reste #}
+{% set next_group = [] %}
+{% set rest_group = [] %}
+{% if upcoming_active|length > 0 %}
+    {% set next_date = sessions[(upcoming_active|first).getSessionId()].getSessionDate() %}
+    {% for reg in upcoming_active %}
+        {% if sessions[reg.getSessionId()].getSessionDate() == next_date %}
+            {% set next_group = next_group|merge([reg]) %}
+        {% else %}
+            {% set rest_group = rest_group|merge([reg]) %}
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+{# Compter les séances disponibles (non inscrit, non liste d'attente) #}
+{% set browse_count = 0 %}
+{% for s in available_sessions %}
+    {% if s.getId() not in registered_session_ids and not browse_on_waitlist[s.getId()] %}
+        {% set browse_count = browse_count + 1 %}
+    {% endif %}
+{% endfor %}
+
+{# =========================================================
+   Onglets
+   ========================================================= #}
+<div class="ui top attached tabular menu" id="my-sessions-tabs">
+    <a class="item active" data-tab="browse">
+        <i class="search icon" aria-hidden="true"></i>
+        <span class="courses-tab-text">{{ _T("Find a session", "courses") }}</span>
+        {% if browse_count > 0 %}
+            <span class="ui teal circular label" style="margin-left:.4em">{{ browse_count }}</span>
+        {% endif %}
+    </a>
+    <a class="item" data-tab="mine">
+        <i class="calendar check icon" aria-hidden="true"></i>
+        <span class="courses-tab-text">{{ _T("My registrations", "courses") }}</span>
+        {% if upcoming_active|length > 0 %}
+            <span class="ui green circular label" style="margin-left:.4em">{{ upcoming_active|length }}</span>
+        {% endif %}
+    </a>
+</div>
+
+{# =========================================================
+   ONGLET 1 — S'inscrire
+   ========================================================= #}
+<div class="ui bottom attached tab segment active" data-tab="browse" style="padding:1em 0; border:none; box-shadow:none;">
+
+    {% if not member_is_up2date %}
+        <div class="ui orange message">
+            <i class="exclamation triangle icon" aria-hidden="true"></i>
+            {{ _T("Your membership must be up to date to register.", "courses") }}
+        </div>
+    {% endif %}
+
+    {% if available_sessions|length > 0 %}
+    {# Filtres dynamiques (JS, sans rechargement) #}
+    <div class="ui secondary yellow segment courses-browse-filters" style="margin-bottom:1em;">
+        <div class="ui form">
+            <div class="three fields" style="margin-bottom:.5em;">
+                <div class="field">
+                    <label for="browse_type_filter">{{ _T("Type", "courses") }}</label>
+                    <select id="browse_type_filter" class="ui search dropdown">
+                        <option value="">{{ _T("All types", "courses") }}</option>
+                        {% for type in browse_event_types %}
+                            <option value="{{ type.getId() }}">{{ type.getLabel() }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="browse_name_filter">{{ _T("Activity", "courses") }}</label>
+                    <select id="browse_name_filter" class="ui search dropdown">
+                        <option value="">{{ _T("All activities", "courses") }}</option>
+                        {% for item in browse_available_names %}
+                            <option value="{{ item.name }}" data-type-id="{{ item.type_id }}">{{ item.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="browse_date_from">{{ _T("From", "courses") }}</label>
+                    <input type="date" id="browse_date_from" value="{{ "now"|date("Y-m-d") }}"/>
+                </div>
+            </div>
+            <div>
+                <button type="button" id="browse_clear_filter" class="ui small labeled icon button">
+                    <i class="trash alt red icon" aria-hidden="true"></i>
+                    {{ _T("Clear filter", "courses") }}
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div id="browse-no-results" class="ui info message" style="display:none;">
+        <i class="search icon" aria-hidden="true"></i>
+        {{ _T("No session matches your filters.", "courses") }}
+    </div>
+
+    {% if available_sessions|length == 0 %}
+        <div class="ui info message">
+            <i class="calendar outline icon" aria-hidden="true"></i>
+            {{ _T("No upcoming session available.", "courses") }}
+        </div>
+    {% else %}
+        <div class="ui stackable three column grid courses-cards-grid" id="browse-cards-grid">
+        {% for s in available_sessions %}
+            {% set sid = s.getId() %}
+            {% set ev  = browse_events[s.getEventId()] %}
+            {% set already = sid in registered_session_ids %}
+            {% set on_wl   = browse_on_waitlist[sid] %}
+            {% set has_instr = browse_has_instructor[sid] %}
+
+            {% set no_action_left = not browse_can_self_register[sid]
+                and not browse_on_waitlist[sid]
+                and (browse_eligible_children[sid] is not defined or browse_eligible_children[sid]|length == 0) %}
+            {% if not already and not no_action_left %}
+            <div class="column courses-browse-card-col"
+                 data-type-id="{{ ev.getTypeId() }}"
+                 data-event-name="{{ ev.getName() }}"
+                 data-date="{{ s.getSessionDate() }}">
+                <div class="ui fluid card courses-card">
+                    <div class="content">
+                        {# Badge statut #}
+                        <div class="right floated meta">
+                            {% if on_wl %}
+                                <span class="ui blue label">
+                                    <i class="clock icon" aria-hidden="true"></i>
+                                    {{ _T("Waitlist", "courses") }}
+                                </span>
+                            {% elseif not has_instr %}
+                                <span class="ui orange label">
+                                    <i class="clock icon" aria-hidden="true"></i>
+                                    {{ _T("Awaiting instructor", "courses") }}
+                                </span>
+                            {% elseif s.isFull() %}
+                                <span class="ui orange label">{{ _T("Full", "courses") }}</span>
+                            {% else %}
+                                <span class="ui green label">{{ _T("Open", "courses") }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="header">{{ ev.getName() }}</div>
+
+                        <div class="meta">
+                            <i class="calendar icon" aria-hidden="true"></i>
+                            <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
+                            <span class="courses-date-month">{{ s.getMonthYear() }}</span>
+                            &nbsp;&middot;&nbsp;
+                            {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
+                        </div>
+                        {% if ev.getLocation() %}
+                            <div class="meta">
+                                <i class="map pin icon" aria-hidden="true"></i>
+                                {{ ev.getLocation() }}
+                            </div>
+                        {% endif %}
+                        {% if has_instr and browse_instructor_names[sid] is defined %}
+                            <div class="meta">
+                                <i class="chalkboard teacher icon" aria-hidden="true"></i>
+                                {{ browse_instructor_names[sid] }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    {# Jauge capacité #}
+                    {% if s.getMaxCapacity() %}
+                        <div class="content">
+                            <div class="ui tiny progress{% if s.isFull() %} red{% elseif s.getCapacityPercent() > 75 %} yellow{% else %} green{% endif %}" data-percent="{{ s.getCapacityPercent() }}">
+                                <div class="bar" style="width:{{ s.getCapacityPercent() }}%"></div>
+                                <div class="label">{{ s.getCurrentRegistrations() }} / {{ s.getMaxCapacity() }}</div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {# Actions #}
+                    <div class="extra content">
+                        {% if on_wl %}
+                            {# Sur liste d'attente #}
+                            <a href="{{ url_for("coursesSessionShow", {"id": sid}) }}" class="ui tiny button">
+                                <i class="eye icon" aria-hidden="true"></i>
+                                {{ _T("Details", "courses") }}
+                            </a>
+                        {% elseif not has_instr %}
+                            {# Pas d'instructeur — pas d'inscription possible #}
+                            <span class="ui tiny orange label">
+                                <i class="exclamation triangle icon" aria-hidden="true"></i>
+                                {{ _T("No instructor", "courses") }}
+                            </span>
+                        {% elseif not member_is_up2date %}
+                            {# Cotisation non à jour #}
+                            <a href="{{ url_for("coursesSessionShow", {"id": sid}) }}" class="ui tiny button">
+                                {{ _T("Details", "courses") }}
+                            </a>
+                        {% elseif s.isFull() %}
+                            {# Session complète : liste d'attente pour le membre lui-même #}
+                            {% if browse_can_self_register[sid] %}
+                                <form action="{{ url_for("coursesDoWaitlist", {"id": sid}) }}" method="post" class="ui form courses-inline-form">
+                                    <button type="submit" class="ui tiny labeled icon blue button">
+                                        <i class="clock icon" aria-hidden="true"></i>
+                                        {{ _T("Join waitlist", "courses") }}
+                                    </button>
+                                    {% include "components/forms/csrf.html.twig" %}
+                                </form>
+                            {% endif %}
+                            {# Liste d'attente enfants : via la fiche séance #}
+                            {% if browse_eligible_children[sid] is defined and browse_eligible_children[sid]|length > 0 %}
+                                <a href="{{ url_for("coursesSessionShow", {"id": sid}) }}" class="ui tiny labeled icon teal button">
+                                    <i class="clock icon" aria-hidden="true"></i>
+                                    {{ _T("Details", "courses") }}
+                                </a>
+                            {% endif %}
+                            {% if not browse_can_self_register[sid] and (browse_eligible_children[sid] is not defined or browse_eligible_children[sid]|length == 0) %}
+                                <a href="{{ url_for("coursesSessionShow", {"id": sid}) }}" class="ui tiny basic button">
+                                    {{ _T("Details", "courses") }}
+                                </a>
+                            {% endif %}
+                        {% else %}
+                            {# Inscription en propre nom (uniquement si membre dans le groupe requis) #}
+                            {% if browse_can_self_register[sid] %}
+                                <form action="{{ url_for("coursesDoRegister", {"id": sid}) }}" method="post" class="ui form courses-inline-form">
+                                    <button type="submit" class="ui tiny labeled icon green button">
+                                        <i class="user plus icon" aria-hidden="true"></i>
+                                        {{ _T("Register", "courses") }}
+                                    </button>
+                                    {% include "components/forms/csrf.html.twig" %}
+                                </form>
+                            {% endif %}
+                            {# Inscription d'un enfant éligible #}
+                            {% if browse_eligible_children[sid] is defined and browse_eligible_children[sid]|length > 0 %}
+                                {% if browse_eligible_children[sid]|length == 1 %}
+                                    {% set child_info = browse_eligible_children[sid]|first %}
+                                    <a href="{{ url_for("coursesParentRegisterForm", {"id": sid}) }}" class="ui tiny labeled icon teal button">
+                                        <i class="user plus icon" aria-hidden="true"></i>
+                                        {{ child_info.nickname ? child_info.nickname : child_info.name }}
+                                    </a>
+                                {% else %}
+                                    <a href="{{ url_for("coursesParentRegisterForm", {"id": sid}) }}" class="ui tiny labeled icon teal button">
+                                        <i class="users icon" aria-hidden="true"></i>
+                                        {{ _T("Register a linked member", "courses") }}
+                                    </a>
+                                {% endif %}
+                            {% endif %}
+                            <a href="{{ url_for("coursesSessionShow", {"id": sid}) }}" class="ui tiny basic button">
+                                {{ _T("Details", "courses") }}
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}{# end if not already #}
+        {% endfor %}
+        </div>
+    {% endif %}
+</div>
+
+{# =========================================================
+   ONGLET 2 — Mes inscriptions
+   ========================================================= #}
+<div class="ui bottom attached tab segment" data-tab="mine" style="padding:1em 0; border:none; box-shadow:none;">
+
+    {% if registrations|length == 0 %}
+        <div class="ui placeholder segment">
+            <div class="ui icon header">
+                <i class="calendar outline icon" aria-hidden="true"></i>
+                {{ _T("You have no registrations yet.", "courses") }}
+            </div>
+            <button class="ui small primary button" id="go-browse-btn">
+                {{ _T("Find a session", "courses") }}
+            </button>
+        </div>
+    {% else %}
+
+        {# Export iCal #}
+        <div class="ui basic right aligned segment" style="padding-top:0;">
+            <a href="{{ url_for("coursesMyRegistrationsIcal") }}" class="ui mini labeled icon button" title="{{ _T("Export all as iCal", "courses") }}">
+                <i class="calendar download icon" aria-hidden="true"></i>
+                iCal
+            </a>
+        </div>
+
+        {# Prochaine séance #}
+        {% if next_group|length > 0 %}
+
+            {# Votre prochaine séance — toutes les inscriptions à la date la plus proche #}
+            <h3 class="ui header courses-section-mt-sm">
+                <i class="star icon" aria-hidden="true"></i>
+                {{ _T("Your next session", "courses") }}
+            </h3>
+            <div class="ui stackable three column grid courses-cards-grid">
+                {% for reg in next_group %}
+                    {% set s   = sessions[reg.getSessionId()] %}
+                    {% set ev  = events[s.getEventId()] %}
+                    {% set mid = reg.getMemberId() %}
+                    <div class="column">
+                        <div class="ui fluid card courses-card courses-next-session">
+                            <div class="content">
+                                <div class="right floated meta">
+                                    <span class="ui green label">{{ reg.getStatusLabel() }}</span>
+                                </div>
+                                <a class="header" href="{{ url_for("coursesEventShow", {"id": ev.getId()}) }}">
+                                    {{ ev.getName() }}
+                                </a>
+                                <div class="meta">
+                                    <i class="calendar icon" aria-hidden="true"></i>
+                                    <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
+                                    <span class="courses-date-month">{{ s.getMonthYear() }}</span>
+                                    &nbsp;&middot;&nbsp;
+                                    {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
+                                </div>
+                                {% if ev.getLocation() %}
+                                    <div class="meta">
+                                        <i class="map pin icon" aria-hidden="true"></i>
+                                        {{ ev.getLocation() }}
+                                    </div>
+                                {% endif %}
+                                {% if mine_instructor_names[s.getId()] is defined %}
+                                    <div class="meta">
+                                        <i class="chalkboard teacher icon" aria-hidden="true"></i>
+                                        {{ mine_instructor_names[s.getId()] }}
+                                    </div>
+                                {% endif %}
+                                {% if reg_members[mid] is defined %}
+                                    <div class="meta courses-member-meta">
+                                        <i class="user icon" aria-hidden="true"></i>
+                                        {{ reg_members[mid].name }}
+                                        {% if reg_members[mid].nickname %}
+                                            <span class="ui teal mini label">
+                                                <i class="tag icon" aria-hidden="true"></i>
+                                                {{ reg_members[mid].nickname }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="extra content">
+                                <a href="{{ url_for("coursesSessionShow", {"id": s.getId()}) }}" class="ui small primary button">
+                                    <i class="eye icon" aria-hidden="true"></i>
+                                    {{ _T("Details", "courses") }}
+                                </a>
+                                <a href="{{ url_for("coursesSessionIcal", {"id": s.getId()}) }}" class="ui mini icon button" title="{{ _T("Export iCal", "courses") }}">
+                                    <i class="calendar download icon" aria-hidden="true"></i>
+                                </a>
+                                {% if mid == current_member_id %}
+                                    <form action="{{ url_for("coursesDoUnregister", {"id": s.getId()}) }}" method="post" class="ui form courses-inline-form">
+                                        <button type="submit" class="ui small red labeled icon button">
+                                            <i class="times icon" aria-hidden="true"></i>
+                                            {{ _T("Unregister", "courses") }}
+                                        </button>
+                                        {% include 'components/forms/csrf.html.twig' %}
+                                    </form>
+                                {% else %}
+                                    <form action="{{ url_for("coursesDoParentUnregister", {"id": s.getId()}) }}" method="post" class="ui form courses-inline-form">
+                                        <input type="hidden" name="member_id" value="{{ mid }}">
+                                        <button type="submit" class="ui small red labeled icon button">
+                                            <i class="times icon" aria-hidden="true"></i>
+                                            {{ _T("Unregister", "courses") }}
+                                        </button>
+                                        {% include 'components/forms/csrf.html.twig' %}
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            {# Autres séances à venir (dates ultérieures) #}
+            {% if rest_group|length > 0 %}
+                <h3 class="ui header courses-section-mt">
+                    <i class="clock icon" aria-hidden="true"></i>
+                    {{ _T("Upcoming", "courses") }}
+                </h3>
+                <div class="ui stackable three column grid courses-cards-grid">
+                    {% for reg in rest_group %}
+                        {% set s   = sessions[reg.getSessionId()] %}
+                        {% set ev  = events[s.getEventId()] %}
+                        {% set mid = reg.getMemberId() %}
+                        <div class="column">
+                            <div class="ui fluid card courses-card">
+                                <div class="content">
+                                    <div class="right floated meta">
+                                        <span class="ui green label">{{ reg.getStatusLabel() }}</span>
+                                    </div>
+                                    <a class="header" href="{{ url_for("coursesEventShow", {"id": ev.getId()}) }}">
+                                        {{ ev.getName() }}
+                                    </a>
+                                    <div class="meta">
+                                        <i class="calendar icon" aria-hidden="true"></i>
+                                        <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
+                                        <span class="courses-date-month">{{ s.getMonthYear() }}</span>
+                                        &nbsp;&middot;&nbsp;
+                                        {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
+                                    </div>
+                                    {% if ev.getLocation() %}
+                                        <div class="meta">
+                                            <i class="map pin icon" aria-hidden="true"></i>
+                                            {{ ev.getLocation() }}
+                                        </div>
+                                    {% endif %}
+                                    {% if mine_instructor_names[s.getId()] is defined %}
+                                        <div class="meta">
+                                            <i class="chalkboard teacher icon" aria-hidden="true"></i>
+                                            {{ mine_instructor_names[s.getId()] }}
+                                        </div>
+                                    {% endif %}
+                                    {% if reg_members[mid] is defined %}
+                                        <div class="meta courses-member-meta">
+                                            <i class="user icon" aria-hidden="true"></i>
+                                            {{ reg_members[mid].name }}
+                                            {% if reg_members[mid].nickname %}
+                                                <span class="ui teal mini label">
+                                                    <i class="tag icon" aria-hidden="true"></i>
+                                                    {{ reg_members[mid].nickname }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="extra content">
+                                    <a href="{{ url_for("coursesSessionShow", {"id": s.getId()}) }}" class="ui small primary button">
+                                        <i class="eye icon" aria-hidden="true"></i>
+                                        {{ _T("Details", "courses") }}
+                                    </a>
+                                    <a href="{{ url_for("coursesSessionIcal", {"id": s.getId()}) }}" class="ui mini icon button" title="{{ _T("Export iCal", "courses") }}">
+                                        <i class="calendar download icon" aria-hidden="true"></i>
+                                    </a>
+                                    {% if mid == current_member_id %}
+                                        <form action="{{ url_for("coursesDoUnregister", {"id": s.getId()}) }}" method="post" class="ui form courses-inline-form">
+                                            <button type="submit" class="ui small red labeled icon button">
+                                                <i class="times icon" aria-hidden="true"></i>
+                                                {{ _T("Unregister", "courses") }}
+                                            </button>
+                                            {% include 'components/forms/csrf.html.twig' %}
+                                        </form>
+                                    {% else %}
+                                        <form action="{{ url_for("coursesDoParentUnregister", {"id": s.getId()}) }}" method="post" class="ui form courses-inline-form">
+                                            <input type="hidden" name="member_id" value="{{ mid }}">
+                                            <button type="submit" class="ui small red labeled icon button">
+                                                <i class="times icon" aria-hidden="true"></i>
+                                                {{ _T("Unregister", "courses") }}
+                                            </button>
+                                            {% include 'components/forms/csrf.html.twig' %}
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+        {% else %}
+            <div class="ui info message">
+                <i class="info circle icon" aria-hidden="true"></i>
+                {{ _T("No upcoming session", "courses") }}
+            </div>
+        {% endif %}
+
+        {# Séances annulées #}
+        {% if upcoming_cancelled|length > 0 %}
+            <div class="ui red segment courses-section-mt">
+                <h3 class="ui red header">
+                    <i class="ban icon" aria-hidden="true"></i>
+                    {{ _T("Cancelled sessions", "courses") }}
+                    <span class="ui red circular label">{{ upcoming_cancelled|length }}</span>
+                </h3>
+                <div class="ui stackable three column grid courses-cards-grid">
+                    {% for reg in upcoming_cancelled %}
+                        {% set s   = sessions[reg.getSessionId()] %}
+                        {% set ev  = events[s.getEventId()] %}
+                        {% set mid = reg.getMemberId() %}
+                        <div class="column">
+                            <div class="ui fluid card courses-card courses-card-cancelled">
+                                <div class="content">
+                                    <div class="right floated meta">
+                                        <span class="ui red label">{{ _T("Cancelled", "courses") }}</span>
+                                    </div>
+                                    <div class="header">{{ ev.getName() }}</div>
+                                    <div class="meta">
+                                        <i class="calendar icon" aria-hidden="true"></i>
+                                        <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
+                                        <span class="courses-date-month">{{ s.getMonthYear() }}</span>
+                                        &nbsp;&middot;&nbsp;
+                                        {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
+                                    </div>
+                                    {% if ev.getLocation() %}
+                                        <div class="meta">
+                                            <i class="map pin icon" aria-hidden="true"></i>
+                                            {{ ev.getLocation() }}
+                                        </div>
+                                    {% endif %}
+                                    {% if mine_instructor_names[s.getId()] is defined %}
+                                        <div class="meta">
+                                            <i class="chalkboard teacher icon" aria-hidden="true"></i>
+                                            {{ mine_instructor_names[s.getId()] }}
+                                        </div>
+                                    {% endif %}
+                                    {% if reg_members[mid] is defined %}
+                                        <div class="meta courses-member-meta">
+                                            <i class="user icon" aria-hidden="true"></i>
+                                            {{ reg_members[mid].name }}
+                                            {% if reg_members[mid].nickname %}
+                                                <span class="ui teal mini label">
+                                                    <i class="tag icon" aria-hidden="true"></i>
+                                                    {{ reg_members[mid].nickname }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                    {% if s.getCancellationReason() %}
+                                        <div class="courses-cancel-detail">
+                                            <strong>{{ _T("Reason:", "courses") }}</strong>
+                                            {{ s.getCancellationReasonLabel() }}
+                                        </div>
+                                    {% endif %}
+                                    {% if s.getCancellationComment() %}
+                                        <div class="courses-cancel-detail">
+                                            <i class="comment outline icon" aria-hidden="true"></i>
+                                            {{ s.getCancellationComment() }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="extra content">
+                                    <a href="{{ url_for("coursesSessionShow", {"id": s.getId()}) }}" class="ui small primary button">
+                                        <i class="eye icon" aria-hidden="true"></i>
+                                        {{ _T("Details", "courses") }}
+                                    </a>
+                                    <a href="{{ url_for("coursesSessionIcal", {"id": s.getId()}) }}" class="ui mini icon button" title="{{ _T("Export iCal", "courses") }}">
+                                        <i class="calendar download icon" aria-hidden="true"></i>
+                                    </a>
+                                    {% if mid == current_member_id %}
+                                        <form action="{{ url_for("coursesDoUnregister", {"id": s.getId()}) }}" method="post" class="ui form courses-inline-form">
+                                            <button type="submit" class="ui small red labeled icon button">
+                                                <i class="times icon" aria-hidden="true"></i>
+                                                {{ _T("Unregister", "courses") }}
+                                            </button>
+                                            {% include 'components/forms/csrf.html.twig' %}
+                                        </form>
+                                    {% else %}
+                                        <form action="{{ url_for("coursesDoParentUnregister", {"id": s.getId()}) }}" method="post" class="ui form courses-inline-form">
+                                            <input type="hidden" name="member_id" value="{{ mid }}">
+                                            <button type="submit" class="ui small red labeled icon button">
+                                                <i class="times icon" aria-hidden="true"></i>
+                                                {{ _T("Unregister", "courses") }}
+                                            </button>
+                                            {% include 'components/forms/csrf.html.twig' %}
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        {# Séances passées (repliable) #}
+        {% if past|length > 0 %}
+            <div class="courses-past-toggle courses-section-mt">
+                <i class="dropdown icon" aria-hidden="true"></i>
+                {{ _T("Past sessions", "courses") }} ({{ past|length }})
+            </div>
+            <div class="courses-past-content">
+                <div class="ui stackable three column grid courses-cards-grid">
+                    {% for reg in past|reverse %}
+                        {% set s   = sessions[reg.getSessionId()] %}
+                        {% set ev  = events[s.getEventId()] %}
+                        {% set mid = reg.getMemberId() %}
+                        <div class="column">
+                            <div class="ui fluid card courses-card courses-past{% if s.getStatus() == 'cancelled' %} courses-card-cancelled{% endif %}">
+                                <div class="content">
+                                    <div class="header">{{ ev.getName() }}</div>
+                                    <div class="meta">
+                                        <i class="calendar icon" aria-hidden="true"></i>
+                                        {{ s.getFormattedDate() }}
+                                        &nbsp;&middot;&nbsp;
+                                        {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
+                                    </div>
+                                    {% if mine_instructor_names[s.getId()] is defined %}
+                                        <div class="meta">
+                                            <i class="chalkboard teacher icon" aria-hidden="true"></i>
+                                            {{ mine_instructor_names[s.getId()] }}
+                                        </div>
+                                    {% endif %}
+                                    {% if reg_members[mid] is defined %}
+                                        <div class="meta courses-member-meta">
+                                            <i class="user icon" aria-hidden="true"></i>
+                                            {{ reg_members[mid].name }}
+                                            {% if reg_members[mid].nickname %}
+                                                <span class="ui teal mini label">
+                                                    <i class="tag icon" aria-hidden="true"></i>
+                                                    {{ reg_members[mid].nickname }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="extra content">
+                                    {% if s.getStatus() == 'cancelled' %}
+                                        <span class="ui red tiny label">
+                                            <i class="ban icon" aria-hidden="true"></i>
+                                            {{ _T("Cancelled", "courses") }}
+                                        </span>
+                                    {% else %}
+                                        <span class="ui label">{{ reg.getStatusLabel() }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+<script>
+$(function() {
+    // Browse filters (client-side)
+    var $today = $('#browse_date_from').val();
+
+    function applyBrowseFilters() {
+        var typeId   = $('#browse_type_filter').val();
+        var name     = $('#browse_name_filter').val();
+        var dateFrom = $('#browse_date_from').val();
+        var visible  = 0;
+
+        $('#browse-cards-grid .courses-browse-card-col').each(function() {
+            var $col   = $(this);
+            var cType  = $col.data('type-id').toString();
+            var cName  = $col.data('event-name');
+            var cDate  = $col.data('date');
+
+            var show = true;
+            if (typeId  && cType !== typeId)        show = false;
+            if (name    && cName !== name)           show = false;
+            if (dateFrom && cDate < dateFrom)        show = false;
+
+            $col.toggle(show);
+            if (show) visible++;
+        });
+
+        $('#browse-no-results').toggle(visible === 0 && $('#browse-cards-grid').length > 0);
+    }
+
+    $('#browse_type_filter').on('change', function() {
+        // Cascade: restrict name options to selected type
+        var typeId = $(this).val();
+        $('#browse_name_filter option').each(function() {
+            var $opt = $(this);
+            if ($opt.val() === '') { return; }
+            $opt.toggle(!typeId || $opt.data('type-id').toString() === typeId);
+        });
+        // Reset name if no longer visible
+        var $selName = $('#browse_name_filter');
+        var curName  = $selName.val();
+        if (curName && (!typeId || $('#browse_name_filter option[value="' + curName + '"]:visible').length === 0)) {
+            $selName.val('').trigger('change.select2');
+        }
+        applyBrowseFilters();
+    });
+    $('#browse_name_filter').on('change', applyBrowseFilters);
+    $('#browse_date_from').on('change', applyBrowseFilters);
+
+    $('#browse_clear_filter').on('click', function() {
+        $('#browse_type_filter').val('').trigger('change.select2');
+        $('#browse_name_filter option').show();
+        $('#browse_name_filter').val('').trigger('change.select2');
+        $('#browse_date_from').val($today);
+        applyBrowseFilters();
+    });
+
+    // Tabs
+    $('#my-sessions-tabs .item').on('click', function() {
+        var tab = $(this).data('tab');
+        $('#my-sessions-tabs .item').removeClass('active');
+        $(this).addClass('active');
+        $('.ui.bottom.attached.tab').removeClass('active');
+        $('.ui.bottom.attached.tab[data-tab="' + tab + '"]').addClass('active');
+        localStorage.setItem('my_sessions_tab', tab);
+        if (tab === 'browse') {
+            applyBrowseFilters();
+            $('.ui.progress:visible').progress();
+        }
+    });
+
+    // Restore tab from localStorage
+    var savedTab = localStorage.getItem('my_sessions_tab') || 'browse';
+    if (savedTab !== 'browse') {
+        $('#my-sessions-tabs .item[data-tab="' + savedTab + '"]').trigger('click');
+    } else {
+        applyBrowseFilters();
+        $('.ui.progress:visible').progress();
+    }
+
+    // "Trouver une séance" button from empty state
+    $('#go-browse-btn').on('click', function() {
+        $('#my-sessions-tabs .item[data-tab="browse"]').trigger('click');
+    });
+
+    // Séances passées repliables
+    $('.courses-past-content').hide();
+    $('.courses-past-toggle').on('click', function() {
+        $(this).next('.courses-past-content').slideToggle(200);
+        $(this).find('.dropdown.icon').toggleClass('rotated');
+    });
+});
+</script>
+{% endblock %}

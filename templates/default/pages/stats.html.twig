@@ -1,0 +1,382 @@
+{% extends "page.html.twig" %}
+
+{% block content %}
+
+    {# ===== COMPTEURS RÉSUMÉ — une ligne de 4 cards ===== #}
+    <div class="ui four cards stackable courses-stats-cards">
+
+        <div class="ui green card">
+            <div class="content courses-stat-content">
+                <i class="large green calendar alternate outline icon" aria-hidden="true"></i>
+                <div class="courses-stat-num green">{{ stats.summary.total_events }}</div>
+                <div class="courses-stat-sub">{{ _T("Events", "courses") }}</div>
+            </div>
+        </div>
+
+        <div class="ui teal card">
+            <div class="content courses-stat-content">
+                <i class="large teal clock outline icon" aria-hidden="true"></i>
+                <div class="courses-stat-num teal">{{ stats.summary.total_sessions }}</div>
+                <div class="courses-stat-sub">{{ _T("Sessions", "courses") }}</div>
+            </div>
+        </div>
+
+        <div class="ui orange card">
+            <div class="content courses-stat-content">
+                <i class="large orange users icon" aria-hidden="true"></i>
+                <div class="courses-stat-num orange">{{ stats.summary.total_registrations }}</div>
+                <div class="courses-stat-sub">{{ _T("Registrations", "courses") }}</div>
+            </div>
+        </div>
+
+        <div class="ui blue card">
+            <div class="content courses-stat-content">
+                <i class="large blue calendar check outline icon" aria-hidden="true"></i>
+                <div class="courses-stat-num blue">{{ stats.summary.upcoming_sessions }}</div>
+                <div class="courses-stat-sub">{{ _T("Upcoming sessions", "courses") }}</div>
+            </div>
+        </div>
+
+    </div>
+
+    {# ===== GRAPHIQUES côte à côte ===== #}
+    <div class="ui two column stackable grid courses-grid-gap">
+
+        <div class="column">
+            <div class="ui segment">
+                <div class="ui small header courses-segment-hdr">
+                    <i class="chart bar icon" aria-hidden="true"></i>
+                    {{ _T("Registrations by month", "courses") }}
+                    <span class="sub header">{{ _T("Last 12 months", "courses") }}</span>
+                </div>
+                {% if stats.registrations_by_month|length > 0 %}
+                    <div class="courses-chart-container"><canvas id="registrationsByMonthChart"></canvas></div>
+                {% else %}
+                    <div class="ui basic center aligned segment courses-empty-state">
+                        <i class="chart bar outline icon" aria-hidden="true"></i> {{ _T("No data available.", "courses") }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="column">
+            <div class="ui segment">
+                <div class="ui small header courses-segment-hdr">
+                    <i class="trophy icon" aria-hidden="true"></i>
+                    {{ _T("Top events by registrations", "courses") }}
+                    <span class="sub header">{{ _T("Top 10", "courses") }}</span>
+                </div>
+                {% if stats.top_events|length > 0 %}
+                    <div class="courses-chart-container"><canvas id="topEventsChart"></canvas></div>
+                {% else %}
+                    <div class="ui basic center aligned segment courses-empty-state">
+                        <i class="trophy icon" aria-hidden="true"></i> {{ _T("No data available.", "courses") }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    {# ===== TAUX DE REMPLISSAGE + ACTIVITÉ RÉCENTE ===== #}
+    <div class="ui two column stackable grid">
+
+        <div class="column">
+            <div class="ui segment">
+                <div class="ui small header courses-segment-hdr">
+                    <i class="chart pie icon" aria-hidden="true"></i>
+                    {{ _T("Average fill rate by event", "courses") }}
+                </div>
+                {% if stats.fill_rates|length > 0 %}
+                    <table class="ui very basic compact small table">
+                        <thead>
+                            <tr>
+                                <th>{{ _T("Event", "courses") }}</th>
+                                <th>{{ _T("Fill rate", "courses") }}</th>
+                                <th class="collapsing">{{ _T("Sessions", "courses") }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rate in stats.fill_rates %}
+                            {% set pct = rate.avg_fill|round(1) %}
+                            {% set pct_css = rate.avg_fill|number_format(1, '.', '') %}
+                            <tr>
+                                <td>{{ rate.name }}</td>
+                                <td>
+                                    <div class="courses-fill-row">
+                                        <div class="ui tiny progress{% if pct >= 100 %} red{% elseif pct >= 75 %} yellow{% else %} green{% endif %}">
+                                            <div class="bar" style="width:{{ pct_css }}%"></div>
+                                        </div>
+                                        <span class="courses-fill-pct">{{ pct }}%</span>
+                                    </div>
+                                </td>
+                                <td class="center aligned"><span class="ui mini grey label">{{ rate.session_count }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="ui message">{{ _T("No data available.", "courses") }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="column">
+            <div class="ui segment">
+                <div class="ui small header courses-segment-hdr">
+                    <i class="history icon" aria-hidden="true"></i>
+                    {{ _T("Recent member activity", "courses") }}
+                    <span class="sub header">{{ _T("Last 20 active members", "courses") }}</span>
+                </div>
+                {% if stats.recent_activity|length > 0 %}
+                    <table class="ui very basic compact small table">
+                        <thead>
+                            <tr>
+                                <th>{{ _T("Member", "courses") }}</th>
+                                <th>{{ _T("Last participation", "courses") }}</th>
+                                <th class="collapsing center aligned">{{ _T("Total", "courses") }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for member in stats.recent_activity %}
+                            <tr>
+                                <td><a href="{{ url_for("member", {"id": member.member_id}) }}">{{ member.member_name }}</a></td>
+                                <td class="courses-activity-date">{{ member.last_date }}</td>
+                                <td class="center aligned"><span class="ui mini blue label">{{ member.total_sessions }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="ui message">{{ _T("No data available.", "courses") }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    {# ===== MEMBRES ACTIFS SUR UNE PÉRIODE ===== #}
+    <div class="ui segment courses-segment-gap courses-period-active">
+
+        <div class="ui small header courses-segment-hdr">
+            <i class="blue user check icon" aria-hidden="true"></i>
+            {{ _T("Active members by period", "courses") }}
+        </div>
+
+        {# Filtre + raccourcis #}
+        <form action="{{ url_for('coursesStats') }}" method="get" class="ui form" id="stats-period-form">
+            <div class="ui secondary fitted segment">
+                <div class="fields courses-filter-row">
+                    <div class="field">
+                        <label class="courses-filter-label">{{ _T("From", "courses") }}</label>
+                        <input type="date" name="stats_from" id="stats_from" value="{{ stats_from }}" class="ui small input"/>
+                    </div>
+                    <div class="field">
+                        <label class="courses-filter-label">{{ _T("Until", "courses") }}</label>
+                        <input type="date" name="stats_to" id="stats_to" value="{{ stats_to }}" class="ui small input"/>
+                    </div>
+                    <div class="field">
+                        <button type="submit" class="ui small labeled icon primary button">
+                            <i class="search icon" aria-hidden="true"></i>
+                            {{ _T("Filter", "courses") }}
+                        </button>
+                    </div>
+                </div>
+                <div class="courses-filter-shortcuts">
+                    <span class="ui small grey text">{{ _T("Quick select:", "courses") }}</span>
+                    <button type="button" class="ui mini basic button period-shortcut" data-from="{{ "now"|date("Y-m-01") }}" data-to="{{ "now"|date("Y-m-d") }}">{{ _T("This month", "courses") }}</button>
+                    <button type="button" class="ui mini basic button period-shortcut" data-from="{{ ("now -3 months")|date("Y-m-01") }}" data-to="{{ "now"|date("Y-m-d") }}">{{ _T("Last 3 months", "courses") }}</button>
+                    <button type="button" class="ui mini basic button period-shortcut" data-from="{{ ("now -6 months")|date("Y-m-01") }}" data-to="{{ "now"|date("Y-m-d") }}">{{ _T("Last 6 months", "courses") }}</button>
+                    <button type="button" class="ui mini basic button period-shortcut" data-from="{{ "now"|date("Y") }}-01-01" data-to="{{ "now"|date("Y-m-d") }}">{{ _T("This year", "courses") }}</button>
+                    <button type="button" class="ui mini basic button period-shortcut" data-from="{{ ("now -1 year")|date("Y") }}-01-01" data-to="{{ ("now -1 year")|date("Y") }}-12-31">{{ _T("Last year", "courses") }}</button>
+                </div>
+            </div>
+        </form>
+
+        {# Résultats #}
+        <div>
+        {% if stats.active_members|length > 0 %}
+            <div class="courses-results-header">
+                <span>
+                    <span class="ui blue label">{{ stats.active_members|length }}</span>
+                    {{ _T("active members from", "courses") }}
+                    <strong>{{ stats_from }}</strong> → <strong>{{ stats_to }}</strong>
+                </span>
+                <button type="button" class="ui mini labeled icon basic button" id="export-csv-btn">
+                    <i class="download icon" aria-hidden="true"></i>
+                    {{ _T("Export CSV", "courses") }}
+                </button>
+            </div>
+            <div class="courses-table-scroll">
+            <table class="ui celled striped compact small table" id="active-members-table">
+                <thead>
+                    <tr>
+                        <th>{{ _T("Member", "courses") }}</th>
+                        <th>{{ _T("Nickname", "courses") }}</th>
+                        <th class="collapsing center aligned">{{ _T("Sessions attended", "courses") }}</th>
+                        <th class="collapsing center aligned">{{ _T("Present", "courses") }}</th>
+                        <th>{{ _T("Events", "courses") }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in stats.active_members %}
+                    <tr>
+                        <td><a href="{{ url_for("member", {"id": m.member_id}) }}">{{ m.member_name }}</a></td>
+                        <td>
+                            {% if m.nickname %}<i class="tag icon" aria-hidden="true"></i> {{ m.nickname }}
+                            {% else %}<span class="ui grey text">—</span>{% endif %}
+                        </td>
+                        <td class="center aligned"><span class="ui small blue label">{{ m.session_count }}</span></td>
+                        <td class="center aligned">
+                            {% if m.attendance_count > 0 %}
+                                <span class="ui small green label">{{ m.attendance_count }}</span>
+                            {% else %}
+                                <span class="ui grey text">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="courses-events-cell">{{ m.events }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        {% else %}
+            <div class="ui warning message">
+                <i class="exclamation triangle icon" aria-hidden="true"></i>
+                {{ _T("No active member for this period.", "courses") }}
+            </div>
+        {% endif %}
+        </div>
+
+    </div>
+
+    {# ===== MEMBRES INACTIFS SUR LA MÊME PÉRIODE ===== #}
+    <div class="ui segment courses-segment-gap courses-period-inactive">
+
+        <div class="ui small header courses-segment-hdr">
+            <i class="red user times icon" aria-hidden="true"></i>
+            {{ _T("Inactive members by period", "courses") }}
+            <span class="sub header">{{ _T("Active members with no participation", "courses") }}</span>
+        </div>
+
+        <div>
+        {% if stats.inactive_members|length > 0 %}
+            <div class="courses-results-header">
+                <span>
+                    <span class="ui red label">{{ stats.inactive_members|length }}</span>
+                    {{ _T("inactive members from", "courses") }}
+                    <strong>{{ stats_from }}</strong> → <strong>{{ stats_to }}</strong>
+                </span>
+                <button type="button" class="ui mini labeled icon basic button" id="export-inactive-csv-btn">
+                    <i class="download icon" aria-hidden="true"></i>
+                    {{ _T("Export CSV", "courses") }}
+                </button>
+            </div>
+            <div class="courses-table-scroll">
+            <table class="ui celled striped compact small table" id="inactive-members-table">
+                <thead>
+                    <tr>
+                        <th>{{ _T("Member", "courses") }}</th>
+                        <th>{{ _T("Nickname", "courses") }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in stats.inactive_members %}
+                    <tr>
+                        <td><a href="{{ url_for("member", {"id": m.member_id}) }}">{{ m.member_name }}</a></td>
+                        <td>
+                            {% if m.nickname %}<i class="tag icon" aria-hidden="true"></i> {{ m.nickname }}
+                            {% else %}<span class="ui grey text">—</span>{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        {% else %}
+            <div class="ui positive message">
+                <i class="check circle icon" aria-hidden="true"></i>
+                {{ _T("All active members participated during this period.", "courses") }}
+            </div>
+        {% endif %}
+        </div>
+
+    </div>
+
+{% endblock %}
+
+{% block javascripts %}
+<script>
+$(function() {
+    $('.period-shortcut').on('click', function() {
+        $('#stats_from').val($(this).data('from'));
+        $('#stats_to').val($(this).data('to'));
+    });
+
+    function exportTableCsv(tableId, cols, filename) {
+        var rows = [cols];
+        $('#' + tableId + ' tbody tr').each(function() {
+            var c = $(this).find('td');
+            rows.push(cols.map(function(_, i){ return c.eq(i).text().trim(); }));
+        });
+        var csv = rows.map(function(r){ return r.map(function(c){ return '"'+c.replace(/"/g,'""')+'"'; }).join(';'); }).join('\n');
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));
+        a.download = filename;
+        a.click();
+    }
+
+    $('#export-csv-btn').on('click', function() {
+        exportTableCsv(
+            'active-members-table',
+            ['{{ _T("Member", "courses") }}','{{ _T("Nickname", "courses") }}','{{ _T("Sessions attended", "courses") }}','{{ _T("Present", "courses") }}','{{ _T("Events", "courses") }}'],
+            'membres-actifs-{{ stats_from }}-{{ stats_to }}.csv'
+        );
+    });
+
+    $('#export-inactive-csv-btn').on('click', function() {
+        exportTableCsv(
+            'inactive-members-table',
+            ['{{ _T("Member", "courses") }}','{{ _T("Nickname", "courses") }}'],
+            'membres-inactifs-{{ stats_from }}-{{ stats_to }}.csv'
+        );
+    });
+});
+</script>
+<script type="module">
+{% if stats.registrations_by_month|length > 0 %}
+var ctxMonth = document.getElementById('registrationsByMonthChart');
+if (ctxMonth) {
+    new Chart(ctxMonth.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: [{% for month, count in stats.registrations_by_month %}'{{ month }}'{% if not loop.last %},{% endif %}{% endfor %}],
+            datasets: [{ label:'{{ _T("Registrations","courses") }}',
+                data: [{% for month, count in stats.registrations_by_month %}{{ count }}{% if not loop.last %},{% endif %}{% endfor %}],
+                backgroundColor:'rgba(33,186,69,0.7)', borderColor:'rgba(33,186,69,1)', borderWidth:1 }]
+        },
+        options: { responsive:true, maintainAspectRatio:false,
+            scales:{ y:{ beginAtZero:true, ticks:{stepSize:1} } },
+            plugins:{ legend:{display:false} } }
+    });
+}
+{% endif %}
+{% if stats.top_events|length > 0 %}
+var ctxTop = document.getElementById('topEventsChart');
+if (ctxTop) {
+    new Chart(ctxTop.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: [{% for evt in stats.top_events %}'{{ evt.name|e('js') }}'{% if not loop.last %},{% endif %}{% endfor %}],
+            datasets: [{ label:'{{ _T("Total registrations","courses") }}',
+                data: [{% for evt in stats.top_events %}{{ evt.total_registrations }}{% if not loop.last %},{% endif %}{% endfor %}],
+                backgroundColor:'rgba(33,133,208,0.7)', borderColor:'rgba(33,133,208,1)', borderWidth:1 }]
+        },
+        options: { indexAxis:'y', responsive:true, maintainAspectRatio:false,
+            scales:{ x:{ beginAtZero:true, ticks:{stepSize:1} } },
+            plugins:{ legend:{display:false} } }
+    });
+}
+{% endif %}
+</script>
+{% endblock %}

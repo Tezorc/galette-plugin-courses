@@ -1,0 +1,171 @@
+{% extends "page.html.twig" %}
+
+{% block content %}
+    <form action="{{ url_for("coursesRegistrationsFilter") }}" method="post" class="ui form filters">
+    <button type="button" class="ui labeled icon fluid button courses-filter-toggle-btn">
+        <i class="filter icon" aria-hidden="true"></i>
+        {{ _T("Filters", "courses") }}
+        <i class="chevron down icon courses-filter-chevron" aria-hidden="true"></i>
+    </button>
+    <div class="ui secondary yellow segment courses-filter-panel">
+        <div class="two fields">
+            <div class="field">
+                <label for="event_type_filter">{{ _T("Type", "courses") }}</label>
+                <select name="event_type_filter" id="event_type_filter" class="ui search dropdown">
+                    <option value="">{{ _T("All types", "courses") }}</option>
+                    {% for type in event_types %}
+                        <option value="{{ type.getId() }}"{% if filters.event_type_filter == type.getId() %} selected="selected"{% endif %}>{{ type.getLabel() }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="name_filter">{{ _T("Event name", "courses") }}</label>
+                <select name="name_filter" id="name_filter" class="ui search dropdown">
+                    <option value="">{{ _T("All events", "courses") }}</option>
+                    {% for item in available_names %}
+                        <option value="{{ item.name }}" data-type-id="{{ item.type_id }}"{% if filters.name_filter == item.name %} selected="selected"{% endif %}>{{ item.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="two fields">
+            <div class="field">
+                <label for="date_from">{{ _T("Session from", "courses") }}</label>
+                <input type="date" name="date_from" id="date_from" value="{{ filters.date_from ?: '' }}">
+            </div>
+            <div class="field">
+                <label for="date_to">{{ _T("Session to", "courses") }}</label>
+                <input type="date" name="date_to" id="date_to" value="{{ filters.date_to ?: '' }}">
+            </div>
+        </div>
+        <div class="ui right aligned basic fitted segment field">
+            <div class="field">
+                <label for="status_filter">{{ _T("Status", "courses") }}</label>
+                <select name="status_filter" id="status_filter" class="ui search dropdown">
+                    <option value="">{{ _T("All statuses", "courses") }}</option>
+                    <option value="registered"{% if filters.status_filter == 'registered' %} selected="selected"{% endif %}>{{ _T("Registered", "courses") }}</option>
+                    <option value="attended"{% if filters.status_filter == 'attended' %} selected="selected"{% endif %}>{{ _T("Attended", "courses") }}</option>
+                    <option value="absent"{% if filters.status_filter == 'absent' %} selected="selected"{% endif %}>{{ _T("Absent", "courses") }}</option>
+                    <option value="absent_excused"{% if filters.status_filter == 'absent_excused' %} selected="selected"{% endif %}>{{ _T("Absent (excused)", "courses") }}</option>
+                    <option value="present_unregistered"{% if filters.status_filter == 'present_unregistered' %} selected="selected"{% endif %}>{{ _T("Present (unregistered)", "courses") }}</option>
+                    <option value="cancelled"{% if filters.status_filter == 'cancelled' %} selected="selected"{% endif %}>{{ _T("Cancelled", "courses") }}</option>
+                </select>
+            </div>
+            <div class="courses-filter-btns">
+                <button type="submit" class="tooltip ui labeled icon primary button" title="{{ _T("Apply filters", "courses") }}" name="filter">
+                    <i class="search icon" aria-hidden="true"></i>
+                    {{ _T("Filter", "courses") }}
+                </button>
+                <button type="submit" id="clear_filter" name="clear_filter" class="tooltip ui small labeled icon button" title="{{ _T("Reset all filters to defaults", "courses") }}">
+                    <i class="trash alt red icon" aria-hidden="true"></i>
+                    {{ _T("Clear filter", "courses") }}
+                </button>
+            </div>
+        </div>
+    </div>
+    {% include "components/forms/csrf.html.twig" %}
+    </form>
+
+    <div class="infoline">
+        <div class="ui basic horizontal segments">
+            <div class="ui basic fitted segment">
+                <div class="ui label">{{ _Tn("%1$s registration", "%1$s registrations", nb, "courses")|format(nb) }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="courses-table-scroll">
+    <table class="listing ui celled striped table courses-responsive-table">
+        <thead>
+            <tr>
+                <th>{{ _T("Member", "courses") }}</th>
+                <th>{{ _T("Nickname", "courses") }}</th>
+                <th>{{ _T("Event", "courses") }}</th>
+                <th>{{ _T("Session date", "courses") }}</th>
+                <th>{{ _T("Registration date", "courses") }}</th>
+                <th>{{ _T("Status", "courses") }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for reg in registrations %}
+                {% set session = sessions[reg.getSessionId()] is defined ? sessions[reg.getSessionId()] : null %}
+                {% set event = session ? (events[session.getEventId()] is defined ? events[session.getEventId()] : null) : null %}
+                <tr>
+                    <td data-label="{{ _T("Member", "courses") }}">
+                        {% if members[reg.getMemberId()] is defined %}
+                            <i class="user circle icon" aria-hidden="true"></i>
+                            <a href="{{ url_for("member", {"id": reg.getMemberId()}) }}">
+                                {{ members[reg.getMemberId()] }}
+                            </a>
+                        {% else %}
+                            {{ _T("Unknown member", "courses") }}
+                        {% endif %}
+                    </td>
+                    <td data-label="{{ _T("Nickname", "courses") }}" class="courses-mobile-hide">
+                        {% if nicknames[reg.getMemberId()] is defined %}
+                            <i class="tag icon" aria-hidden="true"></i>
+                            {{ nicknames[reg.getMemberId()] }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td data-label="{{ _T("Event", "courses") }}">
+                        {% if event %}
+                            <a href="{{ url_for("coursesEventShow", {"id": event.getId()}) }}">
+                                {{ event.getName() }}
+                            </a>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td data-label="{{ _T("Session date", "courses") }}">
+                        {% if session %}
+                            <a href="{{ url_for("coursesSessionShow", {"id": session.getId()}) }}">
+                                {{ session.getFormattedDate() }} {{ session.getFormattedStartTime() }}
+                            </a>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td data-label="{{ _T("Registration date", "courses") }}" class="courses-mobile-hide">{{ reg.getRegistrationDate()|date("d/m/Y") }}</td>
+                    <td data-label="{{ _T("Status", "courses") }}">
+                        {% if reg.getStatus() == 'registered' %}
+                            <span class="ui green label"><i class="check icon" aria-hidden="true"></i> {{ reg.getStatusLabel() }}</span>
+                        {% elseif reg.getStatus() == 'attended' %}
+                            <span class="ui blue label"><i class="check double icon" aria-hidden="true"></i> {{ reg.getStatusLabel() }}</span>
+                        {% elseif reg.getStatus() == 'absent' %}
+                            <span class="ui orange label"><i class="times icon" aria-hidden="true"></i> {{ reg.getStatusLabel() }}</span>
+                        {% elseif reg.getStatus() == 'absent_excused' %}
+                            <span class="ui yellow label"><i class="exclamation icon" aria-hidden="true"></i> {{ reg.getStatusLabel() }}</span>
+                        {% elseif reg.getStatus() == 'present_unregistered' %}
+                            <span class="ui teal label"><i class="user plus icon" aria-hidden="true"></i> {{ reg.getStatusLabel() }}</span>
+                        {% elseif reg.getStatus() == 'cancelled' %}
+                            <span class="ui red label"><i class="ban icon" aria-hidden="true"></i> {{ reg.getStatusLabel() }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="6" class="emptylist">{{ _T("No registration", "courses") }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+$(function() {
+    var $filterForm = $('form.filters');
+
+    // Cascade: type change → reset name and resubmit
+    $('#event_type_filter').on('change', function() {
+        $('#name_filter').val('');
+        $filterForm.submit();
+    });
+
+    $('#status_filter').on('change', function() {
+        $filterForm.submit();
+    });
+});
+</script>
+{% endblock %}

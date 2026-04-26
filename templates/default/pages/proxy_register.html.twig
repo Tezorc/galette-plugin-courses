@@ -1,0 +1,57 @@
+{% extends "page.html.twig" %}
+
+{% block content %}
+    <div class="ui segment">
+        <h3 class="ui dividing header">
+            <i class="user plus icon" aria-hidden="true"></i>
+            {{ _T("Register a member", "courses") }}
+        </h3>
+
+        <div class="ui message">
+            <p>
+                <strong>{{ event.getName() }}</strong> &mdash;
+                {{ session.getSessionDate()|date("d/m/Y") }}
+                ({{ session.getFormattedStartTime() }} - {{ session.getFormattedEndTime() }})
+            </p>
+        </div>
+
+        {% if eligible_members|length > 0 %}
+            <form action="{{ url_for("coursesDoProxyRegister", {"id": session.getId()}) }}" method="post" class="ui form">
+                <div class="field">
+                    <label>{{ _T("Select a member to register", "courses") }}</label>
+                    <select name="member_id" class="ui search dropdown" required>
+                        <option value="">{{ _T("Select a member to register", "courses") }}</option>
+                        {% for mid, member in eligible_members %}
+                            <option value="{{ mid }}">
+                                {{ member.name }}{% if member.nickname %} — {{ member.nickname }}{% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="ui primary labeled icon button">
+                    <i class="check icon" aria-hidden="true"></i>
+                    {{ _T("Register", "courses") }}
+                </button>
+                <a href="{{ url_for("coursesSessionShow", {"id": session.getId()}) }}" class="ui button">
+                    {{ _T("Cancel", "courses") }}
+                </a>
+                {% include 'components/forms/csrf.html.twig' %}
+            </form>
+        {% else %}
+            <div class="ui info message">
+                <p>{{ _T("No eligible member to register.", "courses") }}</p>
+            </div>
+            <a href="{{ url_for("coursesSessionShow", {"id": session.getId()}) }}" class="ui button">
+                {{ _T("Cancel", "courses") }}
+            </a>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        $(function() {
+            $('.ui.dropdown').dropdown();
+        });
+    </script>
+{% endblock %}

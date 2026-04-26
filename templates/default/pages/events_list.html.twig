@@ -1,0 +1,158 @@
+{% extends "page.html.twig" %}
+
+{% block content %}
+    <form action="{{ url_for("coursesEventsFilter") }}" method="post" class="ui form filters">
+    <button type="button" class="ui labeled icon fluid button courses-filter-toggle-btn">
+        <i class="filter icon" aria-hidden="true"></i>
+        {{ _T("Filters", "courses") }}
+        <i class="chevron down icon courses-filter-chevron" aria-hidden="true"></i>
+    </button>
+    <div class="ui secondary yellow segment courses-filter-panel">
+        <div class="three fields">
+            <div class="field">
+                <label for="type_filter">{{ _T("Type", "courses") }}</label>
+                <select name="type_filter" id="type_filter" class="ui search dropdown">
+                    <option value="">{{ _T("All types", "courses") }}</option>
+                    {% for type in event_types %}
+                        <option value="{{ type.getId() }}"{% if filters.type_filter == type.getId() %} selected="selected"{% endif %}>{{ type.getLabel() }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="name_filter">{{ _T("Event name", "courses") }}</label>
+                <select name="name_filter" id="name_filter" class="ui search dropdown">
+                    <option value="">{{ _T("All events", "courses") }}</option>
+                    {% for item in available_names %}
+                        <option value="{{ item.name }}" data-type-id="{{ item.type_id }}"{% if filters.name_filter == item.name %} selected="selected"{% endif %}>{{ item.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="status_filter">{{ _T("Status", "courses") }}</label>
+                <select name="status_filter" id="status_filter" class="ui search dropdown">
+                    <option value="">{{ _T("All statuses", "courses") }}</option>
+                    <option value="draft"{% if filters.status_filter == 'draft' %} selected="selected"{% endif %}>{{ _T("Draft", "courses") }}</option>
+                    <option value="pending"{% if filters.status_filter == 'pending' %} selected="selected"{% endif %}>{{ _T("Pending", "courses") }}</option>
+                    <option value="validated"{% if filters.status_filter == 'validated' %} selected="selected"{% endif %}>{{ _T("Validated", "courses") }}</option>
+                    <option value="cancelled"{% if filters.status_filter == 'cancelled' %} selected="selected"{% endif %}>{{ _T("Cancelled", "courses") }}</option>
+                </select>
+            </div>
+        </div>
+        <div class="courses-filter-btns">
+            <button type="submit" class="tooltip ui labeled icon primary button" title="{{ _T("Apply filters", "courses") }}" name="filter">
+                <i class="search icon" aria-hidden="true"></i>
+                {{ _T("Filter", "courses") }}
+            </button>
+            <button type="submit" id="clear_filter" name="clear_filter" class="tooltip ui small labeled icon button" title="{{ _T("Reset all filters to defaults", "courses") }}">
+                <i class="trash alt red icon" aria-hidden="true"></i>
+                {{ _T("Clear filter", "courses") }}
+            </button>
+        </div>
+    </div>
+    {% include "components/forms/csrf.html.twig" %}
+    </form>
+
+    <div class="infoline">
+        <div class="ui basic horizontal segments">
+            <div class="ui basic fitted segment">
+                <div class="ui label">{{ _Tn("%1$s event", "%1$s events", nb, "courses")|format(nb) }}</div>
+                {% if login.isAdmin() or login.isStaff() or login.isGroupManager() %}
+                    <a class="ui tiny labeled icon button" href="{{ url_for("coursesEventAdd") }}">
+                        <i class="plus circle green icon" aria-hidden="true"></i>
+                        {{ _T("Add an event", "courses") }}
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="courses-table-scroll">
+    <table class="listing ui celled striped table courses-responsive-table">
+        <thead>
+            <tr>
+                <th>{{ _T("Name", "courses") }}</th>
+                <th>{{ _T("Location", "courses") }}</th>
+                <th>{{ _T("Capacity", "courses") }}</th>
+                <th>{{ _T("Status", "courses") }}</th>
+                <th>{{ _T("Created", "courses") }}</th>
+                <th class="actions_row">{{ _T("Actions", "courses") }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for event in events %}
+                <tr{% if event.getStatus() == 'pending' %} class="courses-pending"{% endif %}>
+                    <td data-label="{{ _T("Name", "courses") }}">
+                        <a href="{{ url_for("coursesEventShow", {"id": event.getId()}) }}">
+                            {{ event.getName() }}
+                        </a>
+                    </td>
+                    <td data-label="{{ _T("Location", "courses") }}" class="courses-mobile-hide">{{ event.getLocation() ?? '-' }}</td>
+                    <td data-label="{{ _T("Capacity", "courses") }}" class="courses-mobile-hide">{{ event.getMaxCapacity() ?? _T("Unlimited", "courses") }}</td>
+                    <td data-label="{{ _T("Status", "courses") }}">
+                        {% if event.getStatus() == 'validated' %}
+                            <span class="ui green label"><i class="check icon" aria-hidden="true"></i> {{ event.getStatusLabel() }}</span>
+                        {% elseif event.getStatus() == 'draft' %}
+                            <span class="ui grey label"><i class="pencil icon" aria-hidden="true"></i> {{ event.getStatusLabel() }}</span>
+                        {% elseif event.getStatus() == 'pending' %}
+                            <span class="ui yellow label"><i class="clock icon" aria-hidden="true"></i> {{ event.getStatusLabel() }}</span>
+                        {% elseif event.getStatus() == 'cancelled' %}
+                            <span class="ui red label"><i class="ban icon" aria-hidden="true"></i> {{ event.getStatusLabel() }}</span>
+                        {% endif %}
+                    </td>
+                    <td data-label="{{ _T("Created", "courses") }}" class="courses-mobile-hide">{{ event.getCreationDate()|date("Y-m-d") }}</td>
+                    <td class="actions_row center collapsing">
+                        <a href="{{ url_for("coursesEventShow", {"id": event.getId()}) }}">
+                            <i class="ui eye icon tooltip" aria-hidden="true"></i>
+                            <span class="ui special popup">{{ _T("View event", "courses") }}</span>
+                        </a>
+                        {% if event.canManage(login) %}
+                            <a href="{{ url_for("coursesEventEdit", {"id": event.getId()}) }}" class="action">
+                                <i class="ui edit icon tooltip" aria-hidden="true"></i>
+                                <span class="ui special popup">{{ _T("Edit event", "courses") }}</span>
+                            </a>
+                        {% endif %}
+                        {% if event.canValidate(login) %}
+                            <form action="{{ url_for("coursesDoEventValidate", {"id": event.getId()}) }}" method="post" class="courses-inline-form">
+                                <button type="submit" class="ui icon button courses-icon-btn">
+                                    <i class="ui check circle green icon tooltip" aria-hidden="true"></i>
+                                    <span class="ui special popup">{{ _T("Validate event", "courses") }}</span>
+                                </button>
+                                {% include 'components/forms/csrf.html.twig' %}
+                            </form>
+                            <form action="{{ url_for("coursesDoEventReject", {"id": event.getId()}) }}" method="post" class="courses-inline-form">
+                                <button type="submit" class="ui icon button courses-icon-btn">
+                                    <i class="ui times circle red icon tooltip" aria-hidden="true"></i>
+                                    <span class="ui special popup">{{ _T("Reject event", "courses") }}</span>
+                                </button>
+                                {% include 'components/forms/csrf.html.twig' %}
+                            </form>
+                        {% endif %}
+                        {% if login.isAdmin() or login.isStaff() %}
+                            <a href="{{ url_for("coursesEventRemove", {"id": event.getId()}) }}" class="delete">
+                                <i class="ui trash red icon tooltip" aria-hidden="true"></i>
+                                <span class="ui special popup">{{ _T("Delete event", "courses") }}</span>
+                            </a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="6" class="emptylist">{{ _T("No event", "courses") }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+$(function() {
+    // Auto-soumettre le formulaire quand le type change
+    // → le serveur recalcule la liste des noms filtrés par type
+    $('#type_filter').on('change', function() {
+        // Vider le nom pour ne pas garder une valeur incompatible
+        $('#name_filter').val('');
+        $('form.filters').submit();
+    });
+});
+</script>
+{% endblock %}

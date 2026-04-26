@@ -1,0 +1,49 @@
+{% extends "page.html.twig" %}
+
+{% block content %}
+<div class="ui container">
+    <div class="ui middle aligned center aligned grid" style="margin-top: 2em;">
+        <div class="column" style="max-width: 480px;">
+
+            {% if invalid_token %}
+                <div class="ui icon error message">
+                    <i class="times circle icon" aria-hidden="true"></i>
+                    <div class="content">
+                        <div class="header">{{ _T("Invalid link", "courses") }}</div>
+                        <p>{{ _T("This unsubscribe link is invalid or has already been used.", "courses") }}</p>
+                    </div>
+                </div>
+
+            {% elseif already_opted_out %}
+                <div class="ui icon info message">
+                    <i class="info circle icon" aria-hidden="true"></i>
+                    <div class="content">
+                        <div class="header">{{ _T("Already unsubscribed", "courses") }}</div>
+                        <p>{{ _T("You are already unsubscribed from course notifications.", "courses") }}</p>
+                    </div>
+                </div>
+
+            {% elseif success %}
+                <div class="ui icon success message">
+                    <i class="check circle icon" aria-hidden="true"></i>
+                    <div class="content">
+                        <div class="header">{{ _T("Unsubscribed successfully", "courses") }}</div>
+                        <p>{{ _T("You have been unsubscribed from course email notifications.", "courses") }}</p>
+                        <p>{{ _T("You can re-enable notifications at any time from your member preferences.", "courses") }}</p>
+                    </div>
+                </div>
+
+            {% else %}
+                <div class="ui icon error message">
+                    <i class="exclamation triangle icon" aria-hidden="true"></i>
+                    <div class="content">
+                        <div class="header">{{ _T("Error", "courses") }}</div>
+                        <p>{{ _T("An error occurred while processing your request. Please try again later.", "courses") }}</p>
+                    </div>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

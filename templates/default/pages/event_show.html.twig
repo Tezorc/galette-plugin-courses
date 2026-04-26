@@ -1,0 +1,248 @@
+{% extends "page.html.twig" %}
+
+{% block content %}
+    <div class="ui segment">
+        <h2 class="ui header">
+            <i class="calendar alternate icon" aria-hidden="true"></i>
+            <div class="content">
+                {{ event.getName() }}
+                {% if event.getStatus() == 'validated' %}
+                    <span class="ui green label">{{ event.getStatusLabel() }}</span>
+                {% elseif event.getStatus() == 'draft' %}
+                    <span class="ui grey label">{{ event.getStatusLabel() }}</span>
+                {% elseif event.getStatus() == 'pending' %}
+                    <span class="ui yellow label">{{ event.getStatusLabel() }}</span>
+                {% elseif event.getStatus() == 'cancelled' %}
+                    <span class="ui red label">{{ event.getStatusLabel() }}</span>
+                {% endif %}
+            </div>
+        </h2>
+
+        {# --- Tabs --- #}
+        <div class="ui top attached tabular menu courses-tabs">
+            <a class="item active" data-tab="info">
+                <i class="info circle icon" aria-hidden="true"></i>
+                {{ _T("Information", "courses") }}
+            </a>
+            <a class="item" data-tab="sessions">
+                <i class="clock icon" aria-hidden="true"></i>
+                {{ _T("Sessions", "courses") }}
+                {% if sessions|length > 0 %}
+                    <span class="ui mini circular label">{{ sessions|length }}</span>
+                {% endif %}
+            </a>
+            {% if event.getDescription() %}
+                <a class="item" data-tab="description">
+                    <i class="file text icon" aria-hidden="true"></i>
+                    {{ _T("Description", "courses") }}
+                </a>
+            {% endif %}
+        </div>
+
+        {# --- Tab: Information --- #}
+        <div class="ui bottom attached tab segment active" data-tab="info">
+            <div class="ui relaxed list">
+                <div class="item">
+                    <i class="tag icon" aria-hidden="true"></i>
+                    <div class="content">
+                        <div class="header">{{ _T("Type", "courses") }}</div>
+                        <span class="ui label">{{ event_type.getLabel() }}</span>
+                    </div>
+                </div>
+                {% if event.getLocation() %}
+                    <div class="item">
+                        <i class="map pin icon" aria-hidden="true"></i>
+                        <div class="content">
+                            <div class="header">{{ _T("Location", "courses") }}</div>
+                            {{ event.getLocation() }}
+                        </div>
+                    </div>
+                {% endif %}
+                <div class="item">
+                    <i class="users icon" aria-hidden="true"></i>
+                    <div class="content">
+                        <div class="header">{{ _T("Capacity", "courses") }}</div>
+                        {{ event.getMaxCapacity() ?? _T("Unlimited", "courses") }}
+                    </div>
+                </div>
+                <div class="item">
+                    <i class="euro sign icon" aria-hidden="true"></i>
+                    <div class="content">
+                        <div class="header">{{ _T("Price", "courses") }}</div>
+                        {% if not event.isFree() and event.getPrice() %}
+                            {{ event.getPrice() }}
+                        {% else %}
+                            <span class="ui green label">{{ _T("Free", "courses") }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if event.getUnregisterDeadlineDays() %}
+                    <div class="item">
+                        <i class="clock icon" aria-hidden="true"></i>
+                        <div class="content">
+                            <div class="header">{{ _T("Unregistration deadline", "courses") }}</div>
+                            {{ _T("%d days before the session", "courses")|format(event.getUnregisterDeadlineDays()) }}
+                        </div>
+                    </div>
+                {% endif %}
+                {% if event.isRecurring() %}
+                    <div class="item">
+                        <i class="sync icon" aria-hidden="true"></i>
+                        <div class="content">
+                            <div class="header">{{ _T("Recurrence", "courses") }}</div>
+                            {{ event.getRecurrenceTypeLabel() }}
+                            {% if event.getRecurrenceInterval() > 1 %}
+                                ({{ _T("every %d intervals", "courses")|format(event.getRecurrenceInterval()) }})
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if event.getRecurrenceEndDate() %}
+                        <div class="item">
+                            <i class="calendar times icon" aria-hidden="true"></i>
+                            <div class="content">
+                                <div class="header">{{ _T("Recurrence end", "courses") }}</div>
+                                {{ event.getRecurrenceEndDate()|date("d/m/Y") }}
+                            </div>
+                        </div>
+                    {% endif %}
+                    <div class="item">
+                        <i class="forward icon" aria-hidden="true"></i>
+                        <div class="content">
+                            <div class="header">{{ _T("Generate ahead", "courses") }}</div>
+                            {{ _T("%d weeks", "courses")|format(event.getAdvanceWeeks()) }}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# --- Tab: Sessions --- #}
+        <div class="ui bottom attached tab segment" data-tab="sessions">
+            {% if sessions|length > 0 %}
+                <div class="ui stackable three column grid courses-cards-grid">
+                    {% for session in sessions %}
+                        {% set is_past = session.getSessionDate() < "now"|date("Y-m-d") %}
+                        <div class="column">
+                            <div class="ui fluid card courses-card{% if is_past %} courses-past{% endif %}">
+                                <div class="content">
+                                    <div class="right floated meta">
+                                        {% if is_past %}
+                                            <span class="ui grey label">{{ _T("Past", "courses") }}</span>
+                                        {% elseif session.getStatus() == 'open' %}
+                                            {% if sessions_has_instructor[session.getId()] is defined and not sessions_has_instructor[session.getId()] %}
+                                                <span class="ui orange label">
+                                                    <i class="clock icon" aria-hidden="true"></i>
+                                                    {{ _T("Awaiting instructor", "courses") }}
+                                                </span>
+                                            {% else %}
+                                                <span class="ui green label">{{ session.getStatusLabel() }}</span>
+                                            {% endif %}
+                                        {% elseif session.getStatus() == 'closed' %}
+                                            <span class="ui grey label">{{ session.getStatusLabel() }}</span>
+                                        {% else %}
+                                            <span class="ui red label">{{ session.getStatusLabel() }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="header">
+                                        <span class="courses-date-day">{{ session.getSessionDate()|date("d") }}</span>
+                                        <span class="courses-date-month">{{ session.getMonthYear() }}</span>
+                                    </div>
+                                    <div class="meta">
+                                        <i class="clock icon" aria-hidden="true"></i>
+                                        {{ session.getFormattedStartTime() }} - {{ session.getFormattedEndTime() }}
+                                    </div>
+                                </div>
+                                <div class="content">
+                                    {% if session.getMaxCapacity() %}
+                                        <div class="ui tiny progress{% if session.isFull() %} red{% elseif session.getCapacityPercent() > 75 %} yellow{% else %} green{% endif %}" data-percent="{{ session.getCapacityPercent() }}">
+                                            <div class="bar" style="width: {{ session.getCapacityPercent() }}%">
+                                                <div class="progress"></div>
+                                            </div>
+                                            <div class="label">{{ session.getCurrentRegistrations() }} / {{ session.getMaxCapacity() }}</div>
+                                        </div>
+                                    {% else %}
+                                        <i class="users icon" aria-hidden="true"></i>
+                                        {{ session.getCurrentRegistrations() }} {{ _T("registered", "courses") }}
+                                    {% endif %}
+                                </div>
+                                <div class="extra content">
+                                    <a href="{{ url_for("coursesSessionShow", {"id": session.getId()}) }}" class="ui tiny primary button">
+                                        <i class="eye icon" aria-hidden="true"></i>
+                                        {{ _T("Details", "courses") }}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="ui message">{{ _T("No session scheduled yet.", "courses") }}</div>
+            {% endif %}
+        </div>
+
+        {# --- Tab: Description --- #}
+        {% if event.getDescription() %}
+            <div class="ui bottom attached tab segment" data-tab="description">
+                {{ event.getDescription()|raw }}
+            </div>
+        {% endif %}
+    </div>
+
+    {# --- Workflow action buttons --- #}
+    {% if event.canManage(login) or event.canSubmit(login) or event.canValidate(login) %}
+        <div class="ui center aligned segment courses-actions">
+            {% if event.canManage(login) %}
+                <a href="{{ url_for("coursesEventEdit", {"id": event.getId()}) }}" class="ui small labeled icon button">
+                    <i class="edit icon" aria-hidden="true"></i>
+                    {{ _T("Edit", "courses") }}
+                </a>
+            {% endif %}
+
+            {% if event.isRecurring() and event.canManage(login) %}
+                <form action="{{ url_for("coursesDoGenerateSessions", {"id": event.getId()}) }}" method="post" class="ui form courses-inline-form">
+                    <button type="submit" class="ui small labeled icon teal button">
+                        <i class="sync icon" aria-hidden="true"></i>
+                        {{ _T("Generate sessions", "courses") }}
+                    </button>
+                    {% include 'components/forms/csrf.html.twig' %}
+                </form>
+            {% endif %}
+
+            {% if event.canSubmit(login) %}
+                <form action="{{ url_for("coursesDoEventSubmit", {"id": event.getId()}) }}" method="post" class="ui form courses-inline-form">
+                    <button type="submit" class="ui small labeled icon orange button">
+                        <i class="paper plane icon" aria-hidden="true"></i>
+                        {{ _T("Submit for validation", "courses") }}
+                    </button>
+                    {% include 'components/forms/csrf.html.twig' %}
+                </form>
+            {% endif %}
+
+            {% if event.canValidate(login) %}
+                <form action="{{ url_for("coursesDoEventValidate", {"id": event.getId()}) }}" method="post" class="ui form courses-inline-form">
+                    <button type="submit" class="ui small labeled icon green button">
+                        <i class="check circle icon" aria-hidden="true"></i>
+                        {{ _T("Validate", "courses") }}
+                    </button>
+                    {% include 'components/forms/csrf.html.twig' %}
+                </form>
+                <form action="{{ url_for("coursesDoEventReject", {"id": event.getId()}) }}" method="post" class="ui form courses-inline-form">
+                    <button type="submit" class="ui small labeled icon red button">
+                        <i class="times circle icon" aria-hidden="true"></i>
+                        {{ _T("Reject", "courses") }}
+                    </button>
+                    {% include 'components/forms/csrf.html.twig' %}
+                </form>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        $(function() {
+            $('.ui.progress').progress();
+            $('.courses-tabs .item').tab();
+        });
+    </script>
+{% endblock %}

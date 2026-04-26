@@ -1,0 +1,1697 @@
+# French translations for Galette Courses plugin
+# Copyright (C) 2026 Galette Team
+# This file is distributed under the same license as the Galette Courses package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Galette Courses 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-02-24 12:00+0100\n"
+"PO-Revision-Date: 2026-04-14 06:22+0200\n"
+"Last-Translator: \n"
+"Language-Team: French\n"
+"Language: fr_FR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n > 1;\n"
+"X-Generator: Poedit 3.9\n"
+
+# --- Journal Galette ---
+msgid "[Courses] Member registered to session"
+msgstr "[Cours] Inscription à la séance"
+
+msgid "[Courses] Member unregistered from session"
+msgstr "[Cours] Désinscription de la séance"
+
+msgid "[Courses] Linked member registered to session"
+msgstr "[Cours] Inscription d'un membre lié à la séance"
+
+msgid "[Courses] Linked member unregistered from session"
+msgstr "[Cours] Désinscription d'un membre lié de la séance"
+
+msgid "[Courses] Member registered by staff"
+msgstr "[Cours] Inscription par le staff"
+
+msgid "[Courses] Member joined waitlist"
+msgstr "[Cours] Ajout en liste d'attente"
+
+msgid "Warning: you are already registered for another session at the same time on this day."
+msgstr "Attention : vous êtes déjà inscrit(e) à une autre séance au même créneau horaire ce jour."
+
+msgid "Warning: this linked member is already registered for another session at the same time on this day."
+msgstr "Attention : ce membre rattaché est déjà inscrit à une autre séance au même créneau horaire ce jour."
+
+msgid "[Courses] Member left waitlist"
+msgstr "[Cours] Retrait de la liste d'attente"
+
+msgid "[Courses] Attendance recorded"
+msgstr "[Cours] Présences enregistrées"
+
+msgid "[Courses] Walk-in attendance recorded"
+msgstr "[Cours] Présence spontanée enregistrée"
+
+msgid "[Courses] Event submitted for validation"
+msgstr "[Cours] Événement soumis à validation"
+
+msgid "[Courses] Event validated"
+msgstr "[Cours] Événement validé"
+
+msgid "[Courses] Event rejected"
+msgstr "[Cours] Événement rejeté"
+
+msgid "[Courses] Sessions generated"
+msgstr "[Cours] Séances générées"
+
+msgid "[Courses] Cron: sessions generated"
+msgstr "[Cours] Cron : séances générées"
+
+msgid "[Courses] Instructor assigned to session"
+msgstr "[Cours] Instructeur affecté à la séance"
+
+msgid "[Courses] Instructor removed from session"
+msgstr "[Cours] Instructeur retiré de la séance"
+
+msgid "[Courses] Instructor volunteered for session"
+msgstr "[Cours] Bénévolat instructeur pour la séance"
+
+msgid "[Courses] Session closed"
+msgstr "[Cours] Séance fermée"
+
+msgid "[Courses] Session reopened"
+msgstr "[Cours] Séance réouverte"
+
+msgid "[Courses] Session cancelled"
+msgstr "[Cours] Séance annulée"
+
+msgid "[Courses] Waitlist purged after cancellation"
+msgstr "[Cours] Liste d'attente purgée suite à l'annulation"
+
+msgid "[Courses] Waitlist purged after closing"
+msgstr "[Cours] Liste d'attente purgée suite à la fermeture"
+
+msgid "[Courses] Session reactivated"
+msgstr "[Cours] Séance réactivée"
+
+msgid "[Courses] Session capacity updated"
+msgstr "[Cours] Capacité de la séance modifiée"
+
+msgid "[Courses] Member promoted from waitlist"
+msgstr "[Cours] Membre promu depuis la liste d'attente"
+
+msgid "[Courses] New session created for waitlist"
+msgstr "[Cours] Nouvelle séance créée pour la liste d'attente"
+
+msgid "[Courses] Email sent"
+msgstr "[Cours] Courriel envoyé"
+
+msgid "[Courses] Email send failed"
+msgstr "[Cours] Échec d'envoi du courriel"
+
+# --- Menu & navigation ---
+msgid "Courses"
+msgstr "Cours"
+
+msgid "Events"
+msgstr "Événements"
+
+msgid "Add an event"
+msgstr "Ajouter un événement"
+
+msgid "Sessions"
+msgstr "Séances"
+
+msgid "Registrations"
+msgstr "Inscriptions"
+
+msgid "Statistics"
+msgstr "Statistiques"
+
+msgid "My registrations"
+msgstr "Mes inscriptions"
+
+msgid "My sessions"
+msgstr "Mes séances"
+
+msgid "Find a session"
+msgstr "Trouver une séance"
+
+msgid "No upcoming session available."
+msgstr "Aucune séance à venir disponible."
+
+msgid "Full"
+msgstr "Complet"
+
+msgid "Preferences"
+msgstr "Préférences"
+
+msgid "My notifications"
+msgstr "Mes notifications"
+
+msgid "Your created courses and events"
+msgstr "Vos cours et événements créés"
+
+msgid "View your bookings and book your upcoming classes"
+msgstr "Voir mes inscriptions et m'inscrire aux prochaines séances"
+
+msgid "Register for sessions and view your registrations"
+msgstr "S'inscrire aux séances et consulter mes inscriptions"
+
+# --- Event statuses ---
+msgid "Draft"
+msgstr "Brouillon"
+
+msgid "Pending validation"
+msgstr "En attente de validation"
+
+msgid "Pending"
+msgstr "En attente"
+
+msgid "Validated"
+msgstr "Validé"
+
+msgid "Cancelled"
+msgstr "Annulé"
+
+# --- Session statuses ---
+msgid "Open"
+msgstr "Ouverte"
+
+msgid "Awaiting instructor"
+msgstr "En attente de moniteur"
+
+msgid "Closed"
+msgstr "Fermée"
+
+# --- Registration statuses ---
+msgid "Registered"
+msgstr "Inscrit"
+
+msgid "Attended"
+msgstr "Présent"
+
+# --- Recurrence types ---
+msgid "Weekly"
+msgstr "Hebdomadaire"
+
+msgid "Biweekly"
+msgstr "Bihebdomadaire"
+
+msgid "Monthly"
+msgstr "Mensuel"
+
+# --- Event form ---
+msgid "Event information"
+msgstr "Informations sur l'événement"
+
+msgid "Name"
+msgstr "Nom"
+
+msgid "Description"
+msgstr "Description"
+
+msgid "Type"
+msgstr "Type"
+
+msgid "Select a type"
+msgstr "Choisir un type"
+
+msgid "Location"
+msgstr "Lieu"
+
+msgid "Max capacity"
+msgstr "Capacité maximale"
+
+msgid "Maximum capacity"
+msgstr "Capacité maximale"
+
+msgid "Leave empty for unlimited"
+msgstr "Laisser vide pour illimité"
+
+msgid "Planning"
+msgstr "Planification"
+
+msgid "Price"
+msgstr "Prix"
+
+msgid "Unregistration deadline (days before)"
+msgstr "Délai de désinscription (jours avant)"
+
+msgid "Free event"
+msgstr "Événement gratuit"
+
+msgid "Status"
+msgstr "Statut"
+
+msgid "Use 'Submit for validation' after saving to request staff approval."
+msgstr "Utilisez 'Soumettre pour validation' après l'enregistrement pour demander la validation par l'équipe."
+
+msgid "Schedule"
+msgstr "Planification"
+
+msgid "Recurring event"
+msgstr "Événement récurrent"
+
+msgid "Sessions will be generated automatically based on the recurrence settings."
+msgstr "Les séances seront générées automatiquement selon les paramètres de récurrence."
+
+msgid "Recurrence type"
+msgstr "Type de récurrence"
+
+msgid "Interval"
+msgstr "Intervalle"
+
+msgid "e.g. 1 = every week, 2 = every 2 weeks"
+msgstr "ex : 1 = chaque semaine, 2 = toutes les 2 semaines"
+
+msgid "Generate ahead (weeks)"
+msgstr "Générer à l'avance (semaines)"
+
+msgid "Recurrence end date (optional)"
+msgstr "Date de fin de récurrence (optionnelle)"
+
+msgid "Start date"
+msgstr "Date de début"
+
+msgid "Date of the session (only at creation)"
+msgstr "Date de la séance (uniquement à la création)"
+
+msgid "First occurrence date - defines the recurrence pattern"
+msgstr "Date de la première occurrence - définit le schéma de récurrence"
+
+msgid "Time slots"
+msgstr "Créneaux horaires"
+
+msgid "Start time"
+msgstr "Heure de début"
+
+msgid "End time"
+msgstr "Heure de fin"
+
+msgid "Add a time slot"
+msgstr "Ajouter un créneau"
+
+msgid "Save"
+msgstr "Enregistrer"
+
+msgid "Cancel"
+msgstr "Annuler"
+
+msgid "Close"
+msgstr "Fermer"
+
+msgid "Back"
+msgstr "Retour"
+
+# --- Event show ---
+msgid "Capacity"
+msgstr "Capacité"
+
+msgid "Unlimited"
+msgstr "Illimité"
+
+msgid "Free"
+msgstr "Gratuit"
+
+msgid "Recurrence"
+msgstr "Récurrence"
+
+msgid "every %d intervals"
+msgstr "toutes les %d occurrences"
+
+msgid "Recurrence end"
+msgstr "Fin de récurrence"
+
+msgid "Generate ahead"
+msgstr "Générer à l'avance"
+
+msgid "%d weeks"
+msgstr "%d semaines"
+
+msgid "Edit"
+msgstr "Modifier"
+
+msgid "Generate sessions"
+msgstr "Générer les séances"
+
+msgid "Submit for validation"
+msgstr "Soumettre pour validation"
+
+msgid "Validate"
+msgstr "Valider"
+
+msgid "Reject"
+msgstr "Rejeter"
+
+msgid "Date"
+msgstr "Date"
+
+msgid "Created"
+msgstr "Créé le"
+
+msgid "Time"
+msgstr "Horaire"
+
+msgid "Actions"
+msgstr "Actions"
+
+msgid "Details"
+msgstr "Détails"
+
+msgid "No session scheduled yet."
+msgstr "Aucune séance planifiée."
+
+# --- Events list ---
+#, php-format
+msgid "%1$s event"
+msgid_plural "%1$s events"
+msgstr[0] "%1$s événement"
+msgstr[1] "%1$s événements"
+
+msgid "Search"
+msgstr "Rechercher"
+
+msgid "Name, description, location..."
+msgstr "Nom, description, lieu..."
+
+msgid "All types"
+msgstr "Tous les types"
+
+msgid "All statuses"
+msgstr "Tous les statuts"
+
+msgid "Filter"
+msgstr "Filtrer"
+
+msgid "Filters"
+msgstr "Filtres"
+
+msgid "Apply filters"
+msgstr "Appliquer les filtres"
+
+msgid "Reset all filters to defaults"
+msgstr "Réinitialiser tous les filtres"
+
+msgid "Clear filter"
+msgstr "Effacer les filtres"
+
+msgid "View event"
+msgstr "Voir l'événement"
+
+msgid "Edit event"
+msgstr "Modifier l'événement"
+
+msgid "Validate event"
+msgstr "Valider l'événement"
+
+msgid "Reject event"
+msgstr "Rejeter l'événement"
+
+msgid "Delete event"
+msgstr "Supprimer l'événement"
+
+msgid "No event"
+msgstr "Aucun événement"
+
+msgid "New event"
+msgstr "Nouvel événement"
+
+# --- Sessions list ---
+msgid "From"
+msgstr "Du"
+
+msgid "Until"
+msgstr "Au"
+
+msgid "yyyy-mm-dd format"
+msgstr "format aaaa-mm-jj"
+
+msgid "Event"
+msgstr "Événement"
+
+msgid "No session"
+msgstr "Aucune séance"
+
+#, php-format
+msgid "%1$s session"
+msgid_plural "%1$s sessions"
+msgstr[0] "%1$s séance"
+msgstr[1] "%1$s séances"
+
+# --- Session show ---
+msgid "spots taken"
+msgstr "places prises"
+
+#, php-format
+msgid "%d spots remaining"
+msgstr "%d places restantes"
+
+msgid "registered"
+msgstr "inscrits"
+
+msgid "Register"
+msgstr "S'inscrire"
+
+msgid "Unregister"
+msgstr "Se désinscrire"
+
+msgid "This session is full."
+msgstr "Cette séance est complète."
+
+msgid "Join waitlist"
+msgstr "Rejoindre la liste d'attente"
+
+#, php-format
+msgid "You are on the waitlist (position %d)."
+msgstr "Vous êtes sur la liste d'attente (position %d)."
+
+msgid "Leave waitlist"
+msgstr "Quitter la liste d'attente"
+
+#, php-format
+msgid "%d person(s) on waitlist."
+msgstr "%d personne(s) en liste d'attente."
+
+msgid "Export iCal"
+msgstr "Exporter en iCal"
+
+msgid "Registered members"
+msgstr "Membres inscrits"
+
+msgid "Member"
+msgstr "Membre"
+
+msgid "Registration date"
+msgstr "Date d'inscription"
+
+msgid "Waitlist"
+msgstr "Liste d'attente"
+
+msgid "Position"
+msgstr "Position"
+
+msgid "Added date"
+msgstr "Date d'ajout"
+
+# --- My registrations ---
+msgid "Export all as iCal"
+msgstr "Tout exporter en iCal"
+
+msgid "You have no registrations yet."
+msgstr "Vous n'avez aucune inscription pour le moment."
+
+msgid "Browse available sessions"
+msgstr "Parcourir les séances disponibles"
+
+msgid "No registration"
+msgstr "Aucune inscription"
+
+# --- Statistics ---
+msgid "Active members"
+msgstr "Membres actifs"
+
+msgid "Active members by period"
+msgstr "Membres actifs sur une période"
+
+msgid "until"
+msgstr "au"
+
+msgid "members"
+msgstr "membres"
+
+msgid "Sessions attended"
+msgstr "Séances suivies"
+
+msgid "No active member for this period."
+msgstr "Aucun membre actif sur cette période."
+
+msgid "Inactive members by period"
+msgstr "Membres inactifs sur la période"
+
+msgid "Active members with no participation"
+msgstr "Adhérents actifs n'ayant participé à aucune séance"
+
+msgid "inactive members from"
+msgstr "membres inactifs du"
+
+msgid "All active members participated during this period."
+msgstr "Tous les membres actifs ont participé à au moins une séance sur cette période."
+
+msgid "Last 12 months"
+msgstr "12 derniers mois"
+
+msgid "Top 10"
+msgstr "Top 10"
+
+msgid "Last 20 active members"
+msgstr "20 derniers membres actifs"
+
+msgid "Total"
+msgstr "Total"
+
+msgid "Quick select:"
+msgstr "Raccourci :"
+
+msgid "This month"
+msgstr "Ce mois"
+
+msgid "Last 3 months"
+msgstr "3 derniers mois"
+
+msgid "Last 6 months"
+msgstr "6 derniers mois"
+
+msgid "This year"
+msgstr "Cette année"
+
+msgid "Last year"
+msgstr "Année précédente"
+
+msgid "active members from"
+msgstr "membres actifs du"
+
+msgid "Export CSV"
+msgstr "Exporter CSV"
+
+msgid "No data available."
+msgstr "Aucune donnée disponible."
+
+msgid "Average fill rate by event"
+msgstr "Taux de remplissage moyen par événement"
+
+msgid "Fill rate"
+msgstr "Taux de remplissage"
+
+msgid "Top events by registrations"
+msgstr "Événements les plus populaires"
+
+msgid "Total registrations"
+msgstr "Total des inscriptions"
+
+msgid "Registrations by month"
+msgstr "Inscriptions par mois"
+
+msgid "Month"
+msgstr "Mois"
+
+msgid "Recent member activity"
+msgstr "Activité récente des membres"
+
+msgid "Last participation"
+msgstr "Dernière participation"
+
+msgid "Total sessions"
+msgstr "Total des séances"
+
+# --- Controller messages ---
+msgid "Session not found."
+msgstr "Séance introuvable."
+
+msgid "Event not found."
+msgstr "Événement introuvable."
+
+msgid "Event not found or access denied."
+msgstr "Événement introuvable ou accès refusé."
+
+msgid "You do not have permission to edit this event."
+msgstr "Vous n'avez pas la permission de modifier cet événement."
+
+msgid "You do not have permission to manage this event."
+msgstr "Vous n'avez pas la permission de gérer cet événement."
+
+msgid "Event has been saved."
+msgstr "L'événement a été enregistré."
+
+msgid "An error occurred saving the event."
+msgstr "Une erreur est survenue lors de l'enregistrement de l'événement."
+
+msgid "Event name is required."
+msgstr "Le nom de l'événement est requis."
+
+msgid "Event type is required."
+msgstr "Le type de l'événement est requis."
+
+#, php-format
+msgid "%d sessions have been generated."
+msgstr "%d séances ont été générées."
+
+msgid "You cannot submit this event for validation."
+msgstr "Vous ne pouvez pas soumettre cet événement pour validation."
+
+msgid "Event has been submitted for validation."
+msgstr "L'événement a été soumis pour validation."
+
+msgid "An error occurred submitting the event."
+msgstr "Une erreur est survenue lors de la soumission de l'événement."
+
+msgid "You cannot validate this event."
+msgstr "Vous ne pouvez pas valider cet événement."
+
+msgid "Event has been validated."
+msgstr "L'événement a été validé."
+
+msgid "An error occurred validating the event."
+msgstr "Une erreur est survenue lors de la validation de l'événement."
+
+msgid "You cannot reject this event."
+msgstr "Vous ne pouvez pas rejeter cet événement."
+
+msgid "Event has been rejected and set back to draft."
+msgstr "L'événement a été rejeté et remis en brouillon."
+
+msgid "An error occurred rejecting the event."
+msgstr "Une erreur est survenue lors du rejet de l'événement."
+
+msgid "This event is not recurring."
+msgstr "Cet événement n'est pas récurrent."
+
+#, php-format
+msgid "%d new sessions have been generated."
+msgstr "%d nouvelles séances ont été générées."
+
+msgid "No new sessions to generate."
+msgstr "Aucune nouvelle séance à générer."
+
+msgid "Remove event"
+msgstr "Supprimer l'événement"
+
+msgid "Your membership must be up to date to register."
+msgstr "Votre adhésion doit être à jour pour vous inscrire."
+
+msgid "This session is not open for registration."
+msgstr "Cette séance n'est pas ouverte aux inscriptions."
+
+msgid "You are already registered for this session."
+msgstr "Vous êtes déjà inscrit à cette séance."
+
+msgid "This session is full. You can join the waitlist."
+msgstr "Cette séance est complète. Vous pouvez rejoindre la liste d'attente."
+
+msgid "You do not have access to this event."
+msgstr "Vous n'avez pas accès à cet événement."
+
+msgid "You have been registered successfully."
+msgstr "Votre inscription a bien été enregistrée."
+
+msgid "An error occurred during registration."
+msgstr "Une erreur est survenue lors de l'inscription."
+
+msgid "Registration not found."
+msgstr "Inscription introuvable."
+
+msgid "The unregistration deadline has passed."
+msgstr "Le délai de désinscription est dépassé."
+
+msgid "You have been unregistered successfully."
+msgstr "Votre désinscription a bien été prise en compte."
+
+msgid "An error occurred during unregistration."
+msgstr "Une erreur est survenue lors de la désinscription."
+
+msgid "Your membership must be up to date to join the waitlist."
+msgstr "Votre adhésion doit être à jour pour rejoindre la liste d'attente."
+
+msgid "You are already on the waitlist for this session."
+msgstr "Vous êtes déjà sur la liste d'attente pour cette séance."
+
+#, php-format
+msgid "You have been added to the waitlist (position %d)."
+msgstr "Vous avez été ajouté à la liste d'attente (position %d)."
+
+msgid "An error occurred joining the waitlist."
+msgstr "Une erreur est survenue en rejoignant la liste d'attente."
+
+msgid "You are not on the waitlist for this session."
+msgstr "Vous n'êtes pas sur la liste d'attente pour cette séance."
+
+msgid "You have been removed from the waitlist."
+msgstr "Vous avez été retiré de la liste d'attente."
+
+msgid "An error occurred leaving the waitlist."
+msgstr "Une erreur est survenue en quittant la liste d'attente."
+
+msgid "Unknown member"
+msgstr "Membre inconnu"
+
+msgid "Administrator"
+msgstr "Administrateur"
+
+msgid "Unregistration deadline"
+msgstr "Délai de désinscription"
+
+#, php-format
+msgid "%d days before the session"
+msgstr "%d jours avant la séance"
+
+# --- Email notifications ---
+#, php-format
+msgid "[Courses] Event submitted for validation: "
+msgstr "[Cours] Événement soumis pour validation : "
+
+#, php-format
+msgid ""
+"The event \"%s\" has been submitted for validation by %s.\n"
+"\n"
+"Please review and validate or reject it from the event management page."
+msgstr ""
+"L'événement \"%s\" a été soumis pour validation par %s.\n"
+"\n"
+"Merci de le consulter et de le valider ou rejeter depuis la page de gestion des événements."
+
+#, php-format
+msgid "[Courses] Your event has been validated: "
+msgstr "[Cours] Votre événement a été validé : "
+
+#, php-format
+msgid "Your event \"%s\" has been validated and is now visible to members."
+msgstr "Votre événement \"%s\" a été validé et est maintenant visible par les membres."
+
+#, php-format
+msgid "[Courses] Your event has been rejected: "
+msgstr "[Cours] Votre événement a été rejeté : "
+
+#, php-format
+msgid "Your event \"%s\" has been rejected. It has been set back to draft status so you can modify and resubmit it."
+msgstr "Votre événement \"%s\" a été rejeté. Il a été remis en brouillon afin que vous puissiez le modifier et le resoumettre."
+
+#, php-format
+msgid "Location: "
+msgstr "Lieu : "
+
+#, php-format
+msgid "[Courses] You have been registered: "
+msgstr "[Cours] Vous avez été inscrit : "
+
+#, php-format
+msgid ""
+"A spot has opened up for the session \"%s\" on %s (%s).\n"
+"\n"
+"You have been automatically registered from the waitlist. Log in to Galette to view your registrations."
+msgstr ""
+"Une place s'est libérée pour la séance \"%s\" le %s (%s).\n"
+"\n"
+"Vous avez été automatiquement inscrit depuis la liste d'attente. Connectez-vous à Galette pour voir vos inscriptions."
+
+#, php-format
+msgid "[Courses] Session cancelled: "
+msgstr "[Cours] Séance annulée : "
+
+#, php-format
+msgid "The session for \"%s\" on %s (%s) has been cancelled."
+msgstr "La séance de \"%s\" le %s (%s) a été annulée."
+
+# --- UI improvements ---
+msgid "Your next session"
+msgstr "Votre prochaine séance"
+
+msgid "Upcoming"
+msgstr "À venir"
+
+msgid "Past sessions"
+msgstr "Séances passées"
+
+msgid "No upcoming session"
+msgstr "Aucune séance à venir"
+
+msgid "Upcoming sessions"
+msgstr "Séances à venir"
+
+msgid "Information"
+msgstr "Informations"
+
+msgid "Session date"
+msgstr "Date de séance"
+
+msgid "By date"
+msgstr "Par date"
+
+msgid "By course"
+msgstr "Par cours"
+
+msgid "My courses only"
+msgstr "Mes cours uniquement"
+
+# --- Group restrictions ---
+msgid "Restrict to specific groups"
+msgstr "Restreindre à certains groupes"
+
+msgid "Allowed groups"
+msgstr "Groupes autorisés"
+
+# --- Instructors, nicknames, proxy ---
+msgid "Instructors"
+msgstr "Moniteurs"
+
+msgid "No instructor assigned to this session. Registration is not yet possible."
+msgstr "Aucun moniteur assigné à cette séance. L'inscription n'est pas encore possible."
+
+msgid "Assign instructor"
+msgstr "Affecter un moniteur"
+
+msgid "Remove instructor"
+msgstr "Retirer le moniteur"
+
+msgid "Volunteer as instructor"
+msgstr "Se porter volontaire comme moniteur"
+
+msgid "You have been assigned as instructor."
+msgstr "Vous avez été désigné comme moniteur."
+
+msgid "Instructor has been assigned."
+msgstr "Le moniteur a été affecté."
+
+msgid "Instructor has been removed."
+msgstr "Le moniteur a été retiré."
+
+msgid "This member is already an instructor for this session."
+msgstr "Ce membre est déjà moniteur de cette séance."
+
+msgid "You are already an instructor for this session."
+msgstr "Vous êtes déjà moniteur de cette séance."
+
+msgid "You do not manage any group associated with this event."
+msgstr "Vous ne gérez aucun groupe associé à cet événement."
+
+msgid "An error occurred assigning the instructor."
+msgstr "Une erreur est survenue lors de l'affectation du moniteur."
+
+msgid "An error occurred removing the instructor."
+msgstr "Une erreur est survenue lors du retrait du moniteur."
+
+msgid "Instructor not found."
+msgstr "Moniteur introuvable."
+
+msgid "Please select a member."
+msgstr "Veuillez sélectionner un membre."
+
+msgid "No instructor assigned"
+msgstr "Aucun moniteur assigné"
+
+msgid "Cancel session"
+msgstr "Annuler la séance"
+
+msgid "Session has been cancelled."
+msgstr "La séance a été annulée."
+
+msgid "Reactivate session"
+msgstr "Réactiver la séance"
+
+msgid "Session has been reactivated."
+msgstr "La séance a été réactivée."
+
+msgid "An error occurred reactivating the session."
+msgstr "Une erreur est survenue lors de la réactivation de la séance."
+
+msgid "Only cancelled sessions can be reactivated."
+msgstr "Seules les séances annulées peuvent être réactivées."
+
+msgid "Close session"
+msgstr "Fermer la séance"
+
+msgid "Session has been closed. Members can no longer register."
+msgstr "La séance a été fermée. Les membres ne peuvent plus s'inscrire."
+
+msgid "An error occurred closing the session."
+msgstr "Une erreur est survenue lors de la fermeture de la séance."
+
+msgid "Only open sessions can be closed."
+msgstr "Seules les séances ouvertes peuvent être fermées."
+
+msgid "Reopen session"
+msgstr "Rouvrir la séance"
+
+msgid "Session has been reopened. Members can register again."
+msgstr "La séance a été rouverte. Les membres peuvent à nouveau s'inscrire."
+
+msgid "An error occurred reopening the session."
+msgstr "Une erreur est survenue lors de la réouverture de la séance."
+
+msgid "Only closed sessions can be reopened."
+msgstr "Seules les séances fermées peuvent être rouvertes."
+
+msgid "An error occurred cancelling the session."
+msgstr "Une erreur est survenue lors de l'annulation de la séance."
+
+msgid "This session cannot be cancelled."
+msgstr "Cette séance ne peut pas être annulée."
+
+msgid "Are you sure you want to cancel this session?"
+msgstr "Êtes-vous sûr de vouloir annuler cette séance ?"
+
+# --- Gestion liste d'attente (admin) ---
+msgid "Waitlist management"
+msgstr "Gestion de la liste d'attente"
+
+msgid "There are people waiting for this session. Choose an action:"
+msgstr "Des personnes sont en attente pour cette séance. Choisissez une action :"
+
+msgid "Increase capacity and promote automatically"
+msgstr "Augmenter la capacité et promouvoir automatiquement"
+
+msgid "Set a new maximum capacity. People on the waitlist will be automatically registered (in order) until the session is full again."
+msgstr "Définissez une nouvelle capacité maximale. Les personnes en liste d'attente seront automatiquement inscrites (dans l'ordre) jusqu'à ce que la séance soit à nouveau complète."
+
+msgid "New max capacity"
+msgstr "Nouvelle capacité maximale"
+
+msgid "Apply"
+msgstr "Appliquer"
+
+msgid "Session capacity updated. %d member(s) promoted from the waitlist."
+msgstr "Capacité mise à jour. %d membre(s) promu(s) depuis la liste d'attente."
+
+msgid "Capacity cannot be decreased (current: %d)."
+msgstr "La capacité ne peut pas être diminuée (actuelle : %d)."
+
+msgid "Session capacity updated."
+msgstr "Capacité de la séance mise à jour."
+
+msgid "%d session(s) were not updated: their current registrations exceed the new capacity."
+msgstr "%d séance(s) non mises à jour : le nombre d'inscrits dépasse la nouvelle capacité."
+
+msgid "Promote the next person on the waitlist"
+msgstr "Promouvoir la prochaine personne de la liste d'attente"
+
+msgid "Manually register the first person on the waitlist (ignores capacity limit)."
+msgstr "Inscrit manuellement la première personne en liste d'attente (ignore la limite de capacité)."
+
+msgid "Promote next"
+msgstr "Promouvoir le suivant"
+
+msgid "The waitlist is empty."
+msgstr "La liste d'attente est vide."
+
+msgid "Member promoted from the waitlist."
+msgstr "Membre promu depuis la liste d'attente."
+
+msgid "Create a new session for waiting people"
+msgstr "Créer une nouvelle séance pour les personnes en attente"
+
+msgid "Create an identical session on a new date. All waiting members will be automatically registered in that new session."
+msgstr "Crée une séance identique à une nouvelle date. Tous les membres en attente seront automatiquement inscrits à cette nouvelle séance."
+
+msgid "Date of new session"
+msgstr "Date de la nouvelle séance"
+
+msgid "Create session"
+msgstr "Créer la séance"
+
+msgid "A valid date is required to create the new session."
+msgstr "Une date valide est requise pour créer la nouvelle séance."
+
+msgid "An error occurred creating the new session."
+msgstr "Une erreur est survenue lors de la création de la nouvelle séance."
+
+msgid "New session created on %s. %d member(s) from the waitlist have been registered."
+msgstr "Nouvelle séance créée le %s. %d membre(s) de la liste d'attente ont été inscrits."
+
+msgid "Register a member"
+msgstr "Inscrire un membre"
+
+msgid "Select a member to register"
+msgstr "Sélectionner un membre à inscrire"
+
+msgid "Member has been registered successfully."
+msgstr "Le membre a été inscrit avec succès."
+
+msgid "This member is already registered for this session."
+msgstr "Ce membre est déjà inscrit à cette séance."
+
+msgid "No eligible member to register."
+msgstr "Aucun membre éligible à inscrire."
+
+msgid "Register for"
+msgstr "Inscrire"
+
+msgid "Myself"
+msgstr "Moi-même"
+
+msgid "Register a linked member"
+msgstr "Inscrire un membre lié"
+
+msgid "Select a linked member to register"
+msgstr "Sélectionner un membre lié à inscrire"
+
+msgid "No linked member eligible for this session (already registered or not in the required group)."
+msgstr "Aucun membre lié éligible pour cette séance (déjà inscrit ou n'appartenant pas au groupe requis)."
+
+msgid "You can only register your own linked members."
+msgstr "Vous ne pouvez inscrire que vos propres membres liés."
+
+msgid "Select a linked member to register."
+msgstr "Veuillez sélectionner un membre lié à inscrire."
+
+msgid "This linked member does not belong to a required group for this event."
+msgstr "Ce membre lié n'appartient pas à un groupe requis pour cet événement."
+
+msgid "This linked member is already registered for this session."
+msgstr "Ce membre lié est déjà inscrit à cette séance."
+
+msgid "The linked member has been registered successfully."
+msgstr "Le membre lié a bien été inscrit."
+
+msgid "You can only unregister your own linked members."
+msgstr "Vous ne pouvez désinscrire que vos propres membres liés."
+
+msgid "The linked member has been unregistered successfully."
+msgstr "Le membre lié a bien été désinscrit."
+
+msgid "Invalid request."
+msgstr "Requête invalide."
+
+msgid "An error occurred."
+msgstr "Une erreur est survenue."
+
+msgid "Remove session"
+msgstr "Supprimer la séance"
+
+# --- Cancellation reasons ---
+msgid "Select a reason"
+msgstr "Choisir un motif"
+
+msgid "Competition"
+msgstr "Concours"
+
+msgid "Instructor absent"
+msgstr "Absence du moniteur"
+
+msgid "Training"
+msgstr "Formation"
+
+msgid "Weather"
+msgstr "Météo"
+
+msgid "Other"
+msgstr "Autre"
+
+msgid "Reason"
+msgstr "Motif"
+
+msgid "Comment"
+msgstr "Commentaire"
+
+msgid "Optional comment..."
+msgstr "Commentaire optionnel..."
+
+msgid "Confirm cancellation"
+msgstr "Confirmer l'annulation"
+
+msgid "Reason:"
+msgstr "Motif :"
+
+msgid "Comment:"
+msgstr "Commentaire :"
+
+msgid "Reason: "
+msgstr "Motif : "
+
+msgid "Comment: "
+msgstr "Commentaire : "
+
+# --- Registrations list ---
+msgid "Nickname"
+msgstr "Surnom"
+
+msgid "Event type"
+msgstr "Type d'événement"
+
+#, php-format
+msgid "%1$s registration"
+msgid_plural "%1$s registrations"
+msgstr[0] "%1$s inscription"
+msgstr[1] "%1$s inscriptions"
+
+# --- Attendance marking ---
+msgid "Absent"
+msgstr "Absent"
+
+msgid "Absent (excused)"
+msgstr "Absent (excusé)"
+
+msgid "Present (unregistered)"
+msgstr "Présent (non inscrit)"
+
+msgid "This member does not belong to a required group for this event."
+msgstr "Ce membre n'appartient pas à un groupe requis pour cet événement."
+
+msgid "You do not belong to a required group for this event."
+msgstr "Vous n'appartenez pas à un groupe requis pour cet événement."
+
+msgid "No instructor"
+msgstr "Aucun moniteur"
+
+msgid "Attendance"
+msgstr "Pointage"
+
+msgid "Save attendance"
+msgstr "Enregistrer le pointage"
+
+#, php-format
+msgid "%d attendance(s) recorded."
+msgstr "%d pointage(s) enregistré(s)."
+
+msgid "Walk-in attendance"
+msgstr "Présence hors inscription"
+
+msgid "Walk-in attendance recorded."
+msgstr "Présence hors inscription enregistrée."
+
+msgid "Select a member"
+msgstr "Sélectionner un membre"
+
+msgid "Add"
+msgstr "Ajouter"
+
+msgid "Courses plugin preferences"
+msgstr "Préférences du plugin Cours"
+
+msgid "Notifications"
+msgstr "Notifications"
+
+msgid "Enable email notifications"
+msgstr "Activer les notifications par courriel"
+
+msgid "When enabled, email notifications are sent for event submissions, validations, rejections, new sessions, waitlist promotions and session cancellations. Disabled by default."
+msgstr "Lorsqu'elles sont activées, des notifications par courriel sont envoyées pour les soumissions d'événements, validations, rejets, nouvelles séances, promotions depuis la liste d'attente et annulations de séances. Activées par défaut."
+
+msgid "Club closure dates"
+msgstr "Périodes de fermeture du club"
+
+msgid "Sessions will not be generated automatically on these dates."
+msgstr "Les séances ne seront pas générées automatiquement sur ces périodes."
+
+msgid "Add a closure period"
+msgstr "Ajouter une période de fermeture"
+
+msgid "Automatic session generation"
+msgstr "Génération automatique des séances"
+
+msgid "Schedule this URL with a cron job to automatically generate sessions for all validated recurring events."
+msgstr "Planifiez cette URL avec une tâche cron pour générer automatiquement les séances de tous les événements récurrents validés."
+
+msgid "Copy"
+msgstr "Copier"
+
+msgid "Example cron (every day at 1am):"
+msgstr "Exemple cron (chaque jour à 1h du matin) :"
+
+msgid "Courses preferences saved."
+msgstr "Préférences enregistrées."
+
+msgid "Test email address"
+msgstr "Adresse de test"
+
+msgid "Leave empty for normal sending"
+msgstr "Laisser vide pour l'envoi normal"
+
+msgid "Test mode active: all emails are redirected to this address."
+msgstr "Mode test actif : tous les courriels sont redirigés vers cette adresse."
+
+msgid "When set, all emails are redirected to this address instead of the real recipients (subject will include the original recipients)."
+msgstr "Si renseignée, tous les courriels sont redirigés vers cette adresse au lieu des vrais destinataires (l'objet indiquera les destinataires réels)."
+
+msgid "Are you sure you want to unregister from this session?"
+msgstr "Êtes-vous sûr de vouloir vous désinscrire de cette séance ?"
+
+msgid "Confirm"
+msgstr "Confirmer"
+
+msgid "Event name"
+msgstr "Nom de l'événement"
+
+msgid "All events"
+msgstr "Tous les événements"
+
+msgid "Activity"
+msgstr "Activité"
+
+msgid "All activities"
+msgstr "Toutes les activités"
+
+msgid "No session matches your filters."
+msgstr "Aucune séance ne correspond à vos filtres."
+
+msgid "Description, location..."
+msgstr "Description, lieu..."
+
+# --- Préférences notifications membre ---
+msgid "Email notifications"
+msgstr "Notifications par courriel"
+
+msgid "My notification preferences"
+msgstr "Mes préférences de notifications"
+
+msgid "Receive email notifications"
+msgstr "Recevoir les notifications par courriel"
+
+msgid "When enabled, you will receive email notifications for new events, session updates, waitlist promotions, and cancellations. Disabled by default."
+msgstr "Lorsqu'activées, vous recevrez des courriels pour les nouveaux événements, les nouvelles séances, les promotions de liste d'attente et les annulations. Activées par défaut."
+
+msgid "Your notification preferences have been saved."
+msgstr "Vos préférences de notifications ont été enregistrées."
+
+msgid "Preferences cannot be saved for the super-admin account."
+msgstr "Les préférences ne peuvent pas être enregistrées pour le compte super-administrateur."
+
+msgid "Past"
+msgstr "Passée"
+
+msgid "Present"
+msgstr "Présences"
+
+msgid "Cancelled sessions"
+msgstr "Séances annulées"
+
+msgid "This session has been cancelled."
+msgstr "Cette séance a été annulée."
+
+# --- Closure dates ---
+msgid "Duration"
+msgstr "Durée"
+
+msgid "Ongoing"
+msgstr "En cours"
+
+msgid "Error"
+msgstr "Erreur"
+
+msgid "No closure period configured."
+msgstr "Aucune période de fermeture configurée."
+
+msgid "Some closure periods overlap. They will be merged during session generation."
+msgstr "Certaines périodes se chevauchent. Elles seront fusionnées lors de la génération des séances."
+
+# --- Cron token ---
+msgid "Regenerate token"
+msgstr "Régénérer le jeton"
+
+msgid "Regenerate the cron token? Any existing cron job configuration will need to be updated with the new URL."
+msgstr "Régénérer le jeton cron ? Toute tâche cron configurée devra être mise à jour avec la nouvelle URL."
+
+msgid "Warning: regenerating the token invalidates the current URL. Update any scheduled cron job afterwards."
+msgstr "Attention : régénérer le jeton invalide l'URL actuelle. Pensez à mettre à jour votre tâche cron."
+
+msgid "Cron token regenerated."
+msgstr "Jeton cron régénéré."
+
+# --- Modèles de courriels ---
+msgid "Email templates"
+msgstr "Modèles de courriels"
+
+msgid "Email type"
+msgstr "Type de courriel"
+
+msgid "Customize the subject and body of each automatic email. Use {variable} placeholders to insert dynamic values."
+msgstr "Personnalisez l'objet et le corps de chaque courriel automatique. Utilisez les balises {variable} pour insérer des valeurs dynamiques."
+
+msgid "Submission for validation"
+msgstr "Soumission pour validation"
+
+msgid "Event validated"
+msgstr "Événement validé"
+
+msgid "Event rejected"
+msgstr "Événement rejeté"
+
+msgid "Event published (instructors)"
+msgstr "Événement publié (moniteurs)"
+
+msgid "New sessions generated (instructors)"
+msgstr "Nouvelles séances générées (moniteurs)"
+
+msgid "Promoted from waitlist"
+msgstr "Promu depuis la liste d'attente"
+
+msgid "Instructor assigned (session open)"
+msgstr "Séance ouverte (moniteur affecté)"
+
+msgid "Session cancelled"
+msgstr "Séance annulée"
+
+msgid "Sent to admins when an instructor submits an event for validation."
+msgstr "Envoyé aux administrateurs lorsqu'un intervenant soumet un événement pour validation."
+
+msgid "Sent to the event creator when their event is validated."
+msgstr "Envoyé au créateur de l'événement lorsque son événement est validé."
+
+msgid "Sent to the event creator when their event is rejected."
+msgstr "Envoyé au créateur de l'événement lorsque son événement est rejeté."
+
+msgid "Sent to group managers when a new event is published, so they can volunteer as instructor."
+msgstr "Envoyé aux responsables de groupe lors de la publication d'un événement, pour qu'ils puissent se porter volontaires comme moniteur."
+
+msgid "Sent to group managers when new sessions are generated, so they can volunteer as instructor."
+msgstr "Envoyé aux responsables de groupe lorsque de nouvelles séances sont générées, pour qu'ils puissent se porter volontaires comme moniteur."
+
+msgid "Sent to a member when they are automatically promoted from the waitlist."
+msgstr "Envoyé à un membre lorsqu'il est automatiquement promu depuis la liste d'attente."
+
+msgid "Sent to eligible members when the first instructor is assigned and the session becomes open for registration."
+msgstr "Envoyé aux membres éligibles lorsque le premier moniteur est affecté et que la séance devient ouverte à l'inscription."
+
+msgid "Sent to all registered members when a session is cancelled."
+msgstr "Envoyé à tous les membres inscrits lorsqu'une séance est annulée."
+
+msgid "Customized"
+msgstr "Personnalisé"
+
+msgid "Default"
+msgstr "Par défaut"
+
+msgid "Available variables:"
+msgstr "Variables disponibles :"
+
+msgid "Click to insert at cursor"
+msgstr "Cliquer pour insérer à la position du curseur"
+
+msgid "Variables in the subject line are also supported."
+msgstr "Les variables sont également utilisables dans l'objet du courriel."
+
+msgid "Subject"
+msgstr "Objet"
+
+msgid "Body"
+msgstr "Corps du message"
+
+msgid "Email subject"
+msgstr "Objet du courriel"
+
+msgid "Email body"
+msgstr "Corps du courriel"
+
+msgid "Reset to default"
+msgstr "Réinitialiser par défaut"
+
+msgid "Reset this template to the default text?"
+msgstr "Réinitialiser ce modèle au texte par défaut ?"
+
+msgid "See default text"
+msgstr "Voir le texte par défaut"
+
+msgid "or"
+msgstr "ou"
+
+msgid "Email template saved."
+msgstr "Modèle de courriel enregistré."
+
+msgid "Template reset to default."
+msgstr "Modèle réinitialisé par défaut."
+
+msgid "Unknown template."
+msgstr "Modèle inconnu."
+
+msgid "An error occurred saving the template."
+msgstr "Une erreur est survenue lors de l'enregistrement du modèle."
+
+# --- Default email subjects (with {event_name} placeholder) ---
+msgid "[Courses] Event submitted for validation: {event_name}"
+msgstr "[Cours] Demande de validation – {event_name}"
+
+msgid "[Courses] Your event has been validated: {event_name}"
+msgstr "[Cours] Votre événement est validé – {event_name}"
+
+msgid "[Courses] Your event has been rejected: {event_name}"
+msgstr "[Cours] Votre événement n'a pas été retenu – {event_name}"
+
+msgid "[Courses] New event — volunteer as instructor: {event_name}"
+msgstr "[Cours] Nouvel événement — se porter volontaire comme moniteur : {event_name}"
+
+msgid "[Courses] New sessions — volunteer as instructor: {event_name}"
+msgstr "[Cours] Nouvelles séances — se porter volontaire comme moniteur : {event_name}"
+
+msgid "[Courses] You have been registered: {event_name}"
+msgstr "[Cours] Inscription confirmée – {event_name}"
+
+msgid "[Courses] Séance ouverte : {event_name}"
+msgstr "[Cours] Séance ouverte – {event_name}"
+
+msgid "[Courses] Session cancelled: {event_name}"
+msgstr "[Cours] Séance annulée – {event_name}"
+
+# --- Default email bodies ---
+msgid ""
+"Hello,\n"
+"\n"
+"{creator_name} has submitted the event \"{event_name}\" for validation.\n"
+"\n"
+"Please log in and review it from the event management page."
+msgstr ""
+"Bonjour,\n"
+"\n"
+"{creator_name} vient de soumettre l'événement « {event_name} » pour validation.\n"
+"\n"
+"Rendez-vous sur la page de gestion des événements pour le valider ou le rejeter."
+
+msgid ""
+"Hello,\n"
+"\n"
+"Great news! Your event \"{event_name}\" has been validated and is now open for member registration.\n"
+"\n"
+"Thank you for your contribution!"
+msgstr ""
+"Bonjour,\n"
+"\n"
+"Bonne nouvelle ! Votre événement « {event_name} » a été validé et est désormais ouvert aux inscriptions des adhérents.\n"
+"\n"
+"Merci pour votre contribution, à bientôt !"
+
+msgid ""
+"Hello,\n"
+"\n"
+"Unfortunately your event \"{event_name}\" could not be validated as submitted and has been set back to draft.\n"
+"\n"
+"Feel free to update it and resubmit it for validation."
+msgstr ""
+"Bonjour,\n"
+"\n"
+"Votre événement « {event_name} » n'a pas pu être validé en l'état et a été remis en brouillon.\n"
+"\n"
+"N'hésitez pas à l'ajuster et à le resoumettre pour validation.\n"
+"\n"
+"À bientôt !"
+
+msgid ""
+"Hello,\n"
+"\n"
+"A new event has been published and needs instructors:\n"
+"\n"
+"{event_name}{location_line}{event_description}\n"
+"\n"
+"If you wish to lead a session, log in and volunteer as instructor from the session detail page.\n"
+"\n"
+"Thank you!"
+msgstr ""
+"Bonjour,\n"
+"\n"
+"Un nouvel événement vient d'être publié et recherche des moniteurs :\n"
+"\n"
+"{event_name}{location_line}{event_description}\n"
+"\n"
+"Si vous souhaitez encadrer une séance, connectez-vous et portez-vous volontaire depuis la page de détail de la séance.\n"
+"\n"
+"Connectez-vous sur https://adherent.ccag42.org/\n"
+"\n"
+"Merci !"
+
+msgid ""
+"Hello,\n"
+"\n"
+"New sessions have been planned for \"{event_name}\":{event_description}{dates_list}\n"
+"\n"
+"If you wish to lead one of these sessions, log in and volunteer as instructor from the session detail page.\n"
+"\n"
+"Thank you!"
+msgstr ""
+"Bonjour,\n"
+"\n"
+"De nouvelles séances ont été planifiées pour « {event_name} » :{event_description}{dates_list}\n"
+"\n"
+"Si vous souhaitez encadrer l'une de ces séances, connectez-vous et portez-vous volontaire depuis la page de détail de la séance.\n"
+"\n"
+"Connectez-vous sur https://adherent.ccag42.org/\n"
+"\n"
+"Merci !"
+
+msgid ""
+"Hello,\n"
+"\n"
+"Great news! A spot has opened up and you have been automatically registered for the following session:\n"
+"\n"
+"\"{event_name}\" — {session_date} ({session_time}){event_description}\n"
+"\n"
+"Log in to your member account to view your registrations.\n"
+"\n"
+"See you soon!"
+msgstr ""
+"Bonjour,\n"
+"\n"
+"Bonne nouvelle ! Une place s'est libérée et vous avez été automatiquement inscrit(e) à la séance suivante :\n"
+"\n"
+"« {event_name} » — le {session_date} de {session_time}{event_description}\n"
+"\n"
+"Connectez-vous à votre espace adhérent pour consulter vos inscriptions.\n"
+"\n"
+"À bientôt !"
+
+msgid ""
+"Hello,\n"
+"\n"
+"Unfortunately the session \"{event_name}\" scheduled for {session_date} ({session_time}) has been cancelled.{reason_block}{comment_block}{event_description}\n"
+"\n"
+"We apologize for the inconvenience and look forward to seeing you at a future session."
+msgstr ""
+"Bonjour,\n"
+"\n"
+"La séance « {event_name} » prévue le {session_date} de {session_time} est malheureusement annulée.{reason_block}{comment_block}{event_description}\n"
+"\n"
+"Nous vous présentons nos excuses pour la gêne occasionnée et espérons vous retrouver très bientôt !"
+
+msgid "Session cancelled (waitlist)"
+msgstr "Séance annulée (liste d'attente)"
+
+# --- Corps du courriel : moniteur affecté ---
+msgid ""
+"Bonjour,\n"
+"\n"
+"Bonne nouvelle ! La séance suivante est désormais ouverte :\n"
+"\n"
+"\"{event_name}\" — {session_date} ({session_time})\n"
+"Moniteur : {instructor_name}{event_description}\n"
+"\n"
+"Inscrivez-vous dès maintenant pour confirmer votre présence.\n"
+"\n"
+"À bientôt !"
+msgstr ""
+"Bonjour,\n"
+"\n"
+"Bonne nouvelle ! La séance suivante est désormais ouverte :\n"
+"\n"
+"« {event_name} » — le {session_date} de {session_time}\n"
+"Moniteur : {instructor_name}{event_description}\n"
+"\n"
+"Inscrivez-vous dès maintenant pour confirmer votre présence.\n"
+"\n"
+"À bientôt !"
+
+msgid "Sent to members on the waitlist when a session is cancelled."
+msgstr "Envoyé aux membres en liste d'attente lorsqu'une séance est annulée."
+
+msgid ""
+"Hello,\n"
+"\n"
+"The session \"{event_name}\" scheduled for {session_date} ({session_time}) has been cancelled.{reason_block}{comment_block}{event_description}\n"
+"\n"
+"You were on the waitlist for this session. Your registration request has been removed.\n"
+"\n"
+"We apologize for the inconvenience and look forward to seeing you at a future session."
+msgstr ""
+"Bonjour,\n"
+"\n"
+"La séance « {event_name} » prévue le {session_date} de {session_time} est malheureusement annulée.{reason_block}{comment_block}{event_description}\n"
+"\n"
+"Vous étiez en liste d'attente pour cette séance. Votre demande d'inscription a été supprimée.\n"
+"\n"
+"Nous vous présentons nos excuses pour la gêne occasionnée et espérons vous retrouver très bientôt !"
+
+msgid "Invalid link"
+msgstr "Lien invalide"
+
+msgid "An error occurred while processing your request. Please try again later."
+msgstr "Une erreur est survenue lors du traitement de votre demande. Veuillez réessayer plus tard."
+
+msgid "This unsubscribe link is invalid or has already been used."
+msgstr "Ce lien de désinscription est invalide ou a déjà été utilisé."
+
+msgid "Already unsubscribed"
+msgstr "Déjà désinscrit"
+
+msgid "You are already unsubscribed from course notifications."
+msgstr "Vous êtes déjà désinscrit des notifications de cours."
+
+msgid "Unsubscribed successfully"
+msgstr "Désinscription effectuée"
+
+msgid "You have been unsubscribed from course email notifications."
+msgstr "Vous avez été désinscrit des notifications par courriel de cours."
+
+msgid "You can re-enable notifications at any time from your member preferences."
+msgstr "Vous pouvez réactiver les notifications à tout moment depuis vos préférences adhérent."
+
+msgid "You receive this email because you are a member."
+msgstr "Vous recevez ce courriel car vous êtes adhérent."
+
+msgid "To stop receiving these notifications: "
+msgstr "Pour ne plus recevoir ces notifications : "
+
+msgid "Unsubscribe from notifications:"
+msgstr "Se désinscrire des notifications :"
+
+msgid "My courses"
+msgstr "Mes cours"
+
+msgid "Courses management"
+msgstr "Gestion des cours"
+
+msgid "Registrations management"
+msgstr "Gestion inscriptions"
+
+msgid "Edit session"
+msgstr "Modifier la séance"
+
+msgid "This session can no longer be edited."
+msgstr "Cette séance ne peut plus être modifiée."
+
+msgid "Session updated successfully."
+msgstr "Séance mise à jour avec succès."
+
+msgid "An error occurred while saving the session."
+msgstr "Une erreur est survenue lors de la sauvegarde de la séance."
+
+msgid "Invalid date."
+msgstr "Date invalide."
+
+msgid "Invalid start time."
+msgstr "Heure de début invalide."
+
+msgid "Invalid end time."
+msgstr "Heure de fin invalide."
+
+msgid "End time must be after start time."
+msgstr "L'heure de fin doit être après l'heure de début."
+
+msgid "Session date must be today or in the future."
+msgstr "La date de la séance doit être aujourd'hui ou dans le futur."
+
+msgid "Minimum: %d (current registrations)"
+msgstr "Minimum : %d (inscriptions actuelles)"
+
+# --- Export CSV ---
+msgid "Export to CSV (Excel)"
+msgstr "Exporter en CSV (Excel)"
+
+msgid "Export"
+msgstr "Exporter"
+
+msgid "Last name"
+msgstr "Nom"
+
+msgid "First name"
+msgstr "Prénom"
+
+msgid "Email"
+msgstr "Email"
+
+msgid "Phone"
+msgstr "Téléphone"
+
+msgid "Send email via Galette mailing"
+msgstr "Envoyer un courriel via la messagerie Galette"
+
+msgid "Send email"
+msgstr "Envoyer un courriel"
+
+msgid "Session from"
+msgstr "Séance du"
+
+msgid "Session to"
+msgstr "au"

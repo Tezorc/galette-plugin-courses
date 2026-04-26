@@ -1,0 +1,791 @@
+{% extends "page.html.twig" %}
+
+{% block content %}
+    {# --- Header segment with event name, date, location --- #}
+    <div class="ui {% if session.getStatus() == 'open' %}green{% elseif session.getStatus() == 'closed' %}grey{% else %}red{% endif %} inverted segment courses-session-header-segment">
+        <h2 class="ui inverted header">
+            <i class="calendar alternate icon" aria-hidden="true"></i>
+            <div class="content">
+                {{ event.getName() }}
+                <div class="sub header">
+                    <i class="calendar icon" aria-hidden="true"></i>
+                    <strong class="courses-date-day">{{ session.getSessionDate()|date("d") }}</strong>
+                    <span class="courses-date-month">{{ session.getMonthYear() }}</span>
+                    &nbsp;&middot;&nbsp;
+                    {{ session.getFormattedStartTime() }} – {{ session.getFormattedEndTime() }}
+                    {% if event.getLocation() %}
+                        <br class="courses-mobile-br">
+                        <i class="map pin icon" aria-hidden="true"></i>
+                        {{ event.getLocation() }}
+                    {% endif %}
+                </div>
+            </div>
+        </h2>
+    </div>
+
+    {# --- Edit button (staff only, session not cancelled and future) --- #}
+    {% if (login.isAdmin() or login.isStaff()) and session.getStatus() != 'cancelled' and session.getSessionDate() >= "now"|date("Y-m-d") %}
+    <div class="ui basic right aligned segment" style="padding:.5em 0">
+        <a href="{{ url_for('coursesSessionEdit', {'id': session.getId()}) }}" class="ui small labeled icon button">
+            <i class="edit icon" aria-hidden="true"></i>
+            {{ _T("Edit session", "courses") }}
+        </a>
+    </div>
+    {% endif %}
+
+    {# --- Cancellation banner (visible to all) --- #}
+    {% if session.getStatus() == 'cancelled' %}
+    <div class="ui red message">
+        <div class="header">
+            <i class="ban icon" aria-hidden="true"></i>
+            {{ _T("This session has been cancelled.", "courses") }}
+        </div>
+        {% if session.getCancellationReason() %}
+            <p>
+                <strong>{{ _T("Reason:", "courses") }}</strong>
+                {{ session.getCancellationReasonLabel() }}
+            </p>
+        {% endif %}
+        {% if session.getCancellationComment() %}
+            <p>
+                <strong>{{ _T("Comment:", "courses") }}</strong>
+                {{ session.getCancellationComment() }}
+            </p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="ui stackable grid">
+        {# --- Left column: capacity + instructors + actions --- #}
+        <div class="ten wide column">
+            {# Capacity section #}
+            <div class="ui segment">
+                <h3 class="ui header">
+                    <i class="users icon" aria-hidden="true"></i>
+                    {{ _T("Capacity", "courses") }}
+                </h3>
+                {% if session.getMaxCapacity() %}
+                    <div class="ui indicating progress{% if session.isFull() %} red{% elseif session.getCapacityPercent() > 75 %} yellow{% else %} green{% endif %}" data-percent="{{ session.getCapacityPercent() }}">
+                        <div class="bar" style="width: {{ session.getCapacityPercent() }}%">
+                            <div class="progress"></div>
+                        </div>
+                        <div class="label">{{ session.getCurrentRegistrations() }} / {{ session.getMaxCapacity() }} {{ _T("spots taken", "courses") }}</div>
+                    </div>
+                    {% if session.getRemainingSpots() is not null and session.getRemainingSpots() > 0 %}
+                        <div class="ui large green label">
+                            <i class="check circle icon" aria-hidden="true"></i>
+                            {{ _T("%d spots remaining", "courses")|format(session.getRemainingSpots()) }}
+                        </div>
+                    {% elseif session.isFull() %}
+                        <div class="ui large red label">
+                            <i class="times circle icon" aria-hidden="true"></i>
+                            {{ _T("This session is full.", "courses") }}
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="ui large label">
+                        <i class="users icon" aria-hidden="true"></i>
+                        {{ session.getCurrentRegistrations() }} {{ _T("registered", "courses") }}
+                    </div>
+                {% endif %}
+            </div>
+
+            {# Instructors section #}
+            <div class="ui segment">
+                <h3 class="ui header">
+                    <i class="chalkboard teacher icon" aria-hidden="true"></i>
+                    {{ _T("Instructors", "courses") }}
+                </h3>
+
+                {% if instructors|length > 0 %}
+                    <div class="ui relaxed divided list">
+                        {% for instr in instructors %}
+                            <div class="item">
+                                <div class="content courses-member-inline">
+                                    <i class="user circle icon" aria-hidden="true"></i>
+                                    {% if instructor_members[instr.getMemberId()] is defined %}
+                                        {{ instructor_members[instr.getMemberId()] }}
+                                    {% else %}
+                                        {{ _T("Unknown member", "courses") }}
+                                    {% endif %}
+                                    {% if (login.isAdmin() or login.isStaff()) and session.getSessionDate() >= "now"|date("Y-m-d") %}
+                                        <form action="{{ url_for("coursesDoRemoveInstructor", {"id": session.getId()}) }}" method="post" class="ui form courses-remove-form">
+                                            <input type="hidden" name="member_id" value="{{ instr.getMemberId() }}">
+                                            <button type="submit" class="ui mini red icon button" title="{{ _T("Remove instructor", "courses") }}">
+                                                <i class="times icon" aria-hidden="true"></i>
+                                            </button>
+                                            {% include 'components/forms/csrf.html.twig' %}
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="ui orange message">
+                        <i class="exclamation triangle icon" aria-hidden="true"></i>
+                        {{ _T("No instructor assigned to this session. Registration is not yet possible.", "courses") }}
+                    </div>
+                {% endif %}
+
+                {# Staff: assign instructor #}
+                {% if (login.isAdmin() or login.isStaff()) and eligible_instructors|length > 0 and session.getSessionDate() >= "now"|date("Y-m-d") %}
+                    <div class="ui divider"></div>
+                    <form action="{{ url_for("coursesDoAssignInstructor", {"id": session.getId()}) }}" method="post" class="ui form">
+                        <div class="inline fields">
+                            <div class="field">
+                                <select name="member_id" class="ui search dropdown">
+                                    <option value="">{{ _T("Assign instructor", "courses") }}</option>
+                                    {% for mid, mname in eligible_instructors %}
+                                        <option value="{{ mid }}">{{ mname }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="ui small primary button">
+                                <i class="plus icon" aria-hidden="true"></i>
+                                {{ _T("Assign instructor", "courses") }}
+                            </button>
+                        </div>
+                        {% include 'components/forms/csrf.html.twig' %}
+                    </form>
+                {% endif %}
+
+                {# Group manager: volunteer as instructor #}
+                {% if login.isGroupManager() and not login.isAdmin() and not login.isStaff() and not is_instructor and session.getSessionDate() >= "now"|date("Y-m-d") %}
+                    <div class="ui divider"></div>
+                    <form action="{{ url_for("coursesDoVolunteerInstructor", {"id": session.getId()}) }}" method="post" class="ui form">
+                        <button type="submit" class="ui small labeled icon teal button">
+                            <i class="hand paper icon" aria-hidden="true"></i>
+                            {{ _T("Volunteer as instructor", "courses") }}
+                        </button>
+                        {% include 'components/forms/csrf.html.twig' %}
+                    </form>
+                {% endif %}
+            </div>
+
+            {# Action buttons #}
+            {% if login.isLogged() and not login.isSuperAdmin() and has_instructor and (is_registered or is_on_waitlist or session.isOpen()) %}
+                <div class="ui center aligned segment courses-actions">
+                    {% if not login.isUp2Date() and not login.isAdmin() and not login.isStaff() and not login.isGroupManager() %}
+                        <div class="ui orange message">
+                            <i class="exclamation triangle icon" aria-hidden="true"></i>
+                            {{ _T("Your membership must be up to date to register.", "courses") }}
+                        </div>
+                    {% elseif is_registered %}
+                        {# Désinscription du parent — bouton ouvre une modale de confirmation #}
+                        <div class="courses-unregister-row">
+                            <button type="button" class="ui small labeled icon red button" id="unregister-self-btn">
+                                <i class="times icon" aria-hidden="true"></i>
+                                {{ _T("Unregister", "courses") }}
+                            </button>
+                            {% if current_member_name %}
+                                <strong>{{ current_member_name }}</strong>
+                                {% if current_member_nickname %}
+                                    <span class="ui teal small label">
+                                        <i class="tag icon" aria-hidden="true"></i>{{ current_member_nickname }}
+                                    </span>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                        {# Modale de confirmation désinscription #}
+                        <div class="ui small modal" id="unregister-self-modal">
+                            <div class="header">
+                                <i class="times circle icon" aria-hidden="true"></i>
+                                {{ _T("Unregister", "courses") }}
+                            </div>
+                            <div class="content">
+                                <p>{{ _T("Are you sure you want to unregister from this session?", "courses") }}</p>
+                                {% if current_member_name %}
+                                    <p><strong>{{ current_member_name }}</strong>
+                                    {% if current_member_nickname %}&nbsp;&middot;&nbsp;<span class="ui teal small label"><i class="tag icon" aria-hidden="true"></i>{{ current_member_nickname }}</span>{% endif %}</p>
+                                {% endif %}
+                            </div>
+                            <div class="actions">
+                                <button class="ui small cancel button">{{ _T("Close", "courses") }}</button>
+                                <form action="{{ url_for("coursesDoUnregister", {"id": session.getId()}) }}" method="post" class="ui form courses-inline-form">
+                                    <button type="submit" class="ui small red approve button">
+                                        <i class="times icon" aria-hidden="true"></i>
+                                        {{ _T("Confirm", "courses") }}
+                                    </button>
+                                    {% include 'components/forms/csrf.html.twig' %}
+                                </form>
+                            </div>
+                        </div>
+
+                        {# Inscrire un autre enfant #}
+                        {% set unregistered_children = [] %}
+                        {% for childId, child in children %}
+                            {% if childId not in children_registered %}
+                                {% set unregistered_children = unregistered_children|merge({(childId): child}) %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if unregistered_children|length > 0 and session.isOpen() and not session.isFull() %}
+                            <div class="ui divider"></div>
+                            <a href="{{ url_for("coursesParentRegisterForm", {"id": session.getId()}) }}" class="ui small labeled icon green button">
+                                <i class="user plus icon" aria-hidden="true"></i>
+                                {{ _T("Register a linked member", "courses") }}
+                            </a>
+                        {% endif %}
+                    {% elseif is_on_waitlist %}
+                        <div class="ui blue message">
+                            <i class="clock icon" aria-hidden="true"></i>
+                            {{ _T("You are on the waitlist (position %d).", "courses")|format(waitlist_position) }}
+                        </div>
+                        <form action="{{ url_for("coursesDoLeaveWaitlist", {"id": session.getId()}) }}" method="post" class="ui form">
+                            <button type="submit" class="ui small labeled icon orange button">
+                                <i class="times icon" aria-hidden="true"></i>
+                                {{ _T("Leave waitlist", "courses") }}
+                            </button>
+                            {% include 'components/forms/csrf.html.twig' %}
+                        </form>
+                    {% elseif session.isOpen() and not session.isFull() %}
+                        {% set unregistered_children_available = [] %}
+                        {% for childId, child in children %}
+                            {% if childId not in children_registered %}
+                                {% set unregistered_children_available = unregistered_children_available|merge({(childId): child}) %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if parent_eligible %}
+                            {# Inscription en propre nom #}
+                            <form action="{{ url_for("coursesDoRegister", {"id": session.getId()}) }}" method="post" class="ui form">
+                                <button type="submit" class="ui small labeled icon green button">
+                                    <i class="user plus icon" aria-hidden="true"></i>
+                                    {{ _T("Register", "courses") }}
+                                </button>
+                                {% include 'components/forms/csrf.html.twig' %}
+                            </form>
+                        {% endif %}
+                        {% if unregistered_children_available|length > 0 %}
+                            {% if parent_eligible %}<div class="ui divider"></div>{% endif %}
+                            <a href="{{ url_for("coursesParentRegisterForm", {"id": session.getId()}) }}" class="ui small labeled icon green button">
+                                <i class="user plus icon" aria-hidden="true"></i>
+                                {{ _T("Register a linked member", "courses") }}
+                            </a>
+                        {% endif %}
+                        {% if not parent_eligible and unregistered_children_available|length == 0 and children_registered|length == 0 %}
+                            <div class="ui orange message">
+                                <i class="exclamation triangle icon" aria-hidden="true"></i>
+                                {{ _T("You do not belong to a required group for this event.", "courses") }}
+                            </div>
+                        {% endif %}
+                    {% elseif session.isFull() and session.isOpen() %}
+                        <div class="ui yellow message">
+                            <i class="exclamation triangle icon" aria-hidden="true"></i>
+                            {{ _T("This session is full.", "courses") }}
+                            {% if waitlist_count > 0 %}
+                                {{ _T("%d person(s) on waitlist.", "courses")|format(waitlist_count) }}
+                            {% endif %}
+                        </div>
+                        {% if parent_eligible %}
+                            <form action="{{ url_for("coursesDoWaitlist", {"id": session.getId()}) }}" method="post" class="ui form">
+                                <button type="submit" class="ui small labeled icon blue button">
+                                    <i class="clock icon" aria-hidden="true"></i>
+                                    {{ _T("Join waitlist", "courses") }}
+                                </button>
+                                {% include 'components/forms/csrf.html.twig' %}
+                            </form>
+                        {% endif %}
+                    {% endif %}
+
+                    {# Désinscription des enfants inscrits — affiché dans tous les cas #}
+                    {% if children_registered|length > 0 %}
+                        {% if is_registered or is_on_waitlist %}<div class="ui divider"></div>{% endif %}
+                        {% for childId in children_registered %}
+                            {% if children[childId] is defined %}
+                                <form action="{{ url_for("coursesDoParentUnregister", {"id": session.getId()}) }}" method="post" class="ui form courses-child-unregister-form">
+                                    <input type="hidden" name="member_id" value="{{ childId }}">
+                                    <div class="courses-unregister-row">
+                                        <button type="submit" class="ui small labeled icon red button">
+                                            <i class="times icon" aria-hidden="true"></i>
+                                            {{ _T("Unregister", "courses") }}
+                                        </button>
+                                        <strong>{{ children[childId].name }}</strong>
+                                        {% if children[childId].nickname %}
+                                            <span class="ui teal small label">
+                                                <i class="tag icon" aria-hidden="true"></i>{{ children[childId].nickname }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    {% include 'components/forms/csrf.html.twig' %}
+                                </form>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            {# Admin/staff action buttons: Register a member | Close | Cancel (all on one line) #}
+            {% set is_future = session.getSessionDate() >= "now"|date("Y-m-d") %}
+            {% set has_action_buttons =
+                ((login.isAdmin() or login.isStaff()) and session.getStatus() == 'cancelled') or
+                ((login.isAdmin() or login.isStaff()) and session.getStatus() == 'closed') or
+                (session.getStatus() == 'open' and is_future and (login.isAdmin() or login.isStaff() or login.isGroupManager()))
+            %}
+            {% if has_action_buttons %}
+                <div class="ui center aligned basic segment courses-actions">
+
+                    {# Reactivate (cancelled → open) #}
+                    {% if (login.isAdmin() or login.isStaff()) and session.getStatus() == 'cancelled' %}
+                        <form action="{{ url_for("coursesDoSessionReactivate", {"id": session.getId()}) }}" method="post" class="ui form courses-inline-form">
+                            <button type="submit" class="ui small labeled icon green button">
+                                <i class="redo icon" aria-hidden="true"></i>
+                                {{ _T("Reactivate session", "courses") }}
+                            </button>
+                            {% include 'components/forms/csrf.html.twig' %}
+                        </form>
+                    {% endif %}
+
+                    {# Reopen (closed → open) #}
+                    {% if (login.isAdmin() or login.isStaff()) and session.getStatus() == 'closed' %}
+                        <form action="{{ url_for("coursesDoSessionReopen", {"id": session.getId()}) }}" method="post" class="ui form courses-inline-form">
+                            <button type="submit" class="ui small labeled icon green button">
+                                <i class="lock open icon" aria-hidden="true"></i>
+                                {{ _T("Reopen session", "courses") }}
+                            </button>
+                            {% include 'components/forms/csrf.html.twig' %}
+                        </form>
+                    {% endif %}
+
+                    {% if session.getStatus() == 'open' and is_future %}
+                        {# Register a member #}
+                        {% if has_instructor and (login.isAdmin() or login.isStaff() or login.isGroupManager()) %}
+                            <div class="courses-inline-form">
+                                <a href="{{ url_for("coursesProxyRegisterForm", {"id": session.getId()}) }}" class="ui small labeled icon teal button">
+                                    <i class="user plus icon" aria-hidden="true"></i>
+                                    {{ _T("Register a member", "courses") }}
+                                </a>
+                            </div>
+                        {% endif %}
+
+                        {# Close session (open → closed) #}
+                        {% if login.isAdmin() or login.isStaff() %}
+                            <form action="{{ url_for("coursesDoSessionClose", {"id": session.getId()}) }}" method="post" class="ui form courses-inline-form">
+                                <button type="submit" class="ui small labeled icon orange button">
+                                    <i class="lock icon" aria-hidden="true"></i>
+                                    {{ _T("Close session", "courses") }}
+                                </button>
+                                {% include 'components/forms/csrf.html.twig' %}
+                            </form>
+
+                            {# Cancel session #}
+                            <div class="courses-inline-form">
+                                <button type="button" class="ui small labeled icon red button" id="cancel-session-btn">
+                                    <i class="ban icon" aria-hidden="true"></i>
+                                    {{ _T("Cancel session", "courses") }}
+                                </button>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+
+                </div>
+            {% endif %}
+
+            {# Waitlist management panel (admin/staff only, open session with waitlist) #}
+            {% if (login.isAdmin() or login.isStaff()) and session.getStatus() == 'open' and waitlist_count > 0 %}
+                <div class="ui yellow segment courses-section-mt">
+                    <h4 class="ui header">
+                        <i class="list ol icon" aria-hidden="true"></i>
+                        {{ _T("Waitlist management", "courses") }}
+                        <span class="ui yellow circular label">{{ waitlist_count }}</span>
+                    </h4>
+                    <p class="ui grey text">{{ _T("There are people waiting for this session. Choose an action:", "courses") }}</p>
+
+                    {# Option 1: update capacity (auto-promotes) #}
+                    <div class="ui accordion styled fluid">
+                        <div class="title">
+                            <i class="dropdown icon" aria-hidden="true"></i>
+                            {{ _T("Increase capacity and promote automatically", "courses") }}
+                        </div>
+                        <div class="content">
+                            <p class="ui text">{{ _T("Set a new maximum capacity. People on the waitlist will be automatically registered (in order) until the session is full again.", "courses") }}</p>
+                            <form action="{{ url_for("coursesDoSessionCapacity", {"id": session.getId()}) }}" method="post" class="ui form">
+                                <div class="inline fields">
+                                    <div class="field">
+                                        <label>{{ _T("New max capacity", "courses") }}</label>
+                                        <input type="number" name="max_capacity"
+                                            min="{{ session.getCurrentRegistrations() > 0 ? session.getCurrentRegistrations() : 1 }}"
+                                            value="{{ session.getMaxCapacity() }}" style="width:6em">
+                                    </div>
+                                    <div class="field">
+                                        <button type="submit" class="ui small teal labeled icon button">
+                                            <i class="users icon" aria-hidden="true"></i>
+                                            {{ _T("Apply", "courses") }}
+                                        </button>
+                                    </div>
+                                </div>
+                                {% include 'components/forms/csrf.html.twig' %}
+                            </form>
+                        </div>
+
+                        {# Option 2: promote next manually #}
+                        <div class="title">
+                            <i class="dropdown icon" aria-hidden="true"></i>
+                            {{ _T("Promote the next person on the waitlist", "courses") }}
+                        </div>
+                        <div class="content">
+                            <p class="ui text">{{ _T("Manually register the first person on the waitlist (ignores capacity limit).", "courses") }}</p>
+                            <form action="{{ url_for("coursesDoPromoteWaitlist", {"id": session.getId()}) }}" method="post" class="ui form">
+                                <button type="submit" class="ui small teal labeled icon button">
+                                    <i class="arrow up icon" aria-hidden="true"></i>
+                                    {{ _T("Promote next", "courses") }}
+                                </button>
+                                {% include 'components/forms/csrf.html.twig' %}
+                            </form>
+                        </div>
+
+                        {# Option 3: create a new session for waiting people #}
+                        <div class="title">
+                            <i class="dropdown icon" aria-hidden="true"></i>
+                            {{ _T("Create a new session for waiting people", "courses") }}
+                        </div>
+                        <div class="content">
+                            <p class="ui text">{{ _T("Create an identical session on a new date. All waiting members will be automatically registered in that new session.", "courses") }}</p>
+                            <form action="{{ url_for("coursesDoSessionForWaitlist", {"id": session.getId()}) }}" method="post" class="ui form">
+                                <div class="inline fields">
+                                    <div class="required field">
+                                        <label>{{ _T("Date of new session", "courses") }}</label>
+                                        <input type="date" name="new_date" required style="width:12em">
+                                    </div>
+                                    <div class="field">
+                                        <button type="submit" class="ui small teal labeled icon button">
+                                            <i class="calendar plus icon" aria-hidden="true"></i>
+                                            {{ _T("Create session", "courses") }}
+                                        </button>
+                                    </div>
+                                </div>
+                                {% include 'components/forms/csrf.html.twig' %}
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            {# Cancel session modal (outside the inline block) #}
+            {% if (login.isAdmin() or login.isStaff()) and session.getStatus() == 'open' and session.getSessionDate() >= "now"|date("Y-m-d") %}
+
+                {# Cancel session modal #}
+                <div class="ui small modal" id="cancel-session-modal">
+                    <div class="header">
+                        <i class="ban icon" aria-hidden="true"></i>
+                        {{ _T("Cancel session", "courses") }}
+                    </div>
+                    <div class="content">
+                        <form action="{{ url_for("coursesDoSessionCancel", {"id": session.getId()}) }}" method="post" class="ui form" id="cancel-session-form">
+                            <div class="required field">
+                                <label>{{ _T("Reason", "courses") }}</label>
+                                <select name="cancellation_reason" class="ui dropdown" required>
+                                    <option value="">{{ _T("Select a reason", "courses") }}</option>
+                                    <option value="concours">{{ _T("Competition", "courses") }}</option>
+                                    <option value="absence_moniteur">{{ _T("Instructor absent", "courses") }}</option>
+                                    <option value="formation">{{ _T("Training", "courses") }}</option>
+                                    <option value="meteo">{{ _T("Weather", "courses") }}</option>
+                                    <option value="autre">{{ _T("Other", "courses") }}</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>{{ _T("Comment", "courses") }}</label>
+                                <textarea name="cancellation_comment" rows="3" placeholder="{{ _T("Optional comment...", "courses") }}"></textarea>
+                            </div>
+                            {% include 'components/forms/csrf.html.twig' %}
+                        </form>
+                    </div>
+                    <div class="actions">
+                        <button class="ui small cancel button">{{ _T("Close", "courses") }}</button>
+                        <button class="ui small red approve button" id="confirm-cancel-btn">
+                            <i class="ban icon" aria-hidden="true"></i>
+                            {{ _T("Confirm cancellation", "courses") }}
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
+
+            {# --- Registered members list (admin/staff/group manager) --- #}
+            {% set can_mark_attendance = (login.isAdmin() or login.isStaff() or login.isGroupManager()) and session.getSessionDate() <= "now"|date("Y-m-d") %}
+            {% if (login.isAdmin() or login.isStaff() or login.isGroupManager()) and registrations|length > 0 %}
+                <div class="ui segment">
+                    <div class="courses-section-header">
+                        <h3 class="ui header">
+                            <i class="users icon" aria-hidden="true"></i>
+                            {{ _T("Registered members", "courses") }} ({{ registrations|length }})
+                        </h3>
+                        <div style="display:flex;gap:.4em;flex-wrap:wrap;align-items:center">
+                            <a href="{{ url_for('coursesMailSession', {'id': session.getId()}) }}"
+                               class="ui tiny labeled icon button"
+                               title="{{ _T("Send email via Galette mailing", "courses") }}">
+                                <i class="envelope icon" aria-hidden="true"></i>
+                                {{ _T("Send email", "courses") }}
+                            </a>
+                            {% if login.isAdmin() or login.isStaff() %}
+                                <a href="{{ url_for('coursesSessionExportRegistrations', {'id': session.getId()}) }}"
+                                   class="ui tiny labeled icon button" title="{{ _T("Export to CSV (Excel)", "courses") }}">
+                                    <i class="file excel icon" aria-hidden="true"></i>
+                                    {{ _T("Export", "courses") }}
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="ui divider" style="margin-top:0"></div>
+
+                    {% if can_mark_attendance %}
+                        <form action="{{ url_for("coursesDoMarkAttendance", {"id": session.getId()}) }}" method="post" class="ui form">
+                            <div class="courses-table-scroll">
+                            <table class="ui compact table">
+                                <thead>
+                                    <tr>
+                                        <th>{{ _T("Member", "courses") }}</th>
+                                        <th>{{ _T("Nickname", "courses") }}</th>
+                                        <th>{{ _T("Registration date", "courses") }}</th>
+                                        <th>{{ _T("Attendance", "courses") }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for reg in registrations %}
+                                        <tr>
+                                            <td>
+                                                {% if members[reg.getMemberId()] is defined %}
+                                                    <a href="{{ url_for("member", {"id": reg.getMemberId()}) }}">
+                                                        {{ members[reg.getMemberId()] }}
+                                                    </a>
+                                                {% else %}
+                                                    {{ _T("Unknown member", "courses") }}
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if nicknames[reg.getMemberId()] is defined %}
+                                                    <span class="ui teal mini label">
+                                                        <i class="tag icon" aria-hidden="true"></i>
+                                                        {{ nicknames[reg.getMemberId()] }}
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ reg.getRegistrationDate()|date("d/m/Y") }}</td>
+                                            <td>
+                                                <select name="attendance[{{ reg.getId() }}]" class="ui compact dropdown">
+                                                    <option value="registered"{% if reg.getStatus() == 'registered' %} selected{% endif %}>{{ _T("Registered", "courses") }}</option>
+                                                    <option value="attended"{% if reg.getStatus() == 'attended' %} selected{% endif %}>{{ _T("Attended", "courses") }}</option>
+                                                    <option value="absent"{% if reg.getStatus() == 'absent' %} selected{% endif %}>{{ _T("Absent", "courses") }}</option>
+                                                    <option value="absent_excused"{% if reg.getStatus() == 'absent_excused' %} selected{% endif %}>{{ _T("Absent (excused)", "courses") }}</option>
+                                                    {% if reg.getStatus() == 'present_unregistered' %}
+                                                        <option value="present_unregistered" selected>{{ _T("Present (unregistered)", "courses") }}</option>
+                                                    {% endif %}
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            </div>
+                            <div class="ui basic segment courses-save-right">
+                                <button type="submit" class="ui small primary labeled icon button">
+                                    <i class="check icon" aria-hidden="true"></i>
+                                    {{ _T("Save attendance", "courses") }}
+                                </button>
+                            </div>
+                            {% include 'components/forms/csrf.html.twig' %}
+                        </form>
+                    {% else %}
+                        <div class="ui relaxed divided list">
+                            {% for reg in registrations %}
+                                <div class="item">
+                                    <i class="user circle big icon" aria-hidden="true"></i>
+                                    <div class="content">
+                                        <div class="header">
+                                            {% if members[reg.getMemberId()] is defined %}
+                                                <a href="{{ url_for("member", {"id": reg.getMemberId()}) }}">
+                                                    {{ members[reg.getMemberId()] }}
+                                                </a>
+                                            {% else %}
+                                                {{ _T("Unknown member", "courses") }}
+                                            {% endif %}
+                                            {% if nicknames[reg.getMemberId()] is defined %}
+                                                <span class="ui teal mini label">
+                                                    <i class="tag icon" aria-hidden="true"></i>
+                                                    {{ nicknames[reg.getMemberId()] }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="description">
+                                            {{ reg.getRegistrationDate()|date("d/m/Y") }} &middot; {{ reg.getStatusLabel() }}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            {# --- Walk-in attendance (group manager/staff/admin, past or today sessions) --- #}
+            {% if can_mark_attendance and walkin_eligible_members is defined and walkin_eligible_members|length > 0 %}
+                <div class="ui segment">
+                    <h3 class="ui dividing header">
+                        <i class="user plus icon" aria-hidden="true"></i>
+                        {{ _T("Walk-in attendance", "courses") }}
+                    </h3>
+                    <form action="{{ url_for("coursesDoWalkIn", {"id": session.getId()}) }}" method="post" class="ui form">
+                        <div class="inline fields">
+                            <div class="field">
+                                <select name="member_id" class="ui search dropdown">
+                                    <option value="">{{ _T("Select a member", "courses") }}</option>
+                                    {% for mid, member in walkin_eligible_members %}
+                                        <option value="{{ mid }}">
+                                            {{ member.name }}{% if member.nickname %} ({{ member.nickname }}){% endif %}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="ui small primary button">
+                                <i class="plus icon" aria-hidden="true"></i>
+                                {{ _T("Add", "courses") }}
+                            </button>
+                        </div>
+                        {% include 'components/forms/csrf.html.twig' %}
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+
+        {# --- Right column: info labels + iCal + description --- #}
+        <div class="six wide column">
+            <div class="ui segment">
+                <h3 class="ui dividing header">
+                    <i class="info circle icon" aria-hidden="true"></i>
+                    {{ _T("Information", "courses") }}
+                </h3>
+                <div class="ui relaxed list">
+                    <div class="item">
+                        <i class="tag icon" aria-hidden="true"></i>
+                        <div class="content">
+                            <div class="header">{{ _T("Status", "courses") }}</div>
+                            {% if session.getStatus() == 'open' %}
+                                {% if not has_instructor %}
+                                    <span class="ui orange label">
+                                        <i class="clock icon" aria-hidden="true"></i>
+                                        {{ _T("Awaiting instructor", "courses") }}
+                                    </span>
+                                {% else %}
+                                    <span class="ui green label">{{ session.getStatusLabel() }}</span>
+                                {% endif %}
+                            {% elseif session.getStatus() == 'closed' %}
+                                <span class="ui grey label">{{ session.getStatusLabel() }}</span>
+                            {% else %}
+                                <span class="ui red label">{{ session.getStatusLabel() }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if not event.isFree() and event.getPrice() %}
+                        <div class="item">
+                            <i class="euro sign icon" aria-hidden="true"></i>
+                            <div class="content">
+                                <div class="header">{{ _T("Price", "courses") }}</div>
+                                {{ event.getPrice() }}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="item">
+                            <i class="euro sign icon" aria-hidden="true"></i>
+                            <div class="content">
+                                <div class="header">{{ _T("Price", "courses") }}</div>
+                                <span class="ui green label">{{ _T("Free", "courses") }}</span>
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% if event.getUnregisterDeadlineDays() %}
+                        <div class="item">
+                            <i class="clock icon" aria-hidden="true"></i>
+                            <div class="content">
+                                <div class="header">{{ _T("Unregistration deadline", "courses") }}</div>
+                                {{ _T("%d days before the session", "courses")|format(event.getUnregisterDeadlineDays()) }}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="ui divider"></div>
+                <a href="{{ url_for("coursesSessionIcal", {"id": session.getId()}) }}" class="ui small fluid labeled icon button">
+                    <i class="download icon" aria-hidden="true"></i>
+                    {{ _T("Export iCal", "courses") }}
+                </a>
+            </div>
+
+            {# Event description if available #}
+            {% if event.getDescription() %}
+                <div class="ui segment">
+                    <h3 class="ui dividing header">
+                        <i class="info circle icon" aria-hidden="true"></i>
+                        {{ _T("Description", "courses") }}
+                    </h3>
+                    <div>{{ event.getDescription()|raw }}</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# --- Waitlist (admin/staff/group manager) --- #}
+    {% if (login.isAdmin() or login.isStaff() or login.isGroupManager()) and waitlist_entries|length > 0 %}
+        <div class="ui segment">
+            <h3 class="ui dividing header">
+                <i class="clock icon" aria-hidden="true"></i>
+                {{ _T("Waitlist", "courses") }} ({{ waitlist_entries|length }})
+            </h3>
+
+            <div class="ui ordered list">
+                {% for entry in waitlist_entries %}
+                    <div class="item">
+                        <div class="content">
+                            {% if members[entry.getMemberId()] is defined %}
+                                <a href="{{ url_for("member", {"id": entry.getMemberId()}) }}">
+                                    {{ members[entry.getMemberId()] }}
+                                </a>
+                            {% else %}
+                                {{ _T("Unknown member", "courses") }}
+                            {% endif %}
+                            {% if nicknames[entry.getMemberId()] is defined %}
+                                <span class="ui teal mini label">
+                                    <i class="tag icon" aria-hidden="true"></i>
+                                    {{ nicknames[entry.getMemberId()] }}
+                                </span>
+                            {% endif %}
+                            <span class="ui mini label">{{ entry.getAddedDate()|date("d/m/Y") }}</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        $(function() {
+            $('.ui.progress').progress();
+            $('.ui.dropdown').dropdown();
+
+            // Modale désinscription propre
+            if ($('#unregister-self-modal').length) {
+                $('#unregister-self-modal').modal({ closable: true });
+                $('#unregister-self-btn').on('click', function() {
+                    $('#unregister-self-modal').modal('show');
+                });
+            }
+
+            // Cancel session modal
+            $('#cancel-session-modal').modal({
+                closable: true,
+                onApprove: function() {
+                    var reason = $('select[name="cancellation_reason"]').val();
+                    if (!reason) {
+                        $('select[name="cancellation_reason"]').closest('.field').addClass('error');
+                        return false;
+                    }
+                    $('#cancel-session-form').submit();
+                    return false;
+                }
+            });
+            $('#cancel-session-btn').on('click', function() {
+                $('#cancel-session-modal').modal('show');
+            });
+
+
+        });
+    </script>
+{% endblock %}

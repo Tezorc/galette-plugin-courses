@@ -1,0 +1,79 @@
+<script>
+$(function() {
+    // Initialize all progress bars
+    $('.ui.progress').progress();
+
+    // Initialize all accordions
+    $('.ui.accordion').accordion();
+
+    // Initialize all tabs
+    $('.courses-tabs .item').tab();
+
+    // Mobile filter panel: collapsed by default on small screens
+    if ($(window).width() <= 767) {
+        $('.courses-filter-panel').addClass('courses-collapsed');
+    }
+
+    // Filter toggle button
+    $(document).on('click', '.courses-filter-toggle-btn', function() {
+        var $panel = $(this).closest('form.filters').find('.courses-filter-panel');
+        $panel.toggleClass('courses-collapsed');
+        var open = !$panel.hasClass('courses-collapsed');
+        $(this).find('.courses-filter-chevron')
+               .toggleClass('up', open)
+               .toggleClass('down', !open);
+    });
+
+    // Restore filter panel open if any active filter
+    if ($('.courses-filter-active-badge').length && parseInt($('.courses-filter-active-badge').text(), 10) > 0) {
+        $('.courses-filter-panel').removeClass('courses-collapsed');
+    }
+});
+
+/**
+ * Shared Fomantic UI calendar options — French locale, ISO date format.
+ * Usage: $.extend({}, window.coursesCalOpts, { extraOption: ... })
+ */
+window.coursesCalOpts = {
+    type: 'date',
+    firstDayOfWeek: 1,   // Lundi en premier
+    text: {
+        days:        ['Di', 'Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa'],
+        months:      ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+                      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'],
+        monthsShort: ['Jan', 'Fév', 'Mars', 'Avr', 'Mai', 'Juin',
+                      'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'],
+        today:   'Aujourd\'hui',
+        now:     'Maintenant',
+        am:      'AM',
+        pm:      'PM',
+        weekNo:  'Sem'
+    },
+    /** Sortie toujours en YYYY-MM-DD pour le champ caché / requête */
+    formatter: {
+        date: function(date) {
+            if (!date) return '';
+            var y = date.getFullYear();
+            var m = ('0' + (date.getMonth() + 1)).slice(-2);
+            var d = ('0' + date.getDate()).slice(-2);
+            return y + '-' + m + '-' + d;
+        }
+    },
+    /** Lecture du format YYYY-MM-DD stocké en base */
+    parser: {
+        date: function(text) {
+            if (!text) return null;
+            // Format ISO : YYYY-MM-DD
+            var iso = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (iso) {
+                return new Date(
+                    parseInt(iso[1], 10),
+                    parseInt(iso[2], 10) - 1,
+                    parseInt(iso[3], 10)
+                );
+            }
+            return null;
+        }
+    }
+};
+</script>
