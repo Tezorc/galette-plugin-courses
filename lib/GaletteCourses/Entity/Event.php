@@ -424,12 +424,12 @@ class Event
             $children = $adherent->children;
             if (!empty($children)) {
                 foreach ($children as $child) {
-                    $child_id = is_object($child) ? $child->id : (int)$child;
+                    $child_id = $child->id;
                     if ($child_id > 0) {
                         $child_adh = new \Galette\Entity\Adherent($this->zdb, $child_id);
                         $child_groups = $child_adh->getGroups();
                         foreach ($child_groups as $group) {
-                            $gid = is_object($group) ? $group->getId() : (int)$group;
+                            $gid = $group->getId();
                             if (in_array($gid, $this->groups)) {
                                 return true;
                             }
