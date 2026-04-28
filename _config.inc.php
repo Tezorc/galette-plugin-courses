@@ -22,8 +22,3 @@ declare(strict_types=1);
  */
 
 define('COURSES_PREFIX', 'courses_');
-
-// Force gettext to return UTF-8 regardless of system locale (PHP 8.x)
-if (function_exists('bind_textdomain_codeset')) {
-    bind_textdomain_codeset('courses', 'UTF-8');
-}
