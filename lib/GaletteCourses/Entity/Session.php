@@ -37,13 +37,6 @@ class Session
     public const STATUS_CLOSED = 'closed';
     public const STATUS_CANCELLED = 'cancelled';
 
-    public const CANCEL_REASONS = [
-        'concours' => 'Competition',
-        'absence_moniteur' => 'Instructor absent',
-        'formation' => 'Training',
-        'meteo' => 'Weather',
-        'autre' => 'Other',
-    ];
 
     private int $id;
     private int $event_id;
