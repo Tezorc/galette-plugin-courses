@@ -1,0 +1,18 @@
+{
+  "_comments": [
+    "GithuAction versions setup for Galette."
+  ],
+  "_versions": {
+    "php_min": "8.2",
+    "php_max": "8.5",
+    "pgsql_min": "13",
+    "pgsql_max": "17",
+    "mysql_min": "8.0",
+    "mysql_max": "9.1",
+    "mariadb_min": "10.5",
+    "mariadb_max": "11.6",
+    "pgsql_unsupported": "12",
+    "mysql_unsupported": "5.7",
+    "mariadb_unsupported": "10.4"
+  }
+}
