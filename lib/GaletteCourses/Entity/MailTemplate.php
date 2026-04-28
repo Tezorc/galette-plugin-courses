@@ -138,23 +138,59 @@ class MailTemplate
 
     // --- Getters / Setters ---
 
-    public function getRef(): string     { return $this->ref; }
-    public function getSubject(): string { return $this->subject; }
-    public function getBody(): string    { return $this->body; }
-    public function getLang(): string    { return $this->lang; }
-    public function isCustomized(): bool { return $this->id !== null; }
+    public function getRef(): string
+    {
+        return $this->ref;
+    }
+    public function getSubject(): string
+    {
+        return $this->subject;
+    }
+    public function getBody(): string
+    {
+        return $this->body;
+    }
+    public function getLang(): string
+    {
+        return $this->lang;
+    }
+    public function isCustomized(): bool
+    {
+        return $this->id !== null;
+    }
 
-    public function setSubject(string $s): void { $this->subject = $s; }
-    public function setBody(string $b): void    { $this->body    = $b; }
+    public function setSubject(string $s): void
+    {
+        $this->subject = $s;
+    }
+    public function setBody(string $b): void
+    {
+        $this->body    = $b;
+    }
 
     // --- Instance wrappers (for Twig, which calls without arguments) ---
 
-    public function getLabel(): string      { return self::getRefLabel($this->ref); }
-    public function getDescription(): string { return self::getRefDescription($this->ref); }
+    public function getLabel(): string
+    {
+        return self::getRefLabel($this->ref);
+    }
+    public function getDescription(): string
+    {
+        return self::getRefDescription($this->ref);
+    }
     /** @return string[] */
-    public function getVars(): array        { return self::getAvailableVars($this->ref); }
-    public function getDefaultSubjectText(): string { return self::getDefaultSubject($this->ref); }
-    public function getDefaultBodyText(): string    { return self::getDefaultBody($this->ref); }
+    public function getVars(): array
+    {
+        return self::getAvailableVars($this->ref);
+    }
+    public function getDefaultSubjectText(): string
+    {
+        return self::getDefaultSubject($this->ref);
+    }
+    public function getDefaultBodyText(): string
+    {
+        return self::getDefaultBody($this->ref);
+    }
 
     // --- Static helpers ---
 

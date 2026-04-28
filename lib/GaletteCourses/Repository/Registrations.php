@@ -31,7 +31,6 @@ use GaletteCourses\Entity\Session;
 use GaletteCourses\Filters\RegistrationsList;
 use Analog\Analog;
 use Laminas\Db\Sql\Expression;
-use Laminas\Db\Sql\Predicate\Expression as PredicateExpression;
 use Throwable;
 
 class Registrations

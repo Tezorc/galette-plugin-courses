@@ -26,7 +26,6 @@ namespace GaletteCourses\Controllers;
 use Galette\Controllers\AbstractController;
 use Galette\Core\PluginControllerTrait;
 use GaletteCourses\Entity\Event;
-use GaletteCourses\Entity\Registration;
 use GaletteCourses\Entity\Session;
 use GaletteCourses\Repository\Registrations;
 use Slim\Psr7\Request;
@@ -106,7 +105,7 @@ class ICalController extends AbstractController
     /**
      * Generate a VCALENDAR string from sessions
      *
-     * @param Session[] $sessions
+     * @param Session[]         $sessions
      * @param array<int, Event> $events
      */
     private function generateVCalendar(array $sessions, array $events): string

@@ -75,8 +75,8 @@ class MemberPreferences
     /**
      * Filter a list of email recipients, keeping only those who opted in
      *
-     * @param array<string, string> $recipients [email => name]
-     * @param array<string, int> $emailToMemberId [email => member_id]
+     * @param array<string, string> $recipients      [email => name]
+     * @param array<string, int>    $emailToMemberId [email => member_id]
      * @return array<string, string> filtered recipients
      */
     public function filterOptedInRecipients(array $recipients, array $emailToMemberId): array

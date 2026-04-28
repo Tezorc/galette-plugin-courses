@@ -306,8 +306,10 @@ class EventsController extends AbstractPluginController
             // (normal workflow: notifyPublication is called by doValidate, not here)
             if ($id === null && $event->getStatus() === Event::STATUS_VALIDATED) {
                 $notification = new CourseNotification(
-                    $this->zdb, $this->preferences,
-                    new PluginPreferences($this->zdb), new MemberPreferences($this->zdb),
+                    $this->zdb,
+                    $this->preferences,
+                    new PluginPreferences($this->zdb),
+                    new MemberPreferences($this->zdb),
                     $this->history
                 );
                 $notification->notifyPublication($event);
