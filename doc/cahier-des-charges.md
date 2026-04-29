@@ -631,6 +631,19 @@ Le developpement est organise en phases progressives.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
 
+### Phase 23 - CSS externalise (issue #6 - Johan Cwiklinski)
+
+**Statut : TERMINEE**
+
+- Probleme : `templates/default/headers.html.twig` contenait un bloc `<style>` inline de 369 lignes. Inline CSS = pas de cache navigateur, pas de minification, plus difficile a maintenir, viole la separation HTML/CSS.
+- Le contenu CSS est deplace dans `webroot/galette_courses.css` (368 lignes, identique au mot pres). Convention de nommage Galette : `webroot/galette_<plugin>.css` (cf. plugin-events officiel).
+- `headers.html.twig` reduit a une seule ligne :
+  ```
+  <link rel="stylesheet" type="text/css" href="{{ url_for('plugin_res', {'plugin': module_id, 'path': 'galette_courses.css'}) }}"/>
+  ```
+- Galette expose la route `plugin_res` qui sert le contenu de `webroot/` du plugin. La variable Twig `module_id` est injectee automatiquement par Galette pour les templates plugin.
+- A noter : 31 attributs `style="..."` subsistent sur 10 templates de pages. Pas dans le scope de l'issue (qui pointait specifiquement `headers.html.twig`), candidats pour une passe ulterieure si on veut une separation totale HTML/CSS.
+
 ### Phase 22 - Support PostgreSQL (schema + code SQL)
 
 **Statut : TERMINEE**
