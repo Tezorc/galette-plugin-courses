@@ -645,14 +645,15 @@ Le developpement est organise en phases progressives.
 #### F21.2 - Formatage des dates via `IntlDateFormatter`
 
 - Suppression des constantes `FRENCH_DAYS`, `FRENCH_MONTHS`, `FRENCH_MONTHS_FULL` qui hardcodaient les jours et mois en francais.
-- Toutes les methodes de formatage (`getFormattedDate`, `getFormattedDateShort`, `getFormattedDateLong`, `getMonthYear`, `getFormattedStartTime`, `getFormattedEndTime`) utilisent desormais `IntlDateFormatter` avec la locale active.
+- Toutes les methodes de formatage (`getFormattedDate`, `getFormattedDateShort`, `getFormattedDateLong`, `getMonthYear`, `getFormattedStartTime`, `getFormattedEndTime`) utilisent desormais `IntlDateFormatter` avec la locale active. **Aucun motif de date n'est code en dur** : on passe par les styles ICU predefinis (SHORT/MEDIUM/FULL/NONE), entierement determines par la locale.
+- Pour `getMonthYear` (mois + annee abrege), un motif est necessaire car ICU n'a pas de style "month-year". Resolution via `IntlDatePatternGenerator::getBestPattern('yMMM')` (PHP 8.4+) pour respecter l'ordre locale (ex: `ja_JP` met l'annee avant le mois). Fallback `'MMM y'` pour PHP < 8.4 (locale-aware sur le nom du mois, ordre fige).
 - Helper prive `Session::currentLocale()` : prefere `$GLOBALS['i18n']->getLongID()` si defini (pattern Galette), sinon `\Locale::getDefault()`, sinon fallback `fr_FR`. Aucun changement d'API externe.
 - Necessite l'extension PHP `intl` (deja requise par Galette).
 
 #### F21.3 - Tests de regression i18n (`tests/Unit/Entity/SessionTest.php`, 17 cas)
 
 - `CANCEL_REASONS` (12 cas) : verifie l'ordre exact des nouvelles cles, qu'aucune des 5 anciennes cles francaises ne reapparaisse (data-provider, regression), que `getCancellationReasonLabel` retourne le bon libelle pour chaque nouvelle cle (data-provider), et qu'une session sans motif retourne une chaine vide.
-- Formatage locale (5 cas) : `getFormattedDateShort` en `fr_FR` retourne "27 avr. 2026" (regex sur 'avr'), en `en_US` retourne "Apr 27, 2026" ; `getMonthYear` change selon la locale ; `getFormattedDateLong` en FR contient "lundi" (jour de semaine) ; `getFormattedStartTime` en FR retourne `14:00`.
+- Formatage locale (6 cas) : `getFormattedDateShort` en `fr_FR` retourne "27 avr. 2026" (regex sur 'avr'), en `en_US` retourne "Apr 27, 2026" ; `getMonthYear` change selon la locale ; `getMonthYear` en `ja_JP` met l'annee avant le mois (verifie l'usage de `IntlDatePatternGenerator` sur PHP 8.4+) ; `getFormattedDateLong` en FR contient "lundi" (jour de semaine) ; `getFormattedStartTime` en FR retourne `14:00`.
 - `setUp`/`tearDown` sauvegardent et restaurent `\Locale::getDefault()` pour ne pas polluer les autres tests.
 
 #### F21.4 - A faire (deploiement en prod)

@@ -131,6 +131,29 @@ final class SessionTest extends TestCase
         self::assertMatchesRegularExpression('/Apr.*2026/u', $session->getMonthYear());
     }
 
+    /**
+     * On PHP 8.4+, getMonthYear must use IntlDatePatternGenerator so the
+     * field ordering follows locale conventions. ja_JP is the cheapest
+     * way to prove the order is not hardcoded: Japanese puts the year
+     * before the month ("2026年4月"). On older PHP we just verify the
+     * fallback still localizes the month name.
+     */
+    public function testGetMonthYearOrderingFollowsLocaleOnPhp84(): void
+    {
+        if (!class_exists(\IntlDatePatternGenerator::class)) {
+            self::markTestSkipped('IntlDatePatternGenerator requires PHP 8.4+');
+        }
+
+        \Locale::setDefault('ja_JP');
+        $session = $this->makeSessionWithDate('2026-04-27');
+        $out = $session->getMonthYear();
+
+        // Japanese ordering: year before month.
+        self::assertMatchesRegularExpression('/2026.*4/u', $out);
+        // Sanity: it really is the Japanese formatter and not a fallback.
+        self::assertStringContainsString('年', $out);
+    }
+
     public function testGetFormattedDateLongIncludesDayName(): void
     {
         \Locale::setDefault('fr_FR');

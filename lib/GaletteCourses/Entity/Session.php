@@ -311,10 +311,13 @@ class Session
     /**
      * Returns abbreviated month + year in the active locale
      * (e.g. "mars 2026" in fr_FR, "Mar 2026" in en_US).
+     * The month/year ordering itself is locale-driven via
+     * IntlDatePatternGenerator when available (PHP 8.4+).
      */
     public function getMonthYear(): string
     {
-        return (string)self::dateFormatter(null, null, 'MMM yyyy')
+        $pattern = self::bestPattern(self::currentLocale(), 'yMMM');
+        return (string)self::dateFormatter(null, null, $pattern)
             ->format(strtotime($this->session_date));
     }
 
@@ -367,6 +370,28 @@ class Session
             $fmt->setPattern($pattern);
         }
         return $fmt;
+    }
+
+    /**
+     * Resolve the best ICU pattern for a skeleton (e.g. 'yMMM') in a given
+     * locale. Uses IntlDatePatternGenerator when available (PHP 8.4+) so
+     * field ordering follows locale conventions; falls back to a fixed
+     * Month-Year layout on older PHP, which still localizes month names.
+     */
+    private static function bestPattern(string $locale, string $skeleton): string
+    {
+        if (class_exists(\IntlDatePatternGenerator::class)) {
+            $gen = \IntlDatePatternGenerator::create($locale);
+            if ($gen !== null) {
+                $pattern = $gen->getBestPattern($skeleton);
+                if (is_string($pattern) && $pattern !== '') {
+                    return $pattern;
+                }
+            }
+        }
+        // Degraded fallback: 'MMM' is locale-aware (April vs avr.) but
+        // the Month-Year ordering is fixed.
+        return 'MMM y';
     }
 
     private static function currentLocale(): string
