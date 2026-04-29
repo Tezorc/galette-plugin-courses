@@ -83,7 +83,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd galette-core
+          cd galette-core/galette
           composer install --ignore-platform-reqs
 
       - name: CS
@@ -94,22 +94,22 @@ jobs:
       - name: CS Fixer
         if: matrix.php-is-min
         run: |
-          cd galette-core/galette/plugins/plugin-auto
+          cd galette-core/galette/plugins/plugin-courses
           ../../vendor/bin/php-cs-fixer check --show-progress=dots --verbose --diff
 
       - name: Twig CS
         run: |
-          cd galette-core/galette/plugins/plugin-auto
+          cd galette-core/galette/plugins/plugin-courses
           ../../vendor/bin/twigcs templates/default --severity error --display blocking
 
       - name: PHPStan checks
         run: |
-          cd galette-core/galette/plugins/plugin-auto
+          cd galette-core/galette/plugins/plugin-courses
           ../../vendor/bin/phpstan analyze --ansi --memory-limit=2G --no-interaction --no-progress
 
       - name: Headers checks
         run: |
-          cd galette-core/galette/plugins/plugin-auto
+          cd galette-core/galette/plugins/plugin-courses
           ../../vendor/bin/docheader --docheader=../../../.docheader check lib ./*.php
 
 
@@ -173,11 +173,17 @@ jobs:
         uses: galette/.github/actions/build-galette@main
         with:
           php-version: ${{ matrix.php-version }}
+          galette-ref: master
 
       - name: Checkout plugin
         uses: actions/checkout@v6
         with:
           path: galette-core/galette/plugins/plugin-courses
+
+      - name: Install dependencies
+        run: |
+          cd galette-core/galette/plugins/plugin-courses
+          composer install --ignore-platform-reqs
 
       - name: Init for PostgreSQL
         env:
@@ -200,4 +206,4 @@ jobs:
       - name: Unit tests
         run: |
           cd galette-core/galette/plugins/plugin-courses
-          ../../vendor/bin/phpunit --test-suffix=.php --bootstrap tests/TestsBootstrap.php --no-coverage --process-isolation tests/Unit/
+          vendor/bin/phpunit --test-suffix=.php --bootstrap tests/bootstrap.php --no-coverage --process-isolation tests/Unit/
