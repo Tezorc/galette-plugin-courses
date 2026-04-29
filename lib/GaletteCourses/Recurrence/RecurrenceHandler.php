@@ -45,7 +45,7 @@ class RecurrenceHandler
      * If $startDate is provided (first creation), generates from that date.
      * Otherwise, continues from the last existing session.
      *
-     * @param Event $event The recurring event
+     * @param Event       $event     The recurring event
      * @param string|null $startDate Start date (yyyy-mm-dd) for first generation
      * @return Session[] Newly created sessions
      */

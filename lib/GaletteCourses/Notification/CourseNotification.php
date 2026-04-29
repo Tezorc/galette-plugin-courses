@@ -279,7 +279,7 @@ class CourseNotification
     /**
      * Load a MailTemplate from DB (or default) and substitute variables.
      *
-     * @param  array<string, string> $vars
+     * @param array<string, string> $vars
      * @return array{0: string, 1: string} [subject, body]
      */
     private function renderTemplate(string $ref, array $vars): array
@@ -514,7 +514,7 @@ class CourseNotification
     /**
      * Get email addresses for a list of member IDs.
      *
-     * @param  int[]                 $memberIds
+     * @param  int[] $memberIds
      * @return array<string, array{name: string, member_id: int}> [email => ['name' => ..., 'member_id' => ...]]
      */
     private function getMemberEmailsByIds(array $memberIds): array

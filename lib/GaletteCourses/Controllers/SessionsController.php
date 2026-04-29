@@ -785,8 +785,10 @@ class SessionsController extends AbstractPluginController
 
             $event = $session->getEvent();
             $notification = new CourseNotification(
-                $this->zdb, $this->preferences,
-                new PluginPreferences($this->zdb), new MemberPreferences($this->zdb),
+                $this->zdb,
+                $this->preferences,
+                new PluginPreferences($this->zdb),
+                new MemberPreferences($this->zdb),
                 $this->history
             );
 
@@ -872,8 +874,10 @@ class SessionsController extends AbstractPluginController
         if ($capacityIncreased && Waitlist::getCount($this->zdb, $id) > 0) {
             $event = $session->getEvent();
             $notification = new CourseNotification(
-                $this->zdb, $this->preferences,
-                new PluginPreferences($this->zdb), new MemberPreferences($this->zdb),
+                $this->zdb,
+                $this->preferences,
+                new PluginPreferences($this->zdb),
+                new MemberPreferences($this->zdb),
                 $this->history
             );
             while (!$session->isFull() && ($memberId = Waitlist::promoteFirst($this->zdb, $session)) !== null) {
@@ -921,8 +925,10 @@ class SessionsController extends AbstractPluginController
         } else {
             $event = $session->getEvent();
             $notification = new CourseNotification(
-                $this->zdb, $this->preferences,
-                new PluginPreferences($this->zdb), new MemberPreferences($this->zdb),
+                $this->zdb,
+                $this->preferences,
+                new PluginPreferences($this->zdb),
+                new MemberPreferences($this->zdb),
                 $this->history
             );
             $notification->notifyWaitlistPromotion($session, $event, $memberId);
@@ -987,8 +993,10 @@ class SessionsController extends AbstractPluginController
         // Register all waitlisted members in the new session and purge the waitlist
         $event = $source->getEvent();
         $notification = new CourseNotification(
-            $this->zdb, $this->preferences,
-            new PluginPreferences($this->zdb), new MemberPreferences($this->zdb),
+            $this->zdb,
+            $this->preferences,
+            new PluginPreferences($this->zdb),
+            new MemberPreferences($this->zdb),
             $this->history
         );
 

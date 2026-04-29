@@ -49,7 +49,7 @@ class StatsController extends AbstractController
     {
         $params = $request->getQueryParams();
         $dateFrom = !empty($params['stats_from']) ? $params['stats_from'] : date('Y-01-01');
-        $dateTo   = !empty($params['stats_to'])   ? $params['stats_to']   : date('Y-m-d');
+        $dateTo   = !empty($params['stats_to']) ? $params['stats_to'] : date('Y-m-d');
 
         // Clamp: dateTo >= dateFrom
         if ($dateTo < $dateFrom) {
