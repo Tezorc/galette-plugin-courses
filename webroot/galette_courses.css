@@ -57,10 +57,16 @@ tr.courses-pending { background-color: #fffde7 !important; }
 .courses-icon-btn  { padding: 0 !important; background: none !important; border: none !important; box-shadow: none !important; cursor: pointer; }
 
 /* ----- ACTION BUTTONS ----- */
-.courses-actions .ui.button + .ui.button,
-.courses-actions .ui.button + form,
-.courses-actions form + .ui.button,
-.courses-actions form + form { margin-left: .4em !important; }
+/* Flexbox row keeps action buttons aligned horizontally on desktop and lets
+   them wrap cleanly when the segment narrows. The mobile media query below
+   switches to flex-direction: column for the stacked vertical layout. */
+.courses-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: .4em;
+}
 .courses-actions .ui.small.button,
 .courses-actions .ui.small.labeled.icon.button { font-size: .875rem !important; }
 .courses-cards-grid .extra.content .ui.button { font-size: .8125rem; }
@@ -220,16 +226,22 @@ tr.courses-pending { background-color: #fffde7 !important; }
     .courses-card .meta { white-space: normal !important; word-break: break-word; font-size: .9em; }
 
     /* --- Action segments --- */
-    .courses-actions { text-align: center; }
+    /* On mobile the same flexbox container switches to a vertical stack,
+       with each child taking the full width of the row. */
+    .courses-actions {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
     .courses-actions .ui.divider { margin: .5em 0 !important; }
     .courses-actions .button,
     .courses-actions a.ui.button,
     .courses-actions .courses-inline-form .button,
     .courses-actions .courses-inline-form a.ui.button {
-        display: block !important; width: 100% !important;
-        margin: .35em 0 !important; text-align: center !important; box-sizing: border-box !important;
+        width: 100% !important;
+        margin: 0 !important; text-align: center !important; box-sizing: border-box !important;
     }
-    .courses-actions .courses-inline-form { display: block !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+    .courses-actions .courses-inline-form { width: 100% !important; margin: 0 !important; padding: 0 !important; }
 
     /* --- Unregister row --- */
     .courses-unregister-row { flex-direction: column !important; align-items: stretch !important; gap: .4em !important; }

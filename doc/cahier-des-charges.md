@@ -631,6 +631,15 @@ Le developpement est organise en phases progressives.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
 
+### Phase 24 - Alignement horizontal des boutons d'action sur PC
+
+**Statut : TERMINEE**
+
+- Probleme signale : sur la page detail de seance (`session_show.html.twig`), les 3 boutons admin/staff "Inscrire un membre / Fermer la seance / Annuler la seance" s'empilaient verticalement sur PC au lieu d'etre alignes horizontalement. Meme souci sur la page detail evenement (`event_show.html.twig`).
+- Cause : la regle `.courses-inline-form { display: inline; }` ne s'applique pas correctement aux `<form>` (Fomantic UI force `.ui.form` en `display: block`). Les anciennes regles `.courses-actions form + form { margin-left: .4em !important; }` n'avaient pas non plus de quoi forcer un layout en ligne.
+- Fix : `.courses-actions` passe en flexbox horizontal sur PC (`display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: .4em;`). Plus simple, plus moderne, marche avec n'importe quels enfants (form, div, a, button). Suppression des anciennes regles `margin-left` sur freres adjacents (gap natif les rend obsoletes).
+- Sur mobile (≤767px), le container flex passe en `flex-direction: column; align-items: stretch;` -> empilement vertical avec largeur 100%. La classe Fomantic `fluid` precedemment requise sur les boutons mobiles devient optionnelle (la largeur 100% est forcee par CSS sur les enfants).
+
 ### Phase 23 - CSS externalise (issue #6 - Johan Cwiklinski)
 
 **Statut : TERMINEE**
