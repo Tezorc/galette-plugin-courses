@@ -1,15 +1,25 @@
 <?php
 
-declare(strict_types=1);
-
 /**
- * Test-only stub for Galette\Core\Db.
- * Loaded via composer autoload-dev — never reachable in production runtime,
- * where the real Galette core class is autoloaded instead.
+ * Copyright © 2026-2026 The Galette Team && The CCAG42 Team
  *
- * Methods are intentionally untyped/no-op so PHPUnit::createMock() can
- * generate a working double without instantiating the real Laminas-backed Db.
+ * This file is part of Galette Courses plugin (https://github.com/Tezorc/galette-plugin-courses).
+ *
+ * Galette Courses Plugin is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Galette Courses Plugin is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Galette Courses Plugin. If not, see <http://www.gnu.org/licenses/>.
  */
+
+declare(strict_types=1);
 
 namespace Galette\Core;
 
