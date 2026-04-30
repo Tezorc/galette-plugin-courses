@@ -351,7 +351,7 @@ if (ctxMonth) {
         type: 'bar',
         data: {
             labels: [{% for month, count in stats.registrations_by_month %}'{{ month }}'{% if not loop.last %},{% endif %}{% endfor %}],
-            datasets: [{ label:'{{ _T("Registrations","courses") }}',
+            datasets: [{ label:'{{ _T("Registrations", "courses") }}',
                 data: [{% for month, count in stats.registrations_by_month %}{{ count }}{% if not loop.last %},{% endif %}{% endfor %}],
                 backgroundColor:'rgba(33,186,69,0.7)', borderColor:'rgba(33,186,69,1)', borderWidth:1 }]
         },
@@ -368,7 +368,7 @@ if (ctxTop) {
         type: 'bar',
         data: {
             labels: [{% for evt in stats.top_events %}'{{ evt.name|e('js') }}'{% if not loop.last %},{% endif %}{% endfor %}],
-            datasets: [{ label:'{{ _T("Total registrations","courses") }}',
+            datasets: [{ label:'{{ _T("Total registrations", "courses") }}',
                 data: [{% for evt in stats.top_events %}{{ evt.total_registrations }}{% if not loop.last %},{% endif %}{% endfor %}],
                 backgroundColor:'rgba(33,133,208,0.7)', borderColor:'rgba(33,133,208,1)', borderWidth:1 }]
         },

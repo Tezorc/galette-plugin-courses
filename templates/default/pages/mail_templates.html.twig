@@ -53,7 +53,7 @@
                         <button type="button"
                                 class="mailtpl-var-pill"
                                 onclick="insertVar('tbody_{{ ref }}', '{{ var }}')"
-                                title="{{ _T("Click to insert at cursor", "courses") }}">{{"{"}}{{ var }}{{"}"}}</button>
+                                title="{{ _T("Click to insert at cursor", "courses") }}">{{ "{" ~ var ~ "}" }}</button>
                     {% endfor %}
                 </div>
                 <div class="mailtpl-vars-hint">{{ _T("Variables in the subject line are also supported.", "courses") }}</div>

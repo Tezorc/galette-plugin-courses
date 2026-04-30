@@ -5,9 +5,9 @@
 {# =========================================================
    Préparer les données
    ========================================================= #}
-{% set upcoming_active    = [] %}
+{% set upcoming_active = [] %}
 {% set upcoming_cancelled = [] %}
-{% set past               = [] %}
+{% set past = [] %}
 {% for reg in registrations %}
     {% set s = sessions[reg.getSessionId()] %}
     {% if s.getSessionDate() >= "now"|date("Y-m-d") %}
@@ -127,14 +127,12 @@
         <div class="ui stackable three column grid courses-cards-grid" id="browse-cards-grid">
         {% for s in available_sessions %}
             {% set sid = s.getId() %}
-            {% set ev  = browse_events[s.getEventId()] %}
+            {% set ev = browse_events[s.getEventId()] %}
             {% set already = sid in registered_session_ids %}
-            {% set on_wl   = browse_on_waitlist[sid] %}
+            {% set on_wl = browse_on_waitlist[sid] %}
             {% set has_instr = browse_has_instructor[sid] %}
 
-            {% set no_action_left = not browse_can_self_register[sid]
-                and not browse_on_waitlist[sid]
-                and (browse_eligible_children[sid] is not defined or browse_eligible_children[sid]|length == 0) %}
+            {% set no_action_left = not browse_can_self_register[sid] and not browse_on_waitlist[sid] and (browse_eligible_children[sid] is not defined or browse_eligible_children[sid]|length == 0) %}
             {% if not already and not no_action_left %}
             <div class="column courses-browse-card-col"
                  data-type-id="{{ ev.getTypeId() }}"
@@ -310,8 +308,8 @@
             </h3>
             <div class="ui stackable three column grid courses-cards-grid">
                 {% for reg in next_group %}
-                    {% set s   = sessions[reg.getSessionId()] %}
-                    {% set ev  = events[s.getEventId()] %}
+                    {% set s = sessions[reg.getSessionId()] %}
+                    {% set ev = events[s.getEventId()] %}
                     {% set mid = reg.getMemberId() %}
                     <div class="column">
                         <div class="ui fluid card courses-card courses-next-session">
@@ -394,8 +392,8 @@
                 </h3>
                 <div class="ui stackable three column grid courses-cards-grid">
                     {% for reg in rest_group %}
-                        {% set s   = sessions[reg.getSessionId()] %}
-                        {% set ev  = events[s.getEventId()] %}
+                        {% set s = sessions[reg.getSessionId()] %}
+                        {% set ev = events[s.getEventId()] %}
                         {% set mid = reg.getMemberId() %}
                         <div class="column">
                             <div class="ui fluid card courses-card">
@@ -488,8 +486,8 @@
                 </h3>
                 <div class="ui stackable three column grid courses-cards-grid">
                     {% for reg in upcoming_cancelled %}
-                        {% set s   = sessions[reg.getSessionId()] %}
-                        {% set ev  = events[s.getEventId()] %}
+                        {% set s = sessions[reg.getSessionId()] %}
+                        {% set ev = events[s.getEventId()] %}
                         {% set mid = reg.getMemberId() %}
                         <div class="column">
                             <div class="ui fluid card courses-card courses-card-cancelled">
@@ -585,8 +583,8 @@
             <div class="courses-past-content">
                 <div class="ui stackable three column grid courses-cards-grid">
                     {% for reg in past|reverse %}
-                        {% set s   = sessions[reg.getSessionId()] %}
-                        {% set ev  = events[s.getEventId()] %}
+                        {% set s = sessions[reg.getSessionId()] %}
+                        {% set ev = events[s.getEventId()] %}
                         {% set mid = reg.getMemberId() %}
                         <div class="column">
                             <div class="ui fluid card courses-card courses-past{% if s.getStatus() == 'cancelled' %} courses-card-cancelled{% endif %}">
@@ -646,16 +644,16 @@ $(function() {
     var $today = $('#browse_date_from').val();
 
     function applyBrowseFilters() {
-        var typeId   = $('#browse_type_filter').val();
-        var name     = $('#browse_name_filter').val();
+        var typeId = $('#browse_type_filter').val();
+        var name = $('#browse_name_filter').val();
         var dateFrom = $('#browse_date_from').val();
-        var visible  = 0;
+        var visible = 0;
 
         $('#browse-cards-grid .courses-browse-card-col').each(function() {
-            var $col   = $(this);
-            var cType  = $col.data('type-id').toString();
-            var cName  = $col.data('event-name');
-            var cDate  = $col.data('date');
+            var $col = $(this);
+            var cType = $col.data('type-id').toString();
+            var cName = $col.data('event-name');
+            var cDate = $col.data('date');
 
             var show = true;
             if (typeId  && cType !== typeId)        show = false;
@@ -679,7 +677,7 @@ $(function() {
         });
         // Reset name if no longer visible
         var $selName = $('#browse_name_filter');
-        var curName  = $selName.val();
+        var curName = $selName.val();
         if (curName && (!typeId || $('#browse_name_filter option[value="' + curName + '"]:visible').length === 0)) {
             $selName.val('').trigger('change.select2');
         }

@@ -214,9 +214,9 @@
 
                         {# Inscrire un autre enfant #}
                         {% set unregistered_children = [] %}
-                        {% for childId, child in children %}
-                            {% if childId not in children_registered %}
-                                {% set unregistered_children = unregistered_children|merge({(childId): child}) %}
+                        {% for child_id, child in children %}
+                            {% if child_id not in children_registered %}
+                                {% set unregistered_children = unregistered_children|merge({(child_id): child}) %}
                             {% endif %}
                         {% endfor %}
                         {% if unregistered_children|length > 0 and session.isOpen() and not session.isFull() %}
@@ -240,9 +240,9 @@
                         </form>
                     {% elseif session.isOpen() and not session.isFull() %}
                         {% set unregistered_children_available = [] %}
-                        {% for childId, child in children %}
-                            {% if childId not in children_registered %}
-                                {% set unregistered_children_available = unregistered_children_available|merge({(childId): child}) %}
+                        {% for child_id, child in children %}
+                            {% if child_id not in children_registered %}
+                                {% set unregistered_children_available = unregistered_children_available|merge({(child_id): child}) %}
                             {% endif %}
                         {% endfor %}
                         {% if parent_eligible %}
@@ -290,19 +290,19 @@
                     {# Désinscription des enfants inscrits — affiché dans tous les cas #}
                     {% if children_registered|length > 0 %}
                         {% if is_registered or is_on_waitlist %}<div class="ui divider"></div>{% endif %}
-                        {% for childId in children_registered %}
-                            {% if children[childId] is defined %}
+                        {% for child_id in children_registered %}
+                            {% if children[child_id] is defined %}
                                 <form action="{{ url_for("coursesDoParentUnregister", {"id": session.getId()}) }}" method="post" class="ui form courses-child-unregister-form">
-                                    <input type="hidden" name="member_id" value="{{ childId }}">
+                                    <input type="hidden" name="member_id" value="{{ child_id }}">
                                     <div class="courses-unregister-row">
                                         <button type="submit" class="ui small labeled icon red button">
                                             <i class="times icon" aria-hidden="true"></i>
                                             {{ _T("Unregister", "courses") }}
                                         </button>
-                                        <strong>{{ children[childId].name }}</strong>
-                                        {% if children[childId].nickname %}
+                                        <strong>{{ children[child_id].name }}</strong>
+                                        {% if children[child_id].nickname %}
                                             <span class="ui teal small label">
-                                                <i class="tag icon" aria-hidden="true"></i>{{ children[childId].nickname }}
+                                                <i class="tag icon" aria-hidden="true"></i>{{ children[child_id].nickname }}
                                             </span>
                                         {% endif %}
                                     </div>
@@ -316,11 +316,7 @@
 
             {# Admin/staff action buttons: Register a member | Close | Cancel (all on one line) #}
             {% set is_future = session.getSessionDate() >= "now"|date("Y-m-d") %}
-            {% set has_action_buttons =
-                ((login.isAdmin() or login.isStaff()) and session.getStatus() == 'cancelled') or
-                ((login.isAdmin() or login.isStaff()) and session.getStatus() == 'closed') or
-                (session.getStatus() == 'open' and is_future and (login.isAdmin() or login.isStaff() or login.isGroupManager()))
-            %}
+            {% set has_action_buttons = ((login.isAdmin() or login.isStaff()) and session.getStatus() == 'cancelled') or ((login.isAdmin() or login.isStaff()) and session.getStatus() == 'closed') or (session.getStatus() == 'open' and is_future and (login.isAdmin() or login.isStaff() or login.isGroupManager())) %}
             {% if has_action_buttons %}
                 <div class="ui center aligned basic segment courses-actions">
 
