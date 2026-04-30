@@ -32,6 +32,7 @@ use Analog\Analog;
 use Laminas\Db\Sql\Expression;
 use Laminas\Db\Sql\Predicate\Expression as PredicateExpression;
 use Laminas\Db\Sql\Predicate\PredicateSet;
+use Laminas\Db\Sql\Select;
 use Throwable;
 
 /**
@@ -199,7 +200,7 @@ class Sessions
         }
     }
 
-    private function buildWhereClause($select): void
+    private function buildWhereClause(Select $select): void
     {
         // In personal view mode, always restrict to validated events and member's own groups
         if ($this->personalMemberId !== null) {

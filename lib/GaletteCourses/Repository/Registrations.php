@@ -31,6 +31,7 @@ use GaletteCourses\Entity\Session;
 use GaletteCourses\Filters\RegistrationsList;
 use Analog\Analog;
 use Laminas\Db\Sql\Expression;
+use Laminas\Db\Sql\Select;
 use Throwable;
 
 /**
@@ -158,7 +159,7 @@ class Registrations
         }
     }
 
-    private function buildWhereClause($select): void
+    private function buildWhereClause(Select $select): void
     {
         if ($this->filters->session_filter !== null) {
             $select->where->equalTo('r.session_id', $this->filters->session_filter);

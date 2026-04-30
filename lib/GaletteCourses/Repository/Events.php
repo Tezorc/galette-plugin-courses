@@ -31,6 +31,7 @@ use Analog\Analog;
 use Laminas\Db\Sql\Expression;
 use Laminas\Db\Sql\Predicate\Expression as PredicateExpression;
 use Laminas\Db\Sql\Predicate\PredicateSet;
+use Laminas\Db\Sql\Select;
 use Throwable;
 
 /**
@@ -89,7 +90,7 @@ class Events
         }
     }
 
-    private function buildWhereClause($select): void
+    private function buildWhereClause(Select $select): void
     {
         // Role-based access filtering
         if (!$this->login->isAdmin() && !$this->login->isStaff()) {
