@@ -29,6 +29,9 @@ use Galette\Core\Login;
 use Analog\Analog;
 use Throwable;
 
+/**
+ * @author Team CCAG <contact@ccag42.org>
+ */
 class Event
 {
     public const TABLE = 'courses_events';

@@ -30,6 +30,8 @@ use Throwable;
 /**
  * Customizable email template stored in DB.
  * Falls back to hardcoded defaults when no custom version exists.
+ *
+ * @author Team CCAG <contact@ccag42.org>
  */
 class MailTemplate
 {

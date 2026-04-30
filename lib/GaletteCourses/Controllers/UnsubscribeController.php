@@ -32,6 +32,8 @@ use DI\Attribute\Inject;
 
 /**
  * Handles the public (no-auth) one-click unsubscribe link included in notification emails.
+ *
+ * @author Team CCAG <contact@ccag42.org>
  */
 class UnsubscribeController extends AbstractController
 {

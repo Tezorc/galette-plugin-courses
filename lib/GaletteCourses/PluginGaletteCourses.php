@@ -26,6 +26,9 @@ namespace GaletteCourses;
 use Galette\Core\GalettePlugin;
 use Galette\Entity\Adherent;
 
+/**
+ * @author Team CCAG <contact@ccag42.org>
+ */
 class PluginGaletteCourses extends GalettePlugin
 {
     public static function getMenusContents(): array

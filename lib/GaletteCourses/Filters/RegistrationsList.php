@@ -34,6 +34,8 @@ use Galette\Core\Pagination;
  * @property ?string $name_filter
  * @property ?string $date_from
  * @property ?string $date_to
+ *
+ * @author Team CCAG <contact@ccag42.org>
  */
 class RegistrationsList extends Pagination
 {

@@ -32,6 +32,9 @@ use Slim\Psr7\Request;
 use Slim\Psr7\Response;
 use DI\Attribute\Inject;
 
+/**
+ * @author Team CCAG <contact@ccag42.org>
+ */
 class ICalController extends AbstractController
 {
     use PluginControllerTrait;

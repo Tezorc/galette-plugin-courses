@@ -35,6 +35,9 @@ use Slim\Psr7\Response;
 use DI\Attribute\Inject;
 use Analog\Analog;
 
+/**
+ * @author Team CCAG <contact@ccag42.org>
+ */
 class CronController extends AbstractController
 {
     use PluginControllerTrait;

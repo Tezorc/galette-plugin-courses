@@ -31,6 +31,8 @@ use Galette\Core\Pagination;
  * @property ?int    $type_filter
  * @property ?string $status_filter
  * @property ?string $name_filter
+ *
+ * @author Team CCAG <contact@ccag42.org>
  */
 class EventsList extends Pagination
 {

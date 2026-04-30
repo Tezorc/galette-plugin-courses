@@ -37,6 +37,9 @@ use GaletteCourses\PluginPreferences;
 use Analog\Analog;
 use Throwable;
 
+/**
+ * @author Team CCAG <contact@ccag42.org>
+ */
 class CourseNotification
 {
     public function __construct(

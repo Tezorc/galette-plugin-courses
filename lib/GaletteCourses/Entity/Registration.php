@@ -28,6 +28,9 @@ use Galette\Core\Db;
 use Analog\Analog;
 use Throwable;
 
+/**
+ * @author Team CCAG <contact@ccag42.org>
+ */
 class Registration
 {
     public const TABLE = 'courses_registrations';

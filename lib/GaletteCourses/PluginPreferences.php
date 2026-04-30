@@ -27,6 +27,9 @@ use Galette\Core\Db;
 use Analog\Analog;
 use Throwable;
 
+/**
+ * @author Team CCAG <contact@ccag42.org>
+ */
 class PluginPreferences
 {
     public const TABLE = 'courses_preferences';

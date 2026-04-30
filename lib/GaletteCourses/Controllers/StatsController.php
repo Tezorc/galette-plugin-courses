@@ -35,6 +35,9 @@ use DI\Attribute\Inject;
 use Analog\Analog;
 use Throwable;
 
+/**
+ * @author Team CCAG <contact@ccag42.org>
+ */
 class StatsController extends AbstractController
 {
     use PluginControllerTrait;

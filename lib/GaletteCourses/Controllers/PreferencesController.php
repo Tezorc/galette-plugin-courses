@@ -30,6 +30,9 @@ use Slim\Psr7\Request;
 use Slim\Psr7\Response;
 use DI\Attribute\Inject;
 
+/**
+ * @author Team CCAG <contact@ccag42.org>
+ */
 class PreferencesController extends AbstractController
 {
     use PluginControllerTrait;

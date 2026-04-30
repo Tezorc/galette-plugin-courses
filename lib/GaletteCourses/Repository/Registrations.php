@@ -33,6 +33,9 @@ use Analog\Analog;
 use Laminas\Db\Sql\Expression;
 use Throwable;
 
+/**
+ * @author Team CCAG <contact@ccag42.org>
+ */
 class Registrations
 {
     private int $count = 0;

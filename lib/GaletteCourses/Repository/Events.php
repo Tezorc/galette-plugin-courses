@@ -33,6 +33,9 @@ use Laminas\Db\Sql\Predicate\Expression as PredicateExpression;
 use Laminas\Db\Sql\Predicate\PredicateSet;
 use Throwable;
 
+/**
+ * @author Team CCAG <contact@ccag42.org>
+ */
 class Events
 {
     private int $count = 0;
