@@ -517,7 +517,7 @@ class CourseNotification
     /**
      * Get email addresses for a list of member IDs.
      *
-     * @param  int[] $memberIds
+     * @param int[] $memberIds
      * @return array<string, array{name: string, member_id: int}> [email => ['name' => ..., 'member_id' => ...]]
      */
     private function getMemberEmailsByIds(array $memberIds): array

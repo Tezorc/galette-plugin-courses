@@ -22,6 +22,7 @@
 /**
  * @author Team CCAG <contact@ccag42.org>
  */
+
 declare(strict_types=1);
 
 /** @var \Galette\Core\Plugins $this */

@@ -49,11 +49,11 @@ class MailTemplate
     public const REF_CANCELLATION            = 'cancellation';
     public const REF_WAITLIST_CANCELLATION   = 'waitlist_cancellation';
 
-    private ?int    $id      = null;
-    private string  $ref     = '';
-    private string  $subject = '';
-    private string  $body    = '';
-    private string  $lang    = 'fr_FR';
+    private ?int $id      = null;
+    private string $ref     = '';
+    private string $subject = '';
+    private string $body    = '';
+    private string $lang    = 'fr_FR';
 
     public function __construct(private Db $zdb)
     {
