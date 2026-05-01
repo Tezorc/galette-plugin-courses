@@ -1,6 +1,16 @@
 {% extends "page.html.twig" %}
 
 {% block content %}
+    {# --- Back button (history.back if available, else sessions list) --- #}
+    <div class="ui basic segment courses-segment-tight">
+        <a href="{{ url_for('coursesSessions') }}"
+           class="ui small basic labeled icon button courses-back-btn"
+           onclick="if (window.history.length > 1) { window.history.back(); return false; }">
+            <i class="arrow left icon" aria-hidden="true"></i>
+            {{ _T("Back", "courses") }}
+        </a>
+    </div>
+
     {# --- Header segment with event name, date, location --- #}
     <div class="ui {% if session.getStatus() == 'open' %}green{% elseif session.getStatus() == 'closed' %}grey{% else %}red{% endif %} inverted segment courses-session-header-segment">
         <h2 class="ui inverted header">
