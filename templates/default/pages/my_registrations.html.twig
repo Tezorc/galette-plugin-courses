@@ -35,10 +35,17 @@
     {% endfor %}
 {% endif %}
 
-{# Compter les séances disponibles (non inscrit, non liste d'attente) #}
+{# Compter les séances disponibles : doit correspondre EXACTEMENT au
+   filtre de la boucle de cartes ci-dessous (déjà inscrit OU plus aucune
+   action possible -> carte non rendue, donc non comptée). #}
 {% set browse_count = 0 %}
 {% for s in available_sessions %}
-    {% if s.getId() not in registered_session_ids and not browse_on_waitlist[s.getId()] %}
+    {% set _sid = s.getId() %}
+    {% set _already = _sid in registered_session_ids %}
+    {% set _no_action_left = not browse_can_self_register[_sid]
+        and not browse_on_waitlist[_sid]
+        and (browse_eligible_children[_sid] is not defined or browse_eligible_children[_sid]|length == 0) %}
+    {% if not _already and not _no_action_left %}
         {% set browse_count = browse_count + 1 %}
     {% endif %}
 {% endfor %}
@@ -50,9 +57,7 @@
     <a class="item active" data-tab="browse">
         <i class="search icon" aria-hidden="true"></i>
         <span class="courses-tab-text">{{ _T("Find a session", "courses") }}</span>
-        {% if browse_count > 0 %}
-            <span class="ui teal circular label" style="margin-left:.4em">{{ browse_count }}</span>
-        {% endif %}
+        <span id="browse-count-badge" class="ui teal circular label" style="margin-left:.4em;{% if browse_count == 0 %}display:none;{% endif %}">{{ browse_count }}</span>
     </a>
     <a class="item" data-tab="mine">
         <i class="calendar check icon" aria-hidden="true"></i>
@@ -665,6 +670,12 @@ $(function() {
         });
 
         $('#browse-no-results').toggle(visible === 0 && $('#browse-cards-grid').length > 0);
+        // Sync the tab badge with the visible card count
+        var $badge = $('#browse-count-badge');
+        if ($badge.length) {
+            $badge.text(visible);
+            $badge.toggle(visible > 0);
+        }
     }
 
     $('#browse_type_filter').on('change', function() {

@@ -631,6 +631,20 @@ Le developpement est organise en phases progressives.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
 
+### Phase 29 - Correction badge "Trouver une seance" (compteur erroné)
+
+**Statut : TERMINEE**
+
+- Probleme : sur la page "Mes inscriptions", l'onglet *Trouver une seance* affiche un badge avec le nombre de seances disponibles. Le calcul cote serveur (`browse_count`) ne correspondait pas au filtre reellement applique aux cartes :
+  - Le badge excluait les seances ou l'utilisateur etait deja sur liste d'attente, alors que les cartes correspondantes etaient bien rendues -> sous-comptage.
+  - Le badge incluait les seances sans action possible (`no_action_left` = pas de groupe requis, pas en liste d'attente, pas d'enfant eligible), alors que ces cartes n'etaient pas rendues -> sur-comptage.
+  - Le badge ne se mettait pas a jour quand l'utilisateur appliquait les filtres JS (type / activite / date).
+
+- Fix `templates/default/pages/my_registrations.html.twig` :
+  - Calcul de `browse_count` aligne sur le filtre de la boucle de cartes : `not _already and not _no_action_left` (memes variables que la boucle de rendu).
+  - Le span du badge porte desormais l'id `browse-count-badge`, masque via `display:none` si compte = 0 (au lieu d'etre absent du DOM) -> permet la mise a jour live par JS.
+  - `applyBrowseFilters()` met a jour `browse-count-badge` apres chaque application des filtres : valeur = `visible` (cartes effectivement affichees), badge masque si zero.
+
 ### Phase 28 - Page "Mes seances comme moniteur" + nettoyage menu (suppression doublon "Ajouter un evenement")
 
 **Statut : TERMINEE**
