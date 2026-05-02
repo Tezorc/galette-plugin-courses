@@ -133,6 +133,12 @@ msgstr "Mes inscriptions"
 msgid "My sessions"
 msgstr "Mes séances"
 
+msgid "My instructor sessions"
+msgstr "Mes séances comme moniteur"
+
+msgid "You are not assigned as instructor for any session."
+msgstr "Vous n'êtes affecté comme moniteur à aucune séance."
+
 msgid "Find a session"
 msgstr "Trouver une séance"
 
