@@ -477,24 +477,25 @@ $(function() {
 
     // ----- Browse filters (client-side) -----
     var $today = $('#instr_browse_date_from').val();
+    // Local state — see my_registrations.html.twig for rationale.
+    var fType = '';
+    var fName = '';
+    var fDate = $today;
 
     function applyInstrBrowseFilters() {
         if (!$('#instr-browse-cards-grid').length) { return; }
-        var typeId = $('#instr_browse_type_filter').val();
-        var name = $('#instr_browse_name_filter').val();
-        var dateFrom = $('#instr_browse_date_from').val();
         var visible = 0;
 
         $('#instr-browse-cards-grid .courses-browse-card-col').each(function() {
             var $col = $(this);
-            var cType = $col.data('type-id').toString();
-            var cName = $col.data('event-name');
-            var cDate = $col.data('date');
+            var cType = ($col.attr('data-type-id') || '').toString();
+            var cName = ($col.attr('data-event-name') || '').toString();
+            var cDate = $col.attr('data-date') || '';
 
             var show = true;
-            if (typeId  && cType !== typeId)        show = false;
-            if (name    && cName !== name)           show = false;
-            if (dateFrom && cDate < dateFrom)        show = false;
+            if (fType && cType !== fType.toString())                          show = false;
+            if (fName && cName.trim().toLowerCase() !== fName.trim().toLowerCase()) show = false;
+            if (fDate && cDate < fDate)                                       show = false;
 
             $col.toggle(show);
             if (show) visible++;
@@ -509,40 +510,48 @@ $(function() {
     }
 
     function cascadeInstrNameOptions() {
-        var typeId = $('#instr_browse_type_filter').val();
         var $name = $('#instr_browse_name_filter');
         $name.find('option').each(function() {
             var $opt = $(this);
             if ($opt.val() === '') { return; }
-            var matches = !typeId || $opt.data('type-id').toString() === typeId;
+            var optType = ($opt.attr('data-type-id') || '').toString();
+            var matches = !fType || optType === fType.toString();
             $opt.prop('disabled', !matches);
         });
         $name.dropdown('refresh');
-        var curName = $name.val();
-        if (curName) {
-            var $curOpt = $name.find('option[value="' + curName + '"]');
+        if (fName) {
+            var $curOpt = $name.find('option[value="' + fName.replace(/"/g, '\\"') + '"]');
             if ($curOpt.prop('disabled')) {
+                fName = '';
                 $name.dropdown('clear');
             }
         }
     }
 
     // Initialize dropdowns with Fomantic UI onChange callbacks.
-    // Why: relying on the underlying <select>'s `change` event proved
-    // unreliable (Fomantic does not always fire it), so use the dropdown's
-    // own onChange API which is guaranteed to fire on every selection.
+    // See my_registrations.html.twig for rationale.
     $('#instr_browse_type_filter').dropdown({
-        onChange: function() {
+        onChange: function(value) {
+            fType = value || '';
             cascadeInstrNameOptions();
             applyInstrBrowseFilters();
         }
     });
     $('#instr_browse_name_filter').dropdown({
-        onChange: applyInstrBrowseFilters
+        onChange: function(value) {
+            fName = value || '';
+            applyInstrBrowseFilters();
+        }
     });
-    $('#instr_browse_date_from').on('change', applyInstrBrowseFilters);
+    $('#instr_browse_date_from').on('change', function() {
+        fDate = $(this).val();
+        applyInstrBrowseFilters();
+    });
 
     $('#instr_browse_clear_filter').on('click', function() {
+        fType = '';
+        fName = '';
+        fDate = $today;
         $('#instr_browse_type_filter').dropdown('clear');
         $('#instr_browse_name_filter').find('option').prop('disabled', false);
         $('#instr_browse_name_filter').dropdown('refresh').dropdown('clear');

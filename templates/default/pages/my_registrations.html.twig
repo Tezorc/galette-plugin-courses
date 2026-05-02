@@ -645,23 +645,29 @@
 $(function() {
     // Browse filters (client-side)
     var $today = $('#browse_date_from').val();
+    // Local state — do NOT read $('#xxx').val() because Fomantic UI's
+    // dropdown does not always sync the underlying <select>.value
+    // immediately when the user picks an item; rely on the value passed
+    // to onChange() instead (single source of truth).
+    var fType = '';
+    var fName = '';
+    var fDate = $today;
 
     function applyBrowseFilters() {
-        var typeId = $('#browse_type_filter').val();
-        var name = $('#browse_name_filter').val();
-        var dateFrom = $('#browse_date_from').val();
         var visible = 0;
 
         $('#browse-cards-grid .courses-browse-card-col').each(function() {
             var $col = $(this);
-            var cType = $col.data('type-id').toString();
-            var cName = $col.data('event-name');
-            var cDate = $col.data('date');
+            // .attr() bypasses jQuery's .data() value cache so the
+            // attribute is read fresh every time.
+            var cType = ($col.attr('data-type-id') || '').toString();
+            var cName = ($col.attr('data-event-name') || '').toString();
+            var cDate = $col.attr('data-date') || '';
 
             var show = true;
-            if (typeId  && cType !== typeId)        show = false;
-            if (name    && cName !== name)           show = false;
-            if (dateFrom && cDate < dateFrom)        show = false;
+            if (fType && cType !== fType.toString())                          show = false;
+            if (fName && cName.trim().toLowerCase() !== fName.trim().toLowerCase()) show = false;
+            if (fDate && cDate < fDate)                                       show = false;
 
             $col.toggle(show);
             if (show) visible++;
@@ -680,20 +686,20 @@ $(function() {
         // Cascade: restrict name options to the selected type by disabling
         // (Fomantic UI renders disabled options greyed out; toggling the
         // <option> display has no effect once Fomantic has built its menu).
-        var typeId = $('#browse_type_filter').val();
         var $name = $('#browse_name_filter');
         $name.find('option').each(function() {
             var $opt = $(this);
             if ($opt.val() === '') { return; }
-            var matches = !typeId || $opt.data('type-id').toString() === typeId;
+            var optType = ($opt.attr('data-type-id') || '').toString();
+            var matches = !fType || optType === fType.toString();
             $opt.prop('disabled', !matches);
         });
         $name.dropdown('refresh');
         // Clear current name selection if it no longer matches the type
-        var curName = $name.val();
-        if (curName) {
-            var $curOpt = $name.find('option[value="' + curName + '"]');
+        if (fName) {
+            var $curOpt = $name.find('option[value="' + fName.replace(/"/g, '\\"') + '"]');
             if ($curOpt.prop('disabled')) {
+                fName = '';
                 $name.dropdown('clear');
             }
         }
@@ -701,20 +707,31 @@ $(function() {
 
     // Initialize dropdowns with Fomantic UI onChange callbacks.
     // Why: relying on the underlying <select>'s `change` event proved
-    // unreliable (Fomantic does not always fire it), so use the dropdown's
-    // own onChange API which is guaranteed to fire on every selection.
+    // unreliable (Fomantic does not always fire it / sync it), so use the
+    // dropdown's own onChange API which is guaranteed to fire on every
+    // selection AND provides the new value directly as a parameter.
     $('#browse_type_filter').dropdown({
-        onChange: function() {
+        onChange: function(value) {
+            fType = value || '';
             cascadeNameOptions();
             applyBrowseFilters();
         }
     });
     $('#browse_name_filter').dropdown({
-        onChange: applyBrowseFilters
+        onChange: function(value) {
+            fName = value || '';
+            applyBrowseFilters();
+        }
     });
-    $('#browse_date_from').on('change', applyBrowseFilters);
+    $('#browse_date_from').on('change', function() {
+        fDate = $(this).val();
+        applyBrowseFilters();
+    });
 
     $('#browse_clear_filter').on('click', function() {
+        fType = '';
+        fName = '';
+        fDate = $today;
         $('#browse_type_filter').dropdown('clear');
         $('#browse_name_filter').find('option').prop('disabled', false);
         $('#browse_name_filter').dropdown('refresh').dropdown('clear');
