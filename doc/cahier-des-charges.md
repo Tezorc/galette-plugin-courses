@@ -631,6 +631,28 @@ Le developpement est organise en phases progressives.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
 
+### Phase 26 - Liste des inscrits compacte sur mobile (une ligne par membre)
+
+**Statut : TERMINEE**
+
+- Probleme : depuis la phase 25, le tableau des inscrits sur la page detail seance utilisait `courses-responsive-table` -> en mobile chaque ligne se transformait en card empilant les 4 cellules verticalement (Membre / Surnom / Date / Presence) + dropdown a 100% de largeur. Une dizaine d'inscrits = une page interminable a scroller.
+- Demande utilisateur : revenir a une seule ligne par inscrit en mobile.
+
+- Fix template `session_show.html.twig` :
+  - Tableau des inscrits : `courses-responsive-table` -> nouvelle classe `courses-attendance-list`.
+  - Cellules tagguees : `<td class="courses-attlist-member">` (nom), `<td class="courses-attlist-nick">` (surnom desktop), `<td class="courses-attlist-date">` (date), `<td class="courses-attendance-cell">` (dropdown, classe inchangee).
+  - Surnom replique a l'interieur de la cellule "Membre" via un `<span class="courses-attlist-nick-inline">` (cache en desktop, visible uniquement en mobile) -> evite de perdre l'info quand on masque la colonne Surnom.
+
+- Nouvelles regles CSS (`webroot/galette_courses.css`) :
+  - Desktop : `.courses-attlist-nick-inline { display: none; }` (le tableau garde son rendu 4 colonnes).
+  - Mobile (`@media ≤767px`) :
+    - `.courses-attendance-list tbody tr` -> flex `nowrap`, padding compact, bordure et ombre legere par carte (chaque ligne = une carte plate).
+    - Header de tableau et pseudo-elements `data-label` masques.
+    - Colonnes Surnom et Date masquees ; nickname inline reactive (texte gris `.82em`).
+    - Cellule Membre : `flex: 1 1 auto`, `overflow: hidden; text-overflow: ellipsis; white-space: nowrap` -> nom + surnom inline tronques si trop longs.
+    - Cellule Presence : `flex: 0 0 auto` ancree a droite ; dropdown reduit a `min-width: 110px; min-height: 36px; font-size: .85em` (touch target raisonnable, plus assez large pour afficher tous les libelles courts type "Inscrit", "Present", "Absent").
+  - Suppression des anciennes regles `.courses-responsive-table tbody td.courses-attendance-cell` (devenues mortes : la classe `courses-responsive-table` n'est plus appliquee a ce tableau).
+
 ### Phase 25 - Optimisation responsive du detail des seances (smartphones)
 
 **Statut : TERMINEE**

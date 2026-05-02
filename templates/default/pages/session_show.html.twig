@@ -534,7 +534,7 @@
 
                     {% if can_mark_attendance %}
                         <form action="{{ url_for("coursesDoMarkAttendance", {"id": session.getId()}) }}" method="post" class="ui form">
-                            <table class="ui compact table courses-responsive-table">
+                            <table class="ui compact table courses-attendance-list">
                                 <thead>
                                     <tr>
                                         <th>{{ _T("Member", "courses") }}</th>
@@ -546,7 +546,7 @@
                                 <tbody>
                                     {% for reg in registrations %}
                                         <tr>
-                                            <td data-label="{{ _T("Member", "courses") }}">
+                                            <td data-label="{{ _T("Member", "courses") }}" class="courses-attlist-member">
                                                 {% if members[reg.getMemberId()] is defined %}
                                                     <a href="{{ url_for("member", {"id": reg.getMemberId()}) }}">
                                                         {{ members[reg.getMemberId()] }}
@@ -554,8 +554,13 @@
                                                 {% else %}
                                                     {{ _T("Unknown member", "courses") }}
                                                 {% endif %}
+                                                {% if nicknames[reg.getMemberId()] is defined %}
+                                                    <span class="courses-attlist-nick-inline">
+                                                        <i class="tag icon" aria-hidden="true"></i>{{ nicknames[reg.getMemberId()] }}
+                                                    </span>
+                                                {% endif %}
                                             </td>
-                                            <td data-label="{{ _T("Nickname", "courses") }}">
+                                            <td data-label="{{ _T("Nickname", "courses") }}" class="courses-attlist-nick">
                                                 {% if nicknames[reg.getMemberId()] is defined %}
                                                     <span class="ui teal mini label">
                                                         <i class="tag icon" aria-hidden="true"></i>
@@ -563,7 +568,7 @@
                                                     </span>
                                                 {% endif %}
                                             </td>
-                                            <td data-label="{{ _T("Registration date", "courses") }}">{{ reg.getRegistrationDate()|date("d/m/Y") }}</td>
+                                            <td data-label="{{ _T("Registration date", "courses") }}" class="courses-attlist-date">{{ reg.getRegistrationDate()|date("d/m/Y") }}</td>
                                             <td data-label="{{ _T("Attendance", "courses") }}" class="courses-attendance-cell">
                                                 <select name="attendance[{{ reg.getId() }}]" class="ui compact dropdown">
                                                     <option value="registered"{% if reg.getStatus() == 'registered' %} selected{% endif %}>{{ _T("Registered", "courses") }}</option>

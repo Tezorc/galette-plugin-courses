@@ -27,6 +27,9 @@
 .courses-input-narrow { width: 6em; }
 .courses-input-medium { width: 12em; }
 
+/* Inline nickname inside the registered-members table — mobile only */
+.courses-attlist-nick-inline { display: none; }
+
 /* ----- INFO LIST (label/value on same line) ----- */
 .courses-info-list .item {
     display: flex !important;
@@ -393,15 +396,39 @@ tr.courses-pending { background-color: #fffde7 !important; }
     .courses-input-narrow,
     .courses-input-medium { width: 100% !important; }
 
-    /* --- Attendance dropdown inside responsive table card --- */
-    .courses-responsive-table tbody td.courses-attendance-cell {
-        flex-wrap: wrap;
+    /* --- Registered-members table: one member per line on mobile --- */
+    .courses-attendance-list { display: block !important; border: none !important; }
+    .courses-attendance-list thead { display: none !important; }
+    .courses-attendance-list tbody { display: block !important; }
+    .courses-attendance-list tbody tr {
+        display: flex !important; flex-wrap: nowrap !important; align-items: center !important;
+        gap: .5em; padding: .5em .75em !important; margin-bottom: .4em !important;
+        border: 1px solid rgba(34,36,38,.15); border-radius: 6px; background: #fff;
+        box-shadow: 0 1px 3px rgba(0,0,0,.06);
     }
-    .courses-responsive-table tbody td.courses-attendance-cell .ui.dropdown {
-        width: 100% !important; min-height: 44px;
+    .courses-attendance-list tbody td {
+        display: inline-block !important; padding: 0 !important; border: none !important;
+        min-height: auto !important;
     }
-    .courses-responsive-table tbody td.courses-attendance-cell .ui.dropdown .text {
-        line-height: 1.4 !important;
+    .courses-attendance-list tbody td::before { display: none !important; }
+    /* Member cell takes available space; truncate if too long */
+    .courses-attendance-list .courses-attlist-member {
+        flex: 1 1 auto !important; min-width: 0 !important;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    /* Nickname column and date column hidden on mobile (nickname surfaced inline) */
+    .courses-attendance-list .courses-attlist-nick,
+    .courses-attendance-list .courses-attlist-date { display: none !important; }
+    /* Inline nickname (small grey text next to the name) */
+    .courses-attlist-nick-inline {
+        display: inline !important; margin-left: .35em;
+        font-size: .82em; color: #888;
+    }
+    .courses-attlist-nick-inline i.icon { margin-right: .15em !important; opacity: .7; }
+    /* Attendance dropdown anchored to the right, compact width */
+    .courses-attendance-list .courses-attendance-cell { flex: 0 0 auto !important; }
+    .courses-attendance-list .courses-attendance-cell .ui.dropdown {
+        min-width: 110px !important; min-height: 36px; font-size: .85em;
     }
 
     /* --- Modal action buttons stack full-width --- */
