@@ -191,6 +191,31 @@ tr.courses-pending { background-color: #fffde7 !important; }
 .courses-mobile-br { display: none; }
 .courses-session-header-segment { margin-bottom: 0 !important; }
 
+/* Title left, action buttons right inside the colored header banner */
+.courses-session-header-flex {
+    display: flex;
+    align-items: flex-start;
+    gap: .6em;
+    flex-wrap: nowrap;
+}
+.courses-session-header-flex .courses-session-header-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0 !important;
+}
+.courses-session-header-flex .courses-session-header-actions {
+    flex: 0 0 auto;
+    display: flex;
+    gap: .35em;
+    align-items: center;
+}
+.courses-session-header-flex .courses-session-header-actions .ui.button {
+    margin: 0 !important;
+}
+.courses-session-header-flex .courses-session-header-actions .ui.button > i.icon {
+    margin: 0 !important;
+}
+
 /* =========================================================
    FILTER PANEL — collapsible on mobile
    ========================================================= */

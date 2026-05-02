@@ -631,6 +631,33 @@ Le developpement est organise en phases progressives.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
 
+### Phase 27 - Compaction du haut de page detail seance (boutons Retour + Modifier dans le bandeau)
+
+**Statut : TERMINEE**
+
+- Probleme : sur la page detail seance, deux segments distincts au-dessus et en dessous du bandeau colore consommaient inutilement de la hauteur :
+  - Un segment dedie au bouton "Retour" (au-dessus du bandeau).
+  - Un segment dedie au bouton "Modifier la seance" (en dessous du bandeau, staff uniquement).
+  -> ~80-100 px de scroll en plus avant de voir le contenu, particulierement penible sur mobile.
+- Demande utilisateur : "limiter la hauteur, mettre dans le bandeau a droite le bouton retour et modifier seance".
+
+- Fix template `session_show.html.twig` :
+  - Suppression des deux segments separes (`<div class="ui basic segment courses-segment-tight">` autour de chaque bouton).
+  - Header de seance encapsule dans un wrapper flex `<div class="courses-session-header-flex">` :
+    - Gauche : `<h2 class="ui inverted header courses-session-header-title">` (titre evenement + sous-titre date/lieu inchanges).
+    - Droite : `<div class="courses-session-header-actions">` contenant :
+      - Bouton "Retour" : `ui small basic inverted icon button` avec icone `arrow left` et `title="Back"` (icone seule, plus de libelle texte).
+      - Bouton "Modifier seance" (staff uniquement, futur, non annule) : meme style avec icone `edit` et `title="Edit session"`.
+  - Conservation du comportement `onclick="window.history.back()"` sur le bouton Retour.
+
+- Nouvelles regles CSS (`webroot/galette_courses.css`, section "SESSION HEADER") :
+  - `.courses-session-header-flex { display: flex; align-items: flex-start; gap: .6em; flex-wrap: nowrap; }`.
+  - `.courses-session-header-title { flex: 1 1 auto; min-width: 0; margin: 0 !important; }` -> titre prend tout l'espace disponible.
+  - `.courses-session-header-actions { flex: 0 0 auto; display: flex; gap: .35em; align-items: center; }` -> boutons compacts ancres a droite.
+  - Les boutons utilisent `basic inverted` pour s'afficher en outline blanc sur le fond colore (vert/gris/rouge selon statut).
+
+- Resultat : gain de ~80-100 px en hauteur, contenu utile (jauge, instructeurs, inscriptions) visible immediatement au chargement.
+
 ### Phase 26 - Liste des inscrits compacte sur mobile (une ligne par membre)
 
 **Statut : TERMINEE**
