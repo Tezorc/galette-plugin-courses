@@ -191,21 +191,6 @@ class SessionsController extends AbstractPluginController
         $regs_repo = new Registrations($this->zdb);
         $registrations = $regs_repo->getForSession($id);
 
-        // Load member names and nicknames for registrations
-        $members = [];
-        $nicknames = [];
-        foreach ($registrations as $reg) {
-            try {
-                $adherent = new Adherent($this->zdb, $reg->getMemberId());
-                $members[$reg->getMemberId()] = $adherent->sname;
-                if (!empty($adherent->nickname)) {
-                    $nicknames[$reg->getMemberId()] = $adherent->nickname;
-                }
-            } catch (\Throwable $e) {
-                $members[$reg->getMemberId()] = _T('Unknown member', 'courses');
-            }
-        }
-
         // Check if current user is registered or on waitlist
         $is_registered = false;
         $is_on_waitlist = false;
@@ -222,36 +207,54 @@ class SessionsController extends AbstractPluginController
             }
         }
 
-        // Load waitlist info
+        // Load waitlist info (entries only visible to staff / group managers)
         $waitlist_count = Waitlist::getCount($this->zdb, $id);
         $waitlist_entries = [];
         if ($this->login->isAdmin() || $this->login->isStaff() || $this->login->isGroupManager()) {
             $waitlist_entries = Waitlist::getForSession($this->zdb, $id);
-            foreach ($waitlist_entries as $wl) {
-                if (!isset($members[$wl->getMemberId()])) {
-                    try {
-                        $adherent = new Adherent($this->zdb, $wl->getMemberId());
-                        $members[$wl->getMemberId()] = $adherent->sname;
-                        if (!empty($adherent->nickname)) {
-                            $nicknames[$wl->getMemberId()] = $adherent->nickname;
-                        }
-                    } catch (\Throwable $e) {
-                        $members[$wl->getMemberId()] = _T('Unknown member', 'courses');
-                    }
-                }
-            }
         }
 
         // Load instructors for this session
         $instructors = SessionInstructor::getForSession($this->zdb, $id);
+
+        // Batch-load display data (sname + nickname) for everyone shown in
+        // the registered/waitlist/instructor blocks — one SELECT instead of
+        // one `new Adherent()` per row.
+        $memberIdsToDisplay = [];
+        foreach ($registrations as $reg) {
+            $memberIdsToDisplay[$reg->getMemberId()] = true;
+        }
+        foreach ($waitlist_entries as $wl) {
+            $memberIdsToDisplay[$wl->getMemberId()] = true;
+        }
+        foreach ($instructors as $instr) {
+            $memberIdsToDisplay[$instr->getMemberId()] = true;
+        }
+        $memberDisplay = $this->batchLoadMemberDisplay(array_keys($memberIdsToDisplay));
+        $unknown = _T('Unknown member', 'courses');
+
+        $members = [];
+        $nicknames = [];
+        foreach ($registrations as $reg) {
+            $mid = $reg->getMemberId();
+            $members[$mid] = $memberDisplay[$mid]['sname'] ?? $unknown;
+            if (!empty($memberDisplay[$mid]['nickname'])) {
+                $nicknames[$mid] = $memberDisplay[$mid]['nickname'];
+            }
+        }
+        foreach ($waitlist_entries as $wl) {
+            $mid = $wl->getMemberId();
+            if (!isset($members[$mid])) {
+                $members[$mid] = $memberDisplay[$mid]['sname'] ?? $unknown;
+                if (!empty($memberDisplay[$mid]['nickname'])) {
+                    $nicknames[$mid] = $memberDisplay[$mid]['nickname'];
+                }
+            }
+        }
         $instructor_members = [];
         foreach ($instructors as $instr) {
-            try {
-                $adherent = new Adherent($this->zdb, $instr->getMemberId());
-                $instructor_members[$instr->getMemberId()] = $adherent->sname;
-            } catch (\Throwable $e) {
-                $instructor_members[$instr->getMemberId()] = _T('Unknown member', 'courses');
-            }
+            $mid = $instr->getMemberId();
+            $instructor_members[$mid] = $memberDisplay[$mid]['sname'] ?? $unknown;
         }
 
         $has_instructor = SessionInstructor::hasInstructor($this->zdb, $id);
@@ -350,10 +353,13 @@ class SessionsController extends AbstractPluginController
                     }
                 }
 
+                // Batch-load display data for all children at once instead of
+                // creating one Adherent per child (= one SELECT per child).
+                $childDisplay = $this->batchLoadMemberDisplay($validChildIds);
+
                 foreach ($validChildIds as $childId) {
-                    $childAdherent = new Adherent($this->zdb, $childId);
-                    $childName = $childAdherent->sname ?? trim($childAdherent->name . ' ' . ($childAdherent->surname ?? ''));
-                    $childNickname = !empty($childAdherent->nickname) ? (string)$childAdherent->nickname : '';
+                    $childName     = $childDisplay[$childId]['sname']    ?? '';
+                    $childNickname = $childDisplay[$childId]['nickname'] ?? '';
 
                     // A registered child always appears (so the unregister button is always shown),
                     // regardless of current group membership (group may have changed after registration).
