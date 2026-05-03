@@ -680,9 +680,14 @@ $(function() {
             if (fName && cName.trim().toLowerCase() !== fName.trim().toLowerCase()) show = false;
             if (fDate && cDate < fDate)                                             show = false;
 
-            // Use a class with `display: none !important` because Fomantic
-            // UI's `.ui.grid > .column` rule overrides inline display:none.
-            $col.toggleClass('courses-hidden', !show);
+            // Inline `!important` is the only thing that beats Fomantic
+            // UI's `.ui.grid > .column { display: ... !important }` rule
+            // (more specific than any of our classes).
+            if (show) {
+                $col[0].style.removeProperty('display');
+            } else {
+                $col[0].style.setProperty('display', 'none', 'important');
+            }
             if (show) visible++;
         });
 
