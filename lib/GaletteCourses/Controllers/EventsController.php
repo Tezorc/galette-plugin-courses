@@ -288,9 +288,16 @@ class EventsController extends AbstractPluginController
                 $this->propagateCapacityToSessions($event);
             }
 
+            // Collect sessions auto-created during this save so we can
+            // notify group managers in a single batch below.
+            $createdSessions = [];
+
             // For non-recurring event: auto-create a single session
             if (!$event->isRecurring() && !empty($post['session_date'])) {
-                $this->createSessionForEvent($event, $post);
+                $session = $this->createSessionForEvent($event, $post);
+                if ($session !== null) {
+                    $createdSessions[] = $session;
+                }
             }
 
             // For recurring event: generate sessions from start date
@@ -298,6 +305,7 @@ class EventsController extends AbstractPluginController
                 $handler = new RecurrenceHandler($this->zdb);
                 $created = $handler->generateSessions($event, $post['session_date']);
                 if (count($created) > 0) {
+                    $createdSessions = array_merge($createdSessions, $created);
                     $this->flash->addMessage(
                         'success_detected',
                         sprintf(_T('%d sessions have been generated.', 'courses'), count($created))
@@ -305,9 +313,11 @@ class EventsController extends AbstractPluginController
                 }
             }
 
-            // If new event created directly at VALIDATED status (staff bypass), notify group managers
-            // (normal workflow: notifyPublication is called by doValidate, not here)
-            if ($id === null && $event->getStatus() === Event::STATUS_VALIDATED) {
+            // Notify group managers ONLY about session creation (not event
+            // creation/validation). Per user requirement: aucun courriel
+            // a la creation/validation de l'evenement, uniquement quand des
+            // seances (recurrentes ou non) sont effectivement creees.
+            if (!empty($createdSessions) && $event->getStatus() === Event::STATUS_VALIDATED) {
                 $notification = new CourseNotification(
                     $this->zdb,
                     $this->preferences,
@@ -315,7 +325,7 @@ class EventsController extends AbstractPluginController
                     new MemberPreferences($this->zdb),
                     $this->history
                 );
-                $notification->notifyPublication($event);
+                $notification->notifyNewSessions($event, $createdSessions);
             }
 
             $this->flash->addMessage('success_detected', _T('Event has been saved.', 'courses'));
@@ -379,7 +389,7 @@ class EventsController extends AbstractPluginController
     /**
      * @param array<string, mixed> $post
      */
-    private function createSessionForEvent(Event $event, array $post): void
+    private function createSessionForEvent(Event $event, array $post): ?Session
     {
         $session = new Session($this->zdb);
         $session->setEventId($event->getId());
@@ -387,7 +397,10 @@ class EventsController extends AbstractPluginController
         $session->setStartTime($post['slots'][0]['start_time'] ?? '09:00');
         $session->setEndTime($post['slots'][0]['end_time'] ?? '10:00');
         $session->setMaxCapacity($event->getMaxCapacity());
-        $session->store();
+        if (!$session->store()) {
+            return null;
+        }
+        return $session;
     }
 
     public function doSubmit(Request $request, Response $response, int $id): Response
@@ -446,9 +459,14 @@ class EventsController extends AbstractPluginController
                 _T('[Courses] Event validated', 'courses'),
                 sprintf('event #%d — %s', $event->getId(), $event->getName())
             );
+            // Per user requirement: aucun courriel a la validation/publication
+            // de l'evenement. Les courriels aux responsables de groupe sont
+            // envoyes uniquement quand des seances sont creees (auto a la
+            // creation de l'evenement, ou via doGenerateSessions / cron).
+            // notifyValidation reste : elle notifie l'auteur de l'evenement
+            // (le createur, pas les moniteurs/membres).
             $notification = new CourseNotification($this->zdb, $this->preferences, new PluginPreferences($this->zdb), new MemberPreferences($this->zdb), $this->history);
             $notification->notifyValidation($event);
-            $notification->notifyPublication($event);
             $this->flash->addMessage('success_detected', _T('Event has been validated.', 'courses'));
         } else {
             $this->flash->addMessage('error_detected', _T('An error occurred validating the event.', 'courses'));

@@ -631,6 +631,25 @@ Le developpement est organise en phases progressives.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
 
+### Phase 33 - Suppression des courriels de publication a la creation/validation d'evenement
+
+**Statut : TERMINEE**
+
+- Demande utilisateur : aucun courriel ne doit etre envoye aux moniteurs (responsables de groupe) ni aux membres lors de la creation ou de la validation d'un evenement. Les courriels d'invitation aux moniteurs ne doivent partir que lors de la **creation des seances** (recurrentes ou ponctuelles).
+
+- Modifications dans `EventsController` :
+  - `doStore` : retrait de l'appel `notifyPublication($event)` qui partait quand un staff creait directement un evenement au statut VALIDATED. Remplace par `notifyNewSessions($event, $createdSessions)` declenche **uniquement si des seances ont effectivement ete creees** (auto-creees pour evenement ponctuel via `createSessionForEvent`, ou generees pour evenement recurrent via `RecurrenceHandler::generateSessions`). La condition `event->getStatus() === Event::STATUS_VALIDATED` est conservee : un evenement encore en draft / submitted ne notifie pas.
+  - `doValidate` : retrait de l'appel `notifyPublication($event)`. `notifyValidation($event)` est conservee : elle notifie uniquement le createur de l'evenement (REF_VALIDATION), pas les moniteurs ni les membres.
+  - `createSessionForEvent` : signature passee de `void` a `?Session` afin que `doStore` puisse recuperer la seance creee pour la passer a `notifyNewSessions`.
+
+- Pas de modification dans `SessionsController::doReactivate` : le flux de reactivation d'une seance annulee n'est pas une "creation d'evenement", il reste tel quel (`notifyInstructorAssigned` si moniteur deja affecte, sinon `notifyPublication` aux responsables de groupe pour qu'ils se portent volontaires).
+
+- Pas de modification dans `EventsController::doGenerateSessions` ni dans `CronController` : ces deux flux appellent deja `notifyNewSessions`, qui correspond exactement a la regle souhaitee.
+
+- Templates de courriels : aucun template ni `MailTemplate::REF_*` supprime — `REF_PUBLICATION_MANAGER` reste utilise par `SessionsController::doReactivate`.
+
+- Doc utilisateur (`doc/mode-emploi.md`) : phrasing de la Phase 16 mis a jour pour refleter la nouvelle regle.
+
 ### Phase 32 - Acces "Mes seances comme moniteur" : responsables de groupe + moniteurs affectes
 
 **Statut : TERMINEE**
