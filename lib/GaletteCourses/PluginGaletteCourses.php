@@ -60,8 +60,8 @@ class PluginGaletteCourses extends GalettePlugin
         // les affectations via "Gestion des inscriptions"), sauf s'ils
         // sont eux-memes affectes a une seance comme moniteur.
         $memberId = (int)$login->id;
-        $canSeeInstructorPage =
-            $login->isGroupManager()
+        $canSeeInstructorPage
+            = $login->isGroupManager()
             || ($memberId > 0 && SessionInstructor::countSessionsForMember($zdb, $memberId) > 0);
         if ($canSeeInstructorPage) {
             $memberItems[] = [
@@ -179,8 +179,8 @@ class PluginGaletteCourses extends GalettePlugin
         // Les admin et staff ne voient pas la tuile par defaut.
         if ($login !== null && $login->isLogged()) {
             $memberId = (int)$login->id;
-            $canSeeInstructorPage =
-                $login->isGroupManager()
+            $canSeeInstructorPage
+                = $login->isGroupManager()
                 || ($memberId > 0 && SessionInstructor::countSessionsForMember($zdb, $memberId) > 0);
             if ($canSeeInstructorPage) {
                 $tiles[] = [
