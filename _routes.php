@@ -312,6 +312,14 @@ $app->get(
     [GaletteCourses\Controllers\CronController::class, 'generateSessions']
 )->setName('coursesCronGenerateSessions');
 
+// Cron: send daily digest of pending session-invitations to group managers
+// (also runs at the end of generate-sessions; this endpoint exists for setups
+// that schedule the digest separately).
+$app->get(
+    '/cron/send-digest',
+    [GaletteCourses\Controllers\CronController::class, 'sendDigest']
+)->setName('coursesCronSendDigest');
+
 // Email templates (admin)
 $app->get(
     '/admin/mail-templates',

@@ -654,16 +654,17 @@ Le staff et les administrateurs peuvent :
 
 Le plugin envoie des notifications automatiques :
 
-| Evenement | Destinataires | Contenu |
-|-----------|--------------|---------|
-| Soumission pour validation | Administrateurs | Nom de l'evenement + createur |
-| Validation | Createur | Confirmation que l'evenement est publie |
-| Rejet | Createur | Information que l'evenement est rejete et remis en brouillon |
-| Publication (moniteurs) | Responsables de groupe concernes | Nouvel evenement publie (nom, descriptif, lieu), invitation a se porter volontaire comme moniteur |
-| Nouvelles seances generees (moniteurs) | Responsables de groupe concernes | Liste des nouvelles seances (nom, descriptif), invitation a se porter volontaire comme moniteur |
-| Seance ouverte (premier moniteur affecte) | Adherents eligibles | La seance est desormais ouverte (nom, descriptif, date/heure, moniteur), invitation a s'inscrire |
-| Promotion liste d'attente | Membre promu | Confirmation d'inscription automatique avec nom, descriptif, date/heure |
-| Annulation de seance | Inscrits a la seance | Information d'annulation avec nom, descriptif, date/heure |
+| Evenement | Destinataires | Quand | Contenu |
+|-----------|--------------|-------|---------|
+| Soumission pour validation | Administrateurs | Immediat | Nom de l'evenement + createur |
+| Validation | Createur | Immediat | Confirmation que l'evenement est publie |
+| Rejet | Createur | Immediat | Information que l'evenement est rejete et remis en brouillon |
+| **Digest quotidien** (moniteurs) | Responsables de groupe concernes | **1 fois par jour** par le cron | Liste consolidee de toutes les seances en attente d'un moniteur (regroupees par evenement) — invitation a se porter volontaire |
+| Seance ouverte (premier moniteur affecte) | Adherents eligibles | Immediat | La seance est desormais ouverte (nom, descriptif, date/heure, moniteur), invitation a s'inscrire |
+| Promotion liste d'attente | Membre promu | Immediat | Confirmation d'inscription automatique avec nom, descriptif, date/heure |
+| Annulation de seance | Inscrits a la seance | Immediat | Information d'annulation avec nom, descriptif, date/heure |
+
+**Digest quotidien moniteur (Phase 36)** : pour limiter le nombre de courriels recus par les responsables de groupe (notamment ceux en charge de plusieurs groupes), les invitations a se porter volontaire comme moniteur sont **regroupees** dans un seul mail quotidien envoye par le cron. Concretement : chaque fois qu'une seance est creee (creation d'evenement, generation recurrente, reactivation d'une seance annulee), une ligne est empilee dans la queue interne ; le cron quotidien sweep cette queue et envoie un seul mail recap par moniteur listant toutes les seances disponibles ce jour-la, regroupees par evenement. Si une seance recoit un moniteur ou est annulee entre l'enqueue et l'envoi, elle disparait silencieusement du digest.
 
 Chaque email individuel contient un **lien de desinscription personnalise** en pied de message.
 
@@ -827,7 +828,8 @@ Toutes les routes sont prefixees par `/plugins/courses/`.
 | POST | `/admin/mail-templates` | Sauvegarder les modeles |
 | GET | `/my-preferences` | Preferences notifications adherent |
 | POST | `/my-preferences` | Sauvegarder preferences adherent |
-| GET | `/cron/generate-sessions` | Generation automatique des seances (token, sans auth) |
+| GET | `/cron/generate-sessions` | Generation automatique des seances + sweep digest moniteur (token, sans auth) |
+| GET | `/cron/send-digest` | Sweep autonome de la queue digest moniteur (token, sans auth) |
 | GET | `/unsubscribe/{token}` | Desinscription emails en un clic (public, sans auth) |
 
 ---
@@ -880,6 +882,7 @@ Toutes les phases de developpement sont terminees :
 - **Phase 33** : Aucun courriel n'est envoye aux moniteurs ou aux membres a la creation ni a la validation d'un evenement. Les courriels d'invitation aux moniteurs (responsables de groupe) ne partent qu'a la **creation des seances** : auto-creees a la creation d'un evenement (ponctuel ou recurrent), ou via "Generer les seances" / cron. La notification au createur de l'evenement (validation par le staff) est conservee.
 - **Phase 34** : Nettoyage du modele de courriel `REF_PUBLICATION_MANAGER` (devenu inutile apres Phase 33). La reactivation d'une seance annulee sans moniteur reutilise desormais le modele `REF_NEW_SESSIONS_MANAGER` (semantiquement equivalent : invitation aux responsables a se porter volontaire). Le plugin maintient maintenant 8 modeles de courriels (au lieu de 9). Aucun changement visible cote utilisateur final, juste un nettoyage de l'interface admin "Modeles de courriels".
 - **Phase 35** : Validation d'un evenement -> invitation aux responsables de groupe pour les seances futures sans moniteur. Comble la lacune du workflow "responsable cree en brouillon -> soumet -> staff valide" : a la validation, le staff peut compter sur le fait que les responsables eligibles seront automatiquement invites a se porter volontaire pour les seances qui n'ont pas encore d'encadrant.
+- **Phase 36** : Digest quotidien des invitations moniteur — pour limiter le nombre de courriels recus par les responsables de groupe (notamment ceux en charge de plusieurs groupes), les invitations a se porter volontaire comme moniteur sont desormais regroupees dans un seul mail quotidien envoye par le cron, listant toutes les seances disponibles ce jour-la (regroupees par evenement). Au lieu de N mails (un par evenement / par seance generee), chaque responsable recoit au maximum un mail recapitulatif. Latence acceptee : jusqu'a 24h entre la creation d'une seance et la reception du mail. Les autres notifications (annulation, promotion liste d'attente, seance ouverte) restent immediates.
 - **Phase 17** : Correction du controle d'acces a l'auto-inscription par groupe — tous les membres (admin, staff, reguliers) doivent appartenir au groupe requis pour s'inscrire en propre nom (seul le superadmin est exclu) ; suppression du bypass `isAdmin/isStaff` ; verification SQL directe sur `groups_members` ; un parent voit le bouton enfant sans le bouton vert auto-inscription
 - **Phase 18** : Refonte UX page "Mes inscriptions" — masquage automatique des seances deja inscrites dans l'onglet browse (already + no_action_left) ; boutons uniformes parent/enfant sur toutes les cards (Details + iCal mini + Desinscrire) ; nom du moniteur sur toutes les sections ; section rouge distincte pour les seances futures annulees ; onglets mobiles 50/50 icone+texte ; bouton iCal global avec libelle "iCal" ; alignement boutons staff sur mobile dans la page de detail seance ; optimisation CSS responsive (fusion blocs @media, suppression doublons)
 - **Phase 19** : Durcissement securite (revue ACL et timing) — ACL `staff/responsable de groupe` ajoutee sur l'inscription par procuration, l'export CSV des inscrits et le mailing seance ; verification `Event::canAccess($login)` sur les pages de detail evenement et seance (blocage des acces directs par ID a des drafts ou des seances de groupes restreints) ; comparaison constant-time (`hash_equals`) et validation de format (regex hex 48 caracteres) sur le token de desinscription email ; extraction des gardes ACL dans un trait reutilisable `CoursesAclGuard`

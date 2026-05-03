@@ -631,6 +631,57 @@ Le developpement est organise en phases progressives.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
 
+### Phase 36 - Digest quotidien des invitations moniteur (1 mail/jour max par responsable)
+
+**Statut : TERMINEE**
+
+- Demande utilisateur : limiter le nombre de courriels recus par les moniteurs (responsables de groupe), notamment ceux en charge de plusieurs groupes qui, lors d'une generation de seances recurrentes (ex. samedi), pouvaient recevoir plusieurs mails consecutifs (un par evenement). Objectif : un seul mail par jour par moniteur regroupant toutes les seances disponibles.
+
+- Solution retenue : queue + cron quotidien.
+  - Les invitations ne partent plus immediatement -> elles sont empilees dans une nouvelle table.
+  - Le cron quotidien (deja en place pour la generation de seances recurrentes) sweep la queue et envoie un seul mail recap par destinataire.
+  - Tradeoff accepte : latence jusqu'a 24h entre l'enqueue et l'envoi. Acceptable pour un evenement / une seance creee a J+plusieurs jours/semaines, ce qui est le cas dominant.
+
+- Nouveau schema : table `galette_courses_pending_notifications` (script `scripts/upgrade-digest.sql` pour les installations existantes, ajout dans `scripts/mysql.sql` pour les fresh installs) :
+  - Colonnes : `id_pending`, `member_id`, `event_id`, `session_id`, `ref` (varchar 30), `created_at`.
+  - Cle unique `(member_id, session_id, ref)` : empeche les doublons si le meme appel `notifyNewSessions` est rejoue.
+  - FK CASCADE sur `member_id`, `event_id`, `session_id` : si une seance/un evenement/un membre est supprime, ses lignes en attente disparaissent automatiquement (pas d'invitation orpheline).
+
+- Modification `CourseNotification::notifyNewSessions(Event $event, array $sessions): void` :
+  - Ne fait plus aucun envoi direct. Pour chaque (responsable de groupe x seance), insere une ligne dans la queue avec `ref = REF_NEW_SESSIONS_MANAGER`.
+  - Verification prealable via `isPendingEnqueued()` (SELECT) avant l'INSERT pour eviter une exception sur la cle unique en cas de re-enqueue.
+  - Trace `Analog::INFO` : "Daily digest: N notification(s) enqueued for event #X (Y session(s) x Z manager(s))".
+  - Aucun changement d'API : les controlleurs (`EventsController::doStore`, `doValidate`, `SessionsController::doReactivate`, `CronController::generateSessions`) appellent toujours la meme methode.
+
+- Nouvelle methode `CourseNotification::sendDailyDigest(): array` :
+  - Verifie le toggle global `PluginPreferences::isNotificationsEnabled()`. Si OFF -> sortie immediate sans toucher la queue.
+  - Snapshote `MAX(id_pending)` pour ne traiter que les rangees existant au moment du sweep -> les enqueues concurrents seront pour le run suivant.
+  - Charge les rangees joinees (`pending_notifications` x `sessions` x `events` x `adherents` x `session_instructors` x `member_preferences`) avec filtres : `s.status = OPEN`, `s.session_date >= today`, `si.id_instructor IS NULL` (la seance est encore sans moniteur), opt-out (`mp.member_id IS NULL OR mp.notifications_enabled = 1`), email valide, `a.activite_adh = 1`. Ces filtres sont des **filets de securite** : si une seance recoit un moniteur ou est annulee entre l'enqueue et le sweep, sa ligne est silencieusement ignoree (et purgee en fin de run).
+  - Tri `pn.member_id ASC, pn.event_id ASC, s.session_date ASC, s.start_time ASC` pour faciliter le regroupement en PHP.
+  - Regroupe en memoire `[member_id][event_id][sessions[]]`.
+  - Pour chaque membre, construit `{events_block}` au format texte (un bullet par evenement, avec date + horaire en sous-bullet).
+  - Rend le template `REF_DAILY_DIGEST_MANAGER` et envoie via `sendMail()` (qui ajoute le footer unsubscribe individuel).
+  - Purge `DELETE WHERE id_pending <= snapshot` (y compris les rangees filtrees, plus relevantes).
+  - Retourne `['recipients' => N, 'sessions' => N, 'errors' => N]` pour reporting.
+
+- Nouvel endpoint cron : `GET /cron/send-digest?token=XXX` (route `coursesCronSendDigest`, handler `CronController::sendDigest`). Sweep autonome de la queue, utile pour les setups qui veulent un cron dedie au digest.
+
+- Integration dans `CronController::generateSessions` : apres la boucle de generation, appel automatique de `$notification->sendDailyDigest()`. Avantage : un seul cron quotidien (`/cron/generate-sessions`) suffit a la fois a generer les seances recurrentes ET a envoyer les digests. Pas besoin de configurer deux entrees crontab.
+
+- Nouveau template `MailTemplate::REF_DAILY_DIGEST_MANAGER` :
+  - Sujet : "[Courses] Sessions awaiting an instructor".
+  - Corps avec un seul placeholder `{events_block}` (la liste pre-formatee).
+  - Pas de `{event_name}` ni de `{event_description}` : un digest concerne plusieurs evenements, ces variables n'ont pas de sens isolement.
+  - Editable via l'interface admin Modeles de courriels comme tous les autres templates.
+
+- Compteur de refs `MailTemplate::getAvailableRefs()` repasse a 9 (etait a 8 depuis Phase 34) : ajout de REF_DAILY_DIGEST_MANAGER. Le test `MailTemplateTest::testGetAvailableRefsReturnsAllNineCanonicalRefs` (qui assertait deja `assertCount(9)` mais aurait du etre rebaptise apres Phase 34) refonctionne avec la valeur attendue. Nouveau test `testDailyDigestExposesEventsBlockAndUsesItInBody` : verifie que `{events_block}` est bien declare comme variable disponible et present dans le corps par defaut.
+
+- Comportement non modifie pour les autres notifications :
+  - `notifyInstructorAssigned` (membres notifies a la 1ere affectation moniteur) : envoi immediat, c'est rare et important.
+  - `notifyWaitlistPromotion`, `notifySessionCancellation`, `notifyWaitlistSessionCancellation`, `notifySubmission`, `notifyValidation`, `notifyRejection` : envoi immediat. Ces flux ne genereront jamais le volume problematique decrit par l'utilisateur.
+
+- Le template `REF_NEW_SESSIONS_MANAGER` reste editable et present dans l'interface admin, mais en operation normale il n'est plus envoye directement. Il pourrait etre ressuscite en envoi immediat par un futur fork qui voudrait court-circuiter la queue.
+
 ### Phase 35 - Validation d'evenement : invitation aux moniteurs sur les seances en attente
 
 **Statut : TERMINEE**

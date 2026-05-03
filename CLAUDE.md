@@ -60,8 +60,9 @@ galette-plugin-courses/
   _config.inc.php                  # Constante COURSES_PREFIX
   _define.php                      # Enregistrement plugin + ACLs
   _routes.php                      # Routes Slim (50 routes)
-  scripts/mysql.sql                # Schema BDD (11 tables)
+  scripts/mysql.sql                # Schema BDD (12 tables)
   scripts/upgrade-unsubscribe.sql  # Migration: ajout unsubscribe_token
+  scripts/upgrade-digest.sql       # Migration: queue pending_notifications (digest quotidien)
   doc/
     mode-emploi.md                 # Mode d'emploi utilisateur
     cahier-des-charges.md          # Cahier des charges complet
@@ -76,13 +77,13 @@ galette-plugin-courses/
       Registration.php             # Inscription (store, cancel, re-inscription, promotion waitlist)
       Waitlist.php                 # Liste d'attente (position, promotion, FIFO)
       SessionInstructor.php        # Instructeur affecte a une session
-      MailTemplate.php             # Template email personnalisable (9 refs : workflow, publication moniteurs, nouvelles seances moniteurs, seance ouverte, annulation inscrits/attente, promotion waitlist)
+      MailTemplate.php             # Template email personnalisable (9 refs : workflow, nouvelles seances moniteurs, digest quotidien moniteurs, seance ouverte, annulation inscrits/attente, promotion waitlist)
     Repository/
       Events.php                   # Liste evenements (filtrage par role)
       Sessions.php                 # Liste sessions (join events)
       Registrations.php            # Liste inscriptions
     Notification/
-      CourseNotification.php       # Notifications email (workflow, publication, annulation, nouvelles sessions, promotion waitlist, lien desinscription personnalise, notification distincte aux responsables de groupe)
+      CourseNotification.php       # Notifications email (workflow, annulation, promotion waitlist, lien desinscription personnalise, queue digest quotidien pour les invitations moniteur)
     Recurrence/
       RecurrenceHandler.php        # Generation automatique de sessions recurrentes
     Filters/
@@ -99,7 +100,7 @@ galette-plugin-courses/
       MailTemplatesController.php  # Gestion des templates email (CRUD)
       PreferencesController.php    # Preferences globales du plugin (admin)
       MemberPreferencesController.php  # Preferences membre (notifications, iCal)
-      CronController.php           # Endpoint cron (generation sessions recurrentes, relances)
+      CronController.php           # Endpoints cron : generateSessions (sessions recurrentes + sweep digest) + sendDigest (sweep seul)
       UnsubscribeController.php    # Desinscription en un clic (public, sans auth, via token)
   templates/default/
     headers.html.twig              # CSS/assets injectes dans <head>
@@ -126,7 +127,7 @@ galette-plugin-courses/
 
 - Serveur : MySQL, user `galette`, password `galette`, database `galette`
 - PREFIX_DB : `galette_`
-- 11 tables : types, events, events_groups, slots, sessions, session_instructors, registrations, waitlist, preferences, mail_templates, member_preferences
+- 12 tables : types, events, events_groups, slots, sessions, session_instructors, registrations, waitlist, preferences, mail_templates, member_preferences, pending_notifications
 - `creator_id` est nullable (le superadmin n'a pas d'enregistrement adherent)
 - Les FK CASCADE sont sur les suppressions d'events et sessions
 
@@ -141,8 +142,9 @@ galette-plugin-courses/
 - Systeme opt-out notifications : membres sans ligne en base = notifications activees par defaut. Utiliser LEFT JOIN + `(mp.member_id IS NULL OR mp.notifications_enabled = 1)`, jamais INNER JOIN sur `notifications_enabled = 1`
 - `creator_id` est nullable : le superadmin creant un evenement doit stocker `null` (pas `0`) pour ne pas violer la FK vers adherents
 - Desinscription emails (unsubscribe) : systeme opt-out par token. `MemberPreferences::getOrCreateToken()` genere/retourne le token. Chaque courriel inclut un lien personnalise `/plugins/courses/unsubscribe/{token}` (route publique sans auth). `CourseNotification::sendMail()` envoie un email individuel par destinataire pour personnaliser le lien.
-- Notifications aux responsables de groupe : `CourseNotification::getGroupManagerEmails(Event $event)` retourne les emails des responsables (groupes concernes si evenement restreint, tous sinon), avec opt-out. Lors de la generation de seances (creation auto a la creation d'un evenement, ou via "Generer les seances" / cron, ou reactivation d'une seance annulee sans moniteur), seuls les responsables sont notifies (REF_NEW_SESSIONS_MANAGER) pour se porter volontaires comme moniteur. Les membres eligibles sont notifies uniquement lors de l'affectation du premier moniteur (REF_INSTRUCTOR_ASSIGNED). Aucune notification a la creation/validation seule d'un evenement.
-- `MailTemplate` : 8 refs disponibles — REF_SUBMISSION, REF_VALIDATION, REF_REJECTION, REF_NEW_SESSIONS_MANAGER, REF_INSTRUCTOR_ASSIGNED, REF_WAITLIST_PROMOTION, REF_CANCELLATION, REF_WAITLIST_CANCELLATION. REF_PUBLICATION_MANAGER supprime (Phase 34) — la reactivation d'une seance utilise REF_NEW_SESSIONS_MANAGER comme la creation.
+- Notifications aux responsables de groupe : `CourseNotification::getGroupManagerEmails(Event $event)` retourne les emails des responsables (groupes concernes si evenement restreint, tous sinon), avec opt-out. Lors de la generation de seances (creation auto a la creation d'un evenement, ou via "Generer les seances" / cron, ou reactivation d'une seance annulee sans moniteur), les invitations moniteur (REF_NEW_SESSIONS_MANAGER) sont **empilees dans la queue `pending_notifications`** (Phase 36) au lieu d'etre envoyees immediatement. Le cron quotidien (`/cron/generate-sessions` ou `/cron/send-digest`) regroupe les invitations en attente et envoie un seul mail recap (REF_DAILY_DIGEST_MANAGER) par responsable. Les membres eligibles sont toujours notifies immediatement lors de l'affectation du premier moniteur (REF_INSTRUCTOR_ASSIGNED). Aucune notification a la creation/validation seule d'un evenement.
+- Digest quotidien (Phase 36) : `CourseNotification::notifyNewSessions()` n'envoie plus de mail immediat — il fait un INSERT dans `galette_courses_pending_notifications` (cle unique `(member_id, session_id, ref)` pour eviter les doublons). `sendDailyDigest()` snapshote `MAX(id_pending)`, charge les rangees encore actionnables (status=OPEN, date >= today, pas de moniteur, member opt-in), regroupe par membre puis par evenement, envoie un mail unique (REF_DAILY_DIGEST_MANAGER avec placeholder `{events_block}`), puis purge `id_pending <= snapshot`. Filtres a la lecture = filets de securite : si une seance recoit un moniteur ou est annulee entre l'enqueue et le sweep, elle est silencieusement purgee sans email.
+- `MailTemplate` : 9 refs disponibles — REF_SUBMISSION, REF_VALIDATION, REF_REJECTION, REF_NEW_SESSIONS_MANAGER, REF_DAILY_DIGEST_MANAGER, REF_INSTRUCTOR_ASSIGNED, REF_WAITLIST_PROMOTION, REF_CANCELLATION, REF_WAITLIST_CANCELLATION. REF_PUBLICATION_MANAGER supprime (Phase 34) — la reactivation d'une seance utilise REF_NEW_SESSIONS_MANAGER comme la creation. REF_NEW_SESSIONS_MANAGER reste un template editable mais en operation normale (Phase 36) il n'est plus envoye directement : ses contenus sont consolides dans REF_DAILY_DIGEST_MANAGER au passage du cron.
 - ACL : `coursesDoSessionClose` et `coursesDoSessionReopen` requierent le niveau `staff`. `coursesPreferences` / `coursesDoPreferences` : `staff`. `coursesMailTemplates` / `coursesDoMailTemplates` / `coursesDoMailTemplateReset` : `admin`.
 - 7 types d'evenements : Cours, Entrainement, Competition, Decouverte, Formation, Stage, Autre.
 - Menu restructure en deux groupes : Evenements/Seances (membres/responsables) et Administration (staff/admin).
@@ -171,3 +173,4 @@ galette-plugin-courses/
 - Phase 33 : TERMINEE - Aucun courriel a la creation ni a la validation d'evenement (responsables de groupe et membres) : suppression des appels `notifyPublication` dans `EventsController::doStore` et `doValidate` ; remplacement dans `doStore` par `notifyNewSessions($event, $createdSessions)` declenche **uniquement si des seances ont ete reellement creees** (auto-creation pour evenement ponctuel, ou generation pour recurrent) et que `event->getStatus() === STATUS_VALIDATED` ; `createSessionForEvent` retourne maintenant `?Session` (au lieu de void) pour collecter la seance creee ; `notifyValidation` reste (notifie uniquement le createur de l'evenement, pas les moniteurs/membres)
 - Phase 34 : TERMINEE - Suppression complete de `REF_PUBLICATION_MANAGER` et `notifyPublication()` (devenus inutiles apres Phase 33) : `SessionsController::doReactivate` (seul reste utilisant `notifyPublication`) appelle maintenant `notifyNewSessions($event, [$session])` quand la seance reactivee n'a pas de moniteur — semantiquement equivalent (les responsables sont invites a se porter volontaire) ; methode `CourseNotification::notifyPublication()` supprimee ; constante `MailTemplate::REF_PUBLICATION_MANAGER` et ses 6 references (getAvailableRefs, getAvailableVars, getRefLabel, getRefDescription, getDefaultSubject, getDefaultBody) retirees ; description de `REF_NEW_SESSIONS_MANAGER` etendue pour mentionner aussi le cas de reactivation ; test `MailTemplateTest::refsThatMustExposeEventDescription` mis a jour ; chaines i18n du `.po` retirees (le `.mo` sera recompile par Poedit)
 - Phase 35 : TERMINEE - Validation d'un evenement -> invitation aux responsables de groupe sur les seances futures sans moniteur : `EventsController::doValidate` enrichi pour appeler `notifyNewSessions($event, $sessions)` apres la validation reussie, ou `$sessions` est le resultat de la nouvelle methode privee `loadOpenFutureSessionsWithoutInstructor(Event $event)` (selectionne `status=OPEN` + `session_date >= today` + filtre PHP via `SessionInstructor::hasInstructor()`) ; comble la lacune du workflow standard "responsable cree en brouillon -> soumet -> staff valide" ou les seances avaient ete creees au stade brouillon sans declencher de notification (regle Phase 33) ; pas de double notification car `doStore` ne notifie que si statut=VALIDATED a la creation et `doValidate` ne notifie qu'au passage submitted->validated
+- Phase 36 : TERMINEE - Digest quotidien des invitations moniteur (1 seul mail par jour par responsable, peu importe combien d'evenements/seances ont ete crees) : nouvelle table `galette_courses_pending_notifications` (`member_id`, `event_id`, `session_id`, `ref`, `created_at` — cle unique `(member_id, session_id, ref)`) ; `CourseNotification::notifyNewSessions()` ne fait plus d'envoi direct, il fait un INSERT dans la queue ; nouvelle methode `CourseNotification::sendDailyDigest()` qui snapshote `MAX(id_pending)`, charge les rangees encore actionnables (JOIN sessions/events/adherents/session_instructors/member_preferences avec filtres `status=OPEN`, `session_date >= today`, `si.id_instructor IS NULL`, opt-out, email valide, adherent actif), regroupe par membre puis par evenement, envoie un mail consolide (nouveau template REF_DAILY_DIGEST_MANAGER avec placeholder unique `{events_block}`) puis purge `id_pending <= snapshot` ; nouvel endpoint cron `/cron/send-digest?token=XXX` (route `coursesCronSendDigest`, handler `CronController::sendDigest`) ; le digest est aussi appele automatiquement a la fin de `/cron/generate-sessions` pour qu'un seul cron quotidien suffise ; tradeoff = latence (un volontariat envoye a 10h ne partira que le lendemain matin) accepte pour l'objectif "1 mail/jour max" ; les autres notifications (annulation, promotion waitlist, instructor_assigned) restent immediates car elles sont rares et urgentes ; nouveau script `scripts/upgrade-digest.sql` pour les installations existantes ; tests unitaires `MailTemplateTest::testDailyDigestExposesEventsBlockAndUsesItInBody` + count passe a 9 refs

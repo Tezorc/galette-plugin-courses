@@ -1,5 +1,6 @@
 -- Schema for Galette Courses plugin
 
+DROP TABLE IF EXISTS galette_courses_pending_notifications;
 DROP TABLE IF EXISTS galette_courses_mail_templates;
 DROP TABLE IF EXISTS galette_courses_member_preferences;
 DROP TABLE IF EXISTS galette_courses_preferences;
@@ -163,4 +164,21 @@ CREATE TABLE galette_courses_member_preferences (
     UNIQUE KEY uk_courses_mp_member (member_id),
     UNIQUE KEY uk_courses_mp_token (unsubscribe_token),
     CONSTRAINT fk_courses_mp_member FOREIGN KEY (member_id) REFERENCES galette_adherents (id_adh) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Daily-digest queue: rows accumulated by notifyNewSessions during the day,
+-- swept and emailed once per day by the cron (one consolidated email per recipient).
+CREATE TABLE galette_courses_pending_notifications (
+    id_pending int(10) unsigned NOT NULL auto_increment,
+    member_id int(10) unsigned NOT NULL,
+    event_id int(10) unsigned NOT NULL,
+    session_id int(10) unsigned NOT NULL,
+    ref varchar(30) NOT NULL,
+    created_at datetime NOT NULL,
+    PRIMARY KEY (id_pending),
+    UNIQUE KEY uk_courses_pn_member_session_ref (member_id, session_id, ref),
+    KEY idx_courses_pn_member (member_id),
+    CONSTRAINT fk_courses_pn_member FOREIGN KEY (member_id) REFERENCES galette_adherents (id_adh) ON DELETE CASCADE,
+    CONSTRAINT fk_courses_pn_event FOREIGN KEY (event_id) REFERENCES galette_courses_events (id_event) ON DELETE CASCADE,
+    CONSTRAINT fk_courses_pn_session FOREIGN KEY (session_id) REFERENCES galette_courses_sessions (id_session) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

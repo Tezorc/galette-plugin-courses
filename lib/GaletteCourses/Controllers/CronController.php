@@ -85,7 +85,8 @@ class CronController extends AbstractController
             $this->zdb,
             $this->preferences,
             $pluginPrefs,
-            new MemberPreferences($this->zdb)
+            new MemberPreferences($this->zdb),
+            $this->history
         );
 
         $totalCreated = 0;
@@ -112,11 +113,77 @@ class CronController extends AbstractController
             }
         }
 
+        // After generating sessions, immediately sweep the pending-notifications
+        // queue. This way a single daily cron call covers both: new sessions
+        // get enqueued during the run, then the digest goes out in one pass.
+        $digest = $notification->sendDailyDigest();
+
         $body = '[' . date('Y-m-d H:i:s') . '] Auto-generation complete. '
             . $totalCreated . ' session(s) created.' . "\n"
-            . implode("\n", $report);
+            . implode("\n", $report) . "\n"
+            . sprintf(
+                'Digest: %d email(s) sent, %d session(s) listed, %d error(s).',
+                $digest['recipients'],
+                $digest['sessions'],
+                $digest['errors']
+            );
 
-        Analog::log('Cron generate-sessions: ' . $totalCreated . ' session(s) created.', Analog::INFO);
+        Analog::log(
+            'Cron generate-sessions: ' . $totalCreated . ' session(s) created; digest '
+            . $digest['recipients'] . ' email(s).',
+            Analog::INFO
+        );
+
+        $response->getBody()->write($body);
+        return $response->withHeader('Content-Type', 'text/plain');
+    }
+
+    /**
+     * Sweep the pending-notifications queue and send the daily digest
+     * (one consolidated email per group manager listing sessions still
+     * waiting for an instructor).
+     *
+     * Called via cron: GET /plugins/courses/cron/send-digest?token=XXX
+     *
+     * Also runs at the end of /cron/generate-sessions, so projects that
+     * already trigger that endpoint daily do not need to add a second cron.
+     */
+    public function sendDigest(Request $request, Response $response): Response
+    {
+        $pluginPrefs = new PluginPreferences($this->zdb);
+
+        $params        = $request->getQueryParams();
+        $providedToken = $params['token'] ?? '';
+        $expectedToken = $pluginPrefs->getCronToken();
+
+        if ($providedToken === '' || !hash_equals($expectedToken, $providedToken)) {
+            $response->getBody()->write('Unauthorized');
+            return $response->withStatus(403);
+        }
+
+        $notification = new CourseNotification(
+            $this->zdb,
+            $this->preferences,
+            $pluginPrefs,
+            new MemberPreferences($this->zdb),
+            $this->history
+        );
+
+        $digest = $notification->sendDailyDigest();
+
+        $body = sprintf(
+            "[%s] Digest sweep complete.\n%d email(s) sent, %d session(s) listed, %d error(s).\n",
+            date('Y-m-d H:i:s'),
+            $digest['recipients'],
+            $digest['sessions'],
+            $digest['errors']
+        );
+
+        Analog::log(
+            'Cron send-digest: ' . $digest['recipients'] . ' email(s) sent, '
+            . $digest['sessions'] . ' session(s) listed.',
+            Analog::INFO
+        );
 
         $response->getBody()->write($body);
         return $response->withHeader('Content-Type', 'text/plain');

@@ -42,6 +42,8 @@ use Throwable;
  */
 class CourseNotification
 {
+    private const PENDING_TABLE = 'courses_pending_notifications';
+
     public function __construct(
         private Db $zdb,
         private Preferences $preferences,
@@ -104,11 +106,18 @@ class CourseNotification
     }
 
     /**
-     * Notify eligible members and group managers when new sessions are generated.
-     * Members receive an invitation to register.
-     * Group managers (not already notified as members) receive an invitation to volunteer as instructor.
+     * Enqueue session-invitation notifications for the daily digest.
      *
-     * @param Session[] $sessions Newly created sessions
+     * Group managers are *not* emailed immediately: a row is appended to the
+     * pending_notifications queue for each (manager, session) pair, and the
+     * cron `sendDailyDigest()` later sweeps the queue and sends one consolidated
+     * email per recipient. This caps the inbox flood for multi-group managers
+     * who would otherwise receive one email per recurrence generation.
+     *
+     * Members are still notified individually when the first instructor is
+     * assigned (notifyInstructorAssigned), not by this method.
+     *
+     * @param Session[] $sessions Newly created (or reactivated) sessions
      */
     public function notifyNewSessions(Event $event, array $sessions): void
     {
@@ -116,24 +125,266 @@ class CourseNotification
             return;
         }
 
-        $dateList = '';
-        foreach ($sessions as $session) {
-            $dateList .= "\n- " . $session->getFormattedDateShort()
-                . ' (' . $session->getStartTime() . ' - ' . $session->getEndTime() . ')';
-        }
-
-        $vars = [
-            'event_name'        => $event->getName(),
-            'event_description' => $this->buildDescriptionBlock($event->getDescription()),
-            'dates_list'        => $dateList,
-        ];
-
-        // Notify group managers only: members will be notified when the first instructor is assigned
         $managerRecipients = $this->getGroupManagerEmails($event);
-        if (!empty($managerRecipients)) {
-            [$subject, $message] = $this->renderTemplate(MailTemplate::REF_NEW_SESSIONS_MANAGER, $vars);
-            $this->sendMail($managerRecipients, $subject, $message);
+        if (empty($managerRecipients)) {
+            return;
         }
+
+        $now      = date('Y-m-d H:i:s');
+        $eventId  = (int)$event->getId();
+        $enqueued = 0;
+
+        foreach ($managerRecipients as $info) {
+            $memberId = (int)$info['member_id'];
+            if ($memberId <= 0) {
+                continue;
+            }
+            foreach ($sessions as $session) {
+                $sessionId = (int)$session->getId();
+                if ($sessionId <= 0) {
+                    continue;
+                }
+                if ($this->isPendingEnqueued($memberId, $sessionId, MailTemplate::REF_NEW_SESSIONS_MANAGER)) {
+                    continue;
+                }
+                try {
+                    $insert = $this->zdb->insert(self::PENDING_TABLE);
+                    $insert->values([
+                        'member_id'  => $memberId,
+                        'event_id'   => $eventId,
+                        'session_id' => $sessionId,
+                        'ref'        => MailTemplate::REF_NEW_SESSIONS_MANAGER,
+                        'created_at' => $now,
+                    ]);
+                    $this->zdb->execute($insert);
+                    $enqueued++;
+                } catch (Throwable $e) {
+                    // Race / duplicate (concurrent enqueue) — ignore silently
+                    Analog::log(
+                        'enqueueNewSessions skipped (member=' . $memberId
+                        . ', session=' . $sessionId . '): ' . $e->getMessage(),
+                        Analog::DEBUG
+                    );
+                }
+            }
+        }
+
+        if ($enqueued > 0) {
+            Analog::log(
+                'Daily digest: ' . $enqueued . ' notification(s) enqueued for event #' . $eventId
+                . ' (' . count($sessions) . ' session(s) × ' . count($managerRecipients) . ' manager(s))',
+                Analog::INFO
+            );
+        }
+    }
+
+    /**
+     * Sweep the pending_notifications queue and send one consolidated email
+     * per recipient. Called daily by the cron.
+     *
+     * Filters out (and silently purges) rows that are no longer relevant:
+     *   - session no longer OPEN (cancelled, closed, reopened-with-instructor)
+     *   - session date is in the past
+     *   - session now has an instructor assigned
+     *   - member opted out / has no email / is inactive
+     *
+     * @return array{recipients:int, sessions:int, errors:int} report counts
+     */
+    public function sendDailyDigest(): array
+    {
+        $report = ['recipients' => 0, 'sessions' => 0, 'errors' => 0];
+
+        if ($this->pluginPreferences !== null && !$this->pluginPreferences->isNotificationsEnabled()) {
+            Analog::log('Daily digest skipped (notifications disabled)', Analog::DEBUG);
+            return $report;
+        }
+
+        // Snapshot: only process rows that exist NOW. Anything enqueued
+        // during processing is held back for the next run.
+        try {
+            $select = $this->zdb->select(self::PENDING_TABLE);
+            $select->columns(['max_id' => new \Laminas\Db\Sql\Expression('MAX(id_pending)')]);
+            $rs     = $this->zdb->execute($select);
+            $row    = $rs->current();
+            $maxId  = $row !== null ? (int)($row->max_id ?? 0) : 0;
+        } catch (Throwable $e) {
+            Analog::log('Daily digest snapshot error: ' . $e->getMessage(), Analog::ERROR);
+            return $report;
+        }
+
+        if ($maxId === 0) {
+            return $report;
+        }
+
+        $rows = $this->loadPendingDigestRows($maxId);
+
+        if (!empty($rows)) {
+            // Group by member, then event
+            $grouped = [];
+            foreach ($rows as $r) {
+                $mid = $r['member_id'];
+                $eid = $r['event_id'];
+                if (!isset($grouped[$mid])) {
+                    $grouped[$mid] = [
+                        'email'  => $r['email'],
+                        'name'   => $r['name'],
+                        'events' => [],
+                    ];
+                }
+                if (!isset($grouped[$mid]['events'][$eid])) {
+                    $grouped[$mid]['events'][$eid] = [
+                        'event_name' => $r['event_name'],
+                        'sessions'   => [],
+                    ];
+                }
+                $grouped[$mid]['events'][$eid]['sessions'][] = [
+                    'date'  => $r['date_short'],
+                    'start' => $r['start'],
+                    'end'   => $r['end'],
+                ];
+            }
+
+            foreach ($grouped as $mid => $data) {
+                $eventsBlock  = '';
+                $sessionCount = 0;
+                foreach ($data['events'] as $ev) {
+                    $eventsBlock .= '- ' . $ev['event_name'] . "\n";
+                    foreach ($ev['sessions'] as $sess) {
+                        $eventsBlock .= '   ' . $sess['date']
+                            . ' (' . $sess['start'] . ' - ' . $sess['end'] . ')' . "\n";
+                        $sessionCount++;
+                    }
+                    $eventsBlock .= "\n";
+                }
+
+                [$subject, $message] = $this->renderTemplate(MailTemplate::REF_DAILY_DIGEST_MANAGER, [
+                    'events_block' => rtrim($eventsBlock) . "\n",
+                ]);
+
+                $recipients = [
+                    $data['email'] => ['name' => $data['name'], 'member_id' => $mid],
+                ];
+                if ($this->sendMail($recipients, $subject, $message)) {
+                    $report['recipients']++;
+                    $report['sessions'] += $sessionCount;
+                } else {
+                    $report['errors']++;
+                }
+            }
+        }
+
+        // Purge processed rows (including filtered-out ones — they are no
+        // longer relevant either, no point in keeping them around).
+        try {
+            $delete = $this->zdb->delete(self::PENDING_TABLE);
+            $delete->where->lessThanOrEqualTo('id_pending', $maxId);
+            $this->zdb->execute($delete);
+        } catch (Throwable $e) {
+            Analog::log('Daily digest purge error: ' . $e->getMessage(), Analog::ERROR);
+        }
+
+        return $report;
+    }
+
+    /**
+     * Check if a (member, session, ref) tuple is already pending in the digest queue.
+     */
+    private function isPendingEnqueued(int $memberId, int $sessionId, string $ref): bool
+    {
+        try {
+            $select = $this->zdb->select(self::PENDING_TABLE);
+            $select->columns(['id_pending']);
+            $select->where([
+                'member_id'  => $memberId,
+                'session_id' => $sessionId,
+                'ref'        => $ref,
+            ]);
+            $rs = $this->zdb->execute($select);
+            return $rs->count() > 0;
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Load digest-eligible pending rows joined with session/event/member data,
+     * filtered to keep only rows still actionable today.
+     *
+     * @return list<array{
+     *   member_id:int, event_id:int, event_name:string,
+     *   date_short:string, start:string, end:string,
+     *   email:string, name:string
+     * }>
+     */
+    private function loadPendingDigestRows(int $maxId): array
+    {
+        $rows = [];
+        try {
+            $select = $this->zdb->select(['pn' => PREFIX_DB . self::PENDING_TABLE]);
+            $select->columns(['member_id', 'event_id']);
+            $select->join(
+                ['s' => PREFIX_DB . 'courses_sessions'],
+                'pn.session_id = s.id_session',
+                ['session_date', 'start_time', 'end_time']
+            );
+            $select->join(
+                ['e' => PREFIX_DB . 'courses_events'],
+                'pn.event_id = e.id_event',
+                ['event_name' => 'name']
+            );
+            $select->join(
+                ['a' => PREFIX_DB . 'adherents'],
+                'pn.member_id = a.id_adh',
+                ['email_adh', 'nom_adh', 'prenom_adh']
+            );
+            $select->join(
+                ['si' => PREFIX_DB . 'courses_session_instructors'],
+                'pn.session_id = si.session_id',
+                [],
+                \Laminas\Db\Sql\Select::JOIN_LEFT
+            );
+            $select->join(
+                ['mp' => PREFIX_DB . 'courses_member_preferences'],
+                'pn.member_id = mp.member_id',
+                [],
+                \Laminas\Db\Sql\Select::JOIN_LEFT
+            );
+
+            $select->where->lessThanOrEqualTo('pn.id_pending', $maxId);
+            $select->where->equalTo('s.status', Session::STATUS_OPEN);
+            $select->where->greaterThanOrEqualTo('s.session_date', date('Y-m-d'));
+            $select->where->isNull('si.id_instructor');
+            $select->where('(mp.member_id IS NULL OR mp.notifications_enabled = 1)');
+            $select->where->isNotNull('a.email_adh');
+            $select->where->notEqualTo('a.email_adh', '');
+            $select->where->equalTo('a.activite_adh', true);
+            $select->order(['pn.member_id ASC', 'pn.event_id ASC', 's.session_date ASC', 's.start_time ASC']);
+            $select->quantifier('DISTINCT');
+
+            $results = $this->zdb->execute($select);
+            foreach ($results as $r) {
+                $name = trim(($r->prenom_adh ?? '') . ' ' . ($r->nom_adh ?? ''));
+                try {
+                    $dt   = new \DateTime((string)$r->session_date);
+                    $date = $dt->format('d/m/Y');
+                } catch (Throwable $e) {
+                    $date = (string)$r->session_date;
+                }
+                $rows[] = [
+                    'member_id'  => (int)$r->member_id,
+                    'event_id'   => (int)$r->event_id,
+                    'event_name' => (string)$r->event_name,
+                    'date_short' => $date,
+                    'start'      => substr((string)$r->start_time, 0, 5),
+                    'end'        => substr((string)$r->end_time, 0, 5),
+                    'email'      => (string)$r->email_adh,
+                    'name'       => $name !== '' ? $name : (string)$r->email_adh,
+                ];
+            }
+        } catch (Throwable $e) {
+            Analog::log('Daily digest load error: ' . $e->getMessage(), Analog::ERROR);
+        }
+        return $rows;
     }
 
     /**

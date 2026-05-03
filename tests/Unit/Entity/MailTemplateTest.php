@@ -107,9 +107,26 @@ final class MailTemplateTest extends TestCase
         self::assertContains(MailTemplate::REF_INSTRUCTOR_ASSIGNED, $refs);
         self::assertContains(MailTemplate::REF_WAITLIST_PROMOTION, $refs);
         self::assertContains(MailTemplate::REF_CANCELLATION, $refs);
+        // Phase 36 addition: daily digest replaces the per-event new-sessions blast for managers.
+        self::assertContains(MailTemplate::REF_DAILY_DIGEST_MANAGER, $refs);
         // Phase 15 removal: the two refs below were dropped from the active list.
         self::assertNotContains('publication', $refs);
         self::assertNotContains('new_sessions', $refs);
+    }
+
+    /**
+     * Phase 36 contract: the daily digest body is the *only* place the
+     * `events_block` placeholder is consumed. If a future refactor renames
+     * the placeholder or removes it from the default body, the digest cron
+     * would silently send an empty list — fail loud here.
+     */
+    public function testDailyDigestExposesEventsBlockAndUsesItInBody(): void
+    {
+        $vars = MailTemplate::getAvailableVars(MailTemplate::REF_DAILY_DIGEST_MANAGER);
+        self::assertContains('events_block', $vars);
+
+        $body = MailTemplate::getDefaultBody(MailTemplate::REF_DAILY_DIGEST_MANAGER);
+        self::assertStringContainsString('{events_block}', $body);
     }
 
     /**
