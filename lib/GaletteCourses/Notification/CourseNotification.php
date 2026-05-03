@@ -320,7 +320,7 @@ class CourseNotification
     {
         $rows = [];
         try {
-            $select = $this->zdb->select(['pn' => PREFIX_DB . self::PENDING_TABLE]);
+            $select = $this->zdb->select(self::PENDING_TABLE, 'pn');
             $select->columns(['member_id', 'event_id']);
             $select->join(
                 ['s' => PREFIX_DB . 'courses_sessions'],
