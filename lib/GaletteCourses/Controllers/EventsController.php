@@ -403,6 +403,40 @@ class EventsController extends AbstractPluginController
         return $session;
     }
 
+    /**
+     * Returns the OPEN sessions (date >= today) of an event that do NOT yet
+     * have an instructor. Used at validation time to invite group managers
+     * to volunteer for sessions created at draft phase.
+     *
+     * @return Session[]
+     */
+    private function loadOpenFutureSessionsWithoutInstructor(Event $event): array
+    {
+        try {
+            $select = $this->zdb->select(Session::TABLE);
+            $select->where(['event_id' => $event->getId()]);
+            $select->where->equalTo('status', Session::STATUS_OPEN);
+            $select->where->greaterThanOrEqualTo('session_date', date('Y-m-d'));
+            $select->order('session_date ASC');
+            $rs = $this->zdb->execute($select);
+
+            $sessions = [];
+            foreach ($rs as $row) {
+                $session = new Session($this->zdb, $row);
+                if (!SessionInstructor::hasInstructor($this->zdb, $session->getId())) {
+                    $sessions[] = $session;
+                }
+            }
+            return $sessions;
+        } catch (\Throwable $e) {
+            Analog::log(
+                'Error loading open future sessions for event #' . $event->getId() . ': ' . $e->getMessage(),
+                Analog::ERROR
+            );
+            return [];
+        }
+    }
+
     public function doSubmit(Request $request, Response $response, int $id): Response
     {
         $event = new Event($this->zdb, $id);
@@ -459,14 +493,22 @@ class EventsController extends AbstractPluginController
                 _T('[Courses] Event validated', 'courses'),
                 sprintf('event #%d — %s', $event->getId(), $event->getName())
             );
-            // Per user requirement: aucun courriel a la validation/publication
-            // de l'evenement. Les courriels aux responsables de groupe sont
-            // envoyes uniquement quand des seances sont creees (auto a la
-            // creation de l'evenement, ou via doGenerateSessions / cron).
-            // notifyValidation reste : elle notifie l'auteur de l'evenement
-            // (le createur, pas les moniteurs/membres).
             $notification = new CourseNotification($this->zdb, $this->preferences, new PluginPreferences($this->zdb), new MemberPreferences($this->zdb), $this->history);
+            // notifyValidation : informe le createur (pas les moniteurs/membres).
             $notification->notifyValidation($event);
+
+            // Lors de la validation, l'evenement etait probablement en
+            // brouillon avec deja une ou plusieurs seances futures creees
+            // (workflow standard : responsable cree -> soumet -> staff valide).
+            // Ces seances n'avaient pas encore declenche de notification
+            // car la regle exige status=VALIDATED. Maintenant que c'est le
+            // cas, on invite les responsables de groupe a se porter volontaire
+            // sur les seances qui n'ont pas encore de moniteur.
+            $sessionsWithoutInstructor = $this->loadOpenFutureSessionsWithoutInstructor($event);
+            if (!empty($sessionsWithoutInstructor)) {
+                $notification->notifyNewSessions($event, $sessionsWithoutInstructor);
+            }
+
             $this->flash->addMessage('success_detected', _T('Event has been validated.', 'courses'));
         } else {
             $this->flash->addMessage('error_detected', _T('An error occurred validating the event.', 'courses'));

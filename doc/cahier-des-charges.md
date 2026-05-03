@@ -631,6 +631,28 @@ Le developpement est organise en phases progressives.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
 
+### Phase 35 - Validation d'evenement : invitation aux moniteurs sur les seances en attente
+
+**Statut : TERMINEE**
+
+- Lacune identifiee apres la Phase 33 : dans le workflow standard "responsable cree en brouillon -> soumet -> staff valide", les seances avaient ete creees au stade brouillon (donc aucun courriel envoye, regle Phase 33). Une fois l'evenement valide, aucune notification ne partait aux responsables de groupe -> les seances futures sans moniteur restaient invisibles tant qu'un staff ne cliquait pas sur "Generer les seances" (qui de toute facon ne genere que pour les recurrents).
+
+- `EventsController::doValidate` enrichi : apres une validation reussie, charge les seances OPEN futures de l'evenement n'ayant pas encore de moniteur (`loadOpenFutureSessionsWithoutInstructor`) et appelle `notifyNewSessions($event, $sessions)` si la liste est non vide. Comportement utilisateur : a la validation, les responsables de groupe concernes recoivent l'invitation a se porter volontaire avec la liste des dates concernees (`{dates_list}` dans le template).
+
+- Nouvelle methode privee `loadOpenFutureSessionsWithoutInstructor(Event $event): array` :
+  - Selectionne les seances de l'evenement avec `status=OPEN` et `session_date >= today`.
+  - Filtre cote PHP via `SessionInstructor::hasInstructor()` pour ne garder que celles sans moniteur (evite de notifier pour des seances deja prises en charge).
+  - Try/catch + `Analog::log` en cas d'erreur SQL, retourne array vide.
+
+- Pas de double notification :
+  - `doStore` notifie uniquement si l'evenement est cree directement au statut VALIDATED avec des seances auto-creees (cas staff bypass).
+  - `doValidate` notifie uniquement quand l'evenement passe a VALIDATED via le workflow standard.
+  - Les deux chemins sont mutuellement exclusifs.
+
+- Filtre "sans moniteur" : evite de spammer les responsables sur des seances qui ont deja un moniteur (par exemple si le createur s'est auto-affecte au stade brouillon).
+
+- `notifyValidation` au createur reste : informe l'auteur que son evenement est valide.
+
 ### Phase 34 - Nettoyage : suppression complete de REF_PUBLICATION_MANAGER et notifyPublication
 
 **Statut : TERMINEE**
