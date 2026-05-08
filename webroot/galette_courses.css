@@ -90,8 +90,9 @@
 .courses-empty-state   { color: #aaa; }
 
 /* ----- DATE DISPLAY ----- */
-.courses-date-day   { font-size: 1.8em; font-weight: bold; line-height: 1; }
-.courses-date-month { font-size: .9em; text-transform: uppercase; color: #888; }
+.courses-date-day,
+.courses-date-month { font-size: 1.8em; font-weight: bold; line-height: 1; }
+.courses-date-month { text-transform: uppercase; }
 
 /* ----- TABLES ----- */
 tr.courses-pending { background-color: #fffde7 !important; }
@@ -277,7 +278,8 @@ tr.courses-pending { background-color: #fffde7 !important; }
     .courses-filter-toggle-btn { display: flex !important; align-items: center; justify-content: space-between; }
 
     /* --- Typographie --- */
-    .courses-date-day { font-size: 1.4em; }
+    .courses-date-day,
+    .courses-date-month { font-size: 1.4em; }
     .courses-legend { gap: .2em .6em; }
     .courses-results-header { flex-direction: column; align-items: flex-start; gap: .5em; }
 
@@ -502,7 +504,8 @@ tr.courses-pending { background-color: #fffde7 !important; }
    RESPONSIVE ≤ 480px — téléphone portrait
    ========================================================= */
 @media only screen and (max-width: 480px) {
-    .courses-date-day { font-size: 1.2em; }
+    .courses-date-day,
+    .courses-date-month { font-size: 1.2em; }
     .courses-stat-num { font-size: 1.6rem; }
 
     /* Stats: 1 par ligne */
