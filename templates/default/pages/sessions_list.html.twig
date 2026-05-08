@@ -120,13 +120,13 @@
 
         {# --- Macro: render a session card --- #}
         {% macro session_card(session, event, eid, event_colors, sessions_has_instructor, sessions_instructor_names, is_past) %}
-            <div class="ui fluid {{ event_colors[eid] }} card courses-card{% if is_past %} courses-past{% endif %}{% if sessions_has_instructor[session.getId()] is defined and not sessions_has_instructor[session.getId()] %} courses-no-instructor{% endif %}">
+            <div class="ui fluid {{ event_colors[eid] }} card courses-card{% if is_past %} courses-past{% endif %}{% if sessions_has_instructor[session.getId()] is defined and not sessions_has_instructor[session.getId()] and not event.isRegistrationAllowedWithoutInstructor() %} courses-no-instructor{% endif %}">
                 <div class="content">
                     <div class="right floated meta">
                         {% if is_past %}
                             <span class="ui grey label">{{ _T("Past", "courses") }}</span>
                         {% elseif session.getStatus() == 'open' %}
-                            {% if sessions_has_instructor[session.getId()] is defined and not sessions_has_instructor[session.getId()] %}
+                            {% if sessions_has_instructor[session.getId()] is defined and not sessions_has_instructor[session.getId()] and not event.isRegistrationAllowedWithoutInstructor() %}
                                 <span class="ui orange label">
                                     <i class="clock icon" aria-hidden="true"></i>
                                     {{ _T("Awaiting instructor", "courses") }}

@@ -131,10 +131,17 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    <div class="ui orange message">
-                        <i class="exclamation triangle icon" aria-hidden="true"></i>
-                        {{ _T("No instructor assigned to this session. Registration is not yet possible.", "courses") }}
-                    </div>
+                    {% if event.isRegistrationAllowedWithoutInstructor() %}
+                        <div class="ui blue message">
+                            <i class="info circle icon" aria-hidden="true"></i>
+                            {{ _T("No instructor has volunteered yet — registration is open anyway. You will be notified when an instructor takes over.", "courses") }}
+                        </div>
+                    {% else %}
+                        <div class="ui orange message">
+                            <i class="exclamation triangle icon" aria-hidden="true"></i>
+                            {{ _T("No instructor assigned to this session. Registration is not yet possible.", "courses") }}
+                        </div>
+                    {% endif %}
                 {% endif %}
 
                 {# Staff: assign instructor #}
@@ -173,7 +180,7 @@
             </div>
 
             {# Action buttons #}
-            {% if login.isLogged() and not login.isSuperAdmin() and has_instructor and (is_registered or is_on_waitlist or session.isOpen()) %}
+            {% if login.isLogged() and not login.isSuperAdmin() and (has_instructor or event.isRegistrationAllowedWithoutInstructor()) and (is_registered or is_on_waitlist or session.isOpen()) %}
                 <div class="ui center aligned segment courses-actions">
                     {% if not login.isUp2Date() and not login.isAdmin() and not login.isStaff() and not login.isGroupManager() %}
                         <div class="ui orange message">
@@ -353,7 +360,7 @@
 
                     {% if session.getStatus() == 'open' and is_future %}
                         {# Register a member #}
-                        {% if has_instructor and (login.isAdmin() or login.isStaff() or login.isGroupManager()) %}
+                        {% if (has_instructor or event.isRegistrationAllowedWithoutInstructor()) and (login.isAdmin() or login.isStaff() or login.isGroupManager()) %}
                             <div class="courses-inline-form">
                                 <a href="{{ url_for("coursesProxyRegisterForm", {"id": session.getId()}) }}" class="ui small labeled icon teal button">
                                     <i class="user plus icon" aria-hidden="true"></i>
@@ -704,7 +711,7 @@
                         <div class="content">
                             <div class="header">{{ _T("Status", "courses") }}</div>
                             {% if session.getStatus() == 'open' %}
-                                {% if not has_instructor %}
+                                {% if not has_instructor and not event.isRegistrationAllowedWithoutInstructor() %}
                                     <span class="ui orange label">
                                         <i class="clock icon" aria-hidden="true"></i>
                                         {{ _T("Awaiting instructor", "courses") }}

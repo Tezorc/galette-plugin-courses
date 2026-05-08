@@ -158,7 +158,7 @@
                                     <i class="clock icon" aria-hidden="true"></i>
                                     {{ _T("Waitlist", "courses") }}
                                 </span>
-                            {% elseif not has_instr %}
+                            {% elseif not has_instr and not ev.isRegistrationAllowedWithoutInstructor() %}
                                 <span class="ui orange label">
                                     <i class="clock icon" aria-hidden="true"></i>
                                     {{ _T("Awaiting instructor", "courses") }}
@@ -211,8 +211,8 @@
                                 <i class="eye icon" aria-hidden="true"></i>
                                 {{ _T("Details", "courses") }}
                             </a>
-                        {% elseif not has_instr %}
-                            {# Pas d'instructeur — pas d'inscription possible #}
+                        {% elseif not has_instr and not ev.isRegistrationAllowedWithoutInstructor() %}
+                            {# Pas d'instructeur et inscription bloquee par defaut — pas d'inscription possible #}
                             <span class="ui tiny orange label">
                                 <i class="exclamation triangle icon" aria-hidden="true"></i>
                                 {{ _T("No instructor", "courses") }}

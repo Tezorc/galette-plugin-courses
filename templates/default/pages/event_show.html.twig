@@ -129,7 +129,7 @@
                                         {% if is_past %}
                                             <span class="ui grey label">{{ _T("Past", "courses") }}</span>
                                         {% elseif session.getStatus() == 'open' %}
-                                            {% if sessions_has_instructor[session.getId()] is defined and not sessions_has_instructor[session.getId()] %}
+                                            {% if sessions_has_instructor[session.getId()] is defined and not sessions_has_instructor[session.getId()] and not event.isRegistrationAllowedWithoutInstructor() %}
                                                 <span class="ui orange label">
                                                     <i class="clock icon" aria-hidden="true"></i>
                                                     {{ _T("Awaiting instructor", "courses") }}
