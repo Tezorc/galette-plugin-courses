@@ -117,6 +117,21 @@ tr.courses-pending { background-color: #fffde7 !important; }
 .courses-actions .ui.small.labeled.icon.button { font-size: .875rem !important; }
 .courses-cards-grid .extra.content .ui.button { font-size: .8125rem; }
 
+/* ----- REGISTER DROPDOWN (Phase 42) -----
+   The Fomantic UI .ui.card has overflow:hidden by default, which clips the
+   dropdown menu and hides it behind the next session card. Allow escape and
+   raise stacking context when the dropdown is hovered or active. */
+.courses-cards-grid .column,
+.courses-card,
+.courses-card > .content,
+.courses-card > .extra.content { overflow: visible !important; }
+.courses-card .ui.dropdown .menu,
+.courses-actions .ui.dropdown .menu { z-index: 100; }
+.courses-card .ui.simple.dropdown:hover,
+.courses-card .ui.dropdown.active,
+.courses-actions .ui.simple.dropdown:hover,
+.courses-actions .ui.dropdown.active { position: relative; z-index: 50; }
+
 /* ----- DASHBOARD BUTTON ----- */
 .ui.card > .content > .ui.labeled.icon.button,
 .ui.card > .content > a.ui.labeled.icon.button {
@@ -297,6 +312,13 @@ tr.courses-pending { background-color: #fffde7 !important; }
     .courses-card .extra.content form .button { width: 100% !important; display: block !important; margin: 0 !important; text-align: center !important; }
     .courses-card .extra.content form,
     .courses-card .extra.content .courses-inline-form { width: 100% !important; display: block !important; }
+    /* Phase 42 register dropdown : button + menu prennent toute la largeur */
+    .courses-card .extra.content .ui.dropdown.button,
+    .courses-actions .ui.dropdown.button { width: 100% !important; box-sizing: border-box !important; min-height: 42px !important; line-height: 1.4 !important; }
+    .courses-card .extra.content .ui.dropdown.button .menu,
+    .courses-actions .ui.dropdown.button .menu { left: 0 !important; right: 0 !important; min-width: 100% !important; }
+    .courses-card .extra.content .ui.dropdown.button .menu .item,
+    .courses-actions .ui.dropdown.button .menu .item { padding: .85em 1em !important; }
     .courses-card .meta { white-space: normal !important; word-break: break-word; font-size: .9em; }
 
     /* --- Action segments --- */
