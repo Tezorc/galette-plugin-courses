@@ -633,6 +633,31 @@ Le developpement est organise en phases progressives.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
 
+### Phase 41 - Propagation des modifications d'evenement aux seances futures
+
+**Statut : TERMINEE**
+
+- Demande utilisateur : lorsqu'un staff/responsable modifie un evenement existant, les seances futures non-annulees doivent automatiquement refleter les nouvelles valeurs (jauge, creneaux horaires, drapeau "inscription sans moniteur"). Avant : seul `max_capacity` etait propage et il bloquait toute reduction sous le nombre d'inscrits actuels.
+
+- Perimetre valide :
+  - **Q1** Toutes les seances `session_date >= today` ET `status != cancelled`. Les seances passees ou annulees ne sont jamais touchees.
+  - **Q2** Capacite : option (b) — la diminution est acceptee meme s'il y a deja plus d'inscrits que le nouveau plafond. Les inscrits actuels restent inscrits ; la seance ne prend simplement plus de nouveaux jusqu'a ce que des desinscriptions naturelles fassent redescendre le total. Pas de bump de waitlist, pas de blocage.
+  - **Q3** Creneau horaire : propagation du couple `(start_time, end_time)` aux seances futures dont le couple correspond a l'**ancien** slot. Mapping par index (slot N du formulaire = slot N stocke). Si le nombre de slots a change, seuls les indices encore alignes sont propages — les seances qui correspondaient a un slot supprime gardent leur ancien creneau (le staff peut editer chacune individuellement).
+  - **Q4** Toggle `allow_registration_without_instructor` : si transition false -> true sur un evenement VALIDATED, les membres eligibles sont notifies immediatement (`REF_SESSION_OPEN`) sur les seances futures sans moniteur. La transition true -> false est silencieuse (les seances cessent simplement d'etre inscriptibles). Les nouvelles seances creees dans le meme cycle d'edition sont exclues du flux Phase 41 — `notifyNewSessions` les couvre deja (Phase 40).
+  - **Q5** Recurrence : hors perimetre. Modifier `recurrence_type` / `recurrence_interval` / `recurrence_end_date` ne regenere pas / ne supprime pas de seances. La regeneration reste manuelle via le bouton "Generer les seances" + cron.
+  - **Q6** Slots (ajout/suppression) : pas de regeneration de seances. Seule la mise a jour des seances existantes via le mapping par index s'applique.
+
+- Implementation (`EventsController::doStore`) :
+  - Avant `$event->check($post)` (qui ecrase les slots dans l'objet en memoire), snapshot de l'etat : `$event->loadSlots()` puis `$oldSlots = $event->getSlots()` et `$oldAllowNoInstructor = $event->isRegistrationAllowedWithoutInstructor()`.
+  - Apres `$event->store()` et `$event->storeSlots($slots)` : `propagateCapacityToSessions($event)` + `propagateScheduleToSessions($event, $oldSlots, $slots)`.
+  - Apres le bloc `notifyNewSessions` : detection toggle false -> true et envoi `notifySessionOpenWithoutInstructor` pour chaque seance future sans moniteur (filtree pour exclure les seances fraichement creees ce cycle).
+
+- Methode `propagateCapacityToSessions` reduite : suppression de la garde `lessThanOrEqualTo('current_registrations', $newCapacity)` (option a -> b), suppression du bloc warning/skip, elargissement du filtre de `status = OPEN` a `status != CANCELLED` (pour inclure aussi `closed`).
+
+- Nouvelle methode `propagateScheduleToSessions(Event, array $oldSlots, array $newSlots)` : `foreach $oldSlots`, si `$newSlots[$i]` existe et que les couples different, UPDATE `set [start_time, end_time]` WHERE `event_id`, `status != cancelled`, `session_date >= today`, `start_time = oldSlot.start_time`, `end_time = oldSlot.end_time`. Try/catch + Analog::log.
+
+- Aucune nouvelle table, aucun nouveau template mail, aucune migration. Aucun nouveau test (logique testee a travers le flow d'edition manuelle ; les 54 tests unitaires existants continuent de passer).
+
 ### Phase 40 - Toggle par evenement "Autoriser les inscriptions sans moniteur affecte"
 
 **Statut : TERMINEE**

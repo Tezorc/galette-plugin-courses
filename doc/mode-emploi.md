@@ -193,6 +193,15 @@ Les responsables de groupe ne peuvent creer des evenements qu'au statut **Brouil
 - **Filtres disponibles** : recherche textuelle, filtre par type, filtre par statut
 - **Actions** : cliquer sur le nom pour voir le detail, icone crayon pour editer, icone poubelle pour supprimer (staff uniquement)
 
+#### Propagation des modifications aux seances futures
+
+Quand vous modifiez un evenement existant, les changements sont automatiquement propages a toutes ses **seances futures non annulees** (date >= aujourd'hui ET statut different d'Annulee) :
+
+- **Capacite** : la nouvelle valeur remplace celle de chaque seance future. Si vous diminuez la capacite alors que certaines seances ont deja plus d'inscrits que le nouveau plafond, les inscrits restent inscrits ; la seance n'accepte simplement plus de nouveaux jusqu'a ce que des desinscriptions naturelles fassent redescendre le total.
+- **Creneau horaire** : si vous modifiez les heures d'un creneau, toutes les seances futures qui correspondaient a l'ancien creneau prennent les nouveaux horaires (mapping par position du creneau dans le formulaire). Si vous ajoutez ou supprimez un creneau, seuls les creneaux dont la position est inchangee sont propages — les seances liees a un creneau supprime gardent leur ancien horaire (vous pouvez les modifier individuellement).
+- **Drapeau "Autoriser les inscriptions sans moniteur"** : si vous l'activez sur un evenement deja valide, les membres eligibles sont notifies par email pour les seances futures sans moniteur. La desactivation est silencieuse (les seances cessent d'accepter de nouvelles inscriptions sans en prevenir les membres).
+- **Recurrence** (intervalle, date de fin) et **ajout/suppression de creneaux** : ces changements ne regenerent pas / ne suppriment pas de seances. Pour ajouter de nouvelles seances, utilisez le bouton **"Generer les seances"**. Pour annuler des seances, faites-le individuellement.
+
 ### 3. Consulter les seances
 
 - Menu **Mes inscriptions > Seances** : liste des seances a venir

@@ -344,13 +344,19 @@ class EventsController extends AbstractPluginController
             // just flipped from off to on, the existing future sessions without
             // an instructor become registrable — notify eligible members now,
             // mirroring what notifyNewSessions does for newly-created sessions.
+            // Sessions just created above are excluded: notifyNewSessions
+            // already invokes notifySessionOpenWithoutInstructor for them.
             if (
                 $id !== null
                 && !$oldAllowNoInstructor
                 && $event->isRegistrationAllowedWithoutInstructor()
                 && $event->getStatus() === Event::STATUS_VALIDATED
             ) {
-                $futureNoInstr = $this->loadOpenFutureSessionsWithoutInstructor($event);
+                $createdIds = array_map(static fn(Session $s) => $s->getId(), $createdSessions);
+                $futureNoInstr = array_filter(
+                    $this->loadOpenFutureSessionsWithoutInstructor($event),
+                    static fn(Session $s) => !in_array($s->getId(), $createdIds, true)
+                );
                 if (!empty($futureNoInstr)) {
                     $notification ??= new CourseNotification(
                         $this->zdb,
