@@ -201,11 +201,10 @@ Le developpement est organise en phases progressives.
 
 - Un parent (adherent avec membres lies) peut inscrire ses enfants eligibles a une seance
 - L'inscription propre nom et l'inscription enfant sont traitees separement (boutons distincts)
-- Bouton "Inscrire un enfant" ouvre un formulaire de selection des enfants eligibles non inscrits
+- UI : un seul enfant eligible -> bouton portant le nom de l'enfant, POST direct ; deux enfants ou plus -> bouton dropdown listant les enfants
 - Les enfants eligibles sont ceux appartenant a un groupe requis par l'evenement
 - Verifications : lien parent/enfant dans Galette, appartenance au groupe requis, seance ouverte et non pleine
-- Routes dediees : `GET /session/{id}/parent-register` (formulaire), `POST /session/{id}/parent-register` (action)
-- Template dedie : `pages/parent_register_form.html.twig`
+- Route dediee : `POST /session/{id}/parent-register` (action — la page picker dediee a ete supprimee, le choix se fait directement depuis les cards browse / session_show)
 - ACL niveau `member`
 
 #### F8.2 - Desinscription d'un enfant
@@ -1379,7 +1378,6 @@ Toutes les routes sont prefixees automatiquement par `/plugins/courses/`.
 
 | Methode | Route | Controlleur | Permission |
 |---------|-------|-------------|------------|
-| GET | `/session/{id}/parent-register` | RegistrationsController::parentRegisterForm | member |
 | POST | `/session/{id}/parent-register` | RegistrationsController::doParentRegister | member |
 | POST | `/session/{id}/parent-unregister` | RegistrationsController::doParentUnregister | member |
 

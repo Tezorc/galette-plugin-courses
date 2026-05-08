@@ -232,11 +232,6 @@ $app->post(
 )->setName('coursesDoProxyUnregister')->add($authenticate);
 
 // Parent registration (inscrire ses enfants)
-$app->get(
-    '/session/{id:[0-9]+}/parent-register',
-    [RegistrationsController::class, 'parentRegisterForm']
-)->setName('coursesParentRegisterForm')->add($authenticate);
-
 $app->post(
     '/session/{id:[0-9]+}/parent-register',
     [RegistrationsController::class, 'doParentRegister']

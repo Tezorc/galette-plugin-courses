@@ -768,79 +768,6 @@ class RegistrationsController extends AbstractController
         return $response;
     }
 
-    public function parentRegisterForm(Request $request, Response $response, int $id): Response
-    {
-        $session = new Session($this->zdb, $id);
-        if ($session->getId() === null) {
-            $this->flash->addMessage('error_detected', _T('Session not found.', 'courses'));
-            return $response
-                ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
-        }
-
-        if ($this->login->isSuperAdmin() || !$this->login->isLogged()) {
-            return $response
-                ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
-        }
-
-        $event = $session->getEvent();
-        $event->loadGroups();
-        $eventGroups = $event->getGroups();
-
-        $member_id = (int)$this->login->id;
-        $eligible_children = [];
-
-        try {
-            $parentAdherent = new Adherent($this->zdb, $member_id, ['children' => true]);
-            $childrenIds = $parentAdherent->children;
-
-            // Children already registered for this session
-            $regs_repo = new Registrations($this->zdb);
-            $registrations = $regs_repo->getForSession($id);
-            $registered_ids = array_map(fn($r) => $r->getMemberId(), $registrations);
-
-            foreach ($childrenIds as $child) {
-                $childId = is_object($child) ? (int)$child->id : (int)$child;
-                if ($childId <= 0) {
-                    continue;
-                }
-                // Déjà inscrit ?
-                if (in_array($childId, $registered_ids)) {
-                    continue;
-                }
-                // Check child belongs to required event group
-                if (!empty($eventGroups)) {
-                    $checkSelect = $this->zdb->select('groups_members');
-                    $checkSelect->where(['id_adh' => $childId]);
-                    $checkSelect->where->in('id_group', $eventGroups);
-                    $checkResults = $this->zdb->execute($checkSelect);
-                    if ($checkResults->count() === 0) {
-                        continue;
-                    }
-                }
-                $childAdherent = new Adherent($this->zdb, $childId);
-                $name = $childAdherent->sname ?? '';
-                $nickname = !empty($childAdherent->nickname) ? (string)$childAdherent->nickname : '';
-                $eligible_children[$childId] = ['name' => $name, 'nickname' => $nickname];
-            }
-        } catch (\Throwable $e) {
-            Analog::log('Error loading children for parent register form: ' . $e->getMessage(), Analog::ERROR);
-        }
-
-        $this->view->render(
-            $response,
-            $this->getTemplate('pages/parent_register_form'),
-            [
-                'page_title' => _T('Register a linked member', 'courses'),
-                'session'    => $session,
-                'event'      => $event,
-                'eligible_children' => $eligible_children,
-            ]
-        );
-        return $response;
-    }
-
     public function doParentRegister(Request $request, Response $response, int $id): Response
     {
         $session = new Session($this->zdb, $id);
@@ -887,7 +814,7 @@ class RegistrationsController extends AbstractController
             $this->flash->addMessage('error_detected', _T('Select a linked member to register.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesParentRegisterForm', ['id' => (string)$id]));
+                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
         }
 
         $parent_id = (int)$this->login->id;
@@ -921,7 +848,7 @@ class RegistrationsController extends AbstractController
                     $this->flash->addMessage('error_detected', _T('This linked member does not belong to a required group for this event.', 'courses'));
                     return $response
                         ->withStatus(302)
-                        ->withHeader('Location', $this->routeparser->urlFor('coursesParentRegisterForm', ['id' => (string)$id]));
+                        ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
                 }
             } catch (\Throwable $e) {
                 Analog::log('Error checking group for child #' . $child_id . ': ' . $e->getMessage(), Analog::ERROR);

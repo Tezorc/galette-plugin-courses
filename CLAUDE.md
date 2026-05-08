@@ -121,7 +121,6 @@ galette-plugin-courses/
       mail_templates.html.twig
       member_preferences.html.twig
       proxy_register.html.twig
-      parent_register_form.html.twig
       unsubscribe.html.twig
 ```
 
