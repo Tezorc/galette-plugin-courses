@@ -177,7 +177,37 @@ tr.courses-pending { background-color: #fffde7 !important; }
 /* ----- CLOSURE / PREFERENCES ----- */
 .courses-closure-past { opacity: .5; }
 .courses-closure-past .closure-from-input,
-.courses-closure-past .closure-to-input { color: #999; }
+.courses-closure-past .closure-to-input,
+.courses-closure-past .closure-label-input { color: #999; }
+
+/* Closure table: inputs fill their cell uniformly with a visible Fomantic-like
+   border. The reason column gets a comfortable preferred width so labels like
+   "Fermeture annuelle de Noel" do not look cramped next to the date pickers. */
+#closure-table th,
+#closure-table td { vertical-align: middle; }
+#closure-table th:nth-child(3) { width: 28%; }
+#closure-table input.closure-from-input,
+#closure-table input.closure-to-input,
+#closure-table input.closure-label-input {
+    width: 100%;
+    min-height: 36px;
+    padding: .5em .75em;
+    border: 1px solid rgba(34, 36, 38, .2);
+    border-radius: .28571429rem;
+    background: #fff;
+    color: rgba(0, 0, 0, .87);
+    transition: box-shadow .1s ease, border-color .1s ease;
+    box-sizing: border-box;
+}
+#closure-table input.closure-from-input:focus,
+#closure-table input.closure-to-input:focus,
+#closure-table input.closure-label-input:focus {
+    border-color: #85b7d9;
+    box-shadow: 0 0 0 0 rgba(34, 36, 38, .35) inset;
+    outline: none;
+}
+#closure-table input.closure-label-input { font-size: .95em; }
+#closure-table tbody tr.warning input { border-color: #e0b4b4; background: #fff6f6; }
 
 /* ----- CRON ----- */
 .courses-cron-input      { font-family: monospace; font-size: .9em; }
@@ -251,8 +281,11 @@ tr.courses-pending { background-color: #fffde7 !important; }
     .courses-stats-cards.four.cards { flex-wrap: wrap !important; }
     .courses-stats-cards.four.cards .card { min-width: calc(50% - 1.5em) !important; flex: 1 1 calc(50% - 1.5em) !important; margin-bottom: .8em !important; }
     .courses-chart-container { min-height: 200px; }
-    #closure-table th:nth-child(3),
-    #closure-table td:nth-child(3) { display: none; }
+    /* On tablet, hide the Duration column (4th) to keep the Reason column
+       (3rd, added in Phase 44) visible. Duration is reconstructible from
+       From/Until and is far less informative than the closure label. */
+    #closure-table th:nth-child(4),
+    #closure-table td:nth-child(4) { display: none; }
 }
 
 /* =========================================================
@@ -440,9 +473,19 @@ tr.courses-pending { background-color: #fffde7 !important; }
     .courses-cron-input { font-size: .72em !important; }
     .courses-cron-note code { word-break: break-all; font-size: .82em; }
 
-    /* --- Closure date inputs --- */
+    /* --- Closure date / label inputs --- */
     input.closure-from-input,
-    input.closure-to-input { min-height: 44px !important; width: 100% !important; }
+    input.closure-to-input,
+    input.closure-label-input { min-height: 44px !important; width: 100% !important; }
+    /* On phones, also hide the Status column (5th) to give Reason maximum room.
+       Duration (4th) is already hidden by the tablet rule above. */
+    #closure-table th:nth-child(5),
+    #closure-table td:nth-child(5) { display: none; }
+    /* Tighten cell padding so the table breathes on narrow viewports. */
+    #closure-table.ui.celled.compact.table th,
+    #closure-table.ui.celled.compact.table td { padding: .5em !important; }
+    /* Reason column still gets priority on the limited remaining width. */
+    #closure-table th:nth-child(3) { width: auto !important; }
 
     /* --- Segments --- */
     .ui.segment { padding: .9em !important; }
