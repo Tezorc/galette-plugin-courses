@@ -597,6 +597,13 @@ tr.courses-pending { background-color: #fffde7 !important; }
     /* Grid + Segment: padding minimal */
     .ui.stackable.grid > .column:not(.row) { padding: .5em 0 !important; }
     .ui.segment { padding: .7em .75em !important; }
+    /* At this breakpoint columns have zero horizontal padding, so segments
+       inside columns extend full container width. Reset the 1rem inset
+       added at the 767px breakpoint so the green header matches. */
+    .courses-session-header-segment {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
 
     .courses-chart-container { min-height: 180px; }
 }
