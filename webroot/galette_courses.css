@@ -496,14 +496,6 @@ tr.courses-pending { background-color: #fffde7 !important; }
     .ui.inverted.segment h2.ui.inverted.header { font-size: 1.25em !important; }
     .ui.inverted.segment h2.ui.inverted.header .sub.header { font-size: .88em !important; line-height: 1.7 !important; }
     .courses-mobile-br { display: inline !important; }
-    /* Align the colored header segment with the stackable-grid columns below
-       (Fomantic gives them 1rem horizontal padding on mobile, so the
-       headersegment alone went edge-to-edge while the rest of the page was
-       inset by 1rem — visible mismatch on smartphone). */
-    .courses-session-header-segment {
-        margin-left: 1rem !important;
-        margin-right: 1rem !important;
-    }
     /* Header action buttons revert to icon-only on mobile */
     .courses-session-header-flex .courses-session-header-actions .courses-header-action-btn > i.icon { margin: 0 !important; }
     .courses-header-action-label { display: none !important; }
@@ -597,13 +589,6 @@ tr.courses-pending { background-color: #fffde7 !important; }
     /* Grid + Segment: padding minimal */
     .ui.stackable.grid > .column:not(.row) { padding: .5em 0 !important; }
     .ui.segment { padding: .7em .75em !important; }
-    /* At this breakpoint columns have zero horizontal padding, so segments
-       inside columns extend full container width. Reset the 1rem inset
-       added at the 767px breakpoint so the green header matches. */
-    .courses-session-header-segment {
-        margin-left: 0 !important;
-        margin-right: 0 !important;
-    }
 
     .courses-chart-container { min-height: 180px; }
 }

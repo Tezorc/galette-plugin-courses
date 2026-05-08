@@ -1,43 +1,50 @@
 {% extends "page.html.twig" %}
 
 {% block content %}
-    {# --- Header segment with event name, date, location + Back / Edit buttons --- #}
-    <div class="ui {% if session.getStatus() == 'open' %}green{% elseif session.getStatus() == 'closed' %}grey{% else %}red{% endif %} inverted segment courses-session-header-segment">
-        <div class="courses-session-header-flex">
-            <h2 class="ui inverted header courses-session-header-title">
-                <i class="calendar alternate icon" aria-hidden="true"></i>
-                <div class="content">
-                    {{ event.getName() }}
-                    <div class="sub header">
-                        <i class="calendar icon" aria-hidden="true"></i>
-                        <strong class="courses-date-day">{{ session.getSessionDate()|date("d") }}</strong>
-                        <span class="courses-date-month">{{ session.getMonthYear() }}</span>
-                        &nbsp;&middot;&nbsp;
-                        {{ session.getFormattedStartTime() }} – {{ session.getFormattedEndTime() }}
-                        {% if event.getLocation() %}
-                            <br class="courses-mobile-br">
-                            <i class="map pin icon" aria-hidden="true"></i>
-                            {{ event.getLocation() }}
+    {# --- Header segment with event name, date, location + Back / Edit buttons.
+       Wrapped in a stackable grid + sixteen wide column so the colored segment
+       inherits the SAME column padding as every other segment on the page —
+       guarantees identical width across all responsive breakpoints. #}
+    <div class="ui stackable grid">
+        <div class="sixteen wide column">
+            <div class="ui {% if session.getStatus() == 'open' %}green{% elseif session.getStatus() == 'closed' %}grey{% else %}red{% endif %} inverted segment courses-session-header-segment">
+                <div class="courses-session-header-flex">
+                    <h2 class="ui inverted header courses-session-header-title">
+                        <i class="calendar alternate icon" aria-hidden="true"></i>
+                        <div class="content">
+                            {{ event.getName() }}
+                            <div class="sub header">
+                                <i class="calendar icon" aria-hidden="true"></i>
+                                <strong class="courses-date-day">{{ session.getSessionDate()|date("d") }}</strong>
+                                <span class="courses-date-month">{{ session.getMonthYear() }}</span>
+                                &nbsp;&middot;&nbsp;
+                                {{ session.getFormattedStartTime() }} – {{ session.getFormattedEndTime() }}
+                                {% if event.getLocation() %}
+                                    <br class="courses-mobile-br">
+                                    <i class="map pin icon" aria-hidden="true"></i>
+                                    {{ event.getLocation() }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </h2>
+                    <div class="courses-session-header-actions">
+                        <a href="{{ url_for('coursesSessions') }}"
+                           class="ui small basic inverted button courses-header-action-btn courses-back-btn"
+                           title="{{ _T("Back", "courses") }}"
+                           onclick="if (window.history.length > 1) { window.history.back(); return false; }">
+                            <i class="arrow left icon" aria-hidden="true"></i>
+                            <span class="courses-header-action-label">{{ _T("Back", "courses") }}</span>
+                        </a>
+                        {% if is_session_manager and session.getStatus() != 'cancelled' and session.getSessionDate() >= "now"|date("Y-m-d") %}
+                            <a href="{{ url_for('coursesSessionEdit', {'id': session.getId()}) }}"
+                               class="ui small basic inverted button courses-header-action-btn"
+                               title="{{ _T("Edit session", "courses") }}">
+                                <i class="edit icon" aria-hidden="true"></i>
+                                <span class="courses-header-action-label">{{ _T("Edit session", "courses") }}</span>
+                            </a>
                         {% endif %}
                     </div>
                 </div>
-            </h2>
-            <div class="courses-session-header-actions">
-                <a href="{{ url_for('coursesSessions') }}"
-                   class="ui small basic inverted button courses-header-action-btn courses-back-btn"
-                   title="{{ _T("Back", "courses") }}"
-                   onclick="if (window.history.length > 1) { window.history.back(); return false; }">
-                    <i class="arrow left icon" aria-hidden="true"></i>
-                    <span class="courses-header-action-label">{{ _T("Back", "courses") }}</span>
-                </a>
-                {% if is_session_manager and session.getStatus() != 'cancelled' and session.getSessionDate() >= "now"|date("Y-m-d") %}
-                    <a href="{{ url_for('coursesSessionEdit', {'id': session.getId()}) }}"
-                       class="ui small basic inverted button courses-header-action-btn"
-                       title="{{ _T("Edit session", "courses") }}">
-                        <i class="edit icon" aria-hidden="true"></i>
-                        <span class="courses-header-action-label">{{ _T("Edit session", "courses") }}</span>
-                    </a>
-                {% endif %}
             </div>
         </div>
     </div>
