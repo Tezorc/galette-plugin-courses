@@ -43,6 +43,7 @@ CREATE TABLE galette_courses_events (
     recurrence_end_date date DEFAULT NULL,
     advance_weeks int(10) unsigned DEFAULT 4,
     is_restricted tinyint(1) NOT NULL DEFAULT 0,
+    allow_registration_without_instructor tinyint(1) NOT NULL DEFAULT 0,
     status varchar(20) NOT NULL DEFAULT 'draft',
     unregister_deadline_days int(10) unsigned DEFAULT NULL,
     creator_id int(10) unsigned DEFAULT NULL,

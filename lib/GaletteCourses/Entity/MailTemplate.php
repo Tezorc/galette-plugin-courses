@@ -46,6 +46,7 @@ class MailTemplate
     public const REF_DAILY_DIGEST_MANAGER    = 'daily_digest_manager';
     public const REF_WAITLIST_PROMOTION      = 'waitlist_promotion';
     public const REF_INSTRUCTOR_ASSIGNED     = 'instructor_assigned';
+    public const REF_SESSION_OPEN            = 'session_open';
     public const REF_CANCELLATION            = 'cancellation';
     public const REF_WAITLIST_CANCELLATION   = 'waitlist_cancellation';
 
@@ -220,6 +221,7 @@ class MailTemplate
             self::REF_DAILY_DIGEST_MANAGER,
             self::REF_WAITLIST_PROMOTION,
             self::REF_INSTRUCTOR_ASSIGNED,
+            self::REF_SESSION_OPEN,
             self::REF_CANCELLATION,
             self::REF_WAITLIST_CANCELLATION,
         ];
@@ -240,6 +242,7 @@ class MailTemplate
             self::REF_DAILY_DIGEST_MANAGER => ['events_block'],
             self::REF_WAITLIST_PROMOTION  => ['event_name', 'event_description', 'session_date', 'session_time'],
             self::REF_INSTRUCTOR_ASSIGNED => ['event_name', 'event_description', 'session_date', 'session_time', 'instructor_name'],
+            self::REF_SESSION_OPEN        => ['event_name', 'event_description', 'session_date', 'session_time'],
             self::REF_CANCELLATION            => ['event_name', 'event_description', 'session_date', 'session_time', 'reason_block', 'comment_block'],
             self::REF_WAITLIST_CANCELLATION   => ['event_name', 'event_description', 'session_date', 'session_time', 'reason_block', 'comment_block'],
             default                           => ['event_name'],
@@ -256,6 +259,7 @@ class MailTemplate
             self::REF_DAILY_DIGEST_MANAGER => _T('Daily digest — sessions to lead', 'courses'),
             self::REF_WAITLIST_PROMOTION  => _T('Promoted from waitlist', 'courses'),
             self::REF_INSTRUCTOR_ASSIGNED => _T('Instructor assigned (session open)', 'courses'),
+            self::REF_SESSION_OPEN        => _T('Session open for registration (no instructor yet)', 'courses'),
             self::REF_CANCELLATION            => _T('Session cancelled', 'courses'),
             self::REF_WAITLIST_CANCELLATION   => _T('Session cancelled (waitlist)', 'courses'),
             default                           => $ref,
@@ -272,6 +276,7 @@ class MailTemplate
             self::REF_DAILY_DIGEST_MANAGER => _T('Daily consolidated email sent by the cron to each group manager, listing all sessions still without an instructor. Replaces the per-event "new sessions" emails to limit inbox flooding.', 'courses'),
             self::REF_WAITLIST_PROMOTION  => _T('Sent to a member when they are automatically promoted from the waitlist.', 'courses'),
             self::REF_INSTRUCTOR_ASSIGNED => _T('Sent to eligible members when the first instructor is assigned and the session becomes open for registration.', 'courses'),
+            self::REF_SESSION_OPEN        => _T('Sent to eligible members when a session is created on an event that allows registration without an assigned instructor. Skipped when an instructor is already volunteering — REF_INSTRUCTOR_ASSIGNED is used instead.', 'courses'),
             self::REF_CANCELLATION            => _T('Sent to all registered members when a session is cancelled.', 'courses'),
             self::REF_WAITLIST_CANCELLATION   => _T('Sent to members on the waitlist when a session is cancelled.', 'courses'),
             default                           => '',
@@ -288,6 +293,7 @@ class MailTemplate
             self::REF_DAILY_DIGEST_MANAGER => _T('[Courses] Sessions awaiting an instructor', 'courses'),
             self::REF_WAITLIST_PROMOTION  => _T('[Courses] You have been registered: {event_name}', 'courses'),
             self::REF_INSTRUCTOR_ASSIGNED => _T('[Courses] Séance ouverte : {event_name}', 'courses'),
+            self::REF_SESSION_OPEN        => _T('[Courses] Séance ouverte aux inscriptions : {event_name}', 'courses'),
             self::REF_CANCELLATION            => _T('[Courses] Session cancelled: {event_name}', 'courses'),
             self::REF_WAITLIST_CANCELLATION   => _T('[Courses] Session cancelled: {event_name}', 'courses'),
             default                           => '{event_name}',
@@ -301,9 +307,10 @@ class MailTemplate
             self::REF_VALIDATION         => _T("Hello,\n\nGreat news! Your event \"{event_name}\" has been validated and is now open for member registration.\n\nThank you for your contribution!", 'courses'),
             self::REF_REJECTION          => _T("Hello,\n\nUnfortunately your event \"{event_name}\" could not be validated as submitted and has been set back to draft.\n\nFeel free to update it and resubmit it for validation.", 'courses'),
             self::REF_NEW_SESSIONS_MANAGER => _T("Hello,\n\nNew sessions have been planned for \"{event_name}\":{event_description}{dates_list}\n\nIf you wish to lead one of these sessions, log in and volunteer as instructor from the session detail page.\n\nThank you!", 'courses'),
-            self::REF_DAILY_DIGEST_MANAGER => _T("Hello,\n\nThe sessions listed below are still waiting for an instructor.\nIf you would like to lead one of them, log in and volunteer from the session detail page.\n\n{events_block}\nThank you for your involvement!", 'courses'),
+            self::REF_DAILY_DIGEST_MANAGER => _T("Hello,\n\nThe sessions listed below currently have no instructor assigned.\nIf you would like to lead one of them, log in and volunteer from the session detail page — your presence is always welcome.\n\n{events_block}\nThank you for your involvement!", 'courses'),
             self::REF_WAITLIST_PROMOTION  => _T("Hello,\n\nGreat news! A spot has opened up and you have been automatically registered for the following session:\n\n\"{event_name}\" — {session_date} ({session_time}){event_description}\n\nLog in to your member account to view your registrations.\n\nSee you soon!", 'courses'),
             self::REF_INSTRUCTOR_ASSIGNED => _T("Bonjour,\n\nBonne nouvelle ! La séance suivante est désormais ouverte :\n\n\"{event_name}\" — {session_date} ({session_time})\nMoniteur : {instructor_name}{event_description}\n\nInscrivez-vous dès maintenant pour confirmer votre présence.\n\nÀ bientôt !", 'courses'),
+            self::REF_SESSION_OPEN        => _T("Bonjour,\n\nLa séance suivante est ouverte aux inscriptions :\n\n\"{event_name}\" — {session_date} ({session_time}){event_description}\n\nAucun moniteur n'est encore affecté, mais les inscriptions sont ouvertes pour cette séance. Vous serez prévenu(e) dès qu'un moniteur se sera porté volontaire.\n\nInscrivez-vous dès maintenant pour confirmer votre présence.\n\nÀ bientôt !", 'courses'),
             self::REF_CANCELLATION            => _T("Hello,\n\nUnfortunately the session \"{event_name}\" scheduled for {session_date} ({session_time}) has been cancelled.{reason_block}{comment_block}{event_description}\n\nWe apologize for the inconvenience and look forward to seeing you at a future session.", 'courses'),
             self::REF_WAITLIST_CANCELLATION   => _T("Hello,\n\nThe session \"{event_name}\" scheduled for {session_date} ({session_time}) has been cancelled.{reason_block}{comment_block}{event_description}\n\nYou were on the waitlist for this session. Your registration request has been removed.\n\nWe apologize for the inconvenience and look forward to seeing you at a future session.", 'courses'),
             default                           => '',

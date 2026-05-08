@@ -245,6 +245,16 @@ class EventsController extends AbstractPluginController
             $event->setCreatorId($creatorId > 0 ? $creatorId : null);
         }
 
+        // Snapshot state BEFORE check() mutates the entity, so we can detect
+        // edits to propagate onto existing future sessions (Phase 41).
+        $oldSlots = [];
+        $oldAllowNoInstructor = false;
+        if ($id !== null) {
+            $event->loadSlots();
+            $oldSlots = $event->getSlots();
+            $oldAllowNoInstructor = $event->isRegistrationAllowedWithoutInstructor();
+        }
+
         $errors = $event->check($post);
         if (count($errors) > 0) {
             foreach ($errors as $error) {
@@ -283,9 +293,10 @@ class EventsController extends AbstractPluginController
                 $event->storeGroups([]);
             }
 
-            // Propagate max_capacity to future open sessions
+            // Propagate edits onto existing future sessions (Phase 41).
             if ($id !== null) {
                 $this->propagateCapacityToSessions($event);
+                $this->propagateScheduleToSessions($event, $oldSlots, $slots);
             }
 
             // Collect sessions auto-created during this save so we can
@@ -317,6 +328,7 @@ class EventsController extends AbstractPluginController
             // creation/validation). Per user requirement: aucun courriel
             // a la creation/validation de l'evenement, uniquement quand des
             // seances (recurrentes ou non) sont effectivement creees.
+            $notification = null;
             if (!empty($createdSessions) && $event->getStatus() === Event::STATUS_VALIDATED) {
                 $notification = new CourseNotification(
                     $this->zdb,
@@ -326,6 +338,31 @@ class EventsController extends AbstractPluginController
                     $this->history
                 );
                 $notification->notifyNewSessions($event, $createdSessions);
+            }
+
+            // Phase 41: when the "allow registration without instructor" toggle
+            // just flipped from off to on, the existing future sessions without
+            // an instructor become registrable — notify eligible members now,
+            // mirroring what notifyNewSessions does for newly-created sessions.
+            if (
+                $id !== null
+                && !$oldAllowNoInstructor
+                && $event->isRegistrationAllowedWithoutInstructor()
+                && $event->getStatus() === Event::STATUS_VALIDATED
+            ) {
+                $futureNoInstr = $this->loadOpenFutureSessionsWithoutInstructor($event);
+                if (!empty($futureNoInstr)) {
+                    $notification ??= new CourseNotification(
+                        $this->zdb,
+                        $this->preferences,
+                        new PluginPreferences($this->zdb),
+                        new MemberPreferences($this->zdb),
+                        $this->history
+                    );
+                    foreach ($futureNoInstr as $s) {
+                        $notification->notifySessionOpenWithoutInstructor($s, $event);
+                    }
+                }
             }
 
             $this->flash->addMessage('success_detected', _T('Event has been saved.', 'courses'));
@@ -340,47 +377,77 @@ class EventsController extends AbstractPluginController
             ->withHeader('Location', $this->routeparser->urlFor('coursesEvents'));
     }
 
+    /**
+     * Phase 41: propagate the new capacity to every future non-cancelled
+     * session of the event. The user explicitly accepted that lowering the
+     * cap below current_registrations does NOT bump anyone — already-enrolled
+     * members stay; the session just stops accepting new registrations until
+     * natural cancellations bring it under the cap.
+     */
     private function propagateCapacityToSessions(Event $event): void
     {
-        $newCapacity = $event->getMaxCapacity();
-
         try {
             $update = $this->zdb->update(Session::TABLE);
-            $update->set(['max_capacity' => $newCapacity]);
+            $update->set(['max_capacity' => $event->getMaxCapacity()]);
             $update->where->equalTo('event_id', $event->getId());
-            $update->where->equalTo('status', Session::STATUS_OPEN);
+            $update->where->notEqualTo('status', Session::STATUS_CANCELLED);
             $update->where->greaterThanOrEqualTo('session_date', date('Y-m-d'));
-
-            // Never reduce capacity below current registrations for any session
-            if ($newCapacity !== null) {
-                $update->where->lessThanOrEqualTo('current_registrations', $newCapacity);
-            }
-
             $this->zdb->execute($update);
-
-            // Warn if some sessions were skipped (too many registrations)
-            if ($newCapacity !== null) {
-                $select = $this->zdb->select(Session::TABLE);
-                $select->columns(['count' => new \Laminas\Db\Sql\Expression('COUNT(*)')])
-                    ->where->equalTo('event_id', $event->getId())
-                    ->equalTo('status', Session::STATUS_OPEN)
-                    ->greaterThanOrEqualTo('session_date', date('Y-m-d'))
-                    ->greaterThan('current_registrations', $newCapacity);
-                $result = $this->zdb->execute($select)->current();
-                $skipped = (int)($result->count ?? 0);
-                if ($skipped > 0) {
-                    $this->flash->addMessage(
-                        'error_detected',
-                        sprintf(
-                            _T('%d session(s) were not updated: their current registrations exceed the new capacity.', 'courses'),
-                            $skipped
-                        )
-                    );
-                }
-            }
         } catch (\Throwable $e) {
             Analog::log(
                 'Error propagating capacity for event #' . $event->getId() . ': ' . $e->getMessage(),
+                Analog::ERROR
+            );
+        }
+    }
+
+    /**
+     * Phase 41: propagate slot time changes to every future non-cancelled
+     * session whose (start_time, end_time) matches one of the OLD slots.
+     *
+     * Slots are matched by index — position N in the form maps to position N
+     * of the previously-stored list. Slots whose times are unchanged are
+     * skipped. If the user added/removed slots, only the still-aligned indexes
+     * are propagated; sessions tied to a removed slot keep their old time
+     * (the staff can still edit individual sessions).
+     *
+     * @param array<array<string, string>> $oldSlots Slots loaded before check()
+     * @param array<array<string, string>> $newSlots Slots posted by the form
+     */
+    private function propagateScheduleToSessions(Event $event, array $oldSlots, array $newSlots): void
+    {
+        if (empty($oldSlots)) {
+            return;
+        }
+
+        try {
+            foreach ($oldSlots as $i => $oldSlot) {
+                if (!isset($newSlots[$i])) {
+                    continue;
+                }
+                $newSlot = $newSlots[$i];
+                if (
+                    $oldSlot['start_time'] === $newSlot['start_time']
+                    && $oldSlot['end_time'] === $newSlot['end_time']
+                ) {
+                    continue;
+                }
+
+                $update = $this->zdb->update(Session::TABLE);
+                $update->set([
+                    'start_time' => $newSlot['start_time'],
+                    'end_time'   => $newSlot['end_time'],
+                ]);
+                $update->where->equalTo('event_id', $event->getId());
+                $update->where->notEqualTo('status', Session::STATUS_CANCELLED);
+                $update->where->greaterThanOrEqualTo('session_date', date('Y-m-d'));
+                $update->where->equalTo('start_time', $oldSlot['start_time']);
+                $update->where->equalTo('end_time', $oldSlot['end_time']);
+                $this->zdb->execute($update);
+            }
+        } catch (\Throwable $e) {
+            Analog::log(
+                'Error propagating schedule for event #' . $event->getId() . ': ' . $e->getMessage(),
                 Analog::ERROR
             );
         }

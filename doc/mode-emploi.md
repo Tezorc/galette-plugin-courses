@@ -121,7 +121,7 @@ Pour qu'un adherent puisse s'inscrire a une seance :
 - Sa **cotisation doit etre a jour** (`date_echeance` non expiree)
 - La seance doit etre au statut **"Ouverte"**
 - La date de la seance doit etre **dans le futur**
-- **Au moins un moniteur** doit etre assigne a la seance
+- **Au moins un moniteur** doit etre assigne a la seance — **sauf si l'evenement coche** "Autoriser les inscriptions aux seances sans moniteur affecte" (voir l'option dans le formulaire d'evenement)
 - L'adherent ne doit **pas deja etre inscrit** a cette seance
 - La seance ne doit **pas etre pleine** (si une capacite max est definie)
 - Si l'evenement est restreint par groupe, l'adherent doit **appartenir a un des groupes autorises**
@@ -142,6 +142,7 @@ Pour qu'un adherent puisse s'inscrire a une seance :
    - **Prix** : prix de la participation
    - **Evenement gratuit** : cocher si l'evenement est gratuit
    - **Delai de desinscription (jours avant)** : nombre de jours avant la seance au-dela duquel la desinscription n'est plus possible
+   - **Autoriser les inscriptions aux seances sans moniteur affecte** (Phase 40) : si coche, les membres peuvent s'inscrire des la creation/validation de la seance sans attendre qu'un moniteur volontaire soit affecte. Si decoche (defaut), l'inscription reste bloquee tant qu'aucun moniteur n'est affecte (comportement historique).
    - **Statut** : statut de l'evenement (voir ci-dessous)
 
 3. Section **Planification** :
@@ -359,7 +360,7 @@ En haut de cette section, deux boutons sont disponibles pour le staff et les adm
 
 ### 13. Gestion des moniteurs
 
-Un moniteur est un responsable de groupe qui encadre une seance. **L'inscription est bloquee tant qu'aucun moniteur n'est assigne.**
+Un moniteur est un responsable de groupe qui encadre une seance. **L'inscription est bloquee tant qu'aucun moniteur n'est assigne**, sauf si l'evenement a coche **"Autoriser les inscriptions aux seances sans moniteur affecte"** (Phase 40) — dans ce cas, les inscriptions sont ouvertes des la creation de la seance et un email de notification (`REF_SESSION_OPEN`) est envoye aux membres eligibles.
 
 #### Affecter un moniteur (staff/admin)
 

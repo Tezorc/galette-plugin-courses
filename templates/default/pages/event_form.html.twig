@@ -72,6 +72,15 @@
                 </div>
             </div>
 
+            <div class="field">
+                <div class="ui toggle checkbox">
+                    <input type="hidden" name="allow_registration_without_instructor" value="0"/>
+                    <input type="checkbox" name="allow_registration_without_instructor" id="allow_registration_without_instructor" value="1"{% if event.isRegistrationAllowedWithoutInstructor() %} checked{% endif %}/>
+                    <label for="allow_registration_without_instructor">{{ _T("Allow registrations on sessions without an assigned instructor", "courses") }}</label>
+                </div>
+                <div class="courses-help-text">{{ _T("If unchecked, members cannot register on a session until an instructor has volunteered.", "courses") }}</div>
+            </div>
+
             <div class="two fields">
                 <div class="field">
                     <div class="ui toggle checkbox">

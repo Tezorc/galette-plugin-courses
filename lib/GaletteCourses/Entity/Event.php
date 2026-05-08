@@ -56,6 +56,7 @@ class Event
     private ?string $recurrence_end_date = null;
     private int $advance_weeks = 4;
     private bool $is_restricted = false;
+    private bool $allow_registration_without_instructor = false;
     private string $status = self::STATUS_DRAFT;
     private ?int $unregister_deadline_days = null;
     private int $creator_id = 0;
@@ -121,6 +122,7 @@ class Event
         $this->recurrence_end_date = $rs->recurrence_end_date !== null ? (string)$rs->recurrence_end_date : null;
         $this->advance_weeks = (int)$rs->advance_weeks;
         $this->is_restricted = (bool)$rs->is_restricted;
+        $this->allow_registration_without_instructor = (bool)($rs->allow_registration_without_instructor ?? 0);
         $this->status = (string)$rs->status;
         $this->unregister_deadline_days = $rs->unregister_deadline_days !== null ? (int)$rs->unregister_deadline_days : null;
         $this->creator_id = (int)$rs->creator_id;
@@ -217,6 +219,8 @@ class Event
         }
 
         $this->is_restricted = isset($post['is_restricted']) && $post['is_restricted'] == '1';
+        $this->allow_registration_without_instructor = isset($post['allow_registration_without_instructor'])
+            && $post['allow_registration_without_instructor'] == '1';
         $this->unregister_deadline_days = !empty($post['unregister_deadline_days']) ? (int)$post['unregister_deadline_days'] : null;
 
         if (isset($post['status']) && in_array($post['status'], [self::STATUS_DRAFT, self::STATUS_PENDING, self::STATUS_VALIDATED, self::STATUS_CANCELLED])) {
@@ -243,6 +247,7 @@ class Event
                 'recurrence_end_date' => $this->recurrence_end_date,
                 'advance_weeks' => $this->advance_weeks,
                 'is_restricted' => $this->is_restricted ? 1 : 0,
+                'allow_registration_without_instructor' => $this->allow_registration_without_instructor ? 1 : 0,
                 'status' => $this->status,
                 'unregister_deadline_days' => $this->unregister_deadline_days,
             ];
@@ -667,6 +672,11 @@ class Event
     public function isRestricted(): bool
     {
         return $this->is_restricted;
+    }
+
+    public function isRegistrationAllowedWithoutInstructor(): bool
+    {
+        return $this->allow_registration_without_instructor;
     }
 
     public function getStatus(): string

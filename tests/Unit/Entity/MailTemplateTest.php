@@ -99,16 +99,18 @@ final class MailTemplateTest extends TestCase
         );
     }
 
-    public function testGetAvailableRefsReturnsAllNineCanonicalRefs(): void
+    public function testGetAvailableRefsReturnsAllTenCanonicalRefs(): void
     {
         $refs = MailTemplate::getAvailableRefs();
 
-        self::assertCount(9, $refs);
+        self::assertCount(10, $refs);
         self::assertContains(MailTemplate::REF_INSTRUCTOR_ASSIGNED, $refs);
         self::assertContains(MailTemplate::REF_WAITLIST_PROMOTION, $refs);
         self::assertContains(MailTemplate::REF_CANCELLATION, $refs);
         // Phase 36 addition: daily digest replaces the per-event new-sessions blast for managers.
         self::assertContains(MailTemplate::REF_DAILY_DIGEST_MANAGER, $refs);
+        // Phase 40 addition: session open notification for events that allow registration without instructor.
+        self::assertContains(MailTemplate::REF_SESSION_OPEN, $refs);
         // Phase 15 removal: the two refs below were dropped from the active list.
         self::assertNotContains('publication', $refs);
         self::assertNotContains('new_sessions', $refs);
@@ -148,6 +150,7 @@ final class MailTemplateTest extends TestCase
         return [
             'new_sessions_manager'   => [MailTemplate::REF_NEW_SESSIONS_MANAGER],
             'instructor_assigned'    => [MailTemplate::REF_INSTRUCTOR_ASSIGNED],
+            'session_open'           => [MailTemplate::REF_SESSION_OPEN],
             'waitlist_promotion'     => [MailTemplate::REF_WAITLIST_PROMOTION],
             'cancellation'           => [MailTemplate::REF_CANCELLATION],
             'waitlist_cancellation'  => [MailTemplate::REF_WAITLIST_CANCELLATION],

@@ -84,8 +84,11 @@ class RegistrationsController extends AbstractController
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
         }
 
-        // Check instructor assigned
-        if (!SessionInstructor::hasInstructor($this->zdb, $id)) {
+        // Block registration when no instructor is assigned, unless the event explicitly allows it.
+        if (
+            !$session->getEvent()->isRegistrationAllowedWithoutInstructor()
+            && !SessionInstructor::hasInstructor($this->zdb, $id)
+        ) {
             $this->flash->addMessage('error_detected', _T('No instructor assigned to this session. Registration is not yet possible.', 'courses'));
             return $response
                 ->withStatus(302)
@@ -300,8 +303,11 @@ class RegistrationsController extends AbstractController
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
         }
 
-        // Check instructor assigned
-        if (!SessionInstructor::hasInstructor($this->zdb, $id)) {
+        // Block registration when no instructor is assigned, unless the event explicitly allows it.
+        if (
+            !$session->getEvent()->isRegistrationAllowedWithoutInstructor()
+            && !SessionInstructor::hasInstructor($this->zdb, $id)
+        ) {
             $this->flash->addMessage('error_detected', _T('No instructor assigned to this session. Registration is not yet possible.', 'courses'));
             return $response
                 ->withStatus(302)
@@ -865,7 +871,10 @@ class RegistrationsController extends AbstractController
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
         }
 
-        if (!SessionInstructor::hasInstructor($this->zdb, $id)) {
+        if (
+            !$session->getEvent()->isRegistrationAllowedWithoutInstructor()
+            && !SessionInstructor::hasInstructor($this->zdb, $id)
+        ) {
             $this->flash->addMessage('error_detected', _T('No instructor assigned to this session. Registration is not yet possible.', 'courses'));
             return $response
                 ->withStatus(302)
@@ -984,7 +993,10 @@ class RegistrationsController extends AbstractController
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
         }
 
-        if (!SessionInstructor::hasInstructor($this->zdb, $id)) {
+        if (
+            !$session->getEvent()->isRegistrationAllowedWithoutInstructor()
+            && !SessionInstructor::hasInstructor($this->zdb, $id)
+        ) {
             $this->flash->addMessage('error_detected', _T('No instructor assigned to this session. Registration is not yet possible.', 'courses'));
             return $response
                 ->withStatus(302)

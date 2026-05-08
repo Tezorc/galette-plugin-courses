@@ -619,7 +619,7 @@ Le developpement est organise en phases progressives.
 #### F20.5 - Tests templates email (`tests/Unit/Entity/MailTemplateTest.php`, 15 cas)
 
 - Substitution `MailTemplate::substitute` (7 cas) : remplacement simple / multiple / repete / inconnu / vars vides / chaine vide (gestion des `reason_block` / `comment_block` vides en cancellation) / cast d'un int.
-- Contrat des refs (`getAvailableRefs`) : 9 refs presentes, et les anciennes `publication` / `new_sessions` (supprimees en phase 15) absentes.
+- Contrat des refs (`getAvailableRefs`) : 10 refs presentes (Phase 40 a ajoute REF_SESSION_OPEN), et les anciennes `publication` / `new_sessions` (supprimees en phase 15) absentes.
 - Phase 15 verrouillee (data-provider, 6 cas) : `event_description` est expose dans `getAvailableVars` pour `publication_manager`, `new_sessions_manager`, `instructor_assigned`, `waitlist_promotion`, `cancellation`, `waitlist_cancellation`.
 - Sanity : chaque variable annoncee dans `getAvailableVars` apparait dans le `getDefaultBody` correspondant (cas `instructor_assigned` comme tracer).
 
@@ -632,6 +632,54 @@ Le developpement est organise en phases progressives.
 - CI GitHub Actions pour relancer la suite a chaque push.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
+
+### Phase 40 - Toggle par evenement "Autoriser les inscriptions sans moniteur affecte"
+
+**Statut : TERMINEE**
+
+- Demande utilisateur : pouvoir choisir, evenement par evenement, si les inscriptions a une seance sont autorisees alors qu'aucun moniteur n'est affecte. Comportement historique = blocage en l'absence de moniteur ; certains evenements doivent pouvoir s'en affranchir (par ex. quand un moniteur peut etre trouve apres coup, ou quand l'inscription elle-meme aide a recruter un moniteur volontaire).
+
+- Solution retenue : drapeau booleen porte par l'evenement (option B), pas de preference globale.
+  - Nouvelle colonne `allow_registration_without_instructor TINYINT(1) NOT NULL DEFAULT 0` sur `galette_courses_events` (script `scripts/upgrade-allow-no-instructor.sql` pour les installations existantes, ajout dans `scripts/mysql.sql` pour les fresh installs).
+  - Defaut a 0 -> comportement antérieur strictement preserve apres migration. Opt-in evenement par evenement.
+
+- Entite `GaletteCourses\Entity\Event` :
+  - Nouvelle propriete `private bool $allow_registration_without_instructor = false;` lue depuis `loadFromRS` (compat ascendante : `(bool)($rs->allow_registration_without_instructor ?? 0)`), ecrite dans `store()`, lue dans `check()` depuis `$post['allow_registration_without_instructor']`.
+  - Nouvel accesseur public `isRegistrationAllowedWithoutInstructor(): bool`.
+
+- Formulaire d'evenement (`templates/default/pages/event_form.html.twig`) : nouvelle case a cocher Fomantic placee juste apres le bloc `groups-section` (avant le bloc `is_free` / `status`). Pattern double `<input type="hidden" value="0">` + `<input type="checkbox" value="1">` pour garantir l'envoi d'une valeur meme quand la case est decochee. Help-text `.courses-help-text` (nouvelle classe utilitaire CSS) sous la case explicitant que decoche = blocage historique.
+
+- `RegistrationsController` : les 4 endroits qui bloquaient l'inscription en l'absence de moniteur (`doRegister`, `doWaitlist`, `doParentRegister`, `doProxyRegister`) testent desormais d'abord le drapeau evenement avant le check `SessionInstructor::hasInstructor()` :
+  ```
+  if (
+      !$session->getEvent()->isRegistrationAllowedWithoutInstructor()
+      && !SessionInstructor::hasInstructor($this->zdb, $id)
+  ) { ... blocage ... }
+  ```
+  Le commentaire `// Check instructor assigned` est remplace par `// Block registration when no instructor is assigned, unless the event explicitly allows it.` aux deux endroits ou il existait. Le message flash et la redirection sont inchanges.
+
+- Notifications membre : nouveau template `MailTemplate::REF_SESSION_OPEN` (10e ref).
+  - `getAvailableVars` : `event_name`, `event_description`, `session_date`, `session_time` (pas de `instructor_name`, evidemment).
+  - Sujet : `[Courses] Séance ouverte aux inscriptions : {event_name}`.
+  - Corps par defaut : annonce que la seance est ouverte, reconnait qu'aucun moniteur n'est encore affecte, promet une notification ulterieure quand un moniteur se sera porte volontaire (cf. `REF_INSTRUCTOR_ASSIGNED`).
+  - Description (UI admin) explicite : "envoye seulement si l'evenement a `allow_registration_without_instructor=1` et qu'aucun moniteur n'est encore affecte. Sinon `REF_INSTRUCTOR_ASSIGNED` est utilise apres affectation."
+
+- Wiring : `CourseNotification::notifyNewSessions(Event $event, array $sessions)` enrichi.
+  - Avant : pour chaque seance, enqueue dans la queue digest pour les responsables de groupe (Phase 36, comportement inchange).
+  - Apres l'enqueue, **si `$event->isRegistrationAllowedWithoutInstructor()`**, appel direct (envoi immediat, hors queue) de `notifySessionOpenWithoutInstructor($session, $event)` pour chaque seance.
+  - Nouvelle methode publique `CourseNotification::notifySessionOpenWithoutInstructor(Session $session, Event $event): void` : utilise `getEligibleMemberEmails($event)` (deja existant — gere groupes/restrictions/opt-out), rend `REF_SESSION_OPEN` et envoie via `sendMail()`.
+  - Quand un moniteur se proposera ulterieurement, `SessionsController::doAssignInstructor` continuera d'envoyer `REF_INSTRUCTOR_ASSIGNED` aux membres a la 1ere affectation. Les membres recoivent donc 2 mails (`REF_SESSION_OPEN` puis `REF_INSTRUCTOR_ASSIGNED`) sur ce parcours, ce qui est explicitement accepte : le 1er mail leur permet de s'inscrire tout de suite, le 2eme leur confirme l'identite du moniteur.
+
+- Wording de `REF_DAILY_DIGEST_MANAGER` : la phrase d'introduction est neutralisee — elle ne sous-entend plus que l'inscription est bloquee. Avant : "The sessions listed below are still waiting for an instructor. If you would like to lead one of them...". Apres : "The sessions listed below currently have no instructor assigned. If you would like to lead one of them, log in and volunteer from the session detail page — your presence is always welcome.". Le digest reste pertinent dans les deux cas (drapeau active ou non) car la fonction du mail (inviter les responsables a se porter volontaire) ne change pas.
+
+- Tests `tests/Unit/Entity/MailTemplateTest.php` :
+  - `testGetAvailableRefsReturnsAllNineCanonicalRefs` rebaptise `testGetAvailableRefsReturnsAllTenCanonicalRefs` ; assertion `assertCount(9)` -> `assertCount(10)` ; ajout `assertContains(REF_SESSION_OPEN)`.
+  - Data provider `refsThatMustExposeEventDescription` augmente avec une cle `session_open` -> verifie que `event_description` est expose pour le nouveau template.
+  - Test pre-existant `testDefaultBodyMentionsEveryDeclaredVar` (qui s'exerce sur `REF_INSTRUCTOR_ASSIGNED`) couvre par symetrie le contrat "chaque variable declaree apparait dans le corps". 16 tests verts en 375 ms.
+
+- CSS : nouvelle classe `.courses-help-text { font-size: .9em; color: #888; margin-top: .25em; }` ajoutee dans `webroot/galette_courses.css` pour les help-texts sous les champs de formulaire (reutilisable par d'autres ecrans futurs).
+
+- Documentation : `doc/mode-emploi.md` (conditions d'inscription + section formulaire d'evenement + section gestion moniteurs) et `doc/cahier-des-charges.md` (cette section) mis a jour. CLAUDE.md liste la nouvelle ref dans `MailTemplate` (10 refs) et resume Phase 40 dans Avancement.
 
 ### Phase 36 - Digest quotidien des invitations moniteur (1 mail/jour max par responsable)
 

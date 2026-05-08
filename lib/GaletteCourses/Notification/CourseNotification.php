@@ -176,6 +176,37 @@ class CourseNotification
                 Analog::INFO
             );
         }
+
+        // Phase 40: when the event allows registration without an instructor,
+        // members can register on the session right away — notify them now
+        // (per session, immediate) instead of waiting for an instructor to volunteer.
+        if ($event->isRegistrationAllowedWithoutInstructor()) {
+            foreach ($sessions as $session) {
+                $this->notifySessionOpenWithoutInstructor($session, $event);
+            }
+        }
+    }
+
+    /**
+     * Notify eligible members that a session is open for registration even
+     * though no instructor has been assigned yet. Used only for events that
+     * have allow_registration_without_instructor = true.
+     */
+    public function notifySessionOpenWithoutInstructor(Session $session, Event $event): void
+    {
+        $recipients = $this->getEligibleMemberEmails($event);
+        if (empty($recipients)) {
+            return;
+        }
+
+        [$subject, $message] = $this->renderTemplate(MailTemplate::REF_SESSION_OPEN, [
+            'event_name'        => $event->getName(),
+            'event_description' => $this->buildDescriptionBlock($event->getDescription()),
+            'session_date'      => $session->getFormattedDateShort(),
+            'session_time'      => $session->getStartTime() . ' - ' . $session->getEndTime(),
+        ]);
+
+        $this->sendMail($recipients, $subject, $message);
     }
 
     /**
