@@ -200,12 +200,6 @@ class RegistrationsController extends AbstractController
         }
 
         $event = $session->getEvent();
-        if (!$session->canUnregister($event->getUnregisterDeadlineDays())) {
-            $this->flash->addMessage('error_detected', _T('The unregistration deadline has passed.', 'courses'));
-            return $response
-                ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
-        }
 
         $result = $registration->cancel($session);
         if ($result !== false) {
@@ -247,14 +241,7 @@ class RegistrationsController extends AbstractController
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
         }
 
-        // Check deadline
         $event = $session->getEvent();
-        if (!$session->canUnregister($event->getUnregisterDeadlineDays())) {
-            $this->flash->addMessage('error_detected', _T('The unregistration deadline has passed.', 'courses'));
-            return $response
-                ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
-        }
 
         $result = $registration->cancel($session);
         if ($result !== false) {

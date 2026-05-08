@@ -252,6 +252,18 @@ msgstr "Prix"
 msgid "Unregistration deadline (days before)"
 msgstr "Délai de désinscription (jours avant)"
 
+msgid "Registration closes (days before session)"
+msgstr "Inscription fermée (jours avant la séance)"
+
+msgid "Leave empty or 0 to keep registration open until the session start. Unregistration is always allowed up to the session start."
+msgstr "Laisser vide ou 0 pour garder l'inscription ouverte jusqu'au début de la séance. La désinscription est toujours possible jusqu'au début de la séance."
+
+msgid "Registration deadline"
+msgstr "Délai d'inscription"
+
+msgid "Closes %d days before the session"
+msgstr "Fermée %d jours avant la séance"
+
 msgid "Free event"
 msgstr "Événement gratuit"
 

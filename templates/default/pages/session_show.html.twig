@@ -811,12 +811,12 @@
                             </div>
                         </div>
                     {% endif %}
-                    {% if event.getUnregisterDeadlineDays() %}
+                    {% if event.getRegisterDeadlineDays() %}
                         <div class="item">
                             <i class="clock icon" aria-hidden="true"></i>
                             <div class="content">
-                                <div class="header">{{ _T("Unregistration deadline", "courses") }}</div>
-                                {{ _T("%d days before the session", "courses")|format(event.getUnregisterDeadlineDays()) }}
+                                <div class="header">{{ _T("Registration deadline", "courses") }}</div>
+                                {{ _T("Closes %d days before the session", "courses")|format(event.getRegisterDeadlineDays()) }}
                             </div>
                         </div>
                     {% endif %}

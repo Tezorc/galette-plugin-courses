@@ -42,7 +42,7 @@ CREATE TABLE galette_courses_events (
     advance_weeks integer DEFAULT 4,
     is_restricted boolean NOT NULL DEFAULT false,
     status varchar(20) NOT NULL DEFAULT 'draft',
-    unregister_deadline_days integer DEFAULT NULL,
+    register_deadline_days integer DEFAULT NULL,
     creator_id integer DEFAULT NULL,
     creation_date timestamp NOT NULL,
     modification_date timestamp DEFAULT NULL,

@@ -164,12 +164,29 @@ class Session
         return $this->current_registrations >= $this->max_capacity;
     }
 
+    /**
+     * Whether new registrations are accepted right now.
+     *
+     * The event's `register_deadline_days` (when set, > 0) closes registrations
+     * earlier than the session start: registrations close at the start of the
+     * day `(session_date - N days)`. When null/0, the only cutoff is the
+     * session start time itself.
+     */
     public function isOpen(): bool
     {
         if ($this->status !== self::STATUS_OPEN) {
             return false;
         }
         $today = date('Y-m-d');
+
+        $deadline_days = $this->getEvent()->getRegisterDeadlineDays();
+        if ($deadline_days !== null && $deadline_days > 0) {
+            $cutoff = date('Y-m-d', strtotime($this->session_date . ' -' . $deadline_days . ' days'));
+            if ($today >= $cutoff) {
+                return false;
+            }
+        }
+
         if ($this->session_date > $today) {
             return true;
         }
@@ -178,15 +195,6 @@ class Session
         }
         // Same day: allow registration until the session starts
         return date('H:i:s') < $this->start_time;
-    }
-
-    public function canUnregister(?int $deadline_days = null): bool
-    {
-        if ($deadline_days === null) {
-            return true;
-        }
-        $deadline = date('Y-m-d', strtotime($this->session_date . ' -' . $deadline_days . ' days'));
-        return date('Y-m-d') <= $deadline;
     }
 
     public function incrementRegistrations(): void

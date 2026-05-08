@@ -1254,7 +1254,7 @@ Le developpement est organise en phases progressives.
 | advance_weeks | int | Semaines a l'avance pour generation (defaut: 4) |
 | is_restricted | tinyint(1) | Restreint par groupe (defaut: 0) |
 | status | varchar(20) | Statut (draft/pending/validated/cancelled) |
-| unregister_deadline_days | int | Jours avant seance pour deadline desinscription |
+| register_deadline_days | int | Jours avant seance ou l'inscription ferme (Phase 45 — renommee depuis `unregister_deadline_days`, sens inverse : ferme l'inscription au lieu de la desinscription) |
 | creator_id | int FK nullable | Createur (FK vers adherents, null pour superadmin) |
 | creation_date | datetime | Date de creation |
 | modification_date | datetime | Date de modification |

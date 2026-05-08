@@ -23,7 +23,7 @@ Le plugin **Galette Courses** ajoute a Galette la gestion de cours, entrainement
 - Permettre aux adherents de s'inscrire/desinscrire en ligne
 - Suivre la jauge de remplissage en temps reel
 - Restreindre l'acces par groupe d'adherents
-- Definir une deadline de desinscription
+- Definir un delai de fermeture des inscriptions avant la seance
 - Envoyer des notifications email avec lien de desinscription personnalise
 
 ### Architecture Evenement / Seance
@@ -141,7 +141,7 @@ Pour qu'un adherent puisse s'inscrire a une seance :
    - **Capacite maximale** : nombre maximum de participants (laisser vide = illimite)
    - **Prix** : prix de la participation
    - **Evenement gratuit** : cocher si l'evenement est gratuit
-   - **Delai de desinscription (jours avant)** : nombre de jours avant la seance au-dela duquel la desinscription n'est plus possible
+   - **Inscription fermee (jours avant la seance)** : nombre de jours avant la seance a partir duquel les inscriptions sont **fermees**. Vide ou 0 = inscription possible jusqu'au debut de la seance. La **desinscription est toujours possible** jusqu'au debut de la seance (Phase 45).
    - **Autoriser les inscriptions aux seances sans moniteur affecte** (Phase 40) : si coche, les membres peuvent s'inscrire des la creation/validation de la seance sans attendre qu'un moniteur volontaire soit affecte. Si decoche (defaut), l'inscription reste bloquee tant qu'aucun moniteur n'est affecte (comportement historique).
    - **Statut** : statut de l'evenement (voir ci-dessous)
 
@@ -249,11 +249,9 @@ Si l'inscription est impossible (cotisation expiree, seance pleine, etc.), un me
 2. Le bouton **"Se desinscrire"** (rouge) remplace le bouton d'inscription
 3. Cliquer pour se desinscrire — une modale de confirmation s'affiche
 
-La desinscription est possible seulement si :
-- La **deadline de desinscription** n'est pas depassee (si configuree sur l'evenement)
-- La seance est toujours a venir
+La desinscription est **toujours possible** tant que la seance n'a pas commence (Phase 45 — il n'y a plus de deadline de desinscription).
 
-Apres desinscription, si l'adherent souhaite se reinscrire, il peut le faire tant que la seance n'est pas pleine.
+Apres desinscription, si l'adherent souhaite se reinscrire, il peut le faire tant que la seance n'est pas pleine **et que le delai d'inscription n'est pas depasse** (champ "Inscription fermee (jours avant la seance)" sur l'evenement).
 
 ### 6. Consulter ses inscriptions (membre)
 
@@ -954,6 +952,7 @@ Toutes les phases de developpement sont terminees :
 - **Phase 25** : Optimisation responsive du detail des seances (smartphones) — tableau des inscrits convertit en card-layout responsive (suppression du scroll horizontal, dropdown de presence en pleine largeur 44 px de hauteur tactile) ; boutons d'actions de section (Send email / Export) empiles sous le titre h3 et etales sur toute la largeur sur mobile ; inputs des accordions waitlist (capacite, date) a 100% en mobile ; modales (Annuler / Confirmer la desinscription) avec actions empilees en pleine largeur ; correction empilement des champs date/heure sur la page d'edition de seance ; remplacement des `style="..."` inline par des classes utilitaires (`courses-section-actions`, `courses-input-narrow`, `courses-input-medium`, `courses-segment-tight`, `courses-divider-top0`)
 - **Phase 42** : Consolidation des boutons d'inscription parent/enfants — un seul bouton vert **"S'inscrire"** sur les cards "Trouver une seance", "Mes inscriptions" et sur la page de detail d'une seance. Une seule option eligible (parent OU un seul enfant) -> bouton direct portant le nom de la personne, POST sans page intermediaire. Deux options ou plus -> dropdown unique listant **Moi-même** + chaque enfant. Suppression de la page intermediaire "Inscrire un membre rattache" (route `coursesParentRegisterForm` supprimee). Correctifs CSS : dropdown desormais visible quand une autre card est rendue en dessous (overflow visible sur les cards / colonnes, z-index sur le menu) ; sur smartphone, le bouton dropdown et son menu prennent toute la largeur de la card pour rester confortables au tap.
 - **Phase 43** : Droits staff scopes a la seance pour les moniteurs — un moniteur affecte a une seance peut desormais **modifier** la seance (date / horaire / capacite), **ajouter ou retirer** des co-moniteurs, **inscrire ou desinscrire** des membres, **fermer / rouvrir / annuler / reactiver** la seance et **gerer la liste d'attente** (augmenter la capacite, promouvoir, creer une nouvelle seance pour la liste d'attente). Ces droits sont scopes a la seance dont il est moniteur — sur les autres seances, il reste un membre/responsable de groupe ordinaire. Implementation par un nouveau guard `denyUnlessSessionManager()` dans le trait `CoursesAclGuard` (admin OU staff OU instructeur de la seance), applique a 11 routes de gestion de seance auparavant `staff`-only.
+- **Phase 45** : Renommage du champ "Delai de desinscription" en "Inscription fermee (jours avant la seance)" — le sens est inverse : le delai controle desormais la **fermeture des inscriptions** (au lieu de la desinscription). La **desinscription est toujours libre** jusqu'au debut de la seance. Migration BDD `scripts/upgrade-register-deadline.sql` (ALTER TABLE CHANGE), les valeurs existantes sont conservees et reinterpretees comme delai d'inscription.
 - **Phase 44** : Periodes de fermeture — les seances recurrentes tombant sur une date de fermeture sont desormais **creees en statut Annule** (au lieu d'etre sautees). Le tableau des dates de fermeture (preferences staff/admin) gagne une colonne **Motif** (champ libre, max 120 car., ex. "Fermeture annuelle", "Concours regional", "AG annuelle"). A la generation, la seance est creee avec statut `Annule`, motif `Fermeture du club` et le libelle saisi en commentaire d'annulation. **Cascade automatique** : a l'enregistrement des preferences, les seances futures DEJA planifiees (Ouverte ou Fermee) tombant dans une periode sont egalement basculees en Annule, avec courriels d'annulation aux inscrits et purge + notification de la liste d'attente (idempotent : pas de double mail si on re-sauve). Aucune notification d'invitation moniteur n'est envoyee pour les seances creees deja annulees.
 - **Traductions** : Interface entierement traduite en francais (fichiers PO/MO)
 

@@ -48,8 +48,9 @@
                 </div>
 
                 <div class="field">
-                    <label for="unregister_deadline_days">{{ _T("Unregistration deadline (days before)", "courses") }}</label>
-                    <input type="number" name="unregister_deadline_days" id="unregister_deadline_days" value="{{ event.getUnregisterDeadlineDays() }}" min="0"/>
+                    <label for="register_deadline_days">{{ _T("Registration closes (days before session)", "courses") }}</label>
+                    <input type="number" name="register_deadline_days" id="register_deadline_days" value="{{ event.getRegisterDeadlineDays() }}" min="0"/>
+                    <p class="ui small grey text courses-help-text">{{ _T("Leave empty or 0 to keep registration open until the session start. Unregistration is always allowed up to the session start.", "courses") }}</p>
                 </div>
             </div>
 
