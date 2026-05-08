@@ -237,10 +237,23 @@
                         {% endfor %}
                         {% if unregistered_children|length > 0 and session.isOpen() and not session.isFull() %}
                             <div class="ui divider"></div>
-                            <a href="{{ url_for("coursesParentRegisterForm", {"id": session.getId()}) }}" class="ui small labeled icon green button">
-                                <i class="user plus icon" aria-hidden="true"></i>
-                                {{ _T("Register a linked member", "courses") }}
-                            </a>
+                            {% if unregistered_children|length == 1 %}
+                                {% set only_child_id = unregistered_children|keys|first %}
+                                {% set only_child = unregistered_children[only_child_id] %}
+                                <form action="{{ url_for("coursesDoParentRegister", {"id": session.getId()}) }}" method="post" class="ui form courses-inline-form">
+                                    <input type="hidden" name="member_id" value="{{ only_child_id }}"/>
+                                    <button type="submit" class="ui small labeled icon green button">
+                                        <i class="user plus icon" aria-hidden="true"></i>
+                                        {{ only_child.nickname ? only_child.nickname : only_child.name }}
+                                    </button>
+                                    {% include 'components/forms/csrf.html.twig' %}
+                                </form>
+                            {% else %}
+                                <a href="{{ url_for("coursesParentRegisterForm", {"id": session.getId()}) }}" class="ui small labeled icon green button">
+                                    <i class="user plus icon" aria-hidden="true"></i>
+                                    {{ _T("Register a linked member", "courses") }}
+                                </a>
+                            {% endif %}
                         {% endif %}
                     {% elseif is_on_waitlist %}
                         <div class="ui blue message">
@@ -273,10 +286,23 @@
                         {% endif %}
                         {% if unregistered_children_available|length > 0 %}
                             {% if parent_eligible %}<div class="ui divider"></div>{% endif %}
-                            <a href="{{ url_for("coursesParentRegisterForm", {"id": session.getId()}) }}" class="ui small labeled icon green button">
-                                <i class="user plus icon" aria-hidden="true"></i>
-                                {{ _T("Register a linked member", "courses") }}
-                            </a>
+                            {% if unregistered_children_available|length == 1 %}
+                                {% set only_child_id = unregistered_children_available|keys|first %}
+                                {% set only_child = unregistered_children_available[only_child_id] %}
+                                <form action="{{ url_for("coursesDoParentRegister", {"id": session.getId()}) }}" method="post" class="ui form courses-inline-form">
+                                    <input type="hidden" name="member_id" value="{{ only_child_id }}"/>
+                                    <button type="submit" class="ui small labeled icon green button">
+                                        <i class="user plus icon" aria-hidden="true"></i>
+                                        {{ only_child.nickname ? only_child.nickname : only_child.name }}
+                                    </button>
+                                    {% include 'components/forms/csrf.html.twig' %}
+                                </form>
+                            {% else %}
+                                <a href="{{ url_for("coursesParentRegisterForm", {"id": session.getId()}) }}" class="ui small labeled icon green button">
+                                    <i class="user plus icon" aria-hidden="true"></i>
+                                    {{ _T("Register a linked member", "courses") }}
+                                </a>
+                            {% endif %}
                         {% endif %}
                         {% if not parent_eligible and unregistered_children_available|length == 0 and children_registered|length == 0 %}
                             <div class="ui orange message">
