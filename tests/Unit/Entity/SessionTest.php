@@ -53,7 +53,7 @@ final class SessionTest extends TestCase
         $keys = array_keys(Session::CANCEL_REASONS);
 
         self::assertSame(
-            ['competition', 'instructor_absent', 'training', 'weather', 'other'],
+            ['competition', 'instructor_absent', 'training', 'weather', 'club_closure', 'other'],
             $keys
         );
     }

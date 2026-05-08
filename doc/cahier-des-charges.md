@@ -248,10 +248,10 @@ Le developpement est organise en phases progressives.
 - Nouvelle page de preferences accessible au staff/admin : `GET /preferences` et `POST /preferences`
 - Classe `PluginPreferences` : stockage cle-valeur en base de donnees (table `galette_courses_preferences`)
   - `NOTIFICATIONS_ENABLED` : activation des notifications email
-  - `CLOSURE_DATES` : plages de fermeture du club (JSON, tableau de {from, to})
+  - `CLOSURE_DATES` : plages de fermeture du club (JSON, tableau de `{from, to, label}` ; cf. Phase 44 — `label` est libre, max 120 car., utilise comme commentaire d'annulation)
   - `CRON_TOKEN` : token de securite 48 hex auto-genere
-- Methodes : `getClosureDates()`, `setClosureDates()`, `isClosureDate(string $date)`, `getCronToken()`
-- `RecurrenceHandler` prend un `?PluginPreferences $pluginPrefs = null` : les seances generees ignorent les dates de fermeture
+- Methodes : `getClosureDates()`, `setClosureDates()`, `isClosureDate(string $date)`, `getClosureForDate(string $date)` (Phase 44, retourne le range complet avec label), `getCronToken()`
+- `RecurrenceHandler` prend un `?PluginPreferences $pluginPrefs = null` : depuis la **Phase 44**, les seances tombant sur une date de fermeture ne sont plus sautees mais creees en `STATUS_CANCELLED` avec `cancellation_reason='club_closure'` et le label en commentaire (cf. section Phase 44)
 - Interface : toggle notifications, tableau de plages de fermeture avec pickers calendrier (ajout/suppression dynamique), affichage URL cron avec bouton copier
 - Protection CSRF : tous les formulaires POST des preferences (plugin et membre) incluent le token CSRF Galette (`components/forms/csrf.html.twig`)
 
@@ -631,6 +631,95 @@ Le developpement est organise en phases progressives.
 - CI GitHub Actions pour relancer la suite a chaque push.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
+
+### Phase 44 - Periodes de fermeture du club -> seances generees en `cancelled`
+
+**Statut : TERMINEE**
+
+- Demande utilisateur : "Les seances recurrentes durant les periodes de fermeture du club devraient etre creees en annule avec la cause de l'annulation (fermeture annuelle, concours, AG, etc.)" — au lieu d'etre **sautees silencieusement** comme c'etait le cas depuis la Phase 10.
+
+- Justification : la disparition pure et simple d'une seance recurrente sur le calendrier prete a confusion (les membres se demandent pourquoi telle date manque). En la creant en `cancelled` avec un motif explicite, le creneau reste visible avec sa raison d'etre annule, tout comme une annulation manuelle.
+
+- Schema de stockage (pas de migration BDD requise — JSON dans `pref_value` de la table `galette_courses_preferences`) :
+  - Avant : `[{"from": "2026-08-01", "to": "2026-08-31"}]`
+  - Apres : `[{"from": "2026-08-01", "to": "2026-08-31", "label": "Fermeture annuelle"}]`
+  - Compatibilite ascendante : `getClosureDates()` normalise les anciennes entrees en injectant `label = ''`.
+
+- Implementation :
+  - `PluginPreferences::getClosureDates()` normalise toutes les entrees pour exposer la cle `label` (defaut `''`) ; les lecteurs peuvent compter sur sa presence.
+  - Nouvelle methode `PluginPreferences::getClosureForDate(string $date): ?array` retourne le range complet (avec label) ou `null`. Utilisee par `RecurrenceHandler` pour recuperer le label du range qui couvre la date a creer.
+  - `RecurrenceHandler::generateSessions()` ne filtre plus les dates de fermeture. Il itere sur tous les `$newDates` (dates calculees moins celles ayant deja une seance), et pour chacune :
+    - si `$pluginPrefs?->getClosureForDate($date)` retourne un range, la seance est creee avec `status=STATUS_CANCELLED`, `cancellation_reason='club_closure'`, `cancellation_comment=$range['label']` (ou `null` si le label est vide) ;
+    - sinon, comportement habituel (creation `STATUS_OPEN`).
+  - Nouveau motif `'club_closure' => 'Club closure'` (6e cle) ajoute a `Session::CANCEL_REASONS`. `getCancellationReasonLabel()` etend son `match` pour afficher `_T('Club closure', 'courses')`.
+  - Filtre defensif en tete de `CourseNotification::notifyNewSessions()` : `array_filter` ne garde que `STATUS_OPEN`. Cela evite d'enqueue dans la queue digest moniteur (REF_NEW_SESSIONS_MANAGER) ou de declencher le mail immediat membre (REF_SESSION_OPEN, evenements `allow_registration_without_instructor=1`) pour des seances annulees a la creation. Le digest sweep filtre deja sur `status=OPEN`, mais le filtre amont evite des inserts inutiles dans la queue et garantit que les membres ne recoivent pas un mail "session ouverte" pour un creneau annule.
+
+- UI / preferences (`templates/default/pages/preferences.html.twig`) :
+  - Tableau "Dates de fermeture" : ajout d'une 3e colonne **"Reason"** (entre "Until" et "Duration"), input texte de 120 caracteres, placeholder localise.
+  - `<tbody>` rendu : nouveau `<input type="text" name="closure_label[]" value="{{ range.label|default('') }}" maxlength="120">`.
+  - JS `newClosureRow()` : la fonction qui cree dynamiquement une nouvelle ligne ajoute la cellule `closure_label[]` avec le meme placeholder. `colspan="6"` sur la ligne "empty state" (au lieu de 5).
+  - Wording du paragraphe explicatif modifie : "Recurring sessions falling on these dates will be created as cancelled with the reason shown below" (au lieu de "Sessions will not be generated automatically on these dates").
+
+- Backend (`PreferencesController::doSave`) : parse `$post['closure_label']` parallelement a `closure_from` / `closure_to`. Trim, troncature defensive a 120 caracteres si depassement (devrait etre bloque cote HTML par `maxlength`). Stockage `['from'=>..., 'to'=>..., 'label'=>...]` par range.
+
+- Tests : un test mis a jour
+  - `SessionTest::testCancelReasonsExposesLanguageNeutralKeys` : tableau attendu passe de 5 a 6 cles (`['competition', 'instructor_absent', 'training', 'weather', 'club_closure', 'other']`).
+  - 54 tests verts (aucun nouveau test ajoute — le comportement est couvert par integration manuelle dans le scenario "Cron generate-sessions sur date couverte par une closure").
+
+- Acteurs notifies pour les seances creees directement en `cancelled` (cron / "Generer les seances") : aucun (les seances annulees a la creation ne declenchent ni `notifyNewSessions` ni `notifySessionOpenWithoutInstructor` grace au filtre defensif). Si un staff/moniteur souhaite reactiver une seance closure plus tard, le flux normal `doReactivate` s'applique (qui declenche bien `notifyNewSessions` ou `notifyInstructorAssigned` selon la presence d'un moniteur).
+
+- **Cascade aux seances existantes** (decision metier "B" cf. session du 2026-05-08) : lorsqu'un staff enregistre les preferences, toutes les seances futures (`session_date >= today`) au statut `OPEN` ou `CLOSED` tombant dans une plage de fermeture sont basculees en `CANCELLED` avec le meme motif et label, **et les inscrits + liste d'attente sont notifies** comme dans une annulation manuelle :
+  - Nouvelle methode privee `PreferencesController::cancelSessionsCoveredByClosures(array $closures)` appelee dans `doSave` apres `setClosureDates()`.
+  - Pour chaque plage `[from, to, label]` :
+    - skip si `to < today` (plage purement passee — eviter du bruit historique) ;
+    - `effectiveFrom = max(from, today)` (ne touche jamais une seance deja passee si la plage commence avant aujourd'hui) ;
+    - `SELECT id_session FROM galette_courses_sessions WHERE session_date BETWEEN effectiveFrom AND to AND status != 'cancelled'` ;
+    - pour chaque seance trouvee : load -> setStatus(CANCELLED) + setCancellationReason('club_closure') + setCancellationComment(label ou null) -> store -> history log -> `notifySessionCancellation($session, $event, 'club_closure', $comment)` (REF_CANCELLATION aux inscrits) -> `Waitlist::clearForSession()` -> si waitlist non vide `notifyWaitlistSessionCancellation(...)` (REF_WAITLIST_CANCELLATION).
+  - **Idempotence garantie** par le filtre `status != cancelled` : les seances deja annulees au passage precedent ne ressortent pas, donc re-sauver des preferences identiques ne re-notifie personne. Une plage retiree puis remise ne re-notifie pas non plus (les seances etaient deja annulees, on ne les ouvre pas automatiquement — le staff peut les reactiver manuellement).
+  - **Pas de cascade inverse** : retirer une periode de fermeture ne re-ouvre pas les seances annulees automatiquement. Decision : trop ambiguous (un staff peut avoir entre temps annule pour d'autres raisons), donc reactivation manuelle uniquement.
+  - Message flash supplementaire post-cascade : `"%d existing session(s) have been cancelled and concerned members notified."` (FR : "%d séance(s) existante(s) ont été annulées et les membres concernés notifiés.").
+
+- Imports ajoutes a `PreferencesController` : `Session`, `Waitlist`, `MemberPreferences`, `CourseNotification`, `Analog`, `Throwable`.
+
+- Traductions FR ajoutees dans `lang/courses_fr_FR.utf8.po` :
+  - `Club closure` -> "Fermeture du club" (cancellation reason label)
+  - `Recurring sessions falling on these dates will be created as cancelled with the reason shown below (e.g. "Annual closure", "Competition", "AGM").` (paragraphe explicatif preferences)
+  - `e.g. Annual closure, Competition, AGM` (placeholder du champ Motif)
+  - `%d existing session(s) have been cancelled and concerned members notified.` (flash post-cascade)
+  - `[Courses] Session cancelled (club closure)` (libelle history)
+  - `Reason` ("Motif") deja existant, reutilise pour la nouvelle colonne du tableau.
+
+- Documentation : section "Dates de fermeture du club" de `doc/mode-emploi.md` reecrite ; cette section ; `CLAUDE.md` (entree Avancement Phase 44).
+
+### Phase 43 - Droits staff scopes a la seance pour les moniteurs
+
+**Statut : TERMINEE**
+
+- Demande utilisateur : un moniteur (`SessionInstructor` affecte a la seance) doit avoir les memes droits que le staff sur **cette seance precise** : modifier (date / horaire / capacite), ajouter / retirer des moniteurs, ajouter / retirer des inscrits, fermer / rouvrir / annuler / reactiver, gerer la liste d'attente.
+
+- Perimetre confirme : tous les controllers de gestion d'une seance auparavant `staff`-only sont desormais ouverts a admin / staff / moniteur affecte a la seance. Les routes purement read-only (export CSV, mailing) restent au niveau `groupmanager` (non scope a la seance, perimetre non demande).
+
+- Implementation :
+  - Nouvelle methode protegee `CoursesAclGuard::denyUnlessSessionManager(int $sessionId, Response, string $redirectUrl, ?string $errorMessage = null): ?Response` ajoutee au trait. Autorise admin, staff, OU `SessionInstructor::isInstructor($zdb, $sessionId, $login->id)`. Sinon flash `error_detected` + redirect 302. Le superadmin (`login->id === 0`) n'est pas instructor par definition (`memberId > 0` requis avant l'appel `isInstructor`).
+  - 11 routes de gestion de seance descendues de `staff` a `member` dans `_define.php` (`coursesSessionEdit`, `coursesDoSessionEdit`, `coursesDoAssignInstructor`, `coursesDoRemoveInstructor`, `coursesDoSessionClose`, `coursesDoSessionReopen`, `coursesDoSessionCancel`, `coursesDoSessionReactivate`, `coursesDoSessionCapacity`, `coursesDoPromoteWaitlist`, `coursesDoSessionForWaitlist`). Le commentaire au-dessus du bloc rappelle que la securite est **maintenant assuree par les gardes en handler**, plus par la table ACL.
+  - 11 handlers de `SessionsController` enrichis d'un appel a `denyUnlessSessionManager` en tete (avant tout autre traitement). Les 3 handlers qui utilisaient `denyUnlessAdminOrStaff` (`doEditCapacity`, `doPromoteWaitlist`, `doSessionForWaitlist`) basculent vers le nouveau guard.
+  - `SessionsController::show` : `is_session_manager` (admin/staff/instructor-of-this-session) calcule en amont, expose au template, et utilise pour : chargement des `eligible_instructors` (auparavant staff-only), chargement des `waitlist_entries`, calcul de `can_mark_attendance`, affichage du bloc `Registered members`. La variable `is_instructor` reste exposee pour le filtre du bouton "Volunteer as instructor" (un instructeur deja affecte ne doit pas se voir proposer de se porter volontaire).
+
+- UI (`templates/default/pages/session_show.html.twig`) : 9 gates `(login.isAdmin() or login.isStaff())` remplaces par `is_session_manager` :
+  - bouton **Modifier seance** (header)
+  - bouton **Retirer un moniteur** (par ligne instructor)
+  - formulaire **Affecter un moniteur**
+  - boutons d'action `has_action_buttons` + **Reactivate / Reopen / Close / Cancel session**
+  - bloc **Waitlist management** (capacite / promote / session-for-waitlist)
+  - tableau **Registered members** (header + corps + dropdown attendance)
+  - bloc **Waitlist** (consultation lecture seule)
+  - Le bouton **Register a member** etend ses gates de `(admin or staff or groupmanager)` a `(is_session_manager or groupmanager)` — un moniteur de la seance peut ainsi inscrire un autre membre par procuration.
+
+- Securite / defense en profondeur : la coexistence du gate route-level (`member`) + handler-level (`denyUnlessSessionManager`) est volontaire. Si le handler-level est jamais retire par regression, le risque expose est limite (un membre lambda ne pourra QUE atteindre la route, pas executer l'action — toutes les redirections de denial restent en place dans le handler ; toutefois la frontiere principale reste le `denyUnlessSessionManager` qui doit absolument rester present sur chaque handler concerne).
+
+- Aucun nouveau test unitaire ajoute (le guard est un wrapper d'une logique deja couverte indirectement) ; les 54 tests existants passent toujours en ~250 ms.
+
+- Documentation : `doc/mode-emploi.md` (section moniteurs etendue, table ACL si presente) et cette section.
 
 ### Phase 42 - Consolidation des boutons d'inscription parent/enfants (UI dropdown unique)
 

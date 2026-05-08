@@ -102,20 +102,15 @@ class RecurrenceHandler
             );
         }
 
-        // Filter out dates that already have sessions or fall on closure periods
+        // Filter out dates that already have sessions
         $existingDates = $this->getExistingSessionDates($event->getId());
         $newDates = array_filter($dates, function (string $d) use ($existingDates): bool {
-            if (in_array($d, $existingDates)) {
-                return false;
-            }
-            if ($this->pluginPrefs !== null && $this->pluginPrefs->isClosureDate($d)) {
-                Analog::log('Skipping session on closure date: ' . $d, Analog::INFO);
-                return false;
-            }
-            return true;
+            return !in_array($d, $existingDates);
         });
 
-        // Create sessions
+        // Create sessions. Dates that fall within a club closure period are
+        // created with status=cancelled and the closure label as comment, so
+        // members see the cancelled slot in the calendar with the reason.
         $created = [];
         foreach ($newDates as $date) {
             $session = new Session($this->zdb);
@@ -124,6 +119,21 @@ class RecurrenceHandler
             $session->setStartTime($startTime);
             $session->setEndTime($endTime);
             $session->setMaxCapacity($event->getMaxCapacity());
+
+            $closure = $this->pluginPrefs?->getClosureForDate($date);
+            if ($closure !== null) {
+                $session->setStatus(Session::STATUS_CANCELLED);
+                $session->setCancellationReason('club_closure');
+                $label = trim($closure['label'] ?? '');
+                $session->setCancellationComment($label !== '' ? $label : null);
+                Analog::log(
+                    'Creating cancelled session on closure date ' . $date
+                    . ' for event #' . $event->getId()
+                    . ($label !== '' ? ' (' . $label . ')' : ''),
+                    Analog::INFO
+                );
+            }
+
             if ($session->store()) {
                 $created[] = $session;
             }

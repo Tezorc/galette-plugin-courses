@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace GaletteCourses\Controllers;
 
+use GaletteCourses\Entity\SessionInstructor;
 use Slim\Psr7\Response;
 
 /**
@@ -67,6 +68,33 @@ trait CoursesAclGuard
         ?string $errorMessage = null
     ): ?Response {
         if ($this->login->isAdmin() || $this->login->isStaff()) {
+            return null;
+        }
+        $this->flash->addMessage(
+            'error_detected',
+            $errorMessage ?? _T('You do not have permission to perform this action.', 'courses')
+        );
+        return $response->withStatus(302)->withHeader('Location', $redirectUrl);
+    }
+
+    /**
+     * Deny unless the logged-in user is admin, staff, or an instructor of
+     * this specific session. Used to grant session-scoped management rights
+     * (edit, cancel, close, capacity, instructor assignment...) to the
+     * moniteurs assigned to the session — same level as staff, but limited
+     * to their own sessions.
+     */
+    protected function denyUnlessSessionManager(
+        int $sessionId,
+        Response $response,
+        string $redirectUrl,
+        ?string $errorMessage = null
+    ): ?Response {
+        if ($this->login->isAdmin() || $this->login->isStaff()) {
+            return null;
+        }
+        $memberId = (int)$this->login->id;
+        if ($memberId > 0 && SessionInstructor::isInstructor($this->zdb, $sessionId, $memberId)) {
             return null;
         }
         $this->flash->addMessage(

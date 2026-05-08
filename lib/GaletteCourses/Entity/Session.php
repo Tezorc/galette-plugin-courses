@@ -45,6 +45,7 @@ class Session
         'instructor_absent' => 'Instructor absent',
         'training'          => 'Training',
         'weather'           => 'Weather',
+        'club_closure'      => 'Club closure',
         'other'             => 'Other',
     ];
 
@@ -469,6 +470,7 @@ class Session
             'instructor_absent' => _T('Instructor absent', 'courses'),
             'training'          => _T('Training', 'courses'),
             'weather'           => _T('Weather', 'courses'),
+            'club_closure'      => _T('Club closure', 'courses'),
             'other'             => _T('Other', 'courses'),
             default             => $this->cancellation_reason,
         };

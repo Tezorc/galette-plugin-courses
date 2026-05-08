@@ -30,7 +30,7 @@
                     <i class="arrow left icon" aria-hidden="true"></i>
                     <span class="courses-header-action-label">{{ _T("Back", "courses") }}</span>
                 </a>
-                {% if (login.isAdmin() or login.isStaff()) and session.getStatus() != 'cancelled' and session.getSessionDate() >= "now"|date("Y-m-d") %}
+                {% if is_session_manager and session.getStatus() != 'cancelled' and session.getSessionDate() >= "now"|date("Y-m-d") %}
                     <a href="{{ url_for('coursesSessionEdit', {'id': session.getId()}) }}"
                        class="ui small basic inverted button courses-header-action-btn"
                        title="{{ _T("Edit session", "courses") }}">
@@ -117,7 +117,7 @@
                                     {% else %}
                                         {{ _T("Unknown member", "courses") }}
                                     {% endif %}
-                                    {% if (login.isAdmin() or login.isStaff()) and session.getSessionDate() >= "now"|date("Y-m-d") %}
+                                    {% if is_session_manager and session.getSessionDate() >= "now"|date("Y-m-d") %}
                                         <form action="{{ url_for("coursesDoRemoveInstructor", {"id": session.getId()}) }}" method="post" class="ui form courses-remove-form">
                                             <input type="hidden" name="member_id" value="{{ instr.getMemberId() }}">
                                             <button type="submit" class="ui mini red icon button" title="{{ _T("Remove instructor", "courses") }}">
@@ -144,8 +144,8 @@
                     {% endif %}
                 {% endif %}
 
-                {# Staff: assign instructor #}
-                {% if (login.isAdmin() or login.isStaff()) and eligible_instructors|length > 0 and session.getSessionDate() >= "now"|date("Y-m-d") %}
+                {# Session manager (staff or session instructor): assign another instructor #}
+                {% if is_session_manager and eligible_instructors|length > 0 and session.getSessionDate() >= "now"|date("Y-m-d") %}
                     <div class="ui divider"></div>
                     <form action="{{ url_for("coursesDoAssignInstructor", {"id": session.getId()}) }}" method="post" class="ui form">
                         <div class="inline fields">
@@ -398,14 +398,14 @@
                 </div>
             {% endif %}
 
-            {# Admin/staff action buttons: Register a member | Close | Cancel (all on one line) #}
+            {# Session-manager action buttons: Register a member | Close | Cancel (all on one line) #}
             {% set is_future = session.getSessionDate() >= "now"|date("Y-m-d") %}
-            {% set has_action_buttons = ((login.isAdmin() or login.isStaff()) and session.getStatus() == 'cancelled') or ((login.isAdmin() or login.isStaff()) and session.getStatus() == 'closed') or (session.getStatus() == 'open' and is_future and (login.isAdmin() or login.isStaff() or login.isGroupManager())) %}
+            {% set has_action_buttons = (is_session_manager and session.getStatus() == 'cancelled') or (is_session_manager and session.getStatus() == 'closed') or (session.getStatus() == 'open' and is_future and (is_session_manager or login.isGroupManager())) %}
             {% if has_action_buttons %}
                 <div class="ui center aligned basic segment courses-actions">
 
                     {# Reactivate (cancelled → open) #}
-                    {% if (login.isAdmin() or login.isStaff()) and session.getStatus() == 'cancelled' %}
+                    {% if is_session_manager and session.getStatus() == 'cancelled' %}
                         <form action="{{ url_for("coursesDoSessionReactivate", {"id": session.getId()}) }}" method="post" class="ui form courses-inline-form">
                             <button type="submit" class="ui small labeled icon green button">
                                 <i class="redo icon" aria-hidden="true"></i>
@@ -416,7 +416,7 @@
                     {% endif %}
 
                     {# Reopen (closed → open) #}
-                    {% if (login.isAdmin() or login.isStaff()) and session.getStatus() == 'closed' %}
+                    {% if is_session_manager and session.getStatus() == 'closed' %}
                         <form action="{{ url_for("coursesDoSessionReopen", {"id": session.getId()}) }}" method="post" class="ui form courses-inline-form">
                             <button type="submit" class="ui small labeled icon green button">
                                 <i class="lock open icon" aria-hidden="true"></i>
@@ -428,7 +428,7 @@
 
                     {% if session.getStatus() == 'open' and is_future %}
                         {# Register a member #}
-                        {% if (has_instructor or event.isRegistrationAllowedWithoutInstructor()) and (login.isAdmin() or login.isStaff() or login.isGroupManager()) %}
+                        {% if (has_instructor or event.isRegistrationAllowedWithoutInstructor()) and (is_session_manager or login.isGroupManager()) %}
                             <div class="courses-inline-form">
                                 <a href="{{ url_for("coursesProxyRegisterForm", {"id": session.getId()}) }}" class="ui small labeled icon teal button">
                                     <i class="user plus icon" aria-hidden="true"></i>
@@ -438,7 +438,7 @@
                         {% endif %}
 
                         {# Close session (open → closed) #}
-                        {% if login.isAdmin() or login.isStaff() %}
+                        {% if is_session_manager %}
                             <form action="{{ url_for("coursesDoSessionClose", {"id": session.getId()}) }}" method="post" class="ui form courses-inline-form">
                                 <button type="submit" class="ui small labeled icon orange button">
                                     <i class="lock icon" aria-hidden="true"></i>
@@ -460,8 +460,8 @@
                 </div>
             {% endif %}
 
-            {# Waitlist management panel (admin/staff only, open session with waitlist) #}
-            {% if (login.isAdmin() or login.isStaff()) and session.getStatus() == 'open' and waitlist_count > 0 %}
+            {# Waitlist management panel (session managers only, open session with waitlist) #}
+            {% if is_session_manager and session.getStatus() == 'open' and waitlist_count > 0 %}
                 <div class="ui yellow segment courses-section-mt">
                     <h4 class="ui header">
                         <i class="list ol icon" aria-hidden="true"></i>
@@ -541,7 +541,7 @@
             {% endif %}
 
             {# Cancel session modal (outside the inline block) #}
-            {% if (login.isAdmin() or login.isStaff()) and session.getStatus() == 'open' and session.getSessionDate() >= "now"|date("Y-m-d") %}
+            {% if is_session_manager and session.getStatus() == 'open' and session.getSessionDate() >= "now"|date("Y-m-d") %}
 
                 {# Cancel session modal #}
                 <div class="ui small modal" id="cancel-session-modal">
@@ -579,10 +579,10 @@
                 </div>
             {% endif %}
 
-            {# --- Registered members list (admin/staff/group manager) --- #}
-            {% set can_mark_attendance = (login.isAdmin() or login.isStaff() or login.isGroupManager()) and session.getSessionDate() <= "now"|date("Y-m-d") %}
-            {% set can_cancel_registration = login.isAdmin() or login.isStaff() or is_instructor %}
-            {% if (login.isAdmin() or login.isStaff() or login.isGroupManager()) and registrations|length > 0 %}
+            {# --- Registered members list (session managers / group managers) --- #}
+            {% set can_mark_attendance = (is_session_manager or login.isGroupManager()) and session.getSessionDate() <= "now"|date("Y-m-d") %}
+            {% set can_cancel_registration = is_session_manager %}
+            {% if (is_session_manager or login.isGroupManager()) and registrations|length > 0 %}
                 <div class="ui segment">
                     <div class="courses-section-header">
                         <h3 class="ui header">
@@ -841,8 +841,8 @@
         </div>
     </div>
 
-    {# --- Waitlist (admin/staff/group manager) --- #}
-    {% if (login.isAdmin() or login.isStaff() or login.isGroupManager()) and waitlist_entries|length > 0 %}
+    {# --- Waitlist (session managers / group managers) --- #}
+    {% if (is_session_manager or login.isGroupManager()) and waitlist_entries|length > 0 %}
         <div class="ui segment">
             <h3 class="ui dividing header">
                 <i class="clock icon" aria-hidden="true"></i>

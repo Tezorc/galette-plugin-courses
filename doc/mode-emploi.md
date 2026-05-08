@@ -371,7 +371,13 @@ En haut de cette section, deux boutons sont disponibles pour le staff et les adm
 
 Un moniteur est un responsable de groupe qui encadre une seance. **L'inscription est bloquee tant qu'aucun moniteur n'est assigne**, sauf si l'evenement a coche **"Autoriser les inscriptions aux seances sans moniteur affecte"** (Phase 40) — dans ce cas, les inscriptions sont ouvertes des la creation de la seance et un email de notification (`REF_SESSION_OPEN`) est envoye aux membres eligibles.
 
-#### Affecter un moniteur (staff/admin)
+#### Droits du moniteur sur sa seance (Phase 43)
+
+Un moniteur affecte a une seance dispose des **memes droits que le staff sur cette seance precise** : modifier la seance (date, horaire, capacite), ajouter / retirer des moniteurs co-encadrants, inscrire / desinscrire des membres, fermer / rouvrir / annuler / reactiver la seance, gerer la liste d'attente (augmenter la capacite, promouvoir manuellement, creer une nouvelle seance pour la liste d'attente). Ces droits sont **scopes a la seance ou il est affecte** : sur les autres seances, le moniteur reste un membre / responsable de groupe ordinaire.
+
+Cas typique d'usage : un moniteur volontaire prend en charge sa seance de bout en bout (avant, pendant, apres) sans devoir solliciter un membre du staff pour le moindre ajustement.
+
+#### Affecter un moniteur (staff/admin/moniteur de la seance)
 
 1. Aller sur la page de detail d'une seance **future ou du jour**
 2. Dans la section **Moniteurs**, utiliser le select pour choisir un responsable de groupe
@@ -392,7 +398,7 @@ Les moniteurs eligibles sont les responsables des groupes associes a l'evenement
 
 Dans la liste des seances, un badge orange (triangle d'exclamation) s'affiche a cote du bouton "Details" pour les seances sans moniteur assigne.
 
-### 14. Fermer / Rouvrir une seance (staff/admin)
+### 14. Fermer / Rouvrir une seance (staff/admin/moniteur de la seance)
 
 La fermeture manuelle d'une seance empeche les nouvelles inscriptions sans annuler la seance (places occupees maintenues, inscrits existants conserves).
 
@@ -573,14 +579,17 @@ Cocher **"Activer les notifications email"** pour activer ou desactiver toutes l
 
 ### Dates de fermeture du club (staff / admin)
 
-La section **"Dates de fermeture"** permet de saisir des periodes de fermeture (vacances, feries) pendant lesquelles **aucune seance recurrente ne sera generee automatiquement**.
+La section **"Dates de fermeture"** permet de saisir des periodes de fermeture (vacances, feries, concours, AG...). Les seances recurrentes tombant sur ces dates sont **creees automatiquement en statut Annule**, avec le motif "Fermeture du club" et le libelle saisi en commentaire d'annulation.
 
 - Cliquer sur **"Ajouter une periode de fermeture"** pour ajouter une plage
 - Renseigner les dates **De** et **Au** via le selecteur calendrier
+- Renseigner le **Motif** (champ libre, max 120 caracteres) : ex. "Fermeture annuelle", "Concours regional", "AG annuelle", "Vacances de Noel"
 - Cliquer sur la corbeille rouge pour supprimer une plage
 - Cliquer sur **Enregistrer** pour sauvegarder
 
-Lors de la generation automatique des seances (bouton "Generer les seances" ou tache automatique programmee sur le serveur), toute date tombant dans une periode de fermeture est ignoree.
+Lors de la generation automatique des seances (bouton "Generer les seances" ou tache cron), toute date tombant dans une periode de fermeture donne lieu a une seance creee en `Annule` (et non plus sautee). Les membres voient ainsi le creneau dans le calendrier avec le motif explicite, ce qui evite toute confusion sur l'absence de seance. Aucune notification d'invitation moniteur n'est envoyee pour ces seances annulees a la creation.
+
+**Cascade automatique aux seances deja existantes** : a l'enregistrement des preferences, toutes les seances futures (a partir d'aujourd'hui) deja planifiees au statut **Ouverte** ou **Fermee** et tombant dans une periode de fermeture sont automatiquement basculees en **Annulee** avec le motif "Fermeture du club" et le libelle saisi en commentaire. Les inscrits recoivent un courriel d'annulation et la liste d'attente est purgee + notifiee, exactement comme une annulation manuelle. Les seances deja annulees ne sont jamais retouchees (idempotent : re-sauver les memes preferences ne re-envoie aucun courriel). Un message de confirmation indique le nombre de seances impactees.
 
 ### Generation automatique des seances (admin uniquement)
 
@@ -944,6 +953,8 @@ Toutes les phases de developpement sont terminees :
 - **Phase 26** : Liste des inscrits compacte sur smartphone — une ligne par membre dans la page detail seance (au lieu du card-layout multi-lignes de la phase 25). Nom et surnom (en gris) s'affichent a gauche, dropdown de presence ancre a droite ; colonnes Surnom et Date d'inscription masquees en mobile (le surnom reste visible inline a cote du nom).
 - **Phase 25** : Optimisation responsive du detail des seances (smartphones) — tableau des inscrits convertit en card-layout responsive (suppression du scroll horizontal, dropdown de presence en pleine largeur 44 px de hauteur tactile) ; boutons d'actions de section (Send email / Export) empiles sous le titre h3 et etales sur toute la largeur sur mobile ; inputs des accordions waitlist (capacite, date) a 100% en mobile ; modales (Annuler / Confirmer la desinscription) avec actions empilees en pleine largeur ; correction empilement des champs date/heure sur la page d'edition de seance ; remplacement des `style="..."` inline par des classes utilitaires (`courses-section-actions`, `courses-input-narrow`, `courses-input-medium`, `courses-segment-tight`, `courses-divider-top0`)
 - **Phase 42** : Consolidation des boutons d'inscription parent/enfants — un seul bouton vert **"S'inscrire"** sur les cards "Trouver une seance", "Mes inscriptions" et sur la page de detail d'une seance. Une seule option eligible (parent OU un seul enfant) -> bouton direct portant le nom de la personne, POST sans page intermediaire. Deux options ou plus -> dropdown unique listant **Moi-même** + chaque enfant. Suppression de la page intermediaire "Inscrire un membre rattache" (route `coursesParentRegisterForm` supprimee). Correctifs CSS : dropdown desormais visible quand une autre card est rendue en dessous (overflow visible sur les cards / colonnes, z-index sur le menu) ; sur smartphone, le bouton dropdown et son menu prennent toute la largeur de la card pour rester confortables au tap.
+- **Phase 43** : Droits staff scopes a la seance pour les moniteurs — un moniteur affecte a une seance peut desormais **modifier** la seance (date / horaire / capacite), **ajouter ou retirer** des co-moniteurs, **inscrire ou desinscrire** des membres, **fermer / rouvrir / annuler / reactiver** la seance et **gerer la liste d'attente** (augmenter la capacite, promouvoir, creer une nouvelle seance pour la liste d'attente). Ces droits sont scopes a la seance dont il est moniteur — sur les autres seances, il reste un membre/responsable de groupe ordinaire. Implementation par un nouveau guard `denyUnlessSessionManager()` dans le trait `CoursesAclGuard` (admin OU staff OU instructeur de la seance), applique a 11 routes de gestion de seance auparavant `staff`-only.
+- **Phase 44** : Periodes de fermeture — les seances recurrentes tombant sur une date de fermeture sont desormais **creees en statut Annule** (au lieu d'etre sautees). Le tableau des dates de fermeture (preferences staff/admin) gagne une colonne **Motif** (champ libre, max 120 car., ex. "Fermeture annuelle", "Concours regional", "AG annuelle"). A la generation, la seance est creee avec statut `Annule`, motif `Fermeture du club` et le libelle saisi en commentaire d'annulation. **Cascade automatique** : a l'enregistrement des preferences, les seances futures DEJA planifiees (Ouverte ou Fermee) tombant dans une periode sont egalement basculees en Annule, avec courriels d'annulation aux inscrits et purge + notification de la liste d'attente (idempotent : pas de double mail si on re-sauve). Aucune notification d'invitation moniteur n'est envoyee pour les seances creees deja annulees.
 - **Traductions** : Interface entierement traduite en francais (fichiers PO/MO)
 
 ---
@@ -1181,8 +1192,8 @@ Pour les evenements recurrents :
 **Gestion des inscriptions > Preferences** :
 
 **Dates de fermeture** (staff et admin) :
-- Ajouter les periodes de fermeture du club (vacances, feries)
-- Les seances recurrentes ne seront pas generees sur ces dates
+- Ajouter les periodes de fermeture du club (vacances, feries, concours, AG...) avec un **motif libre**
+- Les seances recurrentes tombant sur ces dates sont creees en statut **Annule** avec le motif saisi en commentaire (au lieu d'etre sautees)
 
 **Notifications email** (admin uniquement) :
 - Activer/desactiver toutes les notifications automatiques du plugin

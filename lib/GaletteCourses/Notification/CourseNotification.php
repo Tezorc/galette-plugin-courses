@@ -121,6 +121,15 @@ class CourseNotification
      */
     public function notifyNewSessions(Event $event, array $sessions): void
     {
+        // Defensive filter: only OPEN sessions are actionable. Sessions created
+        // already cancelled (e.g. on a club closure date — see RecurrenceHandler)
+        // must not enqueue manager invitations nor trigger member "session open"
+        // notifications.
+        $sessions = array_values(array_filter(
+            $sessions,
+            static fn(Session $s) => $s->getStatus() === Session::STATUS_OPEN
+        ));
+
         if (empty($sessions)) {
             return;
         }

@@ -207,15 +207,21 @@ class SessionsController extends AbstractPluginController
             }
         }
 
-        // Load waitlist info (entries only visible to staff / group managers)
-        $waitlist_count = Waitlist::getCount($this->zdb, $id);
-        $waitlist_entries = [];
-        if ($this->login->isAdmin() || $this->login->isStaff() || $this->login->isGroupManager()) {
-            $waitlist_entries = Waitlist::getForSession($this->zdb, $id);
-        }
-
         // Load instructors for this session
         $instructors = SessionInstructor::getForSession($this->zdb, $id);
+
+        $is_instructor_for_load = false;
+        if ($this->login->isLogged() && !$this->login->isSuperAdmin() && $this->login->id !== null) {
+            $is_instructor_for_load = SessionInstructor::isInstructor($this->zdb, $id, (int)$this->login->id);
+        }
+        $is_session_manager_load = $this->login->isAdmin() || $this->login->isStaff() || $is_instructor_for_load;
+
+        // Load waitlist info (entries visible to staff / group managers / session instructors)
+        $waitlist_count = Waitlist::getCount($this->zdb, $id);
+        $waitlist_entries = [];
+        if ($is_session_manager_load || $this->login->isGroupManager()) {
+            $waitlist_entries = Waitlist::getForSession($this->zdb, $id);
+        }
 
         // Batch-load display data (sname + nickname) for everyone shown in
         // the registered/waitlist/instructor blocks — one SELECT instead of
@@ -258,14 +264,14 @@ class SessionsController extends AbstractPluginController
         }
 
         $has_instructor = SessionInstructor::hasInstructor($this->zdb, $id);
-        $is_instructor = false;
-        if ($this->login->isLogged() && !$this->login->isSuperAdmin() && $this->login->id !== null) {
-            $is_instructor = SessionInstructor::isInstructor($this->zdb, $id, (int)$this->login->id);
-        }
+        $is_instructor = $is_instructor_for_load;
+        $is_session_manager = $is_session_manager_load;
 
-        // For staff: load eligible instructors (group managers of the event's groups)
+        // For session managers (staff or session instructors): load eligible
+        // instructors (group managers of the event's groups) so they can
+        // assign/replace co-instructors.
         $eligible_instructors = [];
-        if ($this->login->isAdmin() || $this->login->isStaff()) {
+        if ($is_session_manager) {
             $event->loadGroups();
             $eventGroups = $event->getGroups();
             if (!empty($eventGroups)) {
@@ -384,7 +390,7 @@ class SessionsController extends AbstractPluginController
 
         // Load eligible members for walk-in attendance (past or today sessions)
         $walkin_eligible_members = [];
-        $can_mark_attendance = ($this->login->isAdmin() || $this->login->isStaff() || $this->login->isGroupManager())
+        $can_mark_attendance = ($is_session_manager || $this->login->isGroupManager())
             && $session->getSessionDate() <= date('Y-m-d');
         if ($can_mark_attendance) {
             $event->loadGroups();
@@ -449,6 +455,7 @@ class SessionsController extends AbstractPluginController
                 'instructor_members' => $instructor_members,
                 'has_instructor' => $has_instructor,
                 'is_instructor' => $is_instructor,
+                'is_session_manager' => $is_session_manager,
                 'eligible_instructors' => $eligible_instructors,
                 'children' => $children,
                 'children_registered' => $children_registered,
@@ -463,6 +470,15 @@ class SessionsController extends AbstractPluginController
 
     public function doAssignInstructor(Request $request, Response $response, int $id): Response
     {
+        $deny = $this->denyUnlessSessionManager(
+            $id,
+            $response,
+            $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id])
+        );
+        if ($deny !== null) {
+            return $deny;
+        }
+
         $session = new Session($this->zdb, $id);
         if ($session->getId() === null) {
             $this->flash->addMessage('error_detected', _T('Session not found.', 'courses'));
@@ -522,6 +538,15 @@ class SessionsController extends AbstractPluginController
 
     public function doRemoveInstructor(Request $request, Response $response, int $id): Response
     {
+        $deny = $this->denyUnlessSessionManager(
+            $id,
+            $response,
+            $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id])
+        );
+        if ($deny !== null) {
+            return $deny;
+        }
+
         $session = new Session($this->zdb, $id);
         if ($session->getId() === null) {
             $this->flash->addMessage('error_detected', _T('Session not found.', 'courses'));
@@ -645,6 +670,15 @@ class SessionsController extends AbstractPluginController
 
     public function doClose(Request $request, Response $response, int $id): Response
     {
+        $deny = $this->denyUnlessSessionManager(
+            $id,
+            $response,
+            $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id])
+        );
+        if ($deny !== null) {
+            return $deny;
+        }
+
         $session = new Session($this->zdb, $id);
         if ($session->getId() === null) {
             $this->flash->addMessage('error_detected', _T('Session not found.', 'courses'));
@@ -689,6 +723,15 @@ class SessionsController extends AbstractPluginController
 
     public function doReopen(Request $request, Response $response, int $id): Response
     {
+        $deny = $this->denyUnlessSessionManager(
+            $id,
+            $response,
+            $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id])
+        );
+        if ($deny !== null) {
+            return $deny;
+        }
+
         $session = new Session($this->zdb, $id);
         if ($session->getId() === null) {
             $this->flash->addMessage('error_detected', _T('Session not found.', 'courses'));
@@ -723,6 +766,15 @@ class SessionsController extends AbstractPluginController
 
     public function doCancel(Request $request, Response $response, int $id): Response
     {
+        $deny = $this->denyUnlessSessionManager(
+            $id,
+            $response,
+            $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id])
+        );
+        if ($deny !== null) {
+            return $deny;
+        }
+
         $session = new Session($this->zdb, $id);
         if ($session->getId() === null) {
             $this->flash->addMessage('error_detected', _T('Session not found.', 'courses'));
@@ -782,6 +834,15 @@ class SessionsController extends AbstractPluginController
      */
     public function doReactivate(Request $request, Response $response, int $id): Response
     {
+        $deny = $this->denyUnlessSessionManager(
+            $id,
+            $response,
+            $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id])
+        );
+        if ($deny !== null) {
+            return $deny;
+        }
+
         $session = new Session($this->zdb, $id);
         if ($session->getId() === null) {
             $this->flash->addMessage('error_detected', _T('Session not found.', 'courses'));
@@ -850,7 +911,8 @@ class SessionsController extends AbstractPluginController
      */
     public function doEditCapacity(Request $request, Response $response, int $id): Response
     {
-        $deny = $this->denyUnlessAdminOrStaff(
+        $deny = $this->denyUnlessSessionManager(
+            $id,
             $response,
             $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id])
         );
@@ -933,7 +995,8 @@ class SessionsController extends AbstractPluginController
      */
     public function doPromoteWaitlist(Request $request, Response $response, int $id): Response
     {
-        $deny = $this->denyUnlessAdminOrStaff(
+        $deny = $this->denyUnlessSessionManager(
+            $id,
             $response,
             $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id])
         );
@@ -975,7 +1038,8 @@ class SessionsController extends AbstractPluginController
      */
     public function doSessionForWaitlist(Request $request, Response $response, int $id): Response
     {
-        $deny = $this->denyUnlessAdminOrStaff(
+        $deny = $this->denyUnlessSessionManager(
+            $id,
             $response,
             $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id])
         );
@@ -1065,6 +1129,15 @@ class SessionsController extends AbstractPluginController
 
     public function edit(Request $request, Response $response, int $id): Response
     {
+        $deny = $this->denyUnlessSessionManager(
+            $id,
+            $response,
+            $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id])
+        );
+        if ($deny !== null) {
+            return $deny;
+        }
+
         $session = new Session($this->zdb, $id);
         if ($session->getId() === null) {
             $this->flash->addMessage('error_detected', _T('Session not found.', 'courses'));
@@ -1088,6 +1161,15 @@ class SessionsController extends AbstractPluginController
 
     public function doEdit(Request $request, Response $response, int $id): Response
     {
+        $deny = $this->denyUnlessSessionManager(
+            $id,
+            $response,
+            $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id])
+        );
+        if ($deny !== null) {
+            return $deny;
+        }
+
         $session = new Session($this->zdb, $id);
         if ($session->getId() === null) {
             $this->flash->addMessage('error_detected', _T('Session not found.', 'courses'));

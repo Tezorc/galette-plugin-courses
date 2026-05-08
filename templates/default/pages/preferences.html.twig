@@ -54,7 +54,7 @@
             <span class="ui blue circular label" id="closure-count-badge"
                 {% if closure_dates|length == 0 %}style="display:none"{% endif %}>{{ closure_dates|length }}</span>
         </h3>
-        <p class="ui small text">{{ _T('Sessions will not be generated automatically on these dates.', 'courses') }}</p>
+        <p class="ui small text">{{ _T('Recurring sessions falling on these dates will be created as cancelled with the reason shown below (e.g. "Annual closure", "Competition", "AGM").', 'courses') }}</p>
 
         <div id="closure-overlap-warning" class="ui warning message" style="display:none">
             <i class="exclamation triangle icon" aria-hidden="true"></i>
@@ -67,6 +67,7 @@
                     <tr>
                         <th>{{ _T('From', 'courses') }}</th>
                         <th>{{ _T('Until', 'courses') }}</th>
+                        <th>{{ _T('Reason', 'courses') }}</th>
                         <th class="collapsing center aligned">{{ _T('Duration', 'courses') }}</th>
                         <th class="collapsing center aligned">{{ _T('Status', 'courses') }}</th>
                         <th class="collapsing"></th>
@@ -74,7 +75,7 @@
                 </thead>
                 <tbody id="closure-rows">
                     <tr id="closure-empty-row"{% if closure_dates|length > 0 %} style="display:none"{% endif %}>
-                        <td colspan="5" class="center aligned">
+                        <td colspan="6" class="center aligned">
                             <span class="ui grey text">
                                 <i class="calendar outline icon" aria-hidden="true"></i>
                                 {{ _T('No closure period configured.', 'courses') }}
@@ -85,6 +86,7 @@
                     <tr class="closure-row">
                         <td><input type="date" name="closure_from[]" value="{{ range.from }}" class="closure-from-input"/></td>
                         <td><input type="date" name="closure_to[]" value="{{ range.to }}" class="closure-to-input"/></td>
+                        <td><input type="text" name="closure_label[]" value="{{ range.label|default('') }}" class="closure-label-input" maxlength="120" placeholder="{{ _T('e.g. Annual closure, Competition, AGM', 'courses') }}"/></td>
                         <td class="collapsing center aligned closure-duration"></td>
                         <td class="collapsing center aligned closure-status"></td>
                         <td class="collapsing">
@@ -236,9 +238,11 @@ $(function() {
     }
 
     function newClosureRow() {
+        var labelPlaceholder = '{{ _T("e.g. Annual closure, Competition, AGM", "courses")|e('js') }}';
         return $('<tr class="closure-row">' +
             '<td><input type="date" name="closure_from[]" class="closure-from-input"/></td>' +
             '<td><input type="date" name="closure_to[]" class="closure-to-input"/></td>' +
+            '<td><input type="text" name="closure_label[]" class="closure-label-input" maxlength="120" placeholder="' + labelPlaceholder + '"/></td>' +
             '<td class="collapsing center aligned closure-duration">–</td>' +
             '<td class="collapsing center aligned closure-status"></td>' +
             '<td class="collapsing">' +

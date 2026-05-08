@@ -131,21 +131,32 @@ class PluginPreferences
 
     /**
      * Get closure date ranges.
-     * Each entry: ['from' => 'yyyy-mm-dd', 'to' => 'yyyy-mm-dd']
+     * Each entry: ['from' => 'yyyy-mm-dd', 'to' => 'yyyy-mm-dd', 'label' => string]
+     * The 'label' key may be missing on legacy data — callers must default to ''.
      *
-     * @return array<array{from: string, to: string}>
+     * @return array<array{from: string, to: string, label?: string}>
      */
     public function getClosureDates(): array
     {
         $json = $this->get(self::CLOSURE_DATES, '[]');
         $decoded = json_decode($json, true);
-        return is_array($decoded) ? $decoded : [];
+        if (!is_array($decoded)) {
+            return [];
+        }
+        // Normalize: ensure 'label' key always present
+        return array_map(static function (array $r): array {
+            return [
+                'from'  => (string)($r['from']  ?? ''),
+                'to'    => (string)($r['to']    ?? ''),
+                'label' => (string)($r['label'] ?? ''),
+            ];
+        }, $decoded);
     }
 
     /**
      * Save closure date ranges.
      *
-     * @param array<array{from: string, to: string}> $dates
+     * @param array<array{from: string, to: string, label?: string}> $dates
      */
     public function setClosureDates(array $dates): bool
     {
@@ -157,12 +168,24 @@ class PluginPreferences
      */
     public function isClosureDate(string $date): bool
     {
+        return $this->getClosureForDate($date) !== null;
+    }
+
+    /**
+     * Return the matching closure range for a given date, or null if none.
+     * Used by RecurrenceHandler to create a cancelled session with the
+     * closure label as cancellation comment.
+     *
+     * @return array{from: string, to: string, label: string}|null
+     */
+    public function getClosureForDate(string $date): ?array
+    {
         foreach ($this->getClosureDates() as $range) {
             if ($date >= $range['from'] && $date <= $range['to']) {
-                return true;
+                return $range;
             }
         }
-        return false;
+        return null;
     }
 
     /**

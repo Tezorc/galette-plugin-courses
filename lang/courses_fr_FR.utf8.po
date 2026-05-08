@@ -1096,6 +1096,9 @@ msgstr "Formation"
 msgid "Weather"
 msgstr "Météo"
 
+msgid "Club closure"
+msgstr "Fermeture du club"
+
 msgid "Other"
 msgstr "Autre"
 
@@ -1194,6 +1197,18 @@ msgstr "Périodes de fermeture du club"
 
 msgid "Sessions will not be generated automatically on these dates."
 msgstr "Les séances ne seront pas générées automatiquement sur ces périodes."
+
+msgid "Recurring sessions falling on these dates will be created as cancelled with the reason shown below (e.g. \"Annual closure\", \"Competition\", \"AGM\")."
+msgstr "Les séances récurrentes tombant sur ces dates seront créées en statut Annulé avec le motif indiqué ci-dessous (ex. « Fermeture annuelle », « Concours », « AG »)."
+
+msgid "e.g. Annual closure, Competition, AGM"
+msgstr "ex. Fermeture annuelle, Concours, AG"
+
+msgid "%d existing session(s) have been cancelled and concerned members notified."
+msgstr "%d séance(s) existante(s) ont été annulées et les membres concernés notifiés."
+
+msgid "[Courses] Session cancelled (club closure)"
+msgstr "[Courses] Séance annulée (fermeture du club)"
 
 msgid "Add a closure period"
 msgstr "Ajouter une période de fermeture"
