@@ -751,7 +751,8 @@ class RegistrationsController extends AbstractController
 
     public function proxyRegisterForm(Request $request, Response $response, int $id): Response
     {
-        $deny = $this->denyUnlessStaffOrGroupManager(
+        $deny = $this->denyUnlessCanProxyRegister(
+            $id,
             $response,
             $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]),
             _T('You do not have permission to register members on behalf of others.', 'courses')
@@ -958,7 +959,8 @@ class RegistrationsController extends AbstractController
 
     public function doProxyRegister(Request $request, Response $response, int $id): Response
     {
-        $deny = $this->denyUnlessStaffOrGroupManager(
+        $deny = $this->denyUnlessCanProxyRegister(
+            $id,
             $response,
             $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]),
             _T('You do not have permission to register members on behalf of others.', 'courses')
@@ -1008,8 +1010,36 @@ class RegistrationsController extends AbstractController
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
         }
 
+        // Full session -> fall back to waitlist instead of erroring out, so a
+        // staff/instructor proxy registration always lands somewhere actionable.
         if ($session->isFull()) {
-            $this->flash->addMessage('warning_detected', _T('This session is full.', 'courses'));
+            if (Waitlist::isOnWaitlist($this->zdb, $id, $member_id)) {
+                $this->flash->addMessage(
+                    'warning_detected',
+                    _T('This session is full and the member is already on the waitlist.', 'courses')
+                );
+                return $response
+                    ->withStatus(302)
+                    ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+            }
+            $waitlist = new Waitlist($this->zdb);
+            $waitlist->setSessionId($id);
+            $waitlist->setMemberId($member_id);
+            if ($waitlist->store()) {
+                $this->history->add(
+                    _T('[Courses] Member added to waitlist by staff', 'courses'),
+                    sprintf('session #%d — member #%d — position %d', $id, $member_id, $waitlist->getPosition())
+                );
+                $this->flash->addMessage(
+                    'success_detected',
+                    sprintf(
+                        _T('Session is full. Member added to the waitlist (position %d).', 'courses'),
+                        $waitlist->getPosition()
+                    )
+                );
+            } else {
+                $this->flash->addMessage('error_detected', _T('An error occurred adding the member to the waitlist.', 'courses'));
+            }
             return $response
                 ->withStatus(302)
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));

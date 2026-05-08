@@ -691,6 +691,26 @@ Le developpement est organise en phases progressives.
 
 - Documentation : section "Dates de fermeture du club" de `doc/mode-emploi.md` reecrite ; cette section ; `CLAUDE.md` (entree Avancement Phase 44).
 
+### Phase 49 - Proxy-register : moniteur autorise + bascule waitlist sur seance pleine
+
+**Statut : TERMINEE**
+
+- Demande utilisateur : "si un moniteur et staff inscrivent un membre a une seance et que la seance est complete, rajouter sur liste d'attente". Deux changements lies dans `RegistrationsController` :
+  1. **ACL** : un moniteur (SessionInstructor de la seance) doit pouvoir utiliser le formulaire "Register a member" — la UI etait deja exposee aux moniteurs depuis la Phase 43, mais le handler `doProxyRegister` rejetait via `denyUnlessStaffOrGroupManager`.
+  2. **Comportement seance pleine** : au lieu d'echouer avec un message "This session is full.", la requete tombe automatiquement en bascule waitlist (insert dans `Waitlist` + position calculee) avec message flash explicite.
+
+- Implementation :
+  - Nouveau guard `CoursesAclGuard::denyUnlessCanProxyRegister(int $sessionId, ...)` : autorise admin, staff, groupmanager, OU `SessionInstructor::isInstructor($zdb, $sessionId, login.id)`. Mirroir exact de la gate UI dans `session_show.html.twig` ("Register a member" visible si `is_session_manager or groupmanager`).
+  - `proxyRegisterForm` et `doProxyRegister` remplacent leur appel `denyUnlessStaffOrGroupManager` par le nouveau guard avec parametre `sessionId = $id`.
+  - Routes `coursesProxyRegisterForm` et `coursesDoProxyRegister` descendues de `groupmanager` a `member` dans `_define.php` (la securite reelle est portee par le guard handler, meme pattern Phase 43 / Phase 46).
+  - Branche `if ($session->isFull())` modifiee : verifie d'abord `Waitlist::isOnWaitlist` (warning si deja en file), sinon construit un `Waitlist`, appelle `store()`, log history `[Courses] Member added to waitlist by staff`, et flash success avec position. Aucune notification email envoyee (pas pour proxy register — le moniteur/staff agit en presence du membre, le mail serait redondant).
+
+- Limites assumees :
+  - Pas de notification email a l'inscrit ou au membre quand le proxy-register tombe en waitlist (compromis volontaire — le sponsor agit en concertation).
+  - Si la seance n'est pas pleine et que le membre est deja sur la waitlist d'une autre maniere, le code n'enleve pas l'entree existante avant de creer la registration directe — cas tres rare en pratique (un membre sur waitlist puis inscrit directement par staff). La promotion reste manuelle via l'UI waitlist existante.
+
+- Documentation : `doc/mode-emploi.md` (paragraphe "Inscription par staff/moniteur" enrichi de la mention waitlist), cette section, et `CLAUDE.md` (entree Avancement Phase 49).
+
 ### Phase 48 - Detection passive des inscriptions hors groupe (changement de niveau)
 
 **Statut : TERMINEE**

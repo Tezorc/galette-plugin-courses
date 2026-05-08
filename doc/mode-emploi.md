@@ -1099,10 +1099,14 @@ Vous ne pouvez vous porter volontaire que si vous gerez un des groupes associes 
 
 ### Inscrire un membre par procuration
 
+Le bouton est accessible aux administrateurs, au staff, aux responsables de groupe et **aux moniteurs affectes a la seance**.
+
 Si un adherent vous demande de l'inscrire :
 1. Sur la page de detail d'une seance, cliquer sur le bouton teal **"Inscrire un membre"**
 2. Selectionner le membre dans le dropdown recherchable
 3. Cliquer sur **"Inscrire"**
+
+**Bascule liste d'attente** : si la seance est pleine au moment de la soumission, le membre est automatiquement ajoute a la liste d'attente (avec sa position) au lieu d'echouer. Un message vert confirme la bascule. Si le membre est deja sur la waitlist, un message orange l'indique sans creer de doublon.
 
 ### Pointer les presences
 

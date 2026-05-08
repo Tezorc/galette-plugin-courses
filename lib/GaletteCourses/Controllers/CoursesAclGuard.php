@@ -103,6 +103,33 @@ trait CoursesAclGuard
     }
 
     /**
+     * Deny unless the logged-in user can proxy-register a member onto the
+     * given session: admin, staff, group manager, OR an instructor of this
+     * specific session. Mirrors the UI gate of session_show.html.twig
+     * ("Register a member" button visible to is_session_manager or
+     * groupmanager).
+     */
+    protected function denyUnlessCanProxyRegister(
+        int $sessionId,
+        Response $response,
+        string $redirectUrl,
+        ?string $errorMessage = null
+    ): ?Response {
+        if ($this->login->isAdmin() || $this->login->isStaff() || $this->login->isGroupManager()) {
+            return null;
+        }
+        $memberId = (int)$this->login->id;
+        if ($memberId > 0 && SessionInstructor::isInstructor($this->zdb, $sessionId, $memberId)) {
+            return null;
+        }
+        $this->flash->addMessage(
+            'error_detected',
+            $errorMessage ?? _T('You do not have permission to perform this action.', 'courses')
+        );
+        return $response->withStatus(302)->withHeader('Location', $redirectUrl);
+    }
+
+    /**
      * Deny unless the logged-in user is admin, staff, or an instructor of
      * this specific session. Used to grant session-scoped management rights
      * (edit, cancel, close, capacity, instructor assignment...) to the
