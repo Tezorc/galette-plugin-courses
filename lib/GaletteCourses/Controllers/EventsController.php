@@ -46,6 +46,8 @@ use Analog\Analog;
  */
 class EventsController extends AbstractPluginController
 {
+    use CoursesAclGuard;
+
     /**
      * @var array<string, mixed>
      */
@@ -54,6 +56,15 @@ class EventsController extends AbstractPluginController
 
     public function list(Request $request, Response $response, ?string $option = null, int|string|null $value = null): Response
     {
+        if (
+            $deny = $this->denyUnlessCanAuthorEvents(
+                $response,
+                $this->routeparser->urlFor('coursesMyRegistrations')
+            )
+        ) {
+            return $deny;
+        }
+
         $filter_name = $this->getFilterName('events');
         if (isset($this->session->$filter_name)) {
             $filters = $this->session->$filter_name;
@@ -96,6 +107,15 @@ class EventsController extends AbstractPluginController
 
     public function filter(Request $request, Response $response): Response
     {
+        if (
+            $deny = $this->denyUnlessCanAuthorEvents(
+                $response,
+                $this->routeparser->urlFor('coursesMyRegistrations')
+            )
+        ) {
+            return $deny;
+        }
+
         $post = $request->getParsedBody();
         $filter_name = $this->getFilterName('events');
 
@@ -134,11 +154,27 @@ class EventsController extends AbstractPluginController
 
     public function add(Request $request, Response $response): Response
     {
+        if (
+            $deny = $this->denyUnlessCanAuthorEvents(
+                $response,
+                $this->routeparser->urlFor('coursesMyRegistrations')
+            )
+        ) {
+            return $deny;
+        }
         return $this->showForm($response, new Event($this->zdb));
     }
 
     public function doAdd(Request $request, Response $response): Response
     {
+        if (
+            $deny = $this->denyUnlessCanAuthorEvents(
+                $response,
+                $this->routeparser->urlFor('coursesMyRegistrations')
+            )
+        ) {
+            return $deny;
+        }
         return $this->doStore($request, $response, null);
     }
 

@@ -56,12 +56,13 @@
         <div class="ui basic horizontal segments">
             <div class="ui basic fitted segment">
                 <div class="ui label">{{ _Tn("%1$s event", "%1$s events", nb, "courses")|format(nb) }}</div>
-                {% if login.isAdmin() or login.isStaff() or login.isGroupManager() %}
-                    <a class="ui tiny labeled icon button" href="{{ url_for("coursesEventAdd") }}">
-                        <i class="plus circle green icon" aria-hidden="true"></i>
-                        {{ _T("Add an event", "courses") }}
-                    </a>
-                {% endif %}
+                {# Reaching this page implies author rights (Phase 46): the handler
+                   gates list() with denyUnlessCanAuthorEvents (admin/staff/group
+                   manager/instructor on at least one session). #}
+                <a class="ui tiny labeled icon button" href="{{ url_for("coursesEventAdd") }}">
+                    <i class="plus circle green icon" aria-hidden="true"></i>
+                    {{ _T("Add an event", "courses") }}
+                </a>
             </div>
         </div>
     </div>

@@ -691,6 +691,74 @@ Le developpement est organise en phases progressives.
 
 - Documentation : section "Dates de fermeture du club" de `doc/mode-emploi.md` reecrite ; cette section ; `CLAUDE.md` (entree Avancement Phase 44).
 
+### Phase 48 - Detection passive des inscriptions hors groupe (changement de niveau)
+
+**Statut : TERMINEE**
+
+- Demande utilisateur : "si changement de groupe de niveau comment faire?". Option retenue : detection passive a l'affichage de "Mes inscriptions" — pas de hook sur la modification d'adherent (que le plugin ne controle pas), pas de cron, pas de desinscription automatique. Le flag est calcule en SQL au chargement de la page et le membre garde la main pour se desinscrire manuellement.
+
+- Implementation :
+  - `RegistrationsController::myRegistrations` : apres le chargement des `$events`, appel de `loadGroups()` sur chaque event puis construction de `$event_groups_map` (event_id => [group_id, ...]) restreint aux events ayant des groupes. Une **unique** requete `SELECT id_adh, id_group FROM galette_groups_members WHERE id_adh IN (parent + enfants) AND id_group IN (union des groupes requis)` materialise un map `$member_groups[member_id][group_id] = true`. Pour chaque registration sur une seance future non-annulee dont l'event a des groupes, on verifie que le membre inscrit appartient a au moins un groupe requis ; sinon `out_of_group_regs[reg.getId()] = true`.
+  - Filtres applicatifs : seules les seances `session_date >= today` ET status != cancelled sont evaluees (les seances passees sont historiquement valides ; les seances deja annulees n'ont pas besoin de signal supplementaire).
+  - Variable `out_of_group_regs` (map `[regId => true]`) passee au template.
+
+- Template `my_registrations.html.twig` :
+  - Bandeau orange en tete du `{% block content %}` (apres celui des cotisations) si `out_of_group_regs|length > 0`, avec compteur singulier/pluriel via `_Tn`.
+  - Sur chaque card des sections "Your next session" et "Upcoming" : substitution du badge statut vert par un badge orange "Out of group" (i + tooltip) quand `out_of_group_regs[reg.getId()] is defined`. Classe `courses-card-out-of-group` ajoutee a la card pour fond jaune (`#fff8e1`) + bordure gauche orange (`#f2711c`, 4px). Le bouton "Unregister" deja present permet de regulariser.
+
+- CSS : nouvelle classe `.courses-card-out-of-group` ajoutee dans `webroot/galette_courses.css` apres `.courses-card-cancelled`.
+
+- Limites assumees :
+  - **Pas de filet de securite cote serveur** sur l'inscription existante : la registration reste valide en base jusqu'a annulation. Le check d'appartenance au groupe est uniquement consulte (a) au moment de l'inscription via `Event::canRegisterSelf` et (b) ici a l'affichage. Une registration "out of group" peut donc rester en base si le membre n'agit pas — c'est le compromis voulu de l'option 1.
+  - **Pas de notification email** : la detection est uniquement visuelle. Pas de spam si un membre est retire d'un groupe par erreur et reintegre rapidement.
+
+- Documentation : `doc/mode-emploi.md` (paragraphe "Avertissement changement de groupe" dans la section "Consulter ses inscriptions"), cette section, et `CLAUDE.md` (entree Avancement Phase 48).
+
+### Phase 47 - Avertissement cotisation (parent ou enfant non a jour) sur "Mes inscriptions"
+
+**Statut : TERMINEE**
+
+- Demande utilisateur : "si le membre parent ou enfant n'est pas a jour de cotisation alors mettre un message sur mes inscription".
+
+- Implementation :
+  - `RegistrationsController::myRegistrations` : la boucle de chargement parent + enfants (`Adherent::children`) collecte desormais les noms des adherents pour lesquels `Adherent::isUp2Date()` retourne `false`. Le tableau est passe au template comme `not_up2date_members` (liste de chaines `sname`). Aucune nouvelle requete : on reutilise les objets `Adherent` deja instancies dans la meme boucle pour le rendu.
+  - `templates/default/pages/my_registrations.html.twig` : insertion d'un bandeau orange en tete du `{% block content %}` (avant les onglets) si `not_up2date_members|length > 0`. Le message est singulier ou pluriel et liste les noms concatenes par virgule.
+  - L'avertissement est purement informatif : la logique de blocage existante (`!login.isUp2Date()` dans `doRegister` / `doParentRegister` / `doWaitlist` / `doProxyRegister`) reste inchangee.
+  - Pas de bypass admin/staff/groupmanager sur cet avertissement (volontaire) : meme un admin doit savoir si l'un de ses enfants n'est pas a jour. La logique de bypass (`isAdmin || isStaff || isGroupManager`) reste appliquee uniquement au flag `member_is_up2date` qui pilote le message dans l'onglet "Trouver une seance".
+
+- Documentation : `doc/mode-emploi.md` (section "Consulter ses inscriptions" enrichie d'un paragraphe sur le bandeau cotisation), cette section, et `CLAUDE.md` (entree Avancement Phase 47).
+
+### Phase 46 - Droits "auteur d'evenements" etendus aux moniteurs
+
+**Statut : TERMINEE**
+
+- Demande utilisateur : "Le moniteur seul doit voir egalement les evenements et modifier ceux qu'il a cree." Suite logique de la Phase 43 (droits staff au niveau seance pour les moniteurs) : extension au niveau **evenement**. Un membre affecte comme `SessionInstructor` sur au moins une seance (donc reconnu comme moniteur) doit pouvoir creer ses propres evenements, les modifier, les soumettre a validation — sans etre groupmanager.
+
+- Perimetre confirme :
+  - Lister les evenements
+  - Creer un evenement
+  - Modifier ses propres evenements (creator_id == login.id)
+  - Soumettre ses propres evenements a validation
+  - PAS de droit sur les evenements crees par d'autres (un moniteur ne peut pas modifier l'evenement d'un autre responsable / moniteur). La validation / le rejet restent staff-only.
+
+- Implementation :
+  - Nouvelle methode `CoursesAclGuard::denyUnlessCanAuthorEvents(Response, string $redirectUrl, ?string $errorMessage = null): ?Response` : autorise admin, staff, groupmanager, OU `SessionInstructor::countSessionsForMember($zdb, login.id) > 0`. Sinon flash + redirect 302.
+  - ACL routes descendues de `groupmanager` a `member` dans `_define.php` : `coursesEvents`, `coursesEventsFilter`, `coursesEventAdd`, `coursesDoEventAdd`, `coursesEventEdit`, `coursesDoEventEdit`, `coursesDoEventSubmit`. Commentaire ajoute pour rappeler que la securite est portee par les gardes en handler.
+  - `EventsController` (qui utilisait pas le trait avant) declare maintenant `use CoursesAclGuard;`. Les handlers `list / filter / add / doAdd` appellent `denyUnlessCanAuthorEvents` en tete (redirect vers `coursesMyRegistrations` quand refuse — pas de boucle puisque cette route est `member`-libre).
+  - `Event::canAccess` etendu : pour les non-staff, l'acces a un evenement non-valide est autorise si l'utilisateur est createur ET (groupmanager OU moniteur).
+  - `Event::canManage` etendu : pour les non-staff, le droit de modifier exige `creator_id == login.id` ET (groupmanager OU moniteur). Les staff/admin restent inconditionnellement autorises.
+  - `Event::canSubmit` etendu : meme logique (createur + groupmanager OU moniteur), tout en preservant la condition status=DRAFT.
+  - Nouveau helper prive `Event::isInstructorAnywhere(Db, int): bool` qui delegue a `SessionInstructor::countSessionsForMember`. Centralise le predicat reutilise par les 3 methodes ci-dessus.
+  - `Events::buildWhereClause` refactore en `applyRoleScope(Select)`, partage avec `getAvailableNames` (suppression d'une duplication). Un moniteur non-groupmanager voit le meme perimetre qu'un groupmanager : ses propres evenements (toute statut) + tous les evenements valides. Un membre regulier (ni groupmanager ni moniteur) reste filtre comme avant : evenements valides uniquement, restrictions de groupe appliquees.
+  - `PluginGaletteCourses::getMenusContents()` : la condition d'affichage du menu "Gestion des inscriptions" devient `isAdmin || isStaff || isGroupManager || isInstructorAnywhere`. L'item "Registrations management" (route `coursesRegistrations` toujours `groupmanager`-only) reste gate dans la condition pour ne pas afficher de lien menant a un 403 pour le moniteur seul.
+  - `templates/default/pages/events_list.html.twig` : la condition `{% if login.isAdmin() or login.isStaff() or login.isGroupManager() %}` autour du bouton "Add an event" est supprimee — la page elle-meme est deja gate par le handler.
+
+- Securite / defense en profondeur : la coexistence du gate route-level (`member`) + handler-level (`denyUnlessCanAuthorEvents`) est volontaire (meme pattern que Phase 43). Pour les operations sur un evenement specifique (edit/doEdit/doSubmit), la gate principale reste la verification entite-niveau (`canManage` / `canSubmit`) qui exige creator + role autorise.
+
+- Aucun nouveau test unitaire (le predicat est un wrapper de logique existante) ; les 54 tests existants restent verts.
+
+- Documentation : `doc/mode-emploi.md` (section "Menu Gestion des inscriptions" + workflow de validation enrichi avec la mention moniteur), cette section, et `CLAUDE.md` (entree Avancement Phase 46).
+
 ### Phase 43 - Droits staff scopes a la seance pour les moniteurs
 
 **Statut : TERMINEE**

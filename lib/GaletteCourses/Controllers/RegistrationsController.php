@@ -401,6 +401,7 @@ class RegistrationsController extends AbstractController
         $member_ids  = [$member_id];
         $children_ids = []; // IDs of linked members (children) only
         $reg_members = []; // memberId => ['name' => ..., 'nickname' => ...]
+        $not_up2date_members = []; // names of members (parent/children) not up to date
 
         try {
             $currentAdherent = new Adherent($this->zdb, $member_id, ['children' => true]);
@@ -408,6 +409,9 @@ class RegistrationsController extends AbstractController
                 'name'     => $currentAdherent->sname ?? '',
                 'nickname' => !empty($currentAdherent->nickname) ? (string)$currentAdherent->nickname : '',
             ];
+            if (!$currentAdherent->isUp2Date()) {
+                $not_up2date_members[] = $reg_members[$member_id]['name'];
+            }
             foreach ($currentAdherent->children as $child) {
                 $childId = is_object($child) ? (int)$child->id : (int)$child;
                 if ($childId <= 0) {
@@ -420,6 +424,9 @@ class RegistrationsController extends AbstractController
                     'name'     => $childAdherent->sname ?? '',
                     'nickname' => !empty($childAdherent->nickname) ? (string)$childAdherent->nickname : '',
                 ];
+                if (!$childAdherent->isUp2Date()) {
+                    $not_up2date_members[] = $reg_members[$childId]['name'];
+                }
             }
         } catch (\Throwable $e) {
             Analog::log('Error loading children for my_registrations: ' . $e->getMessage(), Analog::ERROR);
@@ -444,6 +451,72 @@ class RegistrationsController extends AbstractController
 
         // Batch-load instructor names for registered sessions
         $mine_instructor_names = SessionInstructor::getInstructorNamesForSessions($this->zdb, array_keys($sessions));
+
+        // Detect out-of-group registrations: upcoming non-cancelled sessions on
+        // events restricted to groups the member no longer belongs to. Flags
+        // are computed per registration id and consumed by the template to show
+        // an "out of group" warning + emphasised unregister action.
+        $out_of_group_regs = []; // [registration_id => true]
+        $today = date('Y-m-d');
+        $event_groups_map = []; // [event_id => [group_id, ...]]
+        foreach ($events as $eid => $ev) {
+            $ev->loadGroups();
+            $g = $ev->getGroups();
+            if (!empty($g)) {
+                $event_groups_map[$eid] = $g;
+            }
+        }
+        if (!empty($event_groups_map)) {
+            $allRequiredGroups = [];
+            foreach ($event_groups_map as $g) {
+                foreach ($g as $gid) {
+                    $allRequiredGroups[$gid] = true;
+                }
+            }
+            $member_groups = []; // [member_id => [group_id => true]]
+            try {
+                $sel = $this->zdb->select('groups_members');
+                $sel->columns(['id_adh', 'id_group']);
+                $sel->where->in('id_adh', $member_ids);
+                $sel->where->in('id_group', array_keys($allRequiredGroups));
+                foreach ($this->zdb->execute($sel) as $r) {
+                    $member_groups[(int)$r->id_adh][(int)$r->id_group] = true;
+                }
+            } catch (\Throwable $e) {
+                Analog::log(
+                    'Error checking member groups for out-of-group flag: ' . $e->getMessage(),
+                    Analog::ERROR
+                );
+            }
+            foreach ($registrations as $reg) {
+                $sid = $reg->getSessionId();
+                $session = $sessions[$sid] ?? null;
+                if ($session === null) {
+                    continue;
+                }
+                if ($session->getSessionDate() < $today) {
+                    continue; // past
+                }
+                if ($session->getStatus() === Session::STATUS_CANCELLED) {
+                    continue; // already cancelled, no actionable signal
+                }
+                $eid = $session->getEventId();
+                if (!isset($event_groups_map[$eid])) {
+                    continue; // event has no group restriction
+                }
+                $mid = $reg->getMemberId();
+                $inAnyGroup = false;
+                foreach ($event_groups_map[$eid] as $gid) {
+                    if (isset($member_groups[$mid][$gid])) {
+                        $inAnyGroup = true;
+                        break;
+                    }
+                }
+                if (!$inAnyGroup && $reg->getId() !== null) {
+                    $out_of_group_regs[$reg->getId()] = true;
+                }
+            }
+        }
 
         // Build registered/waitlisted session ID sets (parent only, for self-registration status)
         $registered_session_ids = [];
@@ -557,6 +630,8 @@ class RegistrationsController extends AbstractController
                                              || $this->login->isAdmin()
                                              || $this->login->isStaff()
                                              || $this->login->isGroupManager(),
+                'not_up2date_members'     => $not_up2date_members,
+                'out_of_group_regs'       => $out_of_group_regs,
             ]
         );
         return $response;

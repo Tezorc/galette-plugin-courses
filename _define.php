@@ -35,14 +35,19 @@ $this->register(
     route: 'courses',
     date: '2026-02-24',
     acls: [
-        'coursesEvents'             => 'groupmanager',
-        'coursesEventsFilter'       => 'groupmanager',
-        'coursesEventAdd'           => 'groupmanager',
-        'coursesDoEventAdd'         => 'groupmanager',
+        // Event authorship: routes are 'member' but each handler enforces
+        // denyUnlessCanAuthorEvents() (admin/staff/group manager/instructor on
+        // any session) — see Phase 46. Edit/Submit/DoEdit further gate via
+        // Event::canManage()/canSubmit() which limit non-staff users to their
+        // own events (creator_id === login.id).
+        'coursesEvents'             => 'member',
+        'coursesEventsFilter'       => 'member',
+        'coursesEventAdd'           => 'member',
+        'coursesDoEventAdd'         => 'member',
         'coursesEventShow'          => 'member',
-        'coursesEventEdit'          => 'groupmanager',
-        'coursesDoEventEdit'        => 'groupmanager',
-        'coursesDoEventSubmit'      => 'groupmanager',
+        'coursesEventEdit'          => 'member',
+        'coursesDoEventEdit'        => 'member',
+        'coursesDoEventSubmit'      => 'member',
         'coursesDoEventValidate'    => 'staff',
         'coursesDoEventReject'      => 'staff',
         'coursesDoGenerateSessions' => 'staff',

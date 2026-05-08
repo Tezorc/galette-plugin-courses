@@ -385,9 +385,11 @@ class Event
 
         // For validated events, check group restrictions
         if ($this->status !== self::STATUS_VALIDATED) {
-            // Non-validated events: only creator and managers
-            if ($login->isGroupManager()) {
-                return $this->creator_id === (int)$login->id;
+            // Non-validated events: only creator (group manager or instructor)
+            if ($this->creator_id === (int)$login->id) {
+                if ($login->isGroupManager() || self::isInstructorAnywhere($this->zdb, (int)$login->id)) {
+                    return true;
+                }
             }
             return false;
         }
@@ -515,11 +517,33 @@ class Event
             return true;
         }
 
-        if ($login->isGroupManager() && $this->creator_id === (int)$login->id) {
-            return true;
+        // Phase 46: a non-staff user can manage their own events when they
+        // are either a group manager OR registered as instructor on at least
+        // one session (any session — instructor on session #X may still own
+        // and edit event #Y they created themselves).
+        if ($this->creator_id === (int)$login->id) {
+            if ($login->isGroupManager()) {
+                return true;
+            }
+            if (self::isInstructorAnywhere($this->zdb, (int)$login->id)) {
+                return true;
+            }
         }
 
         return false;
+    }
+
+    /**
+     * Returns true if the given member is registered as instructor on at
+     * least one session. Centralized here so canAccess/canManage/canSubmit
+     * stay in sync with the Phase 46 author predicate.
+     */
+    private static function isInstructorAnywhere(Db $zdb, int $memberId): bool
+    {
+        if ($memberId <= 0) {
+            return false;
+        }
+        return SessionInstructor::countSessionsForMember($zdb, $memberId) > 0;
     }
 
     public function needsValidation(): bool
@@ -535,7 +559,10 @@ class Event
         if ($login->isAdmin() || $login->isStaff()) {
             return true;
         }
-        return $login->isGroupManager() && $this->creator_id === (int)$login->id;
+        if ($this->creator_id !== (int)$login->id) {
+            return false;
+        }
+        return $login->isGroupManager() || self::isInstructorAnywhere($this->zdb, (int)$login->id);
     }
 
     public function canValidate(Login $login): bool

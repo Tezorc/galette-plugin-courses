@@ -78,6 +78,31 @@ trait CoursesAclGuard
     }
 
     /**
+     * Deny unless the logged-in user can author events: admin, staff, group
+     * manager, or any member affected as instructor on at least one session
+     * (Phase 46). Edit rights on a specific event are still gated downstream
+     * by Event::canManage() (creator-only for non-staff).
+     */
+    protected function denyUnlessCanAuthorEvents(
+        Response $response,
+        string $redirectUrl,
+        ?string $errorMessage = null
+    ): ?Response {
+        if ($this->login->isAdmin() || $this->login->isStaff() || $this->login->isGroupManager()) {
+            return null;
+        }
+        $memberId = (int)$this->login->id;
+        if ($memberId > 0 && SessionInstructor::countSessionsForMember($this->zdb, $memberId) > 0) {
+            return null;
+        }
+        $this->flash->addMessage(
+            'error_detected',
+            $errorMessage ?? _T('You do not have permission to perform this action.', 'courses')
+        );
+        return $response->withStatus(302)->withHeader('Location', $redirectUrl);
+    }
+
+    /**
      * Deny unless the logged-in user is admin, staff, or an instructor of
      * this specific session. Used to grant session-scoped management rights
      * (edit, cancel, close, capacity, instructor assignment...) to the

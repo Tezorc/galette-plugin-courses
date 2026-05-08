@@ -2,6 +2,27 @@
 
 {% block content %}
 
+{# Avertissement cotisation : parent ou enfants non a jour #}
+{% if not_up2date_members|length > 0 %}
+    <div class="ui orange message">
+        <i class="exclamation triangle icon" aria-hidden="true"></i>
+        {% if not_up2date_members|length == 1 %}
+            {{ _T("Membership not up to date for: %s. Registration will not be possible until the membership is renewed.", "courses")|format(not_up2date_members|first) }}
+        {% else %}
+            {{ _T("Membership not up to date for: %s. Registration will not be possible until the memberships are renewed.", "courses")|format(not_up2date_members|join(", ")) }}
+        {% endif %}
+    </div>
+{% endif %}
+
+{# Avertissement changement de groupe : inscriptions futures sur un evenement
+   dont l'adherent ne fait plus partie du groupe requis #}
+{% if out_of_group_regs|length > 0 %}
+    <div class="ui orange message">
+        <i class="exclamation triangle icon" aria-hidden="true"></i>
+        {{ _Tn("%d registration is on an event you no longer have access to (group membership changed). You can unregister from the marked card below.", "%d registrations are on events you no longer have access to (group membership changed). You can unregister from the marked cards below.", out_of_group_regs|length, "courses")|format(out_of_group_regs|length) }}
+    </div>
+{% endif %}
+
 {# =========================================================
    Préparer les données
    ========================================================= #}
@@ -358,11 +379,19 @@
                     {% set s = sessions[reg.getSessionId()] %}
                     {% set ev = events[s.getEventId()] %}
                     {% set mid = reg.getMemberId() %}
+                    {% set is_out_of_group = out_of_group_regs[reg.getId()] is defined %}
                     <div class="column">
-                        <div class="ui fluid card courses-card courses-next-session">
+                        <div class="ui fluid card courses-card courses-next-session{% if is_out_of_group %} courses-card-out-of-group{% endif %}">
                             <div class="content">
                                 <div class="right floated meta">
-                                    <span class="ui green label">{{ reg.getStatusLabel() }}</span>
+                                    {% if is_out_of_group %}
+                                        <span class="ui orange label" title="{{ _T("You no longer belong to the required group for this event.", "courses") }}">
+                                            <i class="exclamation triangle icon" aria-hidden="true"></i>
+                                            {{ _T("Out of group", "courses") }}
+                                        </span>
+                                    {% else %}
+                                        <span class="ui green label">{{ reg.getStatusLabel() }}</span>
+                                    {% endif %}
                                 </div>
                                 <a class="header" href="{{ url_for("coursesEventShow", {"id": ev.getId()}) }}">
                                     {{ ev.getName() }}
@@ -442,11 +471,19 @@
                         {% set s = sessions[reg.getSessionId()] %}
                         {% set ev = events[s.getEventId()] %}
                         {% set mid = reg.getMemberId() %}
+                        {% set is_out_of_group = out_of_group_regs[reg.getId()] is defined %}
                         <div class="column">
-                            <div class="ui fluid card courses-card">
+                            <div class="ui fluid card courses-card{% if is_out_of_group %} courses-card-out-of-group{% endif %}">
                                 <div class="content">
                                     <div class="right floated meta">
-                                        <span class="ui green label">{{ reg.getStatusLabel() }}</span>
+                                        {% if is_out_of_group %}
+                                            <span class="ui orange label" title="{{ _T("You no longer belong to the required group for this event.", "courses") }}">
+                                                <i class="exclamation triangle icon" aria-hidden="true"></i>
+                                                {{ _T("Out of group", "courses") }}
+                                            </span>
+                                        {% else %}
+                                            <span class="ui green label">{{ reg.getStatusLabel() }}</span>
+                                        {% endif %}
                                     </div>
                                     <a class="header" href="{{ url_for("coursesEventShow", {"id": ev.getId()}) }}">
                                         {{ ev.getName() }}

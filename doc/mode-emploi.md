@@ -255,7 +255,11 @@ Apres desinscription, si l'adherent souhaite se reinscrire, il peut le faire tan
 
 ### 6. Consulter ses inscriptions (membre)
 
-La page **Mes inscriptions** (`/plugins/courses/my-registrations`) comporte deux onglets :
+La page **Mes inscriptions** (`/plugins/courses/my-registrations`) comporte deux onglets.
+
+**Avertissement cotisation** : un bandeau orange est affiche en haut de la page si **le membre lui-meme ou l'un de ses enfants** n'est pas a jour de cotisation. Le message liste les noms concernes et rappelle qu'aucune inscription ne sera possible tant que la cotisation n'est pas renouvelee.
+
+**Avertissement changement de groupe** : si l'adherent (ou l'un de ses enfants) est inscrit a une seance future dont l'evenement est restreint a un groupe auquel il n'appartient plus (changement de niveau, retrait du groupe par le staff), un second bandeau orange s'affiche en haut de la page (compteur du nombre d'inscriptions concernees) et chaque card concernee dans "Votre prochaine seance" / "A venir" est mise en evidence (fond jaune, bordure orange, badge "Out of group" remplaceant le statut). Le bouton "Se desinscrire" deja present sur la card permet de regulariser. Aucune desinscription automatique : le membre garde la main, libre a lui de se desinscrire ou d'en parler avec le staff.
 
 #### Onglet "Trouver une seance"
 
@@ -685,11 +689,11 @@ Pour reactiver les notifications apres desinscription via le lien, l'adherent do
 
 ## Workflow de validation
 
-Le plugin met en place un workflow de validation pour les evenements crees par les responsables de groupe.
+Le plugin met en place un workflow de validation pour les evenements crees par les responsables de groupe ou par les moniteurs (Phase 46).
 
 ### Principe
 
-1. Un **responsable de groupe** cree un evenement (statut automatique : **Brouillon**)
+1. Un **responsable de groupe** ou un **moniteur** (membre affecte comme moniteur sur au moins une seance) cree un evenement (statut automatique : **Brouillon**)
 2. Il clique sur **"Soumettre pour validation"** sur la page de detail de l'evenement
 3. L'evenement passe au statut **En attente** et le staff/admin est notifie par email
 4. Un membre du **staff** ou un **administrateur** peut alors :
@@ -707,7 +711,7 @@ Le staff et les administrateurs peuvent :
 
 | Bouton | Visible quand | Qui peut cliquer |
 |--------|---------------|-----------------|
-| **Soumettre pour validation** | Statut = Brouillon | Createur (responsable de groupe) ou staff/admin |
+| **Soumettre pour validation** | Statut = Brouillon | Createur (responsable de groupe ou moniteur) ou staff/admin |
 | **Valider** | Statut = En attente | Staff / Admin |
 | **Rejeter** | Statut = En attente | Staff / Admin |
 
@@ -812,13 +816,18 @@ Elle presente deux onglets :
 - **Trouver une seance** : catalogue des seances sans moniteur ou l'utilisateur peut se proposer (avec filtres Type / Activite / Date et boutons **"Filtrer"** + **"Effacer le filtre"**, identiques a "Mes inscriptions")
 - **Mes seances comme moniteur** : seances groupees en quatre sections (*Prochaine seance*, *A venir*, *Annulees*, *Passees* repliable). Chaque carte affiche le nom de l'evenement, la date, le lieu, le ou les moniteurs, la jauge d'inscrits, et propose les boutons **Details**, **iCal** et — si l'utilisateur est responsable de groupe, staff ou admin — **Export CSV des inscrits**.
 
-### Menu "Gestion des inscriptions" (responsable de groupe, staff, admin)
+### Menu "Gestion des inscriptions" (moniteur, responsable de groupe, staff, admin)
+
+Le menu apparait des qu'un membre est **auteur d'evenements** (Phase 46) :
+- responsable de groupe (peut creer des evenements pour ses groupes), OU
+- moniteur (membre affecte sur au moins une seance) — peut creer ses propres evenements meme sans etre responsable de groupe, OU
+- staff / admin (acces complet).
 
 | Sous-menu | Visible par | Description |
 |-----------|-------------|-------------|
-| Evenements | Responsable de groupe+ | Liste des evenements (avec bouton "Ajouter un evenement" en haut de page) |
-| Seances | Responsable de groupe+ | Liste complete des seances avec filtres avances |
-| Gestion des inscriptions | Responsable de groupe+ | Toutes les inscriptions |
+| Evenements | Auteur (moniteur, responsable, staff, admin) | Liste des evenements (avec bouton "Ajouter un evenement" en haut de page) ; chaque utilisateur voit ses propres evenements (toute statut) + tous les evenements valides |
+| Seances | Auteur | Liste complete des seances avec filtres avances |
+| Gestion des inscriptions | Responsable de groupe+ | Toutes les inscriptions (le moniteur seul n'y a pas acces, il gere ses inscriptions via le detail de seance) |
 | Statistiques | Staff / Admin | Statistiques de participation |
 | Preferences | Staff / Admin | Parametres du plugin |
 | Modeles de courriels | Admin uniquement | Modeles d'emails |

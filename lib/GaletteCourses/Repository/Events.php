@@ -26,6 +26,7 @@ namespace GaletteCourses\Repository;
 use Galette\Core\Db;
 use Galette\Core\Login;
 use GaletteCourses\Entity\Event;
+use GaletteCourses\Entity\SessionInstructor;
 use GaletteCourses\Filters\EventsList;
 use Analog\Analog;
 use Laminas\Db\Sql\Expression;
@@ -92,49 +93,7 @@ class Events
 
     private function buildWhereClause(Select $select): void
     {
-        // Role-based access filtering
-        if (!$this->login->isAdmin() && !$this->login->isStaff()) {
-            if ($this->login->isGroupManager()) {
-                // Group managers see their own events + validated events
-                $select->where->nest()
-                    ->equalTo('e.creator_id', (int)$this->login->id)
-                    ->or
-                    ->equalTo('e.status', Event::STATUS_VALIDATED)
-                    ->unnest();
-            } else {
-                // Regular members see only validated events
-                $select->where->equalTo('e.status', Event::STATUS_VALIDATED);
-
-                // Group restriction filtering for regular members
-                if ($this->login->id !== null) {
-                    $memberId = (int)$this->login->id;
-                    $nested = $select->where->nest();
-                    $nested->equalTo('e.is_restricted', 0);
-                    // OR events matching the member's own groups
-                    $nested->addPredicate(
-                        new PredicateExpression(
-                            'EXISTS (SELECT 1 FROM ' . PREFIX_DB . 'courses_events_groups eg'
-                            . ' INNER JOIN ' . PREFIX_DB . 'groups_members gm ON eg.group_id = gm.id_group'
-                            . ' WHERE eg.event_id = e.' . Event::PK . ' AND gm.id_adh = ?)',
-                            [$memberId]
-                        ),
-                        PredicateSet::OP_OR
-                    );
-                    // OR events matching any of the member's children's groups
-                    $nested->addPredicate(
-                        new PredicateExpression(
-                            'EXISTS (SELECT 1 FROM ' . PREFIX_DB . 'courses_events_groups eg_c'
-                            . ' INNER JOIN ' . PREFIX_DB . 'groups_members gm_c ON eg_c.group_id = gm_c.id_group'
-                            . ' INNER JOIN ' . PREFIX_DB . 'adherents child ON child.id_adh = gm_c.id_adh'
-                            . ' WHERE eg_c.event_id = e.' . Event::PK . ' AND child.parent_id = ?)',
-                            [$memberId]
-                        ),
-                        PredicateSet::OP_OR
-                    );
-                    $nested->unnest();
-                }
-            }
-        }
+        $this->applyRoleScope($select);
 
         // Apply filters
         if ($this->filters->filter_str !== null && $this->filters->filter_str !== '') {
@@ -162,6 +121,64 @@ class Events
     }
 
     /**
+     * Role-based scoping shared by getList() and getAvailableNames().
+     *
+     * Phase 46: a member who is registered as instructor on at least one
+     * session — without being a group manager — also qualifies as an "event
+     * author" and gets the same view as a group manager (own events of any
+     * status + all validated events).
+     */
+    private function applyRoleScope(Select $select): void
+    {
+        if ($this->login->isAdmin() || $this->login->isStaff()) {
+            return;
+        }
+
+        $memberId = (int)$this->login->id;
+        $isAuthor = $memberId > 0
+            && (
+                $this->login->isGroupManager()
+                || SessionInstructor::countSessionsForMember($this->zdb, $memberId) > 0
+            );
+
+        if ($isAuthor) {
+            $select->where->nest()
+                ->equalTo('e.creator_id', $memberId)
+                ->or
+                ->equalTo('e.status', Event::STATUS_VALIDATED)
+                ->unnest();
+            return;
+        }
+
+        // Regular members see only validated events, with group-restriction filter.
+        $select->where->equalTo('e.status', Event::STATUS_VALIDATED);
+        if ($memberId > 0) {
+            $nested = $select->where->nest();
+            $nested->equalTo('e.is_restricted', 0);
+            $nested->addPredicate(
+                new PredicateExpression(
+                    'EXISTS (SELECT 1 FROM ' . PREFIX_DB . 'courses_events_groups eg'
+                    . ' INNER JOIN ' . PREFIX_DB . 'groups_members gm ON eg.group_id = gm.id_group'
+                    . ' WHERE eg.event_id = e.' . Event::PK . ' AND gm.id_adh = ?)',
+                    [$memberId]
+                ),
+                PredicateSet::OP_OR
+            );
+            $nested->addPredicate(
+                new PredicateExpression(
+                    'EXISTS (SELECT 1 FROM ' . PREFIX_DB . 'courses_events_groups eg_c'
+                    . ' INNER JOIN ' . PREFIX_DB . 'groups_members gm_c ON eg_c.group_id = gm_c.id_group'
+                    . ' INNER JOIN ' . PREFIX_DB . 'adherents child ON child.id_adh = gm_c.id_adh'
+                    . ' WHERE eg_c.event_id = e.' . Event::PK . ' AND child.parent_id = ?)',
+                    [$memberId]
+                ),
+                PredicateSet::OP_OR
+            );
+            $nested->unnest();
+        }
+    }
+
+    /**
      * Returns distinct event names with their type_id, accessible to the current user.
      * Used for the cascading name/type filter dropdown.
      *
@@ -174,43 +191,7 @@ class Events
             $select->columns(['name', 'type_id']);
             $select->quantifier('DISTINCT');
 
-            // Apply only role-based access filtering
-            if (!$this->login->isAdmin() && !$this->login->isStaff()) {
-                if ($this->login->isGroupManager()) {
-                    $select->where->nest()
-                        ->equalTo('e.creator_id', (int)$this->login->id)
-                        ->or
-                        ->equalTo('e.status', Event::STATUS_VALIDATED)
-                        ->unnest();
-                } else {
-                    $select->where->equalTo('e.status', Event::STATUS_VALIDATED);
-                    if ($this->login->id !== null) {
-                        $memberId = (int)$this->login->id;
-                        $nested = $select->where->nest();
-                        $nested->equalTo('e.is_restricted', 0);
-                        $nested->addPredicate(
-                            new PredicateExpression(
-                                'EXISTS (SELECT 1 FROM ' . PREFIX_DB . 'courses_events_groups eg'
-                                . ' INNER JOIN ' . PREFIX_DB . 'groups_members gm ON eg.group_id = gm.id_group'
-                                . ' WHERE eg.event_id = e.' . Event::PK . ' AND gm.id_adh = ?)',
-                                [$memberId]
-                            ),
-                            PredicateSet::OP_OR
-                        );
-                        $nested->addPredicate(
-                            new PredicateExpression(
-                                'EXISTS (SELECT 1 FROM ' . PREFIX_DB . 'courses_events_groups eg_c'
-                                . ' INNER JOIN ' . PREFIX_DB . 'groups_members gm_c ON eg_c.group_id = gm_c.id_group'
-                                . ' INNER JOIN ' . PREFIX_DB . 'adherents child ON child.id_adh = gm_c.id_adh'
-                                . ' WHERE eg_c.event_id = e.' . Event::PK . ' AND child.parent_id = ?)',
-                                [$memberId]
-                            ),
-                            PredicateSet::OP_OR
-                        );
-                        $nested->unnest();
-                    }
-                }
-            }
+            $this->applyRoleScope($select);
 
             // Filtrer par type si actif
             if ($this->filters->type_filter !== null) {

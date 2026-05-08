@@ -87,8 +87,13 @@ class PluginGaletteCourses extends GalettePlugin
             'items' => $memberItems,
         ];
 
-        // --- Menu gestion : admin, staff, responsable de groupe ---
-        if ($login->isAdmin() || $login->isStaff() || $login->isGroupManager()) {
+        // --- Menu gestion : admin, staff, responsable de groupe, ou moniteur ---
+        // Phase 46 : un membre affecte comme moniteur sur au moins une seance
+        // peut creer/editer ses propres evenements. La condition d'affichage du
+        // menu reflete cette extension.
+        $isInstructorAnywhere = $memberId > 0
+            && SessionInstructor::countSessionsForMember($zdb, $memberId) > 0;
+        if ($login->isAdmin() || $login->isStaff() || $login->isGroupManager() || $isInstructorAnywhere) {
             $mgmtItems = [];
 
             $mgmtItems[] = [
@@ -101,11 +106,15 @@ class PluginGaletteCourses extends GalettePlugin
                 'route' => ['name' => 'coursesSessions'],
                 'icon'  => 'clock',
             ];
-            $mgmtItems[] = [
-                'label' => _T('Registrations management', 'courses'),
-                'route' => ['name' => 'coursesRegistrations'],
-                'icon'  => 'list',
-            ];
+            // Registrations management requires groupmanager+ (route ACL).
+            // Pure instructors do not have access.
+            if ($login->isAdmin() || $login->isStaff() || $login->isGroupManager()) {
+                $mgmtItems[] = [
+                    'label' => _T('Registrations management', 'courses'),
+                    'route' => ['name' => 'coursesRegistrations'],
+                    'icon'  => 'list',
+                ];
+            }
 
             if ($login->isAdmin() || $login->isStaff()) {
                 $mgmtItems[] = [
