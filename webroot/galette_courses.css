@@ -496,6 +496,14 @@ tr.courses-pending { background-color: #fffde7 !important; }
     .ui.inverted.segment h2.ui.inverted.header { font-size: 1.25em !important; }
     .ui.inverted.segment h2.ui.inverted.header .sub.header { font-size: .88em !important; line-height: 1.7 !important; }
     .courses-mobile-br { display: inline !important; }
+    /* Align the colored header segment with the stackable-grid columns below
+       (Fomantic gives them 1rem horizontal padding on mobile, so the
+       headersegment alone went edge-to-edge while the rest of the page was
+       inset by 1rem — visible mismatch on smartphone). */
+    .courses-session-header-segment {
+        margin-left: 1rem !important;
+        margin-right: 1rem !important;
+    }
     /* Header action buttons revert to icon-only on mobile */
     .courses-session-header-flex .courses-session-header-actions .courses-header-action-btn > i.icon { margin: 0 !important; }
     .courses-header-action-label { display: none !important; }
