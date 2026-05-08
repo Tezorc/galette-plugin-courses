@@ -246,8 +246,12 @@
                                 </a>
                             {% endif %}
                         {% else %}
-                            {# Inscription en propre nom (uniquement si membre dans le groupe requis) #}
-                            {% if browse_can_self_register[sid] %}
+                            {% set self_count = browse_can_self_register[sid] ? 1 : 0 %}
+                            {% set children_count = (browse_eligible_children[sid] is defined) ? browse_eligible_children[sid]|length : 0 %}
+                            {% set total_options = self_count + children_count %}
+
+                            {% if total_options == 1 and browse_can_self_register[sid] %}
+                                {# Seule option : le membre lui-meme #}
                                 <form action="{{ url_for("coursesDoRegister", {"id": sid}) }}" method="post" class="ui form courses-inline-form">
                                     <button type="submit" class="ui tiny labeled icon green button">
                                         <i class="user plus icon" aria-hidden="true"></i>
@@ -255,21 +259,47 @@
                                     </button>
                                     {% include "components/forms/csrf.html.twig" %}
                                 </form>
-                            {% endif %}
-                            {# Inscription d'un enfant éligible #}
-                            {% if browse_eligible_children[sid] is defined and browse_eligible_children[sid]|length > 0 %}
-                                {% if browse_eligible_children[sid]|length == 1 %}
-                                    {% set child_info = browse_eligible_children[sid]|first %}
-                                    <a href="{{ url_for("coursesParentRegisterForm", {"id": sid}) }}" class="ui tiny labeled icon teal button">
-                                        <i class="user plus icon" aria-hidden="true"></i>
-                                        {{ child_info.nickname ? child_info.nickname : child_info.name }}
-                                    </a>
-                                {% else %}
-                                    <a href="{{ url_for("coursesParentRegisterForm", {"id": sid}) }}" class="ui tiny labeled icon teal button">
-                                        <i class="users icon" aria-hidden="true"></i>
-                                        {{ _T("Register a linked member", "courses") }}
-                                    </a>
+                            {% elseif total_options == 1 %}
+                                {# Seule option : un seul enfant — bouton porte son nom (lien vers form a 1 etape) #}
+                                {% set only_child_id = browse_eligible_children[sid]|keys|first %}
+                                {% set only_child_info = browse_eligible_children[sid][only_child_id] %}
+                                <a href="{{ url_for("coursesParentRegisterForm", {"id": sid}) }}" class="ui tiny labeled icon teal button">
+                                    <i class="user plus icon" aria-hidden="true"></i>
+                                    {{ only_child_info.nickname ? only_child_info.nickname : only_child_info.name }}
+                                </a>
+                            {% elseif total_options >= 2 %}
+                                {# Plusieurs options : un seul bouton dropdown qui liste les choix #}
+                                <div class="ui simple dropdown tiny labeled icon teal button">
+                                    <i class="user plus icon" aria-hidden="true"></i>
+                                    <span class="text">{{ _T("Register", "courses") }}</span>
+                                    <i class="dropdown icon" aria-hidden="true"></i>
+                                    <div class="menu">
+                                        {% if browse_can_self_register[sid] %}
+                                            <a class="item courses-register-trigger" data-target="register-self-{{ sid }}">
+                                                <i class="user icon" aria-hidden="true"></i>
+                                                {{ _T("Myself", "courses") }}
+                                            </a>
+                                        {% endif %}
+                                        {% for child_id, child_info in browse_eligible_children[sid] %}
+                                            <a class="item courses-register-trigger" data-target="register-child-{{ sid }}-{{ child_id }}">
+                                                <i class="user icon" aria-hidden="true"></i>
+                                                {{ child_info.nickname ? child_info.nickname : child_info.name }}
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {# Hidden forms triggered by dropdown items (HTML5 form= attr would also work, but JS submission keeps Fomantic dropdown semantics) #}
+                                {% if browse_can_self_register[sid] %}
+                                    <form id="register-self-{{ sid }}" action="{{ url_for("coursesDoRegister", {"id": sid}) }}" method="post" class="courses-hidden-form">
+                                        {% include "components/forms/csrf.html.twig" %}
+                                    </form>
                                 {% endif %}
+                                {% for child_id, child_info in browse_eligible_children[sid] %}
+                                    <form id="register-child-{{ sid }}-{{ child_id }}" action="{{ url_for("coursesDoParentRegister", {"id": sid}) }}" method="post" class="courses-hidden-form">
+                                        <input type="hidden" name="member_id" value="{{ child_id }}"/>
+                                        {% include "components/forms/csrf.html.twig" %}
+                                    </form>
+                                {% endfor %}
                             {% endif %}
                             <a href="{{ url_for("coursesSessionShow", {"id": sid}) }}" class="ui tiny basic button">
                                 {{ _T("Details", "courses") }}

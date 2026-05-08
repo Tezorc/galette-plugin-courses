@@ -28,6 +28,18 @@ $(function() {
     if ($('.courses-filter-active-badge').length && parseInt($('.courses-filter-active-badge').text(), 10) > 0) {
         $('.courses-filter-panel').removeClass('courses-collapsed');
     }
+
+    // Register dropdown (browse cards): clicking an item submits the
+    // matching hidden form so the user goes straight to the right
+    // POST endpoint (self-register or parent-register-with-child).
+    $(document).on('click', '.courses-register-trigger', function(e) {
+        e.preventDefault();
+        var formId = $(this).data('target');
+        if (formId) {
+            var form = document.getElementById(formId);
+            if (form) form.submit();
+        }
+    });
 });
 
 /**
