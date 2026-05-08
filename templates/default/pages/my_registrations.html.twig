@@ -260,13 +260,17 @@
                                     {% include "components/forms/csrf.html.twig" %}
                                 </form>
                             {% elseif total_options == 1 %}
-                                {# Seule option : un seul enfant — bouton porte son nom (lien vers form a 1 etape) #}
+                                {# Seule option : un seul enfant — POST direct, bouton porte son nom #}
                                 {% set only_child_id = browse_eligible_children[sid]|keys|first %}
                                 {% set only_child_info = browse_eligible_children[sid][only_child_id] %}
-                                <a href="{{ url_for("coursesParentRegisterForm", {"id": sid}) }}" class="ui tiny labeled icon teal button">
-                                    <i class="user plus icon" aria-hidden="true"></i>
-                                    {{ only_child_info.nickname ? only_child_info.nickname : only_child_info.name }}
-                                </a>
+                                <form action="{{ url_for("coursesDoParentRegister", {"id": sid}) }}" method="post" class="ui form courses-inline-form">
+                                    <input type="hidden" name="member_id" value="{{ only_child_id }}"/>
+                                    <button type="submit" class="ui tiny labeled icon teal button">
+                                        <i class="user plus icon" aria-hidden="true"></i>
+                                        {{ only_child_info.nickname ? only_child_info.nickname : only_child_info.name }}
+                                    </button>
+                                    {% include "components/forms/csrf.html.twig" %}
+                                </form>
                             {% elseif total_options >= 2 %}
                                 {# Plusieurs options : un seul bouton dropdown qui liste les choix #}
                                 <div class="ui simple dropdown tiny labeled icon teal button">
