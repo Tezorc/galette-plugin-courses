@@ -691,6 +691,31 @@ Le developpement est organise en phases progressives.
 
 - Documentation : section "Dates de fermeture du club" de `doc/mode-emploi.md` reecrite ; cette section ; `CLAUDE.md` (entree Avancement Phase 44).
 
+### Phase 50 - Propagation du jour de la semaine (recurrent) lors de l'edition d'un evenement
+
+**Statut : TERMINEE**
+
+- Demande utilisateur : "dans seances changement horaire ok mais egalement jour". Suite directe de Phase 41 qui propageait deja les horaires (`start_time` / `end_time` des slots) aux seances futures non-annulees, mais n'agissait pas sur le jour de la semaine.
+
+- Implementation :
+  - Nouvelle methode privee `EventsController::propagateDayOfWeekToSessions(Event $event, string $newSessionDate)` dans `EventsController.php`. Appelee dans `doStore` apres `propagateScheduleToSessions` quand `$id !== null && $event->isRecurring() && !empty($post['session_date'])`.
+  - Algorithme : on lit la **premiere** seance future non-annulee de l'evenement (`status != cancelled AND session_date >= today`, order ASC) pour deduire l'ancien jour de la semaine via `date('w', ...)`. On compare avec le jour de la semaine du `session_date` poste. Si identiques -> early return. Sinon on calcule un delta signe le plus court : `delta = newWeekday - oldWeekday`, normalise dans `[-3, +3]` (`if delta > 3: delta -= 7 ; elif delta < -3: delta += 7`).
+  - On applique ensuite `UPDATE galette_courses_sessions SET session_date = old + delta day WHERE id = ?` pour chaque seance future non-annulee. Les seances dont la date apres shift tomberait en passe (`shifted < today`, cas tres rare : seulement si shift backward depuis aujourd'hui) sont skippees.
+
+- Ordre des operations dans `doStore` (crucial) :
+  1. `event->store()`, `storeSlots`, `storeGroups`
+  2. `propagateCapacityToSessions` (Phase 41)
+  3. `propagateScheduleToSessions` (Phase 41 — match (start_time, end_time))
+  4. `propagateDayOfWeekToSessions` (Phase 50 — shift session_date)
+  5. `createSessionForEvent` / `RecurrenceHandler::generateSessions` (recurrent : utilise `getExistingSessionDates()` pour eviter les doublons — apres shift les nouvelles dates sont vues comme existantes et generateSessions ne re-cree pas dessus)
+
+- Limites assumees :
+  - Le shift est calcule a partir de la **premiere** seance future non-annulee. Si le calendrier est deja desynchronise (certaines seances ont ete edicees individuellement sur d'autres jours), le shift est calcule par rapport a l'anchor de la premiere seance et pourrait ne pas s'appliquer uniformement aux seances deplacees a la main. Dans ce cas la propagation re-aligne tout le monde sur un decalage commun, ce qui peut surprendre.
+  - La regle ne couvre que les evenements recurrents. Pour les evenements ponctuels, l'edition de `session_date` reste hors-perimetre (declenche aujourd'hui une nouvelle creation via `createSessionForEvent` — bug separe non traite).
+  - Le shift signe le plus court privilegie le delta minimal en valeur absolue ; un shift de Vendredi -> Lundi devient `-4` et non `+3`. Le comportement reste deterministe et sans ambiguite.
+
+- Documentation : cette section, `CLAUDE.md` (entree Avancement Phase 50), et `doc/mode-emploi.md` (mention dans "Modifier un evenement recurrent").
+
 ### Phase 49 - Proxy-register : moniteur autorise + bascule waitlist sur seance pleine
 
 **Statut : TERMINEE**

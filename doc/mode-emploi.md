@@ -460,6 +460,20 @@ Une seance est modifiable si :
 
 Lors de la generation des seances pour un evenement recurrent, toutes les seances futures **sans moniteur assigne** sont automatiquement mises a jour avec les horaires et la capacite definis sur l'evenement. Cela permet de propager les modifications de l'evenement sur les seances a venir qui n'ont pas encore ete prises en charge par un moniteur.
 
+#### Propagation des modifications d'evenement aux seances futures (Phase 41 + 50)
+
+Quand vous editez un evenement existant, les modifications suivantes sont automatiquement appliquees aux seances futures non annulees (toutes, qu'elles aient ou non un moniteur affecte) :
+
+- **Capacite maximale** : la nouvelle capacite est appliquee. Si le nombre d'inscrits actuel depasse la nouvelle capacite, les inscrits restent (rien n'est annule), mais la seance n'accepte plus de nouvelles inscriptions jusqu'a redescendre sous la limite.
+- **Horaires (heure de debut / heure de fin des slots)** : les seances dont l'heure correspond a l'ancien slot recoivent les nouveaux horaires.
+- **Jour de la semaine (evenement recurrent uniquement)** : si vous renseignez la date de debut sur l'edition avec une date qui tombe sur un jour de la semaine different (par exemple ancienne premiere occurrence un mardi, nouvelle date saisie un mercredi), toutes les seances futures non annulees sont automatiquement decalees du nombre de jours correspondant pour tomber sur le nouveau jour.
+
+Limitations :
+
+- L'ajout ou la suppression de slots ne provoque pas de regeneration automatique des seances : utilisez "Generer les seances" pour creer les nouvelles occurrences.
+- Le decalage de jour n'agit que si vous renseignez explicitement la date de debut sur le formulaire d'edition (le champ est vide par defaut).
+- Le recalcul du jour utilise la premiere seance future non-annulee comme reference. Si certaines seances ont ete deplacees individuellement vers un autre jour, le decalage commun s'appliquera quand meme et pourrait les re-aligner sur le nouveau jour.
+
 ### 16-bis. Inscription d'un enfant (parent)
 
 Si un adherent a des enfants lies (via le champ "Membre parent" dans Galette), il peut les inscrire a une seance, independamment de sa propre inscription.

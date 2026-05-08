@@ -333,6 +333,9 @@ class EventsController extends AbstractPluginController
             if ($id !== null) {
                 $this->propagateCapacityToSessions($event);
                 $this->propagateScheduleToSessions($event, $oldSlots, $slots);
+                if ($event->isRecurring() && !empty($post['session_date'])) {
+                    $this->propagateDayOfWeekToSessions($event, (string)$post['session_date']);
+                }
             }
 
             // Collect sessions auto-created during this save so we can
@@ -490,6 +493,74 @@ class EventsController extends AbstractPluginController
         } catch (\Throwable $e) {
             Analog::log(
                 'Error propagating schedule for event #' . $event->getId() . ': ' . $e->getMessage(),
+                Analog::ERROR
+            );
+        }
+    }
+
+    /**
+     * Phase 50: propagate a day-of-week change to every future non-cancelled
+     * session of a recurring event. The new weekday is read from the posted
+     * session_date; the old weekday is read from the first future non-cancelled
+     * session. The signed shortest-path delta (in [-3, +3]) is applied to every
+     * future non-cancelled session via UPDATE session_date = old + delta days.
+     *
+     * Sessions whose shifted date would land in the past are skipped (rare:
+     * happens only when shifting backward and the source session is today).
+     */
+    private function propagateDayOfWeekToSessions(Event $event, string $newSessionDate): void
+    {
+        $today = date('Y-m-d');
+        $newWeekday = (int)date('w', strtotime($newSessionDate));
+
+        try {
+            $select = $this->zdb->select(Session::TABLE);
+            $select->columns([Session::PK, 'session_date']);
+            $select->where(['event_id' => $event->getId()]);
+            $select->where->notEqualTo('status', Session::STATUS_CANCELLED);
+            $select->where->greaterThanOrEqualTo('session_date', $today);
+            $select->order('session_date ASC');
+            $rs = $this->zdb->execute($select);
+
+            $rows = [];
+            foreach ($rs as $r) {
+                $rows[] = [
+                    'id'   => (int)$r->{Session::PK},
+                    'date' => (string)$r->session_date,
+                ];
+            }
+            if (empty($rows)) {
+                return;
+            }
+
+            $oldWeekday = (int)date('w', strtotime($rows[0]['date']));
+            if ($oldWeekday === $newWeekday) {
+                return;
+            }
+
+            $delta = $newWeekday - $oldWeekday;
+            if ($delta > 3) {
+                $delta -= 7;
+            } elseif ($delta < -3) {
+                $delta += 7;
+            }
+
+            foreach ($rows as $row) {
+                $shifted = date(
+                    'Y-m-d',
+                    strtotime($row['date'] . ' ' . ($delta >= 0 ? '+' : '') . $delta . ' day')
+                );
+                if ($shifted < $today) {
+                    continue;
+                }
+                $update = $this->zdb->update(Session::TABLE);
+                $update->set(['session_date' => $shifted]);
+                $update->where([Session::PK => $row['id']]);
+                $this->zdb->execute($update);
+            }
+        } catch (\Throwable $e) {
+            Analog::log(
+                'Error propagating day-of-week for event #' . $event->getId() . ': ' . $e->getMessage(),
                 Analog::ERROR
             );
         }
