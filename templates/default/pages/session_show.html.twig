@@ -848,35 +848,45 @@
         </div>
     </div>
 
-    {# --- Waitlist (session managers / group managers) --- #}
+    {# --- Waitlist (session managers / group managers) ---
+       Wrapped in a stackable grid + sixteen wide column like the header so the
+       segment width follows the same column-padding rules as every other
+       section, instead of escaping the responsive layout. The numbered list
+       uses an explicit position label rather than .ui.ordered.list, whose CSS
+       counter pseudo-element renders unpredictably inside a narrow viewport. #}
     {% if (is_session_manager or login.isGroupManager()) and waitlist_entries|length > 0 %}
-        <div class="ui segment">
-            <h3 class="ui dividing header">
-                <i class="clock icon" aria-hidden="true"></i>
-                {{ _T("Waitlist", "courses") }} ({{ waitlist_entries|length }})
-            </h3>
+        <div class="ui stackable grid">
+            <div class="sixteen wide column">
+                <div class="ui segment">
+                    <h3 class="ui dividing header">
+                        <i class="clock icon" aria-hidden="true"></i>
+                        {{ _T("Waitlist", "courses") }} ({{ waitlist_entries|length }})
+                    </h3>
 
-            <div class="ui ordered list">
-                {% for entry in waitlist_entries %}
-                    <div class="item">
-                        <div class="content">
-                            {% if members[entry.getMemberId()] is defined %}
-                                <a href="{{ url_for("member", {"id": entry.getMemberId()}) }}">
-                                    {{ members[entry.getMemberId()] }}
-                                </a>
-                            {% else %}
-                                {{ _T("Unknown member", "courses") }}
-                            {% endif %}
-                            {% if nicknames[entry.getMemberId()] is defined %}
-                                <span class="ui teal mini label">
-                                    <i class="tag icon" aria-hidden="true"></i>
-                                    {{ nicknames[entry.getMemberId()] }}
-                                </span>
-                            {% endif %}
-                            <span class="ui mini label">{{ entry.getAddedDate()|date("d/m/Y") }}</span>
-                        </div>
+                    <div class="ui relaxed divided list">
+                        {% for entry in waitlist_entries %}
+                            <div class="item">
+                                <div class="content courses-waitlist-item">
+                                    <span class="ui circular label courses-waitlist-pos">{{ loop.index }}</span>
+                                    {% if members[entry.getMemberId()] is defined %}
+                                        <a href="{{ url_for("member", {"id": entry.getMemberId()}) }}">
+                                            {{ members[entry.getMemberId()] }}
+                                        </a>
+                                    {% else %}
+                                        {{ _T("Unknown member", "courses") }}
+                                    {% endif %}
+                                    {% if nicknames[entry.getMemberId()] is defined %}
+                                        <span class="ui teal mini label">
+                                            <i class="tag icon" aria-hidden="true"></i>
+                                            {{ nicknames[entry.getMemberId()] }}
+                                        </span>
+                                    {% endif %}
+                                    <span class="ui mini label">{{ entry.getAddedDate()|date("d/m/Y") }}</span>
+                                </div>
+                            </div>
+                        {% endfor %}
                     </div>
-                {% endfor %}
+                </div>
             </div>
         </div>
     {% endif %}
