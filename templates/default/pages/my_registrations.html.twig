@@ -251,11 +251,12 @@
                             {% set total_options = self_count + children_count %}
 
                             {% if total_options == 1 and browse_can_self_register[sid] %}
-                                {# Seule option : le membre lui-meme #}
+                                {# Seule option : le membre lui-meme — on affiche le nickname (nom du chien) si dispo #}
+                                {% set self_nick = (reg_members[login.id] is defined and reg_members[login.id].nickname) ? reg_members[login.id].nickname : '' %}
                                 <form action="{{ url_for("coursesDoRegister", {"id": sid}) }}" method="post" class="ui form courses-inline-form">
                                     <button type="submit" class="ui tiny labeled icon green button">
                                         <i class="user plus icon" aria-hidden="true"></i>
-                                        {{ _T("Register", "courses") }}
+                                        {{ self_nick ? self_nick : _T("Register", "courses") }}
                                     </button>
                                     {% include "components/forms/csrf.html.twig" %}
                                 </form>
@@ -279,9 +280,10 @@
                                     <i class="dropdown icon" aria-hidden="true"></i>
                                     <div class="menu">
                                         {% if browse_can_self_register[sid] %}
+                                            {% set self_nick_drop = (reg_members[login.id] is defined and reg_members[login.id].nickname) ? reg_members[login.id].nickname : '' %}
                                             <a class="item courses-register-trigger" data-target="register-self-{{ sid }}">
                                                 <i class="user icon" aria-hidden="true"></i>
-                                                {{ _T("Myself", "courses") }}
+                                                {{ self_nick_drop ? self_nick_drop : _T("Myself", "courses") }}
                                             </a>
                                         {% endif %}
                                         {% for child_id, child_info in browse_eligible_children[sid] %}
