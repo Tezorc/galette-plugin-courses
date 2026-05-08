@@ -454,46 +454,39 @@ Lors de la generation des seances pour un evenement recurrent, toutes les seance
 
 ### 16-bis. Inscription d'un enfant (parent)
 
-Si un adherent a des enfants lies (via le champ "Membre parent" dans Galette), il peut les inscrire a une seance via un bouton dedie, independamment de sa propre inscription.
+Si un adherent a des enfants lies (via le champ "Membre parent" dans Galette), il peut les inscrire a une seance, independamment de sa propre inscription.
 
-#### Principe de fonctionnement
+#### Principe de fonctionnement (Phase 42)
 
-Les inscriptions propre nom et enfant sont traitees **separement** via des boutons distincts :
+L'auto-inscription et l'inscription d'enfants sont desormais regroupees derriere un bouton **"S'inscrire"** unique, a la fois sur les cards de l'onglet "Trouver une seance", sur les cards "Mes inscriptions" et sur la page de detail d'une seance. Le rendu s'adapte au nombre d'options eligibles :
 
-- **Bouton "S'inscrire"** : inscrit le parent en son propre nom (visible uniquement si le parent appartient a un groupe requis de l'evenement, ou si l'evenement n'a pas de restriction)
-- **Bouton "Inscrire un enfant"** (vert, icone paw) : ouvre le formulaire d'inscription d'un enfant
+- **1 seule option (parent OU un seul enfant)** : bouton vert direct portant le nom de la personne (`Moi-même` pour le parent, ou le pseudo / nom de l'enfant). Un clic poste immediatement l'inscription, sans page intermediaire.
+- **2 options ou plus (parent + enfant·s, ou plusieurs enfants)** : bouton vert dropdown libelle **"S'inscrire"**. Le menu liste **Moi-même** (si le parent est eligible) puis chaque enfant eligible non deja inscrit (avec son pseudo a defaut, sinon son nom). Selectionner une ligne poste l'inscription correspondante.
 
-Les deux boutons peuvent etre affiches simultanement, permettant au parent de s'inscrire **et** d'inscrire ses enfants pour la meme seance.
+Les enfants deja inscrits sont exclus du menu (et un bouton de desinscription dedie est visible ailleurs sur la card / la page).
 
-#### Inscrire un enfant
+La page intermediaire "Inscrire un membre rattache" n'existe plus : le choix se fait directement depuis le bouton.
 
-1. Sur la page de detail d'une seance, cliquer sur le bouton vert **"Inscrire un enfant"**
-2. Un formulaire s'affiche avec un select recherchable listant les enfants eligibles non deja inscrits
-3. Les enfants eligibles sont ceux appartenant a un groupe requis par l'evenement
-4. Selectionner l'enfant, cliquer sur **"Inscrire"**
+#### Conditions verifiees a la soumission
 
-Le systeme verifie :
-- Le lien parent/enfant dans Galette
-- L'appartenance de l'enfant a un groupe requis
-- La seance ouverte et non pleine
+- Lien parent/enfant dans Galette (relation `parent_id`)
+- Appartenance de l'enfant (ou du parent) a un groupe requis par l'evenement, ou evenement sans restriction
+- Seance ouverte avec places disponibles (sinon liste d'attente, voir 14)
+- Moniteur affecte a la seance, sauf si l'evenement coche **"Autoriser les inscriptions sans moniteur"** (Phase 40)
 
 #### Desinscrire un enfant
 
-Sur la page de detail de la seance, dans la zone d'action, les enfants deja inscrits sont affiches avec :
-- Leur **nom** et **pseudo** affiches a cote du bouton de desinscription
-- Un bouton rouge **"Se desinscrire"** pour chaque enfant
-
-Ce bouton est visible **dans tous les cas** (que le parent soit lui-meme inscrit ou non), y compris pour les enfants qui n'appartiennent pas aux memes groupes que le parent.
+Sur la page de detail de la seance et sur la card "Mes inscriptions", chaque enfant deja inscrit apparait sur sa propre ligne avec son nom + pseudo et un bouton rouge **"Se desinscrire"**. Le bouton est visible meme si le parent n'est pas inscrit lui-meme et meme si l'enfant appartient a un groupe different du parent.
 
 #### Visibilite des seances
 
-Le parent voit dans la liste des seances toutes les seances ouvertes aux groupes de ses enfants, meme s'il n'appartient pas lui-meme a ces groupes.
+Le parent voit dans la liste des seances toutes les seances ouvertes aux groupes de ses enfants, meme s'il n'appartient pas lui-meme a ces groupes. Sur l'onglet "Trouver une seance", les cards dont aucune option (parent et enfants) n'est plus actionnable (deja inscrit partout) sont automatiquement masquees.
 
 #### Cas particuliers
 
-- Si le parent n'est pas eligible en son propre nom mais qu'au moins un enfant l'est, seul le bouton "Inscrire un enfant" s'affiche
-- Si ni le parent ni aucun enfant n'est eligible et qu'aucun enfant n'est inscrit, un message explicatif s'affiche
-- Les enfants deja inscrits sont exclus du formulaire d'inscription
+- Parent non eligible en propre nom + 1 seul enfant eligible -> bouton direct au nom de l'enfant
+- Parent non eligible + plusieurs enfants -> dropdown listant uniquement les enfants
+- Aucune option eligible -> aucun bouton "S'inscrire" (un message explicatif s'affiche si pertinent)
 
 ### 17. Modale de confirmation de desinscription
 
@@ -872,7 +865,6 @@ Toutes les routes sont prefixees par `/plugins/courses/`.
 | GET | `/session/{id}/proxy-register` | Formulaire d'inscription par procuration |
 | POST | `/session/{id}/proxy-register` | Inscrire un membre par procuration |
 | POST | `/session/{id}/proxy-unregister` | Annuler une inscription (staff/admin/moniteur de la seance) |
-| GET | `/session/{id}/parent-register` | Formulaire d'inscription d'un enfant (parent) |
 | POST | `/session/{id}/parent-register` | Inscrire un enfant (parent) |
 | POST | `/session/{id}/parent-unregister` | Desinscrire un enfant (parent) |
 | GET | `/session/{id}/ical` | Export iCal d'une seance |
@@ -951,6 +943,7 @@ Toutes les phases de developpement sont terminees :
 - **Phase 27** : Page detail seance — compaction du haut de page : les boutons "Retour" et "Modifier la seance" (staff) ne sont plus sur des lignes separees au-dessus et en dessous du bandeau colore. Ils sont desormais integres a droite dans le bandeau colore lui-meme, en mode icone seule (avec infobulle au survol). Gain d'environ 80-100 px de hauteur, le contenu utile (jauge, instructeurs, inscriptions) est visible immediatement.
 - **Phase 26** : Liste des inscrits compacte sur smartphone — une ligne par membre dans la page detail seance (au lieu du card-layout multi-lignes de la phase 25). Nom et surnom (en gris) s'affichent a gauche, dropdown de presence ancre a droite ; colonnes Surnom et Date d'inscription masquees en mobile (le surnom reste visible inline a cote du nom).
 - **Phase 25** : Optimisation responsive du detail des seances (smartphones) — tableau des inscrits convertit en card-layout responsive (suppression du scroll horizontal, dropdown de presence en pleine largeur 44 px de hauteur tactile) ; boutons d'actions de section (Send email / Export) empiles sous le titre h3 et etales sur toute la largeur sur mobile ; inputs des accordions waitlist (capacite, date) a 100% en mobile ; modales (Annuler / Confirmer la desinscription) avec actions empilees en pleine largeur ; correction empilement des champs date/heure sur la page d'edition de seance ; remplacement des `style="..."` inline par des classes utilitaires (`courses-section-actions`, `courses-input-narrow`, `courses-input-medium`, `courses-segment-tight`, `courses-divider-top0`)
+- **Phase 42** : Consolidation des boutons d'inscription parent/enfants — un seul bouton vert **"S'inscrire"** sur les cards "Trouver une seance", "Mes inscriptions" et sur la page de detail d'une seance. Une seule option eligible (parent OU un seul enfant) -> bouton direct portant le nom de la personne, POST sans page intermediaire. Deux options ou plus -> dropdown unique listant **Moi-même** + chaque enfant. Suppression de la page intermediaire "Inscrire un membre rattache" (route `coursesParentRegisterForm` supprimee). Correctifs CSS : dropdown desormais visible quand une autre card est rendue en dessous (overflow visible sur les cards / colonnes, z-index sur le menu) ; sur smartphone, le bouton dropdown et son menu prennent toute la largeur de la card pour rester confortables au tap.
 - **Traductions** : Interface entierement traduite en francais (fichiers PO/MO)
 
 ---

@@ -632,6 +632,41 @@ Le developpement est organise en phases progressives.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
 
+### Phase 42 - Consolidation des boutons d'inscription parent/enfants (UI dropdown unique)
+
+**Statut : TERMINEE**
+
+- Demande utilisateur : limiter le nombre de boutons "S'inscrire" / "Inscrire un enfant" affiches simultanement sur une seance (le mix bouton vert + bouton teal + bouton dropdown enfant n'etait pas lisible, surtout sur mobile) et eliminer la page picker intermediaire `/session/{id}/parent-register` (GET) qui faisait perdre un clic des qu'il n'y avait qu'un seul enfant eligible.
+
+- Solution retenue : un seul bouton "S'inscrire" par seance, avec rendu adaptatif selon le nombre d'options eligibles (Moi-même + chaque enfant non encore inscrit). Pattern applique de maniere coherente aux 3 endroits ou le membre rencontre l'inscription :
+  1. Cards de l'onglet **Trouver une seance** (`my_registrations.html.twig` browse view).
+  2. Cards de l'onglet **Mes inscriptions** (idem template).
+  3. Page de **detail seance** (`session_show.html.twig`), bloc d'action principal — meme logique pour le cas "parent deja inscrit, peut encore inscrire un enfant".
+
+- Calcul cote Twig : `total_options = self_count + children_count` ou `self_count = parent_eligible ? 1 : 0` et `children_count = unregistered_children_available|length`. Trois branches :
+  - `total_options == 1 && parent_eligible` -> `<form>` POST `coursesDoRegister` avec un seul bouton vert **"S'inscrire"** (icone `user plus`).
+  - `total_options == 1` (un seul enfant eligible) -> `<form>` POST `coursesDoParentRegister` avec `member_id` en hidden, bouton vert **portant le pseudo / nom de l'enfant**.
+  - `total_options >= 2` -> dropdown Fomantic UI `simple` (CSS-only, hover-open) libelle "S'inscrire", chaque item du menu declenche une `<form>` cachee (pattern out-of-band Phase 38) :
+    - "Moi-même" -> form `reg-self-detail-{sid}` (POST coursesDoRegister) si `parent_eligible`
+    - 1 ligne par enfant -> form `reg-child-new-{sid}-{cid}` ou `reg-child-add-{sid}-{cid}` (POST coursesDoParentRegister avec hidden member_id)
+
+- Page picker supprimee :
+  - Route GET `/session/{id}/parent-register` (`coursesParentRegisterForm`) retiree de `_routes.php`.
+  - Handler `RegistrationsController::parentRegisterForm()` supprime (~70 lignes).
+  - Template `templates/default/pages/parent_register_form.html.twig` supprime.
+  - ACL `'coursesParentRegisterForm' => 'member'` retiree de `_define.php`.
+  - Les 2 redirections en cas d'erreur dans `doParentRegister` qui pointaient vers `coursesParentRegisterForm` redirigent maintenant vers `coursesSessionShow` (la card / la page d'origine du clic).
+
+- Correctifs CSS (`webroot/galette_courses.css`) :
+  - **Clipping desktop** : `.ui.card` Fomantic a `overflow:hidden` par defaut, ce qui clippait le menu dropdown derriere la card suivante quand une seance etait rendue en-dessous. Fix par `overflow: visible !important` sur `.courses-cards-grid .column`, `.courses-card`, `.courses-card > .content`, `.courses-card > .extra.content`, plus `z-index: 100` sur le menu lui-meme et `z-index: 50` (avec `position: relative`) sur le dropdown survole/actif pour qu'il passe par-dessus les cards voisines.
+  - **Mobile (≤767 px)** : dans le bloc `@media` existant, ajout de regles pour que le bouton dropdown et son menu prennent 100% de la largeur de la card (`width: 100% !important; box-sizing: border-box; min-height: 42px`), avec items du menu plus aerés (`padding: .85em 1em`).
+
+- Internationalisation : la chaine `Myself` (msgid existant ligne 1041 du `.po`, traduit `Moi-même`) est reutilisee partout. Pas d'ajout de traduction.
+
+- Tests : aucun test unitaire impacte (54 tests verts en ~200 ms maintenus). Verification manuelle sur l'instance `adherent.ccag42.org`.
+
+- Documentation : `doc/mode-emploi.md` (section 16-bis reecrite, route GET retiree de la table API, changelog enrichi) ; `doc/cahier-des-charges.md` (cette section, F8.1 deja mis a jour, route GET retiree de la table API).
+
 ### Phase 41 - Propagation des modifications d'evenement aux seances futures
 
 **Statut : TERMINEE**
@@ -1380,6 +1415,8 @@ Toutes les routes sont prefixees automatiquement par `/plugins/courses/`.
 |---------|-------|-------------|------------|
 | POST | `/session/{id}/parent-register` | RegistrationsController::doParentRegister | member |
 | POST | `/session/{id}/parent-unregister` | RegistrationsController::doParentUnregister | member |
+
+> Note Phase 42 : la route GET `/session/{id}/parent-register` (page picker `parentRegisterForm`) a ete supprimee. Le choix de l'enfant (ou du parent) se fait directement depuis le bouton dropdown "S'inscrire" sur les cards et sur la page de detail de la seance.
 
 ---
 
