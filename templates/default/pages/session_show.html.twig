@@ -289,50 +289,62 @@
                                 {% set unregistered_children_available = unregistered_children_available|merge({(child_id): child}) %}
                             {% endif %}
                         {% endfor %}
-                        {% if parent_eligible %}
-                            {# Inscription en propre nom #}
-                            <form action="{{ url_for("coursesDoRegister", {"id": session.getId()}) }}" method="post" class="ui form">
+                        {% set self_count = parent_eligible ? 1 : 0 %}
+                        {% set children_count = unregistered_children_available|length %}
+                        {% set total_options = self_count + children_count %}
+                        {% if total_options == 1 and parent_eligible %}
+                            {# Seule option : le membre lui-meme #}
+                            <form action="{{ url_for("coursesDoRegister", {"id": session.getId()}) }}" method="post" class="ui form courses-inline-form">
                                 <button type="submit" class="ui small labeled icon green button">
                                     <i class="user plus icon" aria-hidden="true"></i>
                                     {{ _T("Register", "courses") }}
                                 </button>
                                 {% include 'components/forms/csrf.html.twig' %}
                             </form>
-                        {% endif %}
-                        {% if unregistered_children_available|length > 0 %}
-                            {% if parent_eligible %}<div class="ui divider"></div>{% endif %}
-                            {% if unregistered_children_available|length == 1 %}
-                                {% set only_child_id = unregistered_children_available|keys|first %}
-                                {% set only_child = unregistered_children_available[only_child_id] %}
-                                <form action="{{ url_for("coursesDoParentRegister", {"id": session.getId()}) }}" method="post" class="ui form courses-inline-form">
-                                    <input type="hidden" name="member_id" value="{{ only_child_id }}"/>
-                                    <button type="submit" class="ui small labeled icon green button">
-                                        <i class="user plus icon" aria-hidden="true"></i>
-                                        {{ only_child.nickname ? only_child.nickname : only_child.name }}
-                                    </button>
+                        {% elseif total_options == 1 %}
+                            {# Seule option : un seul enfant — POST direct, bouton porte son nom #}
+                            {% set only_child_id = unregistered_children_available|keys|first %}
+                            {% set only_child = unregistered_children_available[only_child_id] %}
+                            <form action="{{ url_for("coursesDoParentRegister", {"id": session.getId()}) }}" method="post" class="ui form courses-inline-form">
+                                <input type="hidden" name="member_id" value="{{ only_child_id }}"/>
+                                <button type="submit" class="ui small labeled icon green button">
+                                    <i class="user plus icon" aria-hidden="true"></i>
+                                    {{ only_child.nickname ? only_child.nickname : only_child.name }}
+                                </button>
+                                {% include 'components/forms/csrf.html.twig' %}
+                            </form>
+                        {% elseif total_options >= 2 %}
+                            {# Plusieurs options : un seul bouton dropdown qui liste les choix #}
+                            <div class="ui simple dropdown small labeled icon green button">
+                                <i class="user plus icon" aria-hidden="true"></i>
+                                <span class="text">{{ _T("Register", "courses") }}</span>
+                                <i class="dropdown icon" aria-hidden="true"></i>
+                                <div class="menu">
+                                    {% if parent_eligible %}
+                                        <a class="item courses-register-trigger" data-target="reg-self-detail-{{ session.getId() }}">
+                                            <i class="user icon" aria-hidden="true"></i>
+                                            {{ _T("Myself", "courses") }}
+                                        </a>
+                                    {% endif %}
+                                    {% for child_id, child in unregistered_children_available %}
+                                        <a class="item courses-register-trigger" data-target="reg-child-new-{{ session.getId() }}-{{ child_id }}">
+                                            <i class="user icon" aria-hidden="true"></i>
+                                            {{ child.nickname ? child.nickname : child.name }}
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% if parent_eligible %}
+                                <form id="reg-self-detail-{{ session.getId() }}" action="{{ url_for("coursesDoRegister", {"id": session.getId()}) }}" method="post" class="courses-hidden-form">
                                     {% include 'components/forms/csrf.html.twig' %}
                                 </form>
-                            {% else %}
-                                <div class="ui simple dropdown small labeled icon green button">
-                                    <i class="user plus icon" aria-hidden="true"></i>
-                                    <span class="text">{{ _T("Register a linked member", "courses") }}</span>
-                                    <i class="dropdown icon" aria-hidden="true"></i>
-                                    <div class="menu">
-                                        {% for child_id, child in unregistered_children_available %}
-                                            <a class="item courses-register-trigger" data-target="reg-child-new-{{ session.getId() }}-{{ child_id }}">
-                                                <i class="user icon" aria-hidden="true"></i>
-                                                {{ child.nickname ? child.nickname : child.name }}
-                                            </a>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                {% for child_id, child in unregistered_children_available %}
-                                    <form id="reg-child-new-{{ session.getId() }}-{{ child_id }}" action="{{ url_for("coursesDoParentRegister", {"id": session.getId()}) }}" method="post" class="courses-hidden-form">
-                                        <input type="hidden" name="member_id" value="{{ child_id }}"/>
-                                        {% include 'components/forms/csrf.html.twig' %}
-                                    </form>
-                                {% endfor %}
                             {% endif %}
+                            {% for child_id, child in unregistered_children_available %}
+                                <form id="reg-child-new-{{ session.getId() }}-{{ child_id }}" action="{{ url_for("coursesDoParentRegister", {"id": session.getId()}) }}" method="post" class="courses-hidden-form">
+                                    <input type="hidden" name="member_id" value="{{ child_id }}"/>
+                                    {% include 'components/forms/csrf.html.twig' %}
+                                </form>
+                            {% endfor %}
                         {% endif %}
                         {% if not parent_eligible and unregistered_children_available|length == 0 and children_registered|length == 0 %}
                             <div class="ui orange message">
