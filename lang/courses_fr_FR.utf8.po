@@ -1752,8 +1752,3 @@ msgstr ""
 msgid "No instructor has volunteered yet — registration is open anyway. You will be notified when an instructor takes over."
 msgstr "Aucun moniteur ne s'est encore porté volontaire — les inscriptions sont néanmoins ouvertes. Vous serez prévenu(e) dès qu'un moniteur prendra en charge la séance."
 
-# --- Phase 42 : dropdown choix d'inscription dans les cards ---
-
-msgid "Myself"
-msgstr "Moi"
-
