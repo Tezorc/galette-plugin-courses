@@ -370,6 +370,12 @@ msgstr "Valider"
 msgid "Reject"
 msgstr "Rejeter"
 
+msgid "View"
+msgstr "Voir"
+
+msgid "Delete"
+msgstr "Supprimer"
+
 msgid "Date"
 msgstr "Date"
 
@@ -1842,4 +1848,24 @@ msgstr "Une erreur est survenue lors de l'ajout du membre à la liste d'attente.
 
 msgid "This page is reserved for member accounts."
 msgstr "Cette page est réservée aux comptes adhérents."
+
+# --- Phase 47.2 : eligibilite des membres (actif + statut + cotisation) ---
+
+msgid "Member account not found."
+msgstr "Compte adhérent introuvable."
+
+msgid "Member account is not active."
+msgstr "Le compte adhérent n'est pas actif."
+
+msgid "Member has the \"Non member\" status."
+msgstr "L'adhérent a le statut « Non membre »."
+
+msgid "Membership is not up to date."
+msgstr "La cotisation n'est pas à jour."
+
+msgid "Unable to verify member eligibility."
+msgstr "Impossible de vérifier l'éligibilité de l'adhérent."
+
+msgid "Registration will not be possible for the following member(s) until the situation is fixed:"
+msgstr "L'inscription ne sera pas possible pour le(s) membre(s) suivant(s) tant que la situation n'est pas régularisée :"
 

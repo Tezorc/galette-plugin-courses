@@ -398,6 +398,13 @@ class SessionsController extends AbstractPluginController
             try {
                 $select = $this->zdb->select(\Galette\Entity\Adherent::TABLE, 'a');
                 $select->columns(['id_adh', 'nom_adh', 'prenom_adh', 'pseudo_adh']);
+                // Phase 47.2: exclude members with the "Non member" status
+                // (statuts.priorite_statut >= 99 by Galette convention).
+                $select->join(
+                    ['s' => PREFIX_DB . 'statuts'],
+                    'a.id_statut = s.id_statut',
+                    []
+                );
 
                 if (!empty($eventGroups)) {
                     $select->join(
@@ -410,6 +417,7 @@ class SessionsController extends AbstractPluginController
                 }
 
                 $select->where->equalTo('a.activite_adh', true);
+                $select->where->lessThan('s.priorite_statut', 99);
                 $select->order(['a.nom_adh ASC', 'a.prenom_adh ASC']);
                 $results = $this->zdb->execute($select);
 

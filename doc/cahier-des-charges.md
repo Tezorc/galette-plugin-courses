@@ -716,6 +716,39 @@ Le developpement est organise en phases progressives.
 
 - Documentation : cette section, `CLAUDE.md` (entree Avancement Phase 50), et `doc/mode-emploi.md` (mention dans "Modifier un evenement recurrent").
 
+### Phase 51 - Refonte responsive smartphone de la liste des evenements
+
+**Statut : TERMINEE**
+
+- Demande utilisateur : "ameliorer l'affichage responsive smartphone des evenements". Choix A + B retenu : refonte de la carte mobile (titre + meta + actions structures) + boutons d'action explicites avec libelle texte (au lieu d'icones nues).
+
+- Diagnostic avant Phase 51 :
+  - La liste utilisait `.courses-responsive-table` (rendu generique cellule-par-cellule en cards). Sur mobile chaque cellule devenait une ligne flex `LABEL : value` mal hierarchisee, le nom de l'evenement etait enfoui a droite avec un label "NAME:" redondant.
+  - Les actions etaient des `<i>` icones nues sans libelle, sans background, touch targets trop petits (~24px), tooltip popup desktop non utilisable au touch.
+  - Location et Capacity etaient masques sur mobile (`courses-mobile-hide`) — perte d'information utile.
+
+- Implementation :
+  - **Template** `templates/default/pages/events_list.html.twig` :
+    - Classe du tableau passe de `courses-responsive-table` a `courses-events-card-table` (rendu mobile dedie).
+    - Cellule Nom : nouvelle classe `courses-event-name`. Cellule Statut : `courses-event-status`. Cellules Lieu/Capacite : `courses-event-meta` (suppression du `courses-mobile-hide`). Created reste `courses-mobile-hide`.
+    - Chaque action recoit la classe `courses-event-action` + un nouveau `<span class="courses-action-text">` portant le libelle court (View / Edit / Validate / Reject / Delete). Le `<span class="ui special popup">` (tooltip desktop) reste, masque sur mobile.
+  - **CSS** `webroot/galette_courses.css` :
+    - `.courses-action-text { display: none }` au niveau global (desktop conserve l'apparence "icone seule + tooltip").
+    - Nouveau bloc dans `@media ≤ 767px` qui restructure `.courses-events-card-table` :
+      - Tableau et tbody en `display: block`, thead masque.
+      - Chaque `<tr>` devient une carte (border, padding 1em, border-radius 6px, box-shadow leger). Conserve l'effet `courses-pending` jaune.
+      - `.courses-event-name` : titre 1.15em gras avec bordure inferieure.
+      - `.courses-event-status` : badge avec marge verticale.
+      - `.courses-event-meta` : ligne grise 0.9em avec label inline `Lieu : Salle A` via `::before { content: attr(data-label) " : " }`.
+      - `td.actions_row` : flex column gap .4em, separateur top, boutons full-width labelles. Selecteur specifique `.courses-events-card-table .courses-event-action` (specificite 0,2,0 — bat `.courses-icon-btn` qui aurait sinon supprime le background sur les boutons Validate/Reject).
+      - `.courses-action-text` : `display: inline` (libelle visible).
+      - `.ui.special.popup` masque sur mobile pour ne pas se superposer.
+  - **Traductions** `lang/courses_fr_FR.utf8.po` : 2 nouvelles chaines ajoutees ("View" -> "Voir", "Delete" -> "Supprimer"). "Edit", "Validate", "Reject" deja presents. `.mo` recompile via msgfmt.
+
+- Aucune migration BDD. Aucun changement desktop visible. Pas de regression sur les autres pages : la classe `.courses-events-card-table` est specifique a events_list, et `.courses-action-text` n'apparait que dans les actions de cette table.
+
+- Documentation : cette section, `CLAUDE.md` (entree Avancement Phase 51), `doc/mode-emploi.md` (paragraphe responsive smartphone enrichi).
+
 ### Phase 49 - Proxy-register : moniteur autorise + bascule waitlist sur seance pleine
 
 **Statut : TERMINEE**
@@ -772,6 +805,36 @@ Le developpement est organise en phases progressives.
   - Pas de bypass admin/staff/groupmanager sur cet avertissement (volontaire). La logique de bypass (`isAdmin || isStaff || isGroupManager`) reste appliquee uniquement au flag `member_is_up2date` qui pilote le message dans l'onglet "Trouver une seance".
 
 - Documentation : `doc/mode-emploi.md` (section "Consulter ses inscriptions" enrichie d'un paragraphe sur le bandeau cotisation), cette section, et `CLAUDE.md` (entree Avancement Phase 47 + Phase 47.1).
+
+### Phase 47.2 - Eligibilite des membres pour l'inscription (actif + statut + cotisation)
+
+**Statut : TERMINEE**
+
+- Demande utilisateur : "il faut rajouter les conditions suivantes le membre (parent ou enfant) doit etre a jour de cotisation mais etre egalement et le compte actif et statut <>'non membre'". Etend l'enforcement existant (cotisation a jour) avec deux conditions supplementaires : compte adherent actif (`adherents.activite_adh = 1`) ET statut different de "Non membre" (`statuts.priorite_statut < 99`, convention Galette).
+
+- Implementation :
+  - Nouveau helper prive `RegistrationsController::getMemberEligibilityError(int $memberId, string $name = '', bool $skipExMembers = false): ?string`. Retourne `null` si le membre est eligible, sinon un message d'erreur traduit (compte introuvable / inactif / statut "Non membre" / cotisation non a jour). Le `$name` optionnel est concatene entre parentheses ("Compte non actif. (Marie)") pour identifier le membre dans les flash et la banniere. Le parametre `$skipExMembers` (defaut `false`) controle un cas special : si `true` ET que le membre est `activite_adh = 0` OU `priorite_statut >= 99`, le helper retourne `null` silencieusement — utilise par la banniere `myRegistrations` pour ne pas signaler les comptes ex-adherents / inactifs / "Non membre".
+  - Une seule requete SQL par membre : `SELECT activite_adh, date_echeance, bool_exempt_adh FROM galette_adherents a JOIN galette_statuts s ON a.id_statut = s.id_statut WHERE a.id_adh = ?`. La cotisation est consideree a jour si `bool_exempt_adh = 1` OU `date_echeance >= today` (replique fidelement la convention Galette `Adherent::isUp2Date()` sans dependre des deps Adherent).
+  - 4 handlers mis a jour, le helper remplace ou complete `$this->login->isUp2Date()` :
+    - `doRegister` : helper sur `$this->login->id` (au lieu de isUp2Date).
+    - `doWaitlist` : idem.
+    - `doParentRegister` : helper sur `$parent_id` (apres recuperation parent_id) ET sur `$child_id` (apres verif `isChildOf`). Le nom de l'enfant est passe au helper pour clarte du flash.
+    - `doProxyRegister` : helper sur le `$member_id` cible (auparavant aucun check sur la cotisation/statut/actif). La verif a lieu apres validation du `member_id` poste.
+  - Filtre des listes "eligible_members" :
+    - `RegistrationsController::proxyRegisterForm` : ajout JOIN `statuts` + `where->lessThan('s.priorite_statut', 99)` au SELECT existant qui filtrait deja `activite_adh = true`.
+    - `SessionsController::show` (chargement walk-in attendance) : meme ajout.
+  - Banniere `myRegistrations` refondue :
+    - Variable `$not_up2date_members` (liste de noms) -> `$ineligible_members` (liste de raisons pre-formatees, ex: "Membership is not up to date. (Marie)").
+    - Le helper est appele pour le parent ET chaque enfant avec `$skipExMembers = true`. Chaque retour non-null est ajoute a la liste. Les comptes inactifs OU "Non membre" sont silencieusement ignores.
+    - Template `my_registrations.html.twig` : remplacement du texte singulier/pluriel par une introduction generique ("Registration will not be possible for the following member(s) until the situation is fixed:") suivie d'une `<ul>` qui detaille chaque raison.
+
+- Limites assumees :
+  - Le seuil "Non membre" est code en dur a `99` (convention Galette par defaut). Si une installation utilise une convention differente (ex: priorite 100+), il faudra parametrer. Acceptable car la valeur est stable depuis Galette 0.7.
+  - `bool_exempt_adh` est lu directement (pas de via `$adherent->isDueFree()` qui necessite le chargement d'un Adherent complet). Comportement equivalent.
+  - Les 4 handlers ont chacun une requete SQL supplementaire (helper). Pour `doParentRegister` cela fait 2 SQL en plus (parent + enfant). Acceptable car ces handlers ne sont pas dans des boucles.
+  - La banniere "Mes inscriptions" execute le helper `1 + N` fois (parent + N enfants). Pour des families avec beaucoup d'enfants cela pourrait etre optimise en une requete IN(...), mais en pratique le cout reste tres faible.
+
+- Documentation : cette section, `CLAUDE.md` (entree Avancement Phase 47.2), `doc/mode-emploi.md` (paragraphe "Avertissement cotisation" reecrit pour mentionner les 3 conditions).
 
 ### Phase 47.1 - Blocage "Mes inscriptions" pour le super admin
 

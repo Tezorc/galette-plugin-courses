@@ -68,7 +68,7 @@
     </div>
 
     <div class="courses-table-scroll">
-    <table class="listing ui celled striped table courses-responsive-table">
+    <table class="listing ui celled striped table courses-events-card-table">
         <thead>
             <tr>
                 <th>{{ _T("Name", "courses") }}</th>
@@ -82,14 +82,14 @@
         <tbody>
             {% for event in events %}
                 <tr{% if event.getStatus() == 'pending' %} class="courses-pending"{% endif %}>
-                    <td data-label="{{ _T("Name", "courses") }}">
+                    <td data-label="{{ _T("Name", "courses") }}" class="courses-event-name">
                         <a href="{{ url_for("coursesEventShow", {"id": event.getId()}) }}">
                             {{ event.getName() }}
                         </a>
                     </td>
-                    <td data-label="{{ _T("Location", "courses") }}" class="courses-mobile-hide">{{ event.getLocation() ?? '-' }}</td>
-                    <td data-label="{{ _T("Capacity", "courses") }}" class="courses-mobile-hide">{{ event.getMaxCapacity() ?? _T("Unlimited", "courses") }}</td>
-                    <td data-label="{{ _T("Status", "courses") }}">
+                    <td data-label="{{ _T("Location", "courses") }}" class="courses-event-meta">{{ event.getLocation() ?? '-' }}</td>
+                    <td data-label="{{ _T("Capacity", "courses") }}" class="courses-event-meta">{{ event.getMaxCapacity() ?? _T("Unlimited", "courses") }}</td>
+                    <td data-label="{{ _T("Status", "courses") }}" class="courses-event-status">
                         {% if event.getStatus() == 'validated' %}
                             <span class="ui green label"><i class="check icon" aria-hidden="true"></i> {{ event.getStatusLabel() }}</span>
                         {% elseif event.getStatus() == 'draft' %}
@@ -102,36 +102,41 @@
                     </td>
                     <td data-label="{{ _T("Created", "courses") }}" class="courses-mobile-hide">{{ event.getCreationDate()|date("Y-m-d") }}</td>
                     <td class="actions_row center collapsing">
-                        <a href="{{ url_for("coursesEventShow", {"id": event.getId()}) }}">
+                        <a href="{{ url_for("coursesEventShow", {"id": event.getId()}) }}" class="courses-event-action">
                             <i class="ui eye icon tooltip" aria-hidden="true"></i>
                             <span class="ui special popup">{{ _T("View event", "courses") }}</span>
+                            <span class="courses-action-text">{{ _T("View", "courses") }}</span>
                         </a>
                         {% if event.canManage(login) %}
-                            <a href="{{ url_for("coursesEventEdit", {"id": event.getId()}) }}" class="action">
+                            <a href="{{ url_for("coursesEventEdit", {"id": event.getId()}) }}" class="action courses-event-action">
                                 <i class="ui edit icon tooltip" aria-hidden="true"></i>
                                 <span class="ui special popup">{{ _T("Edit event", "courses") }}</span>
+                                <span class="courses-action-text">{{ _T("Edit", "courses") }}</span>
                             </a>
                         {% endif %}
                         {% if event.canValidate(login) %}
                             <form action="{{ url_for("coursesDoEventValidate", {"id": event.getId()}) }}" method="post" class="courses-inline-form">
-                                <button type="submit" class="ui icon button courses-icon-btn">
+                                <button type="submit" class="ui icon button courses-icon-btn courses-event-action">
                                     <i class="ui check circle green icon tooltip" aria-hidden="true"></i>
                                     <span class="ui special popup">{{ _T("Validate event", "courses") }}</span>
+                                    <span class="courses-action-text">{{ _T("Validate", "courses") }}</span>
                                 </button>
                                 {% include 'components/forms/csrf.html.twig' %}
                             </form>
                             <form action="{{ url_for("coursesDoEventReject", {"id": event.getId()}) }}" method="post" class="courses-inline-form">
-                                <button type="submit" class="ui icon button courses-icon-btn">
+                                <button type="submit" class="ui icon button courses-icon-btn courses-event-action">
                                     <i class="ui times circle red icon tooltip" aria-hidden="true"></i>
                                     <span class="ui special popup">{{ _T("Reject event", "courses") }}</span>
+                                    <span class="courses-action-text">{{ _T("Reject", "courses") }}</span>
                                 </button>
                                 {% include 'components/forms/csrf.html.twig' %}
                             </form>
                         {% endif %}
                         {% if login.isAdmin() or login.isStaff() %}
-                            <a href="{{ url_for("coursesEventRemove", {"id": event.getId()}) }}" class="delete">
+                            <a href="{{ url_for("coursesEventRemove", {"id": event.getId()}) }}" class="delete courses-event-action">
                                 <i class="ui trash red icon tooltip" aria-hidden="true"></i>
                                 <span class="ui special popup">{{ _T("Delete event", "courses") }}</span>
+                                <span class="courses-action-text">{{ _T("Delete", "courses") }}</span>
                             </a>
                         {% endif %}
                     </td>

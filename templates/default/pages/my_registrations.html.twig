@@ -2,15 +2,17 @@
 
 {% block content %}
 
-{# Avertissement cotisation : parent ou enfants non a jour #}
-{% if not_up2date_members|length > 0 %}
+{# Phase 47.2 : avertissement eligibilite (cotisation / actif / statut "Non membre")
+   pour le parent et chacun des enfants. Les libelles sont pre-formates cote PHP. #}
+{% if ineligible_members|length > 0 %}
     <div class="ui orange message">
         <i class="exclamation triangle icon" aria-hidden="true"></i>
-        {% if not_up2date_members|length == 1 %}
-            {{ _T("Membership not up to date for: %s. Registration will not be possible until the membership is renewed.", "courses")|format(not_up2date_members|first) }}
-        {% else %}
-            {{ _T("Membership not up to date for: %s. Registration will not be possible until the memberships are renewed.", "courses")|format(not_up2date_members|join(", ")) }}
-        {% endif %}
+        <p>{{ _T("Registration will not be possible for the following member(s) until the situation is fixed:", "courses") }}</p>
+        <ul>
+            {% for reason in ineligible_members %}
+                <li>{{ reason }}</li>
+            {% endfor %}
+        </ul>
     </div>
 {% endif %}
 
@@ -92,12 +94,9 @@
    ========================================================= #}
 <div class="ui bottom attached tab segment active" data-tab="browse" style="padding:1em 0; border:none; box-shadow:none;">
 
-    {% if not member_is_up2date %}
-        <div class="ui orange message">
-            <i class="exclamation triangle icon" aria-hidden="true"></i>
-            {{ _T("Your membership must be up to date to register.", "courses") }}
-        </div>
-    {% endif %}
+    {# Phase 47.2: le bandeau d'eligibilite en tete du block content rend ce
+       message redondant. Le flag member_is_up2date est conserve plus bas pour
+       desactiver les boutons "S'inscrire" sur chaque carte. #}
 
     {% if available_sessions|length > 0 %}
     {# Filtres dynamiques (JS, sans rechargement)

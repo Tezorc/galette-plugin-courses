@@ -88,7 +88,7 @@
                     {{ _T("Average fill rate by event", "courses") }}
                 </div>
                 {% if stats.fill_rates|length > 0 %}
-                    <table class="ui very basic compact small table">
+                    <table class="ui very basic compact small table courses-responsive-table">
                         <thead>
                             <tr>
                                 <th>{{ _T("Event", "courses") }}</th>
@@ -101,8 +101,8 @@
                             {% set pct = rate.avg_fill|round(1) %}
                             {% set pct_css = rate.avg_fill|number_format(1, '.', '') %}
                             <tr>
-                                <td>{{ rate.name }}</td>
-                                <td>
+                                <td data-label="{{ _T("Event", "courses") }}">{{ rate.name }}</td>
+                                <td data-label="{{ _T("Fill rate", "courses") }}">
                                     <div class="courses-fill-row">
                                         <div class="ui tiny progress{% if pct >= 100 %} red{% elseif pct >= 75 %} yellow{% else %} green{% endif %}">
                                             <div class="bar" style="width:{{ pct_css }}%"></div>
@@ -110,7 +110,7 @@
                                         <span class="courses-fill-pct">{{ pct }}%</span>
                                     </div>
                                 </td>
-                                <td class="center aligned"><span class="ui mini grey label">{{ rate.session_count }}</span></td>
+                                <td data-label="{{ _T("Sessions", "courses") }}" class="center aligned"><span class="ui mini grey label">{{ rate.session_count }}</span></td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -129,7 +129,7 @@
                     <span class="sub header">{{ _T("Last 20 active members", "courses") }}</span>
                 </div>
                 {% if stats.recent_activity|length > 0 %}
-                    <table class="ui very basic compact small table">
+                    <table class="ui very basic compact small table courses-responsive-table">
                         <thead>
                             <tr>
                                 <th>{{ _T("Member", "courses") }}</th>
@@ -140,9 +140,9 @@
                         <tbody>
                             {% for member in stats.recent_activity %}
                             <tr>
-                                <td><a href="{{ url_for("member", {"id": member.member_id}) }}">{{ member.member_name }}</a></td>
-                                <td class="courses-activity-date">{{ member.last_date }}</td>
-                                <td class="center aligned"><span class="ui mini blue label">{{ member.total_sessions }}</span></td>
+                                <td data-label="{{ _T("Member", "courses") }}"><a href="{{ url_for("member", {"id": member.member_id}) }}">{{ member.member_name }}</a></td>
+                                <td data-label="{{ _T("Last participation", "courses") }}" class="courses-activity-date">{{ member.last_date }}</td>
+                                <td data-label="{{ _T("Total", "courses") }}" class="center aligned"><span class="ui mini blue label">{{ member.total_sessions }}</span></td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -208,7 +208,7 @@
                 </button>
             </div>
             <div class="courses-table-scroll">
-            <table class="ui celled striped compact small table" id="active-members-table">
+            <table class="ui celled striped compact small table courses-responsive-table" id="active-members-table">
                 <thead>
                     <tr>
                         <th>{{ _T("Member", "courses") }}</th>
@@ -221,20 +221,20 @@
                 <tbody>
                     {% for m in stats.active_members %}
                     <tr>
-                        <td><a href="{{ url_for("member", {"id": m.member_id}) }}">{{ m.member_name }}</a></td>
-                        <td>
+                        <td data-label="{{ _T("Member", "courses") }}"><a href="{{ url_for("member", {"id": m.member_id}) }}">{{ m.member_name }}</a></td>
+                        <td data-label="{{ _T("Nickname", "courses") }}">
                             {% if m.nickname %}<i class="tag icon" aria-hidden="true"></i> {{ m.nickname }}
                             {% else %}<span class="ui grey text">—</span>{% endif %}
                         </td>
-                        <td class="center aligned"><span class="ui small blue label">{{ m.session_count }}</span></td>
-                        <td class="center aligned">
+                        <td data-label="{{ _T("Sessions attended", "courses") }}" class="center aligned"><span class="ui small blue label">{{ m.session_count }}</span></td>
+                        <td data-label="{{ _T("Present", "courses") }}" class="center aligned">
                             {% if m.attendance_count > 0 %}
                                 <span class="ui small green label">{{ m.attendance_count }}</span>
                             {% else %}
                                 <span class="ui grey text">—</span>
                             {% endif %}
                         </td>
-                        <td class="courses-events-cell">{{ m.events }}</td>
+                        <td data-label="{{ _T("Events", "courses") }}" class="courses-events-cell">{{ m.events }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -273,7 +273,7 @@
                 </button>
             </div>
             <div class="courses-table-scroll">
-            <table class="ui celled striped compact small table" id="inactive-members-table">
+            <table class="ui celled striped compact small table courses-responsive-table" id="inactive-members-table">
                 <thead>
                     <tr>
                         <th>{{ _T("Member", "courses") }}</th>
@@ -283,8 +283,8 @@
                 <tbody>
                     {% for m in stats.inactive_members %}
                     <tr>
-                        <td><a href="{{ url_for("member", {"id": m.member_id}) }}">{{ m.member_name }}</a></td>
-                        <td>
+                        <td data-label="{{ _T("Member", "courses") }}"><a href="{{ url_for("member", {"id": m.member_id}) }}">{{ m.member_name }}</a></td>
+                        <td data-label="{{ _T("Nickname", "courses") }}">
                             {% if m.nickname %}<i class="tag icon" aria-hidden="true"></i> {{ m.nickname }}
                             {% else %}<span class="ui grey text">—</span>{% endif %}
                         </td>

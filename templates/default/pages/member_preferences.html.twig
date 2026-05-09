@@ -1,12 +1,6 @@
 {% extends "page.html.twig" %}
 
 {% block content %}
-{% if no_member_record %}
-<div class="ui warning message">
-    <i class="exclamation triangle icon"></i>
-    {{ _T('Preferences cannot be saved for the super-admin account.', 'courses') }}
-</div>
-{% else %}
 <form action="{{ url_for('coursesDoMemberPreferences') }}" method="post" class="form">
     <div class="ui segment">
         <h3 class="ui header">{{ _T('Email notifications', 'courses') }}</h3>
@@ -31,5 +25,4 @@
     {% include 'components/forms/csrf.html.twig' %}
 
 </form>
-{% endif %}
 {% endblock %}

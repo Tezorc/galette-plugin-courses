@@ -112,8 +112,10 @@
         {% if event_colors|length > 1 %}
             <div class="courses-legend">
                 {% for eid in event_order %}
-                    <span class="ui {{ event_colors[eid] }} empty circular label"></span>
-                    <span class="courses-legend-text">{{ event_names[eid] }}</span>
+                    <span class="courses-legend-item">
+                        <span class="ui {{ event_colors[eid] }} empty circular label"></span>
+                        <span class="courses-legend-text">{{ event_names[eid] }}</span>
+                    </span>
                 {% endfor %}
             </div>
         {% endif %}

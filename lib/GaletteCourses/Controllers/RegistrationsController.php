@@ -68,9 +68,15 @@ class RegistrationsController extends AbstractController
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
         }
 
-        // Check membership is up to date
-        if (!$this->login->isUp2Date()) {
-            $this->flash->addMessage('error_detected', _T('Your membership must be up to date to register.', 'courses'));
+        $member_id = (int)$this->login->id;
+        if ($member_id <= 0) {
+            return $response->withStatus(302)->withHeader("Location", $this->routeparser->urlFor("coursesSessions"));
+        }
+
+        // Phase 47.2: enforce active + status + cotisation in one call.
+        $err = $this->getMemberEligibilityError($member_id);
+        if ($err !== null) {
+            $this->flash->addMessage('error_detected', $err);
             return $response
                 ->withStatus(302)
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
@@ -93,11 +99,6 @@ class RegistrationsController extends AbstractController
             return $response
                 ->withStatus(302)
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
-        }
-
-        $member_id = (int)$this->login->id;
-        if ($member_id <= 0) {
-            return $response->withStatus(302)->withHeader("Location", $this->routeparser->urlFor("coursesSessions"));
         }
 
         // Check group access for self-registration (own groups only, not family).
@@ -275,8 +276,15 @@ class RegistrationsController extends AbstractController
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
         }
 
-        if (!$this->login->isUp2Date()) {
-            $this->flash->addMessage('error_detected', _T('Your membership must be up to date to join the waitlist.', 'courses'));
+        $member_id = (int)$this->login->id;
+        if ($member_id <= 0) {
+            return $response->withStatus(302)->withHeader("Location", $this->routeparser->urlFor("coursesSessions"));
+        }
+
+        // Phase 47.2: enforce active + status + cotisation in one call.
+        $err = $this->getMemberEligibilityError($member_id);
+        if ($err !== null) {
+            $this->flash->addMessage('error_detected', $err);
             return $response
                 ->withStatus(302)
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
@@ -299,11 +307,6 @@ class RegistrationsController extends AbstractController
             return $response
                 ->withStatus(302)
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
-        }
-
-        $member_id = (int)$this->login->id;
-        if ($member_id <= 0) {
-            return $response->withStatus(302)->withHeader("Location", $this->routeparser->urlFor("coursesSessions"));
         }
 
         // Check group access first (blocking) before non-blocking warnings
@@ -414,7 +417,10 @@ class RegistrationsController extends AbstractController
         $member_ids  = [$member_id];
         $children_ids = []; // IDs of linked members (children) only
         $reg_members = []; // memberId => ['name' => ..., 'nickname' => ...]
-        $not_up2date_members = []; // names of members (parent/children) not up to date
+        // Phase 47.2: ineligible members (active=0 / non-member status / cotisation
+        // not up to date). Stored as a flat list of pre-formatted reasons:
+        //  ["Membership not up to date. (Marie)", "Account not active. (Paul)"]
+        $ineligible_members = [];
 
         try {
             $currentAdherent = new Adherent($this->zdb, $member_id, ['children' => true]);
@@ -422,8 +428,13 @@ class RegistrationsController extends AbstractController
                 'name'     => $currentAdherent->sname ?? '',
                 'nickname' => !empty($currentAdherent->nickname) ? (string)$currentAdherent->nickname : '',
             ];
-            if (!$currentAdherent->isUp2Date()) {
-                $not_up2date_members[] = $reg_members[$member_id]['name'];
+            $parentDisplay = $this->formatMemberDisplayName(
+                $reg_members[$member_id]['name'],
+                $reg_members[$member_id]['nickname']
+            );
+            $err = $this->getMemberEligibilityError($member_id, $parentDisplay, true);
+            if ($err !== null) {
+                $ineligible_members[] = $err;
             }
             foreach ($currentAdherent->children as $child) {
                 $childId = is_object($child) ? (int)$child->id : (int)$child;
@@ -437,8 +448,13 @@ class RegistrationsController extends AbstractController
                     'name'     => $childAdherent->sname ?? '',
                     'nickname' => !empty($childAdherent->nickname) ? (string)$childAdherent->nickname : '',
                 ];
-                if (!$childAdherent->isUp2Date()) {
-                    $not_up2date_members[] = $reg_members[$childId]['name'];
+                $childDisplay = $this->formatMemberDisplayName(
+                    $reg_members[$childId]['name'],
+                    $reg_members[$childId]['nickname']
+                );
+                $err = $this->getMemberEligibilityError($childId, $childDisplay, true);
+                if ($err !== null) {
+                    $ineligible_members[] = $err;
                 }
             }
         } catch (\Throwable $e) {
@@ -643,7 +659,7 @@ class RegistrationsController extends AbstractController
                                              || $this->login->isAdmin()
                                              || $this->login->isStaff()
                                              || $this->login->isGroupManager(),
-                'not_up2date_members'     => $not_up2date_members,
+                'ineligible_members'      => $ineligible_members,
                 'out_of_group_regs'       => $out_of_group_regs,
             ]
         );
@@ -792,6 +808,13 @@ class RegistrationsController extends AbstractController
         try {
             $select = $this->zdb->select(\Galette\Entity\Adherent::TABLE, 'a');
             $select->columns(['id_adh', 'nom_adh', 'prenom_adh', 'pseudo_adh']);
+            // Phase 47.2: filter out members with the "Non member" status
+            // (statuts.priorite_statut >= 99) — they are not eligible.
+            $select->join(
+                ['s' => PREFIX_DB . 'statuts'],
+                'a.id_statut = s.id_statut',
+                []
+            );
 
             if (!empty($eventGroups)) {
                 $select->join(
@@ -804,6 +827,7 @@ class RegistrationsController extends AbstractController
             }
 
             $select->where->equalTo('a.activite_adh', true);
+            $select->where->lessThan('s.priorite_statut', 99);
             $select->order(['a.nom_adh ASC', 'a.prenom_adh ASC']);
             $results = $this->zdb->execute($select);
 
@@ -860,8 +884,12 @@ class RegistrationsController extends AbstractController
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
         }
 
-        if (!$this->login->isUp2Date()) {
-            $this->flash->addMessage('error_detected', _T('Your membership must be up to date to register.', 'courses'));
+        $parent_id = (int)$this->login->id;
+
+        // Phase 47.2: parent must be active + non-"non-member" status + a jour
+        $err = $this->getMemberEligibilityError($parent_id);
+        if ($err !== null) {
+            $this->flash->addMessage('error_detected', $err);
             return $response
                 ->withStatus(302)
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
@@ -893,8 +921,6 @@ class RegistrationsController extends AbstractController
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
         }
 
-        $parent_id = (int)$this->login->id;
-
         // Verify parent-child relationship
         try {
             if (!$this->isChildOf($parent_id, $child_id)) {
@@ -905,6 +931,25 @@ class RegistrationsController extends AbstractController
             }
         } catch (\Throwable $e) {
             $this->flash->addMessage('error_detected', _T('An error occurred during registration.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+        }
+
+        // Phase 47.2: child must also be active + non-"non-member" + a jour
+        $childDisplay = '';
+        try {
+            $childAdherent = new Adherent($this->zdb, $child_id);
+            $childDisplay = $this->formatMemberDisplayName(
+                (string)($childAdherent->sname ?? ''),
+                !empty($childAdherent->nickname) ? (string)$childAdherent->nickname : ''
+            );
+        } catch (\Throwable) {
+            // fall back to empty display name
+        }
+        $err = $this->getMemberEligibilityError($child_id, $childDisplay);
+        if ($err !== null) {
+            $this->flash->addMessage('error_detected', $err);
             return $response
                 ->withStatus(302)
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
@@ -1011,6 +1056,25 @@ class RegistrationsController extends AbstractController
         $member_id = (int)($post['member_id'] ?? 0);
         if ($member_id <= 0) {
             $this->flash->addMessage('error_detected', _T('Select a member to register', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->routeparser->urlFor('coursesProxyRegisterForm', ['id' => (string)$id]));
+        }
+
+        // Phase 47.2: enforce member eligibility (active + status + cotisation).
+        $targetDisplay = '';
+        try {
+            $targetAdherent = new Adherent($this->zdb, $member_id);
+            $targetDisplay = $this->formatMemberDisplayName(
+                (string)($targetAdherent->sname ?? ''),
+                !empty($targetAdherent->nickname) ? (string)$targetAdherent->nickname : ''
+            );
+        } catch (\Throwable) {
+            // fall back to empty display name
+        }
+        $err = $this->getMemberEligibilityError($member_id, $targetDisplay);
+        if ($err !== null) {
+            $this->flash->addMessage('error_detected', $err);
             return $response
                 ->withStatus(302)
                 ->withHeader('Location', $this->routeparser->urlFor('coursesProxyRegisterForm', ['id' => (string)$id]));
@@ -1241,5 +1305,94 @@ class RegistrationsController extends AbstractController
             }
         }
         return false;
+    }
+
+    /**
+     * Phase 47.2: format "Name (pseudo)" if pseudo is set, otherwise just "Name".
+     * Used to identify the member concerned in eligibility flash messages and
+     * the my_registrations banner.
+     */
+    private function formatMemberDisplayName(string $name, ?string $nickname): string
+    {
+        $name = trim($name);
+        if ($nickname !== null && trim($nickname) !== '') {
+            return $name . ' (' . trim($nickname) . ')';
+        }
+        return $name;
+    }
+
+    /**
+     * Phase 47.2: check that a member is eligible for registration.
+     *
+     * Returns null if the member is eligible, or a translated flash message
+     * otherwise. The 3 conditions enforced (in evaluation order):
+     *  - Account active (`adherents.activite_adh = 1`)
+     *  - Membership status is NOT "Non member" (`statuts.priorite_statut < 99`,
+     *    Galette convention)
+     *  - Cotisation up to date (`bool_exempt_adh = 1` OR `date_echeance >= today`)
+     *
+     * If $name is provided it is appended in parentheses to the message so the
+     * user can identify which linked member is concerned (parent / child).
+     *
+     * When $skipExMembers is true, returns null silently for accounts that are
+     * inactive OR have the "Non member" status (assumed ex-members or members
+     * being phased out). Used by the my_registrations banner to avoid noise;
+     * the handlers keep $skipExMembers = false so they always block.
+     */
+    private function getMemberEligibilityError(
+        int $memberId,
+        string $name = '',
+        bool $skipExMembers = false
+    ): ?string {
+        if ($memberId <= 0) {
+            return _T('Member account not found.', 'courses');
+        }
+        try {
+            $select = $this->zdb->select(Adherent::TABLE, 'a');
+            $select->columns(['activite_adh', 'date_echeance', 'bool_exempt_adh']);
+            $select->join(
+                ['s' => PREFIX_DB . 'statuts'],
+                'a.id_statut = s.id_statut',
+                ['priorite_statut']
+            );
+            $select->where(['a.id_adh' => $memberId]);
+            $row = $this->zdb->execute($select)->current();
+
+            if (!$row) {
+                return _T('Member account not found.', 'courses');
+            }
+
+            $isInactive = !(bool)$row->activite_adh;
+            $isNonMember = (int)$row->priorite_statut >= 99;
+
+            // Phase 47.2 follow-up: account inactive OR non-member -> silent
+            // when called from the banner (assumed ex-member / phased out).
+            // Handlers still enforce by default ($skipExMembers = false).
+            if ($skipExMembers && ($isInactive || $isNonMember)) {
+                return null;
+            }
+
+            $tag = $name !== '' ? ' — ' . $name : '';
+
+            if ($isInactive) {
+                return _T('Member account is not active.', 'courses') . $tag;
+            }
+            if ($isNonMember) {
+                return _T('Member has the "Non member" status.', 'courses') . $tag;
+            }
+            $isUp2Date = (bool)$row->bool_exempt_adh
+                || (!empty($row->date_echeance) && $row->date_echeance >= date('Y-m-d'));
+            if (!$isUp2Date) {
+                return _T('Membership is not up to date.', 'courses') . $tag;
+            }
+
+            return null;
+        } catch (\Throwable $e) {
+            Analog::log(
+                'Error checking member eligibility for #' . $memberId . ': ' . $e->getMessage(),
+                Analog::ERROR
+            );
+            return _T('Unable to verify member eligibility.', 'courses');
+        }
     }
 }

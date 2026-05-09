@@ -59,13 +59,11 @@ class MemberPreferencesController extends AbstractController
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
         }
 
-        $hasMemberRecord = $memberId > 0;
         $memberPrefs = new MemberPreferences($this->zdb);
 
         $params = [
             'page_title' => _T('My notification preferences', 'courses'),
-            'notifications_enabled' => $hasMemberRecord && $memberPrefs->isNotificationsEnabled($memberId),
-            'no_member_record' => !$hasMemberRecord,
+            'notifications_enabled' => $memberPrefs->isNotificationsEnabled($memberId),
         ];
 
         $this->view->render(
