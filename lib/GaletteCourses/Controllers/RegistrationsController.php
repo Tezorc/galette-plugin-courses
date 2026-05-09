@@ -1425,7 +1425,6 @@ class RegistrationsController extends AbstractController
      * "register" dropdowns (parent + children) so members who would be blocked
      * by the handler aren't even offered as an option in the UI.
      *
-     * @param \Galette\Core\Db $zdb
      * @param int[] $memberIds
      * @return array<int, true> map of eligible member IDs (use isset / array_key_exists)
      */
