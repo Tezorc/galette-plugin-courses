@@ -257,7 +257,7 @@ Apres desinscription, si l'adherent souhaite se reinscrire, il peut le faire tan
 
 La page **Mes inscriptions** (`/plugins/courses/my-registrations`) comporte deux onglets.
 
-**Avertissement cotisation** : un bandeau orange est affiche en haut de la page si **le membre lui-meme ou l'un de ses enfants** n'est pas a jour de cotisation. Le message liste les noms concernes et rappelle qu'aucune inscription ne sera possible tant que la cotisation n'est pas renouvelee.
+**Avertissement cotisation** : un bandeau orange est affiche en haut de la page si **le membre lui-meme ou l'un de ses enfants** n'est pas a jour de cotisation. Le message liste les noms concernes et rappelle qu'aucune inscription ne sera possible tant que la cotisation n'est pas renouvelee. Le super administrateur (compte sans fiche adherent) n'a pas acces a cette page : il est redirige vers la liste des seances avec un message d'avertissement.
 
 **Avertissement changement de groupe** : si l'adherent (ou l'un de ses enfants) est inscrit a une seance future dont l'evenement est restreint a un groupe auquel il n'appartient plus (changement de niveau, retrait du groupe par le staff), un second bandeau orange s'affiche en haut de la page (compteur du nombre d'inscriptions concernees) et chaque card concernee dans "Votre prochaine seance" / "A venir" est mise en evidence (fond jaune, bordure orange, badge "Out of group" remplaceant le statut). Le bouton "Se desinscrire" deja present sur la card permet de regulariser. Aucune desinscription automatique : le membre garde la main, libre a lui de se desinscrire ou d'en parler avec le staff.
 

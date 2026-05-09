@@ -397,6 +397,19 @@ class RegistrationsController extends AbstractController
     {
         $member_id = (int)$this->login->id;
 
+        // Phase 47.1: super admin / non-member accounts have no Adherent record
+        // (login.id === 0). The page is meaningless for them and exposes false
+        // signals (e.g. children/cotisation banners on a non-existent member).
+        if ($this->login->isSuperAdmin() || $member_id <= 0) {
+            $this->flash->addMessage(
+                'warning_detected',
+                _T('This page is reserved for member accounts.', 'courses')
+            );
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
+        }
+
         // Collect member IDs to load: parent + children
         $member_ids  = [$member_id];
         $children_ids = []; // IDs of linked members (children) only

@@ -1779,3 +1779,67 @@ msgstr ""
 msgid "No instructor has volunteered yet — registration is open anyway. You will be notified when an instructor takes over."
 msgstr "Aucun moniteur ne s'est encore porté volontaire — les inscriptions sont néanmoins ouvertes. Vous serez prévenu(e) dès qu'un moniteur prendra en charge la séance."
 
+# --- Phase 38 : annulation d'inscription par staff/moniteur ---
+
+msgid "Cancel registration"
+msgstr "Annuler l'inscription"
+
+msgid "Cancel this registration?"
+msgstr "Annuler cette inscription ?"
+
+msgid "Registration cancelled successfully."
+msgstr "Inscription annulée avec succès."
+
+msgid "An error occurred during cancellation."
+msgstr "Une erreur est survenue lors de l'annulation."
+
+msgid "[Courses] Registration cancelled by staff/instructor"
+msgstr "[Courses] Inscription annulée par le staff/moniteur"
+
+msgid "You do not have permission to cancel this registration."
+msgstr "Vous n'avez pas la permission d'annuler cette inscription."
+
+# --- Phase 47 : avertissement cotisation sur "Mes inscriptions" ---
+
+#, php-format
+msgid "Membership not up to date for: %s. Registration will not be possible until the membership is renewed."
+msgstr "Cotisation non à jour pour : %s. L'inscription ne sera pas possible tant que la cotisation n'aura pas été renouvelée."
+
+#, php-format
+msgid "Membership not up to date for: %s. Registration will not be possible until the memberships are renewed."
+msgstr "Cotisation non à jour pour : %s. L'inscription ne sera pas possible tant que les cotisations n'auront pas été renouvelées."
+
+# --- Phase 48 : detection passive des inscriptions hors groupe ---
+
+msgid "Out of group"
+msgstr "Hors groupe"
+
+msgid "You no longer belong to the required group for this event."
+msgstr "Vous n'appartenez plus au groupe requis pour cet événement."
+
+#, php-format
+msgid "%d registration is on an event you no longer have access to (group membership changed). You can unregister from the marked card below."
+msgid_plural "%d registrations are on events you no longer have access to (group membership changed). You can unregister from the marked cards below."
+msgstr[0] "%d inscription porte sur un événement auquel vous n'avez plus accès (votre appartenance au groupe a changé). Vous pouvez vous désinscrire depuis la carte signalée ci-dessous."
+msgstr[1] "%d inscriptions portent sur des événements auxquels vous n'avez plus accès (votre appartenance au groupe a changé). Vous pouvez vous désinscrire depuis les cartes signalées ci-dessous."
+
+# --- Phase 49 : proxy-register bascule waitlist sur seance pleine ---
+
+msgid "This session is full and the member is already on the waitlist."
+msgstr "Cette séance est complète et le membre est déjà sur la liste d'attente."
+
+msgid "[Courses] Member added to waitlist by staff"
+msgstr "[Courses] Membre ajouté à la liste d'attente par le staff"
+
+#, php-format
+msgid "Session is full. Member added to the waitlist (position %d)."
+msgstr "Séance complète. Membre ajouté à la liste d'attente (position %d)."
+
+msgid "An error occurred adding the member to the waitlist."
+msgstr "Une erreur est survenue lors de l'ajout du membre à la liste d'attente."
+
+# --- Phase 47.1 : blocage "Mes inscriptions" pour le super admin ---
+
+msgid "This page is reserved for member accounts."
+msgstr "Cette page est réservée aux comptes adhérents."
+

@@ -45,11 +45,17 @@ class PluginGaletteCourses extends GalettePlugin
         // --- Menu membre : accessible à tous les adhérents ---
         $memberItems = [];
 
-        $memberItems[] = [
-            'label' => _T('My registrations', 'courses'),
-            'route' => ['name' => 'coursesMyRegistrations'],
-            'icon'  => 'calendar check',
-        ];
+        // Phase 47.1: super admin / non-member accounts have no Adherent record
+        // (login.id === 0). Hide member-only entries that have no meaning for them.
+        $hasMemberAccount = !$login->isSuperAdmin() && (int)$login->id > 0;
+
+        if ($hasMemberAccount) {
+            $memberItems[] = [
+                'label' => _T('My registrations', 'courses'),
+                'route' => ['name' => 'coursesMyRegistrations'],
+                'icon'  => 'calendar check',
+            ];
+        }
 
         // Lien "Mes seances comme moniteur" : visible si le membre
         //  - est responsable de groupe pur (ni admin ni staff) — peut se
@@ -75,17 +81,21 @@ class PluginGaletteCourses extends GalettePlugin
             ];
         }
 
-        $memberItems[] = [
-            'label' => _T('My notifications', 'courses'),
-            'route' => ['name' => 'coursesMemberPreferences'],
-            'icon'  => 'bell',
-        ];
+        if ($hasMemberAccount) {
+            $memberItems[] = [
+                'label' => _T('My notifications', 'courses'),
+                'route' => ['name' => 'coursesMemberPreferences'],
+                'icon'  => 'bell',
+            ];
+        }
 
-        $menus[_T('My registrations', 'courses')] = [
-            'title' => _T('My registrations', 'courses'),
-            'icon'  => 'graduation cap',
-            'items' => $memberItems,
-        ];
+        if (!empty($memberItems)) {
+            $menus[_T('My registrations', 'courses')] = [
+                'title' => _T('My registrations', 'courses'),
+                'icon'  => 'graduation cap',
+                'items' => $memberItems,
+            ];
+        }
 
         // --- Menu gestion : admin, staff, responsable de groupe, ou moniteur ---
         // Phase 46 : un membre affecte comme moniteur sur au moins une seance
@@ -175,16 +185,24 @@ class PluginGaletteCourses extends GalettePlugin
     {
         global $login, $zdb;
 
-        $tiles = [
-            [
+        // Phase 47.1: same gate as the menu — super admin / accounts without
+        // an Adherent record do not see the "My registrations" tile.
+        $hasMemberAccount = $login !== null
+            && $login->isLogged()
+            && !$login->isSuperAdmin()
+            && (int)$login->id > 0;
+
+        $tiles = [];
+        if ($hasMemberAccount) {
+            $tiles[] = [
                 'label' => _T('My registrations', 'courses'),
                 'title' => _T('Register for sessions and view your registrations', 'courses'),
                 'route' => [
                     'name' => 'coursesMyRegistrations',
                 ],
                 'icon' => 'calendar_spiral',
-            ],
-        ];
+            ];
+        }
 
         // Tuile "Mes seances comme moniteur" — visible si l'adherent
         //  - est responsable de groupe pur (ni admin ni staff) — peut se

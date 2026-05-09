@@ -766,12 +766,32 @@ Le developpement est organise en phases progressives.
 - Demande utilisateur : "si le membre parent ou enfant n'est pas a jour de cotisation alors mettre un message sur mes inscription".
 
 - Implementation :
-  - `RegistrationsController::myRegistrations` : la boucle de chargement parent + enfants (`Adherent::children`) collecte desormais les noms des adherents pour lesquels `Adherent::isUp2Date()` retourne `false`. Le tableau est passe au template comme `not_up2date_members` (liste de chaines `sname`). Aucune nouvelle requete : on reutilise les objets `Adherent` deja instancies dans la meme boucle pour le rendu.
+  - `RegistrationsController::myRegistrations` : seule la cotisation du **parent connecte** est evaluee (`$currentAdherent->isUp2Date()`). Si elle est non a jour, le `sname` du parent est ajoute a `$not_up2date_members`. Le tableau est passe au template comme `not_up2date_members` (liste de chaines `sname`). Voir Phase 47.1 pour l'historique : la version initiale evaluait aussi chaque enfant individuellement, ce qui produisait des faux positifs sur les cotisations famille.
   - `templates/default/pages/my_registrations.html.twig` : insertion d'un bandeau orange en tete du `{% block content %}` (avant les onglets) si `not_up2date_members|length > 0`. Le message est singulier ou pluriel et liste les noms concatenes par virgule.
   - L'avertissement est purement informatif : la logique de blocage existante (`!login.isUp2Date()` dans `doRegister` / `doParentRegister` / `doWaitlist` / `doProxyRegister`) reste inchangee.
-  - Pas de bypass admin/staff/groupmanager sur cet avertissement (volontaire) : meme un admin doit savoir si l'un de ses enfants n'est pas a jour. La logique de bypass (`isAdmin || isStaff || isGroupManager`) reste appliquee uniquement au flag `member_is_up2date` qui pilote le message dans l'onglet "Trouver une seance".
+  - Pas de bypass admin/staff/groupmanager sur cet avertissement (volontaire). La logique de bypass (`isAdmin || isStaff || isGroupManager`) reste appliquee uniquement au flag `member_is_up2date` qui pilote le message dans l'onglet "Trouver une seance".
 
-- Documentation : `doc/mode-emploi.md` (section "Consulter ses inscriptions" enrichie d'un paragraphe sur le bandeau cotisation), cette section, et `CLAUDE.md` (entree Avancement Phase 47).
+- Documentation : `doc/mode-emploi.md` (section "Consulter ses inscriptions" enrichie d'un paragraphe sur le bandeau cotisation), cette section, et `CLAUDE.md` (entree Avancement Phase 47 + Phase 47.1).
+
+### Phase 47.1 - Blocage "Mes inscriptions" pour le super admin
+
+**Statut : TERMINEE**
+
+- Demande utilisateur : "j'ai une fille qui a sa cotisation non a jour alors qu'elle est bien a jour" puis "oups! erreur c'est lorsque que je suis connecte en super admin, je ne devrais pas avoir acces a mes inscriptions". Faux positif observe sur l'avertissement Phase 47, cause par l'absence de fiche adherent du super admin.
+
+- Cause racine : le super admin Galette n'a pas de ligne dans `adherents` — `$login->id` renvoie `0`. Le handler `myRegistrations` continuait neanmoins de charger `new Adherent($zdb, 0, ['children' => true])` et iterait sur des `children` indeterminees, produisant un banner cotisation incoherent ("ma fille n'est pas a jour" alors que la "fille" en question vient d'un Adherent vide / des seances de test). Plus largement, la page n'a aucun sens pour un compte sans fiche adherent : pas d'inscriptions possibles, pas de cotisation a evaluer.
+
+- Implementation :
+  - `RegistrationsController::myRegistrations` : garde en tete du handler. Si `$this->login->isSuperAdmin() || $member_id <= 0` -> flash `warning_detected` ("This page is reserved for member accounts.") + redirect 302 vers `coursesSessions`. Le check `$childAdherent->isUp2Date()` reste en place pour les comptes membre normaux.
+  - `MemberPreferencesController::show` : meme garde (super admin n'a pas de preferences a configurer — pas de ligne dans `member_preferences` puisque pas de fiche adherent). Redirect vers `coursesSessions` avec le meme flash.
+  - `PluginGaletteCourses::getMenusContents()` : nouvelle variable `$hasMemberAccount = !isSuperAdmin() && (int)$login->id > 0`. Les entrees "My registrations" et "My notifications" ne sont plus inserees dans `$memberItems` si la condition echoue. Le bloc de menu entier ("My registrations") n'est emis dans `$menus` que si `$memberItems` n'est pas vide — un super admin sans entree membre ne voit pas de section vide.
+  - `PluginGaletteCourses::getMyDashboardsContents()` : meme garde `$hasMemberAccount` ; le tableau `$tiles` est initialise vide et la tuile "My registrations" n'est ajoutee que si la condition est vraie. Si le super admin est connecte et n'a aucune autre tuile (ex. pas de seances en tant que moniteur), la liste retournee est vide et le dashboard plugin ne montre rien — comportement attendu.
+
+- Limites assumees :
+  - Le super admin garde acces aux pages d'administration (Sessions, Events, Preferences, Mail templates...) — perimetre normal de son role. Seules les entrees "membre" (My registrations + tuile dashboard correspondante) sont masquees.
+  - Le check par enfant via `$childAdherent->isUp2Date()` est conserve : sur cette installation, chaque membre a sa propre cotisation (pas de cotisation famille). Si une autre installation utilise une cotisation famille (enfants avec `date_echeance` null), des faux positifs pourraient ressurgir — il faudra alors gater le check selon une convention propre a l'installation.
+
+- Documentation : cette section, et `CLAUDE.md` (entree Avancement Phase 47.1).
 
 ### Phase 46 - Droits "auteur d'evenements" etendus aux moniteurs
 

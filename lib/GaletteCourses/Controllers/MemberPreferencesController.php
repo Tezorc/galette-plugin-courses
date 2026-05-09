@@ -46,6 +46,19 @@ class MemberPreferencesController extends AbstractController
     public function show(Request $request, Response $response): Response
     {
         $memberId = (int)$this->login->id;
+
+        // Phase 47.1: super admin / non-member accounts have no Adherent record
+        // and no preferences to set — redirect to the public sessions list.
+        if ($this->login->isSuperAdmin() || $memberId <= 0) {
+            $this->flash->addMessage(
+                'warning_detected',
+                _T('This page is reserved for member accounts.', 'courses')
+            );
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
+        }
+
         $hasMemberRecord = $memberId > 0;
         $memberPrefs = new MemberPreferences($this->zdb);
 
