@@ -322,14 +322,24 @@ class SessionsController extends AbstractPluginController
         $children_registered = [];
         $parent_eligible = false; // fail-secure default
         $eventGroups = [];
+        $eligibility_set = []; // [memberId => true] — populated below
         if ($this->login->isLogged() && !$this->login->isSuperAdmin() && $this->login->id !== null) {
             // Compute eligibility outside the Adherent try/catch so an Adherent load failure
             // cannot leave parent_eligible at its default value and accidentally grant access.
-            $parent_eligible = $event->canRegisterSelf($this->login);
+            $currentMemberId = (int)$this->login->id;
+            // Phase 47.2 follow-up: parent eligibility check (active + status +
+            // cotisation) outside the try so a children-load failure cannot
+            // accidentally grant access. If the SQL itself fails, set is empty
+            // -> parent_eligible becomes false (fail-closed).
+            $eligibility_set = RegistrationsController::batchEligibleMemberIds(
+                $this->zdb,
+                [$currentMemberId]
+            );
+            $parent_eligible = $event->canRegisterSelf($this->login)
+                && isset($eligibility_set[$currentMemberId]);
             $eventGroups = $event->getGroups(); // already loaded by canRegisterSelf()
 
             try {
-                $currentMemberId = (int)$this->login->id;
                 $currentAdherent = new Adherent($this->zdb, $currentMemberId, ['children' => true]);
                 $childrenIds = $currentAdherent->children;
                 // Collect valid child IDs first
@@ -339,6 +349,15 @@ class SessionsController extends AbstractPluginController
                     if ($childId > 0) {
                         $validChildIds[] = $childId;
                     }
+                }
+
+                // Phase 47.2 follow-up: also compute eligibility for the children
+                // (single SQL query) and merge into the existing parent set.
+                if (!empty($validChildIds)) {
+                    $eligibility_set += RegistrationsController::batchEligibleMemberIds(
+                        $this->zdb,
+                        $validChildIds
+                    );
                 }
 
                 // Batch-load group memberships for all children if event has group restrictions
@@ -378,6 +397,12 @@ class SessionsController extends AbstractPluginController
 
                     // For non-registered children: filter by event groups before offering registration.
                     if (!empty($eventGroups) && !isset($childrenInGroup[$childId])) {
+                        continue;
+                    }
+                    // Phase 47.2 follow-up: skip children who fail any of the 3
+                    // eligibility conditions (active + status + cotisation). The
+                    // handler would block them anyway — don't even offer the option.
+                    if (!isset($eligibility_set[$childId])) {
                         continue;
                     }
 

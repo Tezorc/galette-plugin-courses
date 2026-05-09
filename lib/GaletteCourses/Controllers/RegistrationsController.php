@@ -595,14 +595,25 @@ class RegistrationsController extends AbstractController
         $browse_can_self_register = []; // [sid => bool]
         $browse_eligible_children = []; // [sid => [child_id => child_info]]
 
+        // Phase 47.2 follow-up: pre-compute eligibility (active + status + cotisation)
+        // for parent + all children in ONE SQL query, then use it to filter the
+        // self-register button and the children dropdown. Members who fail any
+        // condition are not offered as a choice (the handler would block them).
+        $eligibility_set = self::batchEligibleMemberIds(
+            $this->zdb,
+            array_merge([$member_id], $children_ids)
+        );
+
         foreach ($available_sessions as $s) {
             $sid = $s->getId();
             $ev  = $browse_events[$s->getEventId()];
 
-            $browse_can_self_register[$sid] = $ev->canRegisterSelf($this->login);
+            $browse_can_self_register[$sid] = $ev->canRegisterSelf($this->login)
+                && isset($eligibility_set[$member_id]);
             $eventGroups = $ev->getGroups(); // already loaded by canRegisterSelf()
 
-            // Which children are eligible (in the required group, not already registered)?
+            // Which children are eligible (in the required group, not already registered,
+            // and passing the 3 eligibility conditions)?
             // One batch query per session instead of one per child.
             $eligible = [];
             if (!empty($children_ids)) {
@@ -626,6 +637,9 @@ class RegistrationsController extends AbstractController
                         continue;
                     }
                     if (!empty($eventGroups) && !isset($childrenInGroup[$childId])) {
+                        continue;
+                    }
+                    if (!isset($eligibility_set[$childId])) {
                         continue;
                     }
                     $eligible[$childId] = $reg_members[$childId] ?? ['name' => '', 'nickname' => ''];
@@ -1400,5 +1414,52 @@ class RegistrationsController extends AbstractController
             );
             return _T('Unable to verify member eligibility.', 'courses');
         }
+    }
+
+    /**
+     * Phase 47.2 batch helper : check eligibility for several members in a
+     * single SQL query and return the SUBSET that satisfies all 3 conditions
+     * (active + non-"Non member" status + cotisation up to date).
+     *
+     * Used by myRegistrations / SessionsController::show to filter the
+     * "register" dropdowns (parent + children) so members who would be blocked
+     * by the handler aren't even offered as an option in the UI.
+     *
+     * @param \Galette\Core\Db $zdb
+     * @param int[] $memberIds
+     * @return array<int, true> map of eligible member IDs (use isset / array_key_exists)
+     */
+    public static function batchEligibleMemberIds(\Galette\Core\Db $zdb, array $memberIds): array
+    {
+        $eligible = [];
+        if (empty($memberIds)) {
+            return $eligible;
+        }
+        try {
+            $select = $zdb->select(Adherent::TABLE, 'a');
+            $select->columns(['id_adh']);
+            $select->join(
+                ['s' => PREFIX_DB . 'statuts'],
+                'a.id_statut = s.id_statut',
+                []
+            );
+            $select->where->in('a.id_adh', $memberIds);
+            $select->where->equalTo('a.activite_adh', true);
+            $select->where->lessThan('s.priorite_statut', 99);
+            $today = date('Y-m-d');
+            $select->where->expression(
+                '(a.bool_exempt_adh = 1 OR a.date_echeance >= ?)',
+                [$today]
+            );
+            foreach ($zdb->execute($select) as $r) {
+                $eligible[(int)$r->id_adh] = true;
+            }
+        } catch (\Throwable $e) {
+            Analog::log(
+                'Error batch-checking member eligibility: ' . $e->getMessage(),
+                Analog::ERROR
+            );
+        }
+        return $eligible;
     }
 }
