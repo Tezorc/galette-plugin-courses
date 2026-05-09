@@ -828,6 +828,12 @@ class RegistrationsController extends AbstractController
 
             $select->where->equalTo('a.activite_adh', true);
             $select->where->lessThan('s.priorite_statut', 99);
+            // Cotisation a jour : exempte OU date_echeance dans le futur
+            $today = date('Y-m-d');
+            $select->where->expression(
+                '(a.bool_exempt_adh = 1 OR a.date_echeance >= ?)',
+                [$today]
+            );
             $select->order(['a.nom_adh ASC', 'a.prenom_adh ASC']);
             $results = $this->zdb->execute($select);
 
