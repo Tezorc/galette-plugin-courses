@@ -182,7 +182,7 @@ Pour generer de nouvelles seances ulterieurement (les semaines suivantes) :
 ### Statuts des evenements
 
 | Statut | Description | Visible par les membres |
-|--------|-------------|------------------------|
+| --- | --- | --- |
 | **Brouillon** | En cours de preparation | Non |
 | **En attente** | Soumis pour validation | Non |
 | **Valide** | Publie et ouvert aux inscriptions | Oui |
@@ -440,7 +440,7 @@ La fermeture manuelle d'une seance empeche les nouvelles inscriptions sans annul
 3. La seance repasse au statut **Ouverte** — les inscriptions sont a nouveau possibles
 
 | Statut | Description | Inscriptions |
-|--------|-------------|-------------|
+| ------ | ----------- | ----------- |
 | **Ouverte** | Seance ouverte normalement | Autorisees |
 | **Fermee** | Fermee manuellement (quota, delai...) | Bloquees |
 | **Annulee** | Seance annulee (avec motif) | Bloquees + notification inscrits |
@@ -670,7 +670,7 @@ Note : la deuxieme commande appellera quand meme `sendDailyDigest()` en fin d'ex
 
 Apres execution, le retour HTTP contient un resume textuel :
 
-```
+```text
 [2026-05-04 06:00:01] Auto-generation complete. 12 session(s) created.
 Cours debutant: 4 session(s) created
 Cours ado: 4 session(s) created
@@ -689,7 +689,7 @@ Le menu **Gestion des inscriptions > Modeles de courriels** (accessible aux **ad
 9 modeles sont disponibles :
 
 | Modele | Destinataires | Declencheur |
-|--------|--------------|-------------|
+| ------ | ------------ | ----------- |
 | Soumission pour validation | Administrateurs | Soumission d'un evenement |
 | Evenement valide | Createur de l'evenement | Validation par le staff |
 | Evenement rejete | Createur de l'evenement | Rejet par le staff |
@@ -750,7 +750,7 @@ Le staff et les administrateurs peuvent :
 ### Boutons de workflow
 
 | Bouton | Visible quand | Qui peut cliquer |
-|--------|---------------|-----------------|
+| ------ | ------------- | ---------------- |
 | **Soumettre pour validation** | Statut = Brouillon | Createur (responsable de groupe ou moniteur) ou staff/admin |
 | **Valider** | Statut = En attente | Staff / Admin |
 | **Rejeter** | Statut = En attente | Staff / Admin |
@@ -760,7 +760,7 @@ Le staff et les administrateurs peuvent :
 Le plugin envoie des notifications automatiques :
 
 | Evenement | Destinataires | Quand | Contenu |
-|-----------|--------------|-------|---------|
+| --------- | ------------ | ----- | ------- |
 | Soumission pour validation | Administrateurs | Immediat | Nom de l'evenement + createur |
 | Validation | Createur | Immediat | Confirmation que l'evenement est publie |
 | Rejet | Createur | Immediat | Information que l'evenement est rejete et remis en brouillon |
@@ -820,7 +820,7 @@ La jauge est visible sur la liste des seances et sur la page de detail de chaque
 7 types sont pre-configures a l'installation :
 
 | ID | Label |
-|----|-------|
+| -- | ----- |
 | 1 | Cours |
 | 2 | Entrainement |
 | 3 | Competition |
@@ -838,7 +838,7 @@ Pour ajouter ou modifier des types, intervenir directement en base de donnees da
 ### Menu "Mes inscriptions" (tous les adherents connectes)
 
 | Sous-menu | Visible par | Description |
-|-----------|-------------|-------------|
+| --------- | ----------- | ----------- |
 | Mes inscriptions | Tous | Trouver une seance et consulter ses inscriptions (dashboard membre) |
 | Mes seances comme moniteur | Membres affectes comme moniteur | Toutes les seances ou l'utilisateur est instructeur |
 | Mes notifications | Tous | Mes preferences de notifications email |
@@ -869,7 +869,7 @@ Le menu apparait des qu'un membre est **auteur d'evenements** (Phase 46) :
 - staff / admin (acces complet).
 
 | Sous-menu | Visible par | Description |
-|-----------|-------------|-------------|
+| --------- | ----------- | ----------- |
 | Evenements | Auteur (moniteur, responsable, staff, admin) | Liste des evenements (avec bouton "Ajouter un evenement" en haut de page) ; chaque utilisateur voit ses propres evenements (toute statut) + tous les evenements valides |
 | Seances | Auteur | Liste complete des seances avec filtres avances |
 | Gestion des inscriptions | Responsable de groupe+ | Toutes les inscriptions (le moniteur seul n'y a pas acces, il gere ses inscriptions via le detail de seance) |
@@ -891,7 +891,7 @@ Le menu apparait des qu'un membre est **auteur d'evenements** (Phase 46) :
 Toutes les routes sont prefixees par `/plugins/courses/`.
 
 | Methode | URL | Description |
-|---------|-----|-------------|
+| ------- | --- | ----------- |
 | GET | `/events` | Liste des evenements |
 | POST | `/events/filter` | Filtrer les evenements |
 | GET | `/event/add` | Formulaire de creation |
@@ -956,7 +956,7 @@ Le plugin est entierement traduit en francais. Les traductions sont gerees via l
 ### Fichiers de traduction
 
 | Fichier | Description |
-|---------|-------------|
+| ------- | ----------- |
 | `lang/courses_fr_FR.utf8.po` | Source des traductions francaises (format PO, editable) |
 | `lang/fr_FR.utf8/LC_MESSAGES/courses.mo` | Traductions compilees (format MO binaire) |
 
@@ -1113,7 +1113,7 @@ Pour desinscrire un enfant :
 
 Ce tutoriel explique comment utiliser le plugin en tant que **responsable de groupe** (moniteur, educateur, formateur).
 
-### Prealable
+### Prealable (responsable de groupe)
 
 Vous devez avoir le role **Responsable de groupe** dans Galette et gerer au moins un groupe.
 
@@ -1221,7 +1221,7 @@ Le staff et les administrateurs peuvent :
 
 Le formulaire d'affectation n'est pas disponible sur une seance annulee ou passee.
 
-#### Modifier une seance
+#### Modifier une seance (admin)
 
 Pour les seances futures non annulees :
 
