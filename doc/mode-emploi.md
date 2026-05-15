@@ -3,7 +3,7 @@
 ## Lexique
 
 | Terme utilise dans le plugin | Equivalents selon votre association |
-|------------------------------|-------------------------------------|
+| ------------------------------ | ------------------------------------- |
 | **Moniteur** | Entraineur, coach, educateur, formateur, intervenant, animateur |
 | **Evenement** | Cours, entrainement, competition, stage, atelier, activite |
 | **Seance** | Occurrence, creneau, session, date |
@@ -49,20 +49,24 @@ Pour un evenement ponctuel, une seance unique est creee automatiquement a la cre
 
 1. Copier le dossier `galette-plugin-courses` dans `galette/plugins/`
 2. Appliquer le schema SQL principal :
+
    ```bash
    mysql -u galette -p galette < galette/plugins/galette-plugin-courses/scripts/mysql.sql
    ```
+
 3. Appliquer la migration pour le systeme de desinscription email :
+
    ```bash
    mysql -u galette -p galette < galette/plugins/galette-plugin-courses/scripts/upgrade-unsubscribe.sql
    ```
+
 4. Se connecter a Galette en tant qu'administrateur
 5. Verifier que les menus **Mes inscriptions** et **Gestion des inscriptions** apparaissent dans la barre laterale
 
 ### Tables creees
 
 | Table | Description |
-|-------|-------------|
+| ------- | ------------- |
 | `galette_courses_types` | Types d'evenements (7 types pre-remplis) |
 | `galette_courses_events` | Evenements |
 | `galette_courses_events_groups` | Restrictions par groupe |
@@ -83,7 +87,7 @@ Pour un evenement ponctuel, une seance unique est creee automatiquement a la cre
 Le plugin utilise les roles Galette existants. Chaque fonctionnalite est accessible selon le niveau de l'utilisateur :
 
 | Fonctionnalite | Membre | Responsable de groupe | Staff | Admin |
-|----------------|--------|-----------------------|-------|-------|
+| --- | --- | --- | --- | --- |
 | Voir les seances | Oui (evenements valides) | Oui | Oui (tous) | Oui (tous) |
 | Voir le detail d'un evenement | Oui (valides) | Oui | Oui | Oui |
 | S'inscrire / se desinscrire | Oui | Oui | - | - |
@@ -167,6 +171,7 @@ Pour creer un evenement recurrent (entrainement hebdomadaire, cours bimensuel...
 4. A la sauvegarde, les seances sont generees automatiquement jusqu'a aujourd'hui + N semaines
 
 Pour generer de nouvelles seances ulterieurement (les semaines suivantes) :
+
 1. Aller sur la page de detail de l'evenement
 2. Cliquer sur le bouton teal **"Generer les seances"**
 3. Les nouvelles seances sont creees a partir de la derniere seance existante
@@ -284,6 +289,7 @@ Le bandeau detaille le nom de chaque membre concerne et la raison precise (cotis
 #### Onglet "Mes inscriptions"
 
 Sections du tableau de bord personnel :
+
 - **"Votre prochaine seance"** : card mise en avant (bordure verte, plus grande) avec date, lieu et boutons Details/iCal ; affiche le nom du moniteur si assigne
 - **"A venir"** : grille de cards pour les inscriptions futures suivantes (plusieurs seances le meme jour : toutes apparaissent dans cette section)
 - **"Seances annulees"** : section rouge distincte listant les seances futures annulees avec les memes boutons
@@ -291,6 +297,7 @@ Sections du tableau de bord personnel :
 - **Etat vide** : message engageant avec icone paw et bouton "Parcourir les seances disponibles"
 
 **Boutons sur chaque card (Prochaine seance, A venir, Annulees)** — identiques pour le parent et l'enfant :
+
 - **"Details"** (petit, bleu) : lien vers la page de detail de la seance
 - Bouton **iCal** (mini icone) : export iCal de cette seance
 - **"Se desinscrire"** (petit, rouge) : desinscription directe depuis la card
@@ -369,12 +376,14 @@ La colonne **Presences** compte uniquement les seances ou le membre a ete pointe
 ### 12. Voir le detail d'une seance (staff / responsable de groupe)
 
 La page de detail d'une seance affiche la **liste des inscrits** pour les administrateurs, le staff et les responsables de groupe, avec :
+
 - Le nom de chaque membre inscrit (lien vers sa fiche)
 - Le **pseudo** de l'adherent affiche a cote du nom dans un label teal
 - La date d'inscription
 - Le statut (Inscrit / Present / Absent / Absent excuse / Present non inscrit)
 
 En haut de cette section, deux boutons sont disponibles pour le staff et les administrateurs :
+
 - **"Envoyer un courriel"** : pre-selectionne les membres inscrits (hors annules) ET les personnes en liste d'attente comme destinataires dans l'interface de mailing Galette, puis redirige vers la page de composition du courriel. Les responsables de groupe y ont egalement acces.
 - **"Exporter"** : exporte la liste en CSV (staff uniquement, voir section 9)
 
@@ -455,6 +464,7 @@ Il est possible de modifier une seance future non annulee directement depuis sa 
 #### Conditions de modification
 
 Une seance est modifiable si :
+
 - Son statut est **Ouverte** ou **Fermee** (pas **Annulee**)
 - Sa date est **aujourd'hui ou dans le futur**
 
@@ -525,6 +535,7 @@ Le parent voit dans la liste des seances toutes les seances ouvertes aux groupes
 ### 17. Modale de confirmation de desinscription
 
 Avant de valider une desinscription (en son propre nom), une **modale de confirmation** s'affiche avec :
+
 - Le nom et le pseudo de l'adherent
 - Un bouton **"Fermer"** pour revenir en arriere
 - Un bouton rouge **"Confirmer"** pour valider la desinscription
@@ -690,6 +701,7 @@ Le menu **Gestion des inscriptions > Modeles de courriels** (accessible aux **ad
 | Seance annulee (liste d'attente) | Membres en liste d'attente | Annulation d'une seance |
 
 Chaque modele dispose :
+
 - D'un **sujet** (objet de l'email)
 - D'un **corps** (contenu de l'email, avec variables disponibles affichees sous forme de pastilles cliquables)
 
@@ -706,6 +718,7 @@ Chaque email automatique envoye par le plugin contient, en bas du message, un **
 En cliquant sur ce lien, l'adherent est redirige vers une page de confirmation et desactive automatiquement la reception des emails du plugin, sans avoir a se connecter a Galette.
 
 Ce systeme est independant des preferences de notifications accessibles dans le menu. Les deux methodes permettent d'arreter les emails :
+
 - **Via le lien dans l'email** : en un clic, sans connexion, irreversible jusqu'a reactivation manuelle
 - **Via le menu Mes inscriptions > Mes notifications** : toggle on/off, connexion requise
 
@@ -729,6 +742,7 @@ Le plugin met en place un workflow de validation pour les evenements crees par l
 ### Cas particulier : staff et administrateurs
 
 Le staff et les administrateurs peuvent :
+
 - Choisir n'importe quel statut directement dans le formulaire de creation/edition
 - Creer un evenement directement au statut **Valide** sans passer par le workflow
 - Valider/rejeter les evenements en attente depuis la liste des evenements ou la page de detail
@@ -781,6 +795,7 @@ Cela permet par exemple a un parent qui n'est pas dans le groupe "Club canin" de
 ### Filtrage automatique
 
 Le filtrage par groupe s'applique automatiquement dans les listes :
+
 - **Liste des evenements** : un membre regulier ne voit que les evenements ouverts a ses groupes (ou sans restriction)
 - **Liste des seances** : seules les seances d'evenements accessibles sont affichees
 - Les **responsables de groupe** voient les evenements de leurs groupes + leurs propres evenements
@@ -829,22 +844,26 @@ Pour ajouter ou modifier des types, intervenir directement en base de donnees da
 | Mes notifications | Tous | Mes preferences de notifications email |
 
 La page **Mes inscriptions** comprend deux onglets :
+
 - **Trouver une seance** : catalogue des seances disponibles avec filtres (type, activite, date) et inscription directe, suivi d'une section rouge "Seances annulees" listant les creneaux futurs annules (informatif, sans inscription)
 - **Mes inscriptions** : seances a venir, annulees et passees
 
 La page **Mes seances comme moniteur** est visible pour :
+
 - les **responsables de groupe** — meme sans seance comme moniteur — afin qu'ils puissent se proposer comme moniteur via l'onglet *Trouver une seance* ;
 - tout autre membre affecte a au moins une seance comme instructeur (typiquement un membre regulier assignee par le staff, mais aussi un admin/staff lui-meme affecte ponctuellement).
 
 Les admins et le staff ne voient pas l'entree par defaut : ils gerent les affectations de moniteurs depuis le menu *Gestion des inscriptions*.
 
 Elle presente deux onglets :
+
 - **Trouver une seance** : catalogue des seances sans moniteur ou l'utilisateur peut se proposer (avec filtres Type / Activite / Date et boutons **"Filtrer"** + **"Effacer le filtre"**, identiques a "Mes inscriptions"), suivi d'une section rouge "Seances annulees" listant les creneaux futurs annules dans son perimetre (informatif, sans bouton "Se porter volontaire") — les seances ou l'utilisateur est deja moniteur ne sont pas reprises ici (elles figurent dans l'onglet "Mes seances comme moniteur")
 - **Mes seances comme moniteur** : seances groupees en quatre sections (*Prochaine seance*, *A venir*, *Annulees*, *Passees* repliable). Chaque carte affiche le nom de l'evenement, la date, le lieu, le ou les moniteurs, la jauge d'inscrits, et propose les boutons **Details**, **iCal** et — si l'utilisateur est responsable de groupe, staff ou admin — **Export CSV des inscrits**.
 
 ### Menu "Gestion des inscriptions" (moniteur, responsable de groupe, staff, admin)
 
 Le menu apparait des qu'un membre est **auteur d'evenements** (Phase 46) :
+
 - responsable de groupe (peut creer des evenements pour ses groupes), OU
 - moniteur (membre affecte sur au moins une seance) — peut creer ses propres evenements meme sans etre responsable de groupe, OU
 - staff / admin (acces complet).
@@ -1020,6 +1039,7 @@ Vous devez etre **connecte a Galette** et avoir votre **cotisation a jour** pour
 5. Un message de confirmation s'affiche
 
 **Conditions requises** :
+
 - Cotisation a jour
 - Seance ouverte avec places disponibles
 - Au moins un moniteur assigne
@@ -1055,9 +1075,11 @@ Si la seance est pleine, un message jaune et un bouton bleu **"Rejoindre la list
 ### Etape 6 : Exporter son calendrier iCal
 
 **Export d'une seance** :
+
 - Sur la page de detail d'une seance, cliquer sur **"Exporter en iCal"**
 
 **Export de toutes ses inscriptions** :
+
 - Sur la page "Mes inscriptions", cliquer sur **"Exporter en iCal"** (toutes mes inscriptions)
 - Importer le fichier .ics dans votre application calendrier (Google Calendar, Apple Calendar, Outlook...)
 
@@ -1066,6 +1088,7 @@ Si la seance est pleine, un message jaune et un bouton bleu **"Rejoindre la list
 Par defaut, vous recevez des emails pour : les nouvelles seances disponibles, votre promotion de la liste d'attente, l'annulation d'une seance.
 
 Pour desactiver ces emails :
+
 1. Aller dans **Mes inscriptions > Mes notifications**
 2. Decocher **"Recevoir les notifications par email"**
 3. Cliquer sur **Enregistrer**
@@ -1075,11 +1098,13 @@ Pour vous desabonner sans vous connecter, cliquer sur le lien de desinscription 
 ### Etape 8 : Inscrire un enfant (si vous etes parent)
 
 Si vous avez des enfants rattaches a votre compte Galette :
+
 1. Sur la page de detail d'une seance, cliquer sur le bouton vert **"Inscrire un enfant"**
 2. Selectionner votre enfant dans la liste
 3. Cliquer sur **"Inscrire"**
 
 Pour desinscrire un enfant :
+
 - Sur la page de la seance, les enfants inscrits s'affichent avec un bouton rouge **"Se desinscrire"**
 
 ---
@@ -1132,6 +1157,7 @@ Vous ne pouvez vous porter volontaire que si vous gerez un des groupes associes 
 Le bouton est accessible aux administrateurs, au staff, aux responsables de groupe et **aux moniteurs affectes a la seance**.
 
 Si un adherent vous demande de l'inscrire :
+
 1. Sur la page de detail d'une seance, cliquer sur le bouton teal **"Inscrire un membre"**
 2. Selectionner le membre dans le dropdown recherchable
 3. Cliquer sur **"Inscrire"**
@@ -1141,12 +1167,14 @@ Si un adherent vous demande de l'inscrire :
 ### Pointer les presences
 
 Le pointage est disponible le jour de la seance et apres :
+
 1. Aller sur la page de detail de la seance
 2. Dans la liste des inscrits, changer le statut de chaque membre :
    - **Present** / **Absent** / **Absent (excuse)**
 3. Cliquer sur **"Enregistrer le pointage"**
 
 **Presence hors inscription (walk-in)** : pour un participant present sans inscription prealable :
+
 1. Dans la section **"Presence hors inscription"**, selectionner le membre
 2. Cliquer sur **"Ajouter"**
 
@@ -1164,18 +1192,21 @@ Ce tutoriel couvre les fonctions avancees de gestion accessibles au **staff** et
 ### Gestion complete des evenements (staff / admin)
 
 Le staff et les administrateurs peuvent :
+
 - Voir et modifier **tous les evenements**, quel que soit le createur
 - Creer des evenements directement au statut **Valide** (sans workflow)
 - **Valider** ou **Rejeter** les evenements en attente (statut En attente)
 - **Supprimer** des evenements (avec cascade sur seances et inscriptions)
 
 **Valider un evenement** :
+
 1. **Gestion des inscriptions > Evenements** : reperer les evenements au statut "En attente" (badge jaune)
 2. Cliquer sur le nom pour voir le detail
 3. Cliquer sur le bouton vert **"Valider"**
 4. Le createur est notifie et les adherents eligibles recoivent un email
 
 **Rejeter un evenement** :
+
 1. Sur la page de detail de l'evenement (statut En attente)
 2. Cliquer sur le bouton rouge **"Rejeter"**
 3. L'evenement retourne au statut Brouillon et le createur est notifie
@@ -1193,6 +1224,7 @@ Le formulaire d'affectation n'est pas disponible sur une seance annulee ou passe
 #### Modifier une seance
 
 Pour les seances futures non annulees :
+
 1. Sur la page de detail de la seance, cliquer sur **"Modifier la seance"**
 2. Modifier la date, l'horaire, ou la capacite maximale
 3. Cliquer sur **Enregistrer**
@@ -1213,6 +1245,7 @@ Pour les seances futures non annulees :
 #### Generer les seances recurrentes
 
 Pour les evenements recurrents :
+
 1. Aller sur la page de detail de l'evenement
 2. Cliquer sur le bouton teal **"Generer les seances"**
 3. Les seances sont generees jusqu'a aujourd'hui + N semaines
@@ -1221,12 +1254,14 @@ Pour les evenements recurrents :
 ### Statistiques
 
 **Gestion des inscriptions > Statistiques** offre une vue complete :
+
 - Compteurs globaux (evenements, seances, inscriptions, seances a venir)
 - Graphiques mensuels et top evenements
 - Taux de remplissage par evenement
 - Activite recente des membres
 
 **Filtrer par periode** (membres actifs / inactifs) :
+
 1. Renseigner les dates **Du** et **Au** (ou utiliser les raccourcis : Ce mois-ci, 3 mois, 6 mois, Cette annee...)
 2. Cliquer sur **Filtrer**
 3. Exporter en CSV pour analyse externe
@@ -1236,13 +1271,16 @@ Pour les evenements recurrents :
 **Gestion des inscriptions > Preferences** :
 
 **Dates de fermeture** (staff et admin) :
+
 - Ajouter les periodes de fermeture du club (vacances, feries, concours, AG...) avec un **motif libre**
 - Les seances recurrentes tombant sur ces dates sont creees en statut **Annule** avec le motif saisi en commentaire (au lieu d'etre sautees)
 
 **Notifications email** (admin uniquement) :
+
 - Activer/desactiver toutes les notifications automatiques du plugin
 
 **Generation automatique des seances** (admin uniquement) :
+
 1. Copier l'URL affichee (contient le code de securite)
 2. Transmettre l'URL a votre responsable technique pour programmer une execution automatique chaque nuit
 3. Les seances des evenements recurrents valides sont generees automatiquement sans intervention manuelle
@@ -1252,6 +1290,7 @@ Pour les evenements recurrents :
 ### Modeles de courriels (admin uniquement)
 
 **Gestion des inscriptions > Modeles de courriels** :
+
 - Personnaliser les textes des 10 emails automatiques (soumission, validation, rejet, publication membres/moniteurs, nouvelles seances membres/moniteurs, promotion liste d'attente, annulation inscrits/liste d'attente)
 - Cliquer sur **Reinitialiser** pour revenir au modele par defaut
 - Les variables disponibles sont affichees sous forme de pastilles cliquables pour chaque modele
