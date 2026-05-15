@@ -183,7 +183,7 @@
         {# --- Tab: Description --- #}
         {% if event.getDescription() %}
             <div class="ui bottom attached tab segment" data-tab="description">
-                {{ event.getDescription()|raw }}
+                {{ event.getDescription()|nl2br }}
             </div>
         {% endif %}
     </div>

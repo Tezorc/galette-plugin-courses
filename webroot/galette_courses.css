@@ -67,7 +67,7 @@
 }
 .courses-member-inline { display: flex; align-items: center; gap: .5em; flex-wrap: wrap; }
 .courses-unregister-row { display: flex; align-items: center; gap: .8em; flex-wrap: wrap; justify-content: center; }
-.courses-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.courses-table-scroll { overflow-x: auto; }
 .courses-save-right { text-align: right; }
 .courses-inline-form { display: inline; }
 .courses-remove-form { margin-left: auto; }
@@ -328,7 +328,7 @@ tr.courses-pending { background-color: #fffde7 !important; }
         display: flex !important; align-items: center !important; justify-content: space-between !important;
         padding: .65em 1em !important; border-top: none !important;
         border-bottom: 1px solid rgba(34,36,38,.06) !important;
-        min-height: 44px; word-break: break-word; gap: .5em;
+        min-height: 44px; overflow-wrap: break-word; gap: .5em;
     }
     .courses-responsive-table tbody td:last-child { border-bottom: none !important; }
     .courses-responsive-table tbody td[data-label]::before {
@@ -443,7 +443,7 @@ tr.courses-pending { background-color: #fffde7 !important; }
     .courses-actions .ui.dropdown.button .menu { left: 0 !important; right: 0 !important; min-width: 100% !important; }
     .courses-card .extra.content .ui.dropdown.button .menu .item,
     .courses-actions .ui.dropdown.button .menu .item { padding: .85em 1em !important; }
-    .courses-card .meta { white-space: normal !important; word-break: break-word; font-size: .9em; }
+    .courses-card .meta { white-space: normal !important; overflow-wrap: break-word; font-size: .9em; }
 
     /* --- Action segments --- */
     /* On mobile the same flexbox container switches to a vertical stack,
@@ -526,7 +526,6 @@ tr.courses-pending { background-color: #fffde7 !important; }
         font-size: .88em;
         white-space: normal !important;
         gap: .25em !important;
-        word-break: break-word;
         overflow-wrap: anywhere;
     }
     #my-sessions-tabs .item i.icon,
@@ -539,7 +538,6 @@ tr.courses-pending { background-color: #fffde7 !important; }
         display: block;
         line-height: 1.2;
         white-space: normal;
-        word-break: break-word;
         overflow-wrap: anywhere;
     }
 
