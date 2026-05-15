@@ -84,12 +84,12 @@
                     </tr>
                     {% for range in closure_dates %}
                     <tr class="closure-row">
-                        <td><input type="date" name="closure_from[]" value="{{ range.from }}" class="closure-from-input"/></td>
-                        <td><input type="date" name="closure_to[]" value="{{ range.to }}" class="closure-to-input"/></td>
-                        <td><input type="text" name="closure_label[]" value="{{ range.label|default('') }}" class="closure-label-input" maxlength="120" placeholder="{{ _T('e.g. Annual closure, Competition, AGM', 'courses') }}"/></td>
-                        <td class="collapsing center aligned closure-duration"></td>
-                        <td class="collapsing center aligned closure-status"></td>
-                        <td class="collapsing">
+                        <td data-label="{{ _T('From', 'courses') }}"><input type="date" name="closure_from[]" value="{{ range.from }}" class="closure-from-input"/></td>
+                        <td data-label="{{ _T('Until', 'courses') }}"><input type="date" name="closure_to[]" value="{{ range.to }}" class="closure-to-input"/></td>
+                        <td data-label="{{ _T('Reason', 'courses') }}"><input type="text" name="closure_label[]" value="{{ range.label|default('') }}" class="closure-label-input" maxlength="120" placeholder="{{ _T('e.g. Annual closure, Competition, AGM', 'courses') }}"/></td>
+                        <td data-label="{{ _T('Duration', 'courses') }}" class="collapsing center aligned closure-duration"></td>
+                        <td data-label="{{ _T('Status', 'courses') }}" class="collapsing center aligned closure-status"></td>
+                        <td class="collapsing closure-actions">
                             <button type="button" class="ui tiny red icon button remove-closure-row">
                                 <i class="trash icon" aria-hidden="true"></i>
                             </button>
@@ -239,13 +239,18 @@ $(function() {
 
     function newClosureRow() {
         var labelPlaceholder = '{{ _T("e.g. Annual closure, Competition, AGM", "courses")|e('js') }}';
+        var lblFrom     = '{{ _T("From", "courses")|e('js') }}';
+        var lblUntil    = '{{ _T("Until", "courses")|e('js') }}';
+        var lblReason   = '{{ _T("Reason", "courses")|e('js') }}';
+        var lblDuration = '{{ _T("Duration", "courses")|e('js') }}';
+        var lblStatus   = '{{ _T("Status", "courses")|e('js') }}';
         return $('<tr class="closure-row">' +
-            '<td><input type="date" name="closure_from[]" class="closure-from-input"/></td>' +
-            '<td><input type="date" name="closure_to[]" class="closure-to-input"/></td>' +
-            '<td><input type="text" name="closure_label[]" class="closure-label-input" maxlength="120" placeholder="' + labelPlaceholder + '"/></td>' +
-            '<td class="collapsing center aligned closure-duration">–</td>' +
-            '<td class="collapsing center aligned closure-status"></td>' +
-            '<td class="collapsing">' +
+            '<td data-label="' + lblFrom + '"><input type="date" name="closure_from[]" class="closure-from-input"/></td>' +
+            '<td data-label="' + lblUntil + '"><input type="date" name="closure_to[]" class="closure-to-input"/></td>' +
+            '<td data-label="' + lblReason + '"><input type="text" name="closure_label[]" class="closure-label-input" maxlength="120" placeholder="' + labelPlaceholder + '"/></td>' +
+            '<td data-label="' + lblDuration + '" class="collapsing center aligned closure-duration">–</td>' +
+            '<td data-label="' + lblStatus + '" class="collapsing center aligned closure-status"></td>' +
+            '<td class="collapsing closure-actions">' +
                 '<button type="button" class="ui tiny red icon button remove-closure-row">' +
                     '<i class="trash icon" aria-hidden="true"></i>' +
                 '</button>' +

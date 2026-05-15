@@ -594,19 +594,53 @@ tr.courses-pending { background-color: #fffde7 !important; }
     .courses-cron-input { font-size: .72em !important; }
     .courses-cron-note code { word-break: break-all; font-size: .82em; }
 
-    /* --- Closure date / label inputs --- */
-    input.closure-from-input,
-    input.closure-to-input,
-    input.closure-label-input { min-height: 44px !important; width: 100% !important; }
-    /* On phones, also hide the Status column (5th) to give Reason maximum room.
-       Duration (4th) is already hidden by the tablet rule above. */
-    #closure-table th:nth-child(5),
-    #closure-table td:nth-child(5) { display: none; }
-    /* Tighten cell padding so the table breathes on narrow viewports. */
-    #closure-table.ui.celled.compact.table th,
-    #closure-table.ui.celled.compact.table td { padding: .5em !important; }
-    /* Reason column still gets priority on the limited remaining width. */
-    #closure-table th:nth-child(3) { width: auto !important; }
+    /* --- Closure dates table : passage en card layout sur mobile ---
+       Chaque ligne devient une carte ou les 5 champs (From / Until / Reason /
+       Duration / Status) s'empilent verticalement avec leur libelle a gauche.
+       Override la regle tablet qui cachait Duration (≤1024px) car ici chaque
+       "colonne" devient une ligne de la carte, on a la place de tout afficher. */
+    #closure-table { display: block !important; border: none !important; box-shadow: none !important; }
+    #closure-table thead { display: none !important; }
+    #closure-table tbody { display: block !important; }
+    #closure-table tbody tr.closure-row {
+        display: block !important; margin-bottom: 1em !important; padding: 0 !important;
+        border: 1px solid rgba(34,36,38,.15) !important; border-radius: 6px !important;
+        background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.07) !important; overflow: hidden;
+    }
+    #closure-table tbody tr.closure-row.warning {
+        border-color: #e0b4b4 !important; background: #fff6f6 !important;
+    }
+    #closure-table tbody tr.closure-row td {
+        display: flex !important; align-items: center !important; justify-content: space-between !important;
+        padding: .55em .85em !important; border-top: none !important;
+        border-bottom: 1px solid rgba(34,36,38,.06) !important;
+        min-height: 44px; gap: .6em; width: auto !important; text-align: left !important;
+    }
+    #closure-table tbody tr.closure-row td:last-child { border-bottom: none !important; }
+    /* Re-affiche la cellule Duration (cachee par la regle ≤1024px) */
+    #closure-table tbody tr.closure-row td:nth-child(4) { display: flex !important; }
+    #closure-table tbody tr.closure-row td[data-label]::before {
+        content: attr(data-label); font-weight: 700; font-size: .78em; color: #999;
+        text-transform: uppercase; letter-spacing: .04em; flex-shrink: 0; min-width: 6em;
+    }
+    /* Les inputs prennent la place restante a droite du libelle */
+    #closure-table tbody tr.closure-row td input.closure-from-input,
+    #closure-table tbody tr.closure-row td input.closure-to-input,
+    #closure-table tbody tr.closure-row td input.closure-label-input {
+        flex: 1 1 auto !important; width: auto !important; min-width: 0 !important;
+        min-height: 44px !important;
+    }
+    /* Cellule actions : pas de libelle, bouton aligne a droite, fond grise */
+    #closure-table tbody tr.closure-row td.closure-actions {
+        justify-content: flex-end !important; background: #fafafa;
+    }
+    #closure-table tbody tr.closure-row td.closure-actions::before { content: none !important; }
+    /* Ligne "vide" (No closure period configured) : reste un bloc lisible */
+    #closure-table tbody tr#closure-empty-row { display: block !important; }
+    #closure-table tbody tr#closure-empty-row td {
+        display: block !important; padding: 1em !important; text-align: center !important;
+        border: none !important;
+    }
 
     /* --- Segments --- */
     .ui.segment { padding: .9em !important; }

@@ -632,6 +632,28 @@ Le developpement est organise en phases progressives.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
 
+### Phase 58 - Polish smartphone du tableau des periodes de fermeture (preferences)
+
+**Statut : TERMINEE**
+
+- Demande utilisateur : suite du polish responsive (apres Phase 51 events_list et Phase 57 stats) — sur smartphone, le tableau des periodes de fermeture du club (`#closure-table` dans `preferences.html.twig`) restait tabulaire avec scroll horizontal et plusieurs colonnes cachees (Duration en ≤1024px, Status en ≤767px) pour preserver Reason. Les inputs date/text se touchaient au bord de l'ecran et la cellule actions etait collee a la cellule Status.
+
+- Template `templates/default/pages/preferences.html.twig` :
+  - Attribut `data-label="..."` ajoute sur les 5 `<td>` d'une ligne `.closure-row` (From / Until / Reason / Duration / Status), valeurs traduites via `{{ _T('...', 'courses') }}`.
+  - Classe `closure-actions` ajoutee sur la 6e cellule (bouton corbeille).
+  - Fonction JS `newClosureRow()` mise a jour symetriquement : 5 variables `lblFrom / lblUntil / lblReason / lblDuration / lblStatus` traduites avec `|e('js')` injectees dans la chaine HTML construite, plus `class="collapsing closure-actions"` sur la cellule actions.
+
+- CSS `webroot/galette_courses.css` (bloc `@media (max-width: 767px)`) :
+  - L'ancien set de regles partielles (input 100% width, hide Status `:nth-child(5)`, padding `.5em`, `th:nth-child(3) width:auto`) est remplace par un bloc card-layout complet : `#closure-table { display:block ; border:none ; box-shadow:none }`, `thead { display:none }`, chaque `tr.closure-row` devient une carte (bordure radius 6 px, ombre legere, fond blanc, padding 0).
+  - Chaque td devient `display:flex ; justify-content:space-between ; min-height:44px ; padding:.55em .85em` avec un pseudo `::before` rendant `attr(data-label)` en gris uppercase a gauche (`min-width:6em`), valeur a droite.
+  - Override explicite de la regle tablet (`@media ≤1024px`) qui cachait Duration : `tr.closure-row td:nth-child(4) { display:flex !important }` — en card layout chaque colonne devient une ligne, on a la place de tout afficher.
+  - Inputs (`from / to / label`) passent en `flex:1 1 auto ; width:auto ; min-width:0` pour partager l'espace avec le libelle (ne pas pousser le label au-dessus).
+  - Cellule `.closure-actions` : pas de label, bouton aligne a droite, fond `#fafafa` pour la distinguer comme "footer" de la carte.
+  - Ligne speciale `#closure-empty-row` (state "No closure period configured") : `display:block ; td display:block ; text-align:center` (sans cela elle serait masquee par `thead { display:none }` n'est pas applicable mais le td perd ses bordures de cellule de tableau).
+  - Le warning row (`tr.closure-row.warning`, marque par le JS quand `from > to`) garde son apparence rouge (`border-color #e0b4b4 ; background #fff6f6`) dans le nouveau card layout.
+
+- Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
+
 ### Phase 44 - Periodes de fermeture du club -> seances generees en `cancelled`
 
 **Statut : TERMINEE**
