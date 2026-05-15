@@ -60,10 +60,17 @@ galette-plugin-courses/
   _config.inc.php                  # Constante COURSES_PREFIX
   _define.php                      # Enregistrement plugin + ACLs
   _routes.php                      # Routes Slim (60 routes)
-  scripts/mysql.sql                # Schema BDD (12 tables)
-  scripts/upgrade-unsubscribe.sql  # Migration: ajout unsubscribe_token
-  scripts/upgrade-digest.sql       # Migration: queue pending_notifications (digest quotidien)
-  scripts/upgrade-allow-no-instructor.sql # Migration: colonne allow_registration_without_instructor (Phase 40)
+  scripts/mysql.sql                # Schema BDD MySQL/MariaDB (12 tables)
+  scripts/pgsql.sql                # Schema BDD PostgreSQL (12 tables, equivalent au mysql)
+  scripts/upgrade-unsubscribe.sql  # Migration MySQL : ajout unsubscribe_token (Phase 5)
+  scripts/upgrade-unsubscribe-pgsql.sql # Migration pgsql : ajout unsubscribe_token (Phase 5)
+  scripts/upgrade-digest.sql       # Migration MySQL : queue pending_notifications (Phase 36)
+  scripts/upgrade-digest-pgsql.sql # Migration pgsql : queue pending_notifications (Phase 36)
+  scripts/upgrade-allow-no-instructor.sql       # Migration MySQL : colonne allow_registration_without_instructor (Phase 40)
+  scripts/upgrade-allow-no-instructor-pgsql.sql # Migration pgsql : idem (Phase 40)
+  scripts/upgrade-register-deadline.sql       # Migration MySQL : rename unregister_deadline_days -> register_deadline_days (Phase 45)
+  scripts/upgrade-register-deadline-pgsql.sql # Migration pgsql : idem (Phase 45)
+  scripts/upgrade-cancel-reasons-i18n.sql # Migration MySQL/pgsql : cles de cancellation_reason en EN (Phase 16)
   doc/
     mode-emploi.md                 # Mode d'emploi utilisateur
     cahier-des-charges.md          # Cahier des charges complet

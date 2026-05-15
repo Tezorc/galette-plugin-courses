@@ -1,5 +1,6 @@
 -- Schema for Galette Courses plugin (PostgreSQL)
 
+DROP TABLE IF EXISTS galette_courses_pending_notifications CASCADE;
 DROP TABLE IF EXISTS galette_courses_mail_templates CASCADE;
 DROP TABLE IF EXISTS galette_courses_member_preferences CASCADE;
 DROP TABLE IF EXISTS galette_courses_preferences CASCADE;
@@ -41,6 +42,7 @@ CREATE TABLE galette_courses_events (
     recurrence_end_date date DEFAULT NULL,
     advance_weeks integer DEFAULT 4,
     is_restricted boolean NOT NULL DEFAULT false,
+    allow_registration_without_instructor boolean NOT NULL DEFAULT false,
     status varchar(20) NOT NULL DEFAULT 'draft',
     register_deadline_days integer DEFAULT NULL,
     creator_id integer DEFAULT NULL,
@@ -153,3 +155,23 @@ CREATE TABLE galette_courses_member_preferences (
     CONSTRAINT uk_courses_mp_token UNIQUE (unsubscribe_token),
     CONSTRAINT fk_courses_mp_member FOREIGN KEY (member_id) REFERENCES galette_adherents (id_adh) ON DELETE CASCADE
 );
+
+-- Notifications queue (Phase 36 + Phase 59):
+-- Rows enqueued by notifyNewSessions (managers), notifyInstructorAssigned and
+-- notifySessionOpenWithoutInstructor (members). Swept by:
+--   - sendDailyDigest() — ref = 'new_sessions_manager' (1 mail/day per manager)
+--   - sendWeeklyDigestMember() — ref IN ('instructor_assigned', 'session_open')
+--     (1 mail/week per household, parents + children grouped together)
+CREATE TABLE galette_courses_pending_notifications (
+    id_pending serial PRIMARY KEY,
+    member_id integer NOT NULL,
+    event_id integer NOT NULL,
+    session_id integer NOT NULL,
+    ref varchar(30) NOT NULL,
+    created_at timestamp NOT NULL,
+    CONSTRAINT uk_courses_pn_member_session_ref UNIQUE (member_id, session_id, ref),
+    CONSTRAINT fk_courses_pn_member FOREIGN KEY (member_id) REFERENCES galette_adherents (id_adh) ON DELETE CASCADE,
+    CONSTRAINT fk_courses_pn_event FOREIGN KEY (event_id) REFERENCES galette_courses_events (id_event) ON DELETE CASCADE,
+    CONSTRAINT fk_courses_pn_session FOREIGN KEY (session_id) REFERENCES galette_courses_sessions (id_session) ON DELETE CASCADE
+);
+CREATE INDEX idx_courses_pn_member ON galette_courses_pending_notifications (member_id);

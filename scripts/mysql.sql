@@ -167,8 +167,12 @@ CREATE TABLE galette_courses_member_preferences (
     CONSTRAINT fk_courses_mp_member FOREIGN KEY (member_id) REFERENCES galette_adherents (id_adh) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Daily-digest queue: rows accumulated by notifyNewSessions during the day,
--- swept and emailed once per day by the cron (one consolidated email per recipient).
+-- Notifications queue (Phase 36 + Phase 59):
+-- Rows enqueued by notifyNewSessions (managers), notifyInstructorAssigned and
+-- notifySessionOpenWithoutInstructor (members). Swept by:
+--   - sendDailyDigest() — ref = 'new_sessions_manager' (1 mail/day per manager)
+--   - sendWeeklyDigestMember() — ref IN ('instructor_assigned', 'session_open')
+--     (1 mail/week per household, parents + children grouped together)
 -- Note: integer columns omit the legacy display width (`int(10)`) — deprecated in MySQL 8.
 CREATE TABLE galette_courses_pending_notifications (
     id_pending int unsigned NOT NULL auto_increment,
