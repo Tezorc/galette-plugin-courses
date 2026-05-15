@@ -88,7 +88,7 @@
                     {{ _T("Average fill rate by event", "courses") }}
                 </div>
                 {% if stats.fill_rates|length > 0 %}
-                    <table class="ui very basic compact small table courses-responsive-table">
+                    <table class="ui very basic compact small table courses-responsive-table" id="fill-rate-table">
                         <thead>
                             <tr>
                                 <th>{{ _T("Event", "courses") }}</th>
@@ -129,7 +129,7 @@
                     <span class="sub header">{{ _T("Last 20 active members", "courses") }}</span>
                 </div>
                 {% if stats.recent_activity|length > 0 %}
-                    <table class="ui very basic compact small table courses-responsive-table">
+                    <table class="ui very basic compact small table courses-responsive-table" id="recent-activity-table">
                         <thead>
                             <tr>
                                 <th>{{ _T("Member", "courses") }}</th>
