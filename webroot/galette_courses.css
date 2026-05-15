@@ -635,17 +635,19 @@ tr.courses-pending { background-color: #fffde7 !important; }
         justify-content: flex-end !important; background: #fafafa;
     }
     #closure-table tbody tr.closure-row td.closure-actions::before { content: none !important; }
-    /* Ligne "vide" (No closure period configured) : reste un bloc lisible.
-       Pas de !important sur le tr — le template pose style="display:none" inline
-       quand des fermetures sont configurees, et le JS updateEmptyState() toggle
-       ce style. Le !important ecraserait le inline et afficherait toujours la
-       ligne "Aucune periode". Specificite (1 ID + 1 ID + 1 type = 0,2,1) suffit
-       largement a battre la regle UA tr { display: table-row } sans !important. */
+    /* Ligne "vide" (No closure period configured) : reste un bloc lisible
+       quand aucune fermeture n'est configuree. */
     #closure-table tbody tr#closure-empty-row { display: block; }
     #closure-table tbody tr#closure-empty-row td {
         display: block !important; padding: 1em !important; text-align: center !important;
         border: none !important;
     }
+    /* Masquage independant du style inline : des qu'au moins une .closure-row
+       existe dans le tbody, la ligne vide est cachee. Evite le piege du
+       display:block !important qui ecrasait le style="display:none" pose par
+       Twig + jQuery .toggle(). :has() est supporte dans tous les navigateurs
+       majeurs depuis fin 2023. */
+    #closure-table tbody:has(tr.closure-row) tr#closure-empty-row { display: none !important; }
 
     /* --- Segments --- */
     .ui.segment { padding: .9em !important; }
