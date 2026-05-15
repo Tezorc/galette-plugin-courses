@@ -654,6 +654,39 @@ Le developpement est organise en phases progressives.
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Phase 60 - Depersonnalisation du plugin via `_local_lang.php`
+
+**Statut : TERMINEE**
+
+- Demande utilisateur : "depersonnaliser le plugin pour le rendre utilisable par d'autre association / mettre la personnalisation dans local lang"
+
+- Justification : le `.po` francais embarquait en dur l'URL `https://adherent.ccag42.org/` dans les corps de deux modeles de courriel (`REF_NEW_SESSIONS_MANAGER` et `REF_SESSION_OPEN`). Un autre club qui aurait recupere le plugin tel quel aurait envoye des liens de connexion pointant vers le site de CCAG42. La solution standard Galette pour les surcharges propres a une installation est le fichier `<plugin>_<locale>_local_lang.php` charge automatiquement apres le `.mo` (les cles presentes prennent le pas sur la traduction par defaut). On deplace les elements specifiques dans ce fichier dedie, le `.po` redevient strictement generique.
+
+- **Modifications** :
+  - `lang/courses_fr_FR.utf8.po` :
+    - msgstr de `REF_NEW_SESSIONS_MANAGER` : ligne `"Connectez-vous sur https://adherent.ccag42.org/\n"` retiree (le mail revient au texte generique du msgid : "Si vous souhaitez encadrer l'une de ces seances, connectez-vous et portez-vous volontaire depuis la page de detail de la seance.")
+    - msgstr de `REF_SESSION_OPEN` : ligne `"Connectez-vous sur https://adherent.ccag42.org/ pour vous inscrire ..."` remplacee par le texte generique du msgid : "Inscrivez-vous des maintenant pour confirmer votre presence."
+  - Nouveau fichier `lang/courses_fr_FR.utf8_local_lang.php` :
+    - En-tete documentaire explicitant le mecanisme (chargement automatique par Galette, convention de cle = chaine source EXACTE passee a `_T()` en double-quoted PHP pour que `\n` soit un saut de ligne reel).
+    - Variable `$site_url` en tete (defaut CCAG42), reutilisee dans les overrides pour eviter la duplication.
+    - 2 entrees `$lang[<msgid exact>] = <override>` qui reintroduisent l'URL dans les corps de `REF_NEW_SESSIONS_MANAGER` et `REF_SESSION_OPEN`.
+    - Termine par `return $lang;` (le contrat Galette attend un tableau).
+  - 2 commentaires Twig dev nettoyes : `(nom du chien)` retire de `session_show.html.twig:303` et `my_registrations.html.twig:276` (residus visibles club-canin sans valeur fonctionnelle).
+  - `doc/mode-emploi.md` : section "Personnaliser le plugin pour son association (depersonnalisation)" ajoutee sous "Traductions" — explique comment editer `_local_lang.php`, comment revenir au strict generique (supprimer le fichier).
+
+- **Pourquoi `$lang[<msgid>]` et pas `$lang['some_key']`** : Galette injecte les cles de `_local_lang.php` dans le meme tableau de surcharges que celui consulte par `_T()` apres lecture du `.mo`. La cle doit correspondre EXACTEMENT a ce que `_T()` recoit en argument — donc la chaine source telle qu'ecrite dans le PHP. Pour les corps de courriel multi-lignes, cela impose des `"..."` avec `\n` (et pas des `'...'` qui les interpretent comme deux caracteres). Une cle qui ne match pas produit silencieusement la traduction par defaut du `.mo`.
+
+- **Points hors perimetre (volontaire)** :
+  - Les en-tetes copyright des fichiers PHP (`* Copyright © 2026-2026 The Galette Team && The CCAG42 Team`, `@author Team CCAG <contact@ccag42.org>`) sont conserves tels quels. Choix utilisateur lors de l'arbitrage : "on laisse comme ça" — la depersonnalisation cible le comportement runtime, pas l'attribution intellectuelle de la contribution.
+  - `composer.json` (`"name": "ccag42/galette-plugin-courses"`) inchange (idem en-tetes : attribution, pas runtime).
+  - L'exemple "nom du chien (club canin)" reste dans le lexique de `doc/mode-emploi.md` car il y figure comme **un** equivalent metier parmi plusieurs ("Surnom, nom d'usage, nom du chien (club canin), nom de scene") — illustration utile pour les lecteurs de divers contextes, pas hardcoding.
+
+- **Tests** : aucun test impacte (55 tests existants verts). Le mecanisme `_local_lang.php` est cote Galette core, pas teste cote plugin.
+
+- **Tradeoff** : la traduction par defaut du `.mo` est legerement moins informative (plus de lien direct vers l'espace adherent dans les 2 mails concernes). Chaque deploiement doit decider s'il met en place un `_local_lang.php` ou s'il accepte ce minimalisme. Compromis volontaire pour ne pas forcer une URL d'un autre club a tous les futurs deploiements.
+
+---
+
 ### Phase 59 - Digest hebdomadaire membre + regroupement parent/enfants
 
 **Statut : TERMINEE**

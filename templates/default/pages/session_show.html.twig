@@ -300,7 +300,7 @@
                         {% set children_count = unregistered_children_available|length %}
                         {% set total_options = self_count + children_count %}
                         {% if total_options == 1 and parent_eligible %}
-                            {# Seule option : le membre lui-meme — on affiche le nickname (nom du chien) si dispo #}
+                            {# Seule option : le membre lui-meme — on affiche le nickname si dispo #}
                             <form action="{{ url_for("coursesDoRegister", {"id": session.getId()}) }}" method="post" class="ui form courses-inline-form">
                                 <button type="submit" class="ui small labeled icon green button">
                                     <i class="user plus icon" aria-hidden="true"></i>

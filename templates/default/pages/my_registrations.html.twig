@@ -273,7 +273,7 @@
                             {% set total_options = self_count + children_count %}
 
                             {% if total_options == 1 and browse_can_self_register[sid] %}
-                                {# Seule option : le membre lui-meme — on affiche le nickname (nom du chien) si dispo #}
+                                {# Seule option : le membre lui-meme — on affiche le nickname si dispo #}
                                 {% set self_nick = (reg_members[login.id] is defined and reg_members[login.id].nickname) ? reg_members[login.id].nickname : '' %}
                                 <form action="{{ url_for("coursesDoRegister", {"id": sid}) }}" method="post" class="ui form courses-inline-form">
                                     <input type="hidden" name="redirect_to" value="my_registrations"/>

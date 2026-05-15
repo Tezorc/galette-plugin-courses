@@ -961,8 +961,9 @@ Le plugin est entierement traduit en francais. Les traductions sont gerees via l
 
 | Fichier | Description |
 | ------- | ----------- |
-| `lang/courses_fr_FR.utf8.po` | Source des traductions francaises (format PO, editable) |
-| `lang/fr_FR.utf8/LC_MESSAGES/courses.mo` | Traductions compilees (format MO binaire) |
+| `lang/courses_fr_FR.utf8.po` | Source des traductions francaises generiques (format PO, editable) |
+| `lang/fr_FR.utf8/LC_MESSAGES/courses.mo` | Traductions generiques compilees (format MO binaire) |
+| `lang/courses_fr_FR.utf8_local_lang.php` | Surcharges locales propres a chaque association (URL d'espace adherent, signature, terminologie metier) |
 
 ### Ajouter ou modifier une traduction
 
@@ -970,12 +971,32 @@ Le plugin est entierement traduit en francais. Les traductions sont gerees via l
 2. Compiler avec : `msgfmt -o lang/fr_FR.utf8/LC_MESSAGES/courses.mo lang/courses_fr_FR.utf8.po`
 3. Vider le cache Twig : supprimer le contenu de `data/cache/v1.2.1/templates/`
 
+### Personnaliser le plugin pour son association (depersonnalisation)
+
+Le plugin est volontairement generique : aucune URL, signature ou terme metier
+specifique a un club n'est code en dur dans le `.po` ou le PHP. Les
+specificites locales sont rassemblees dans **`lang/courses_fr_FR.utf8_local_lang.php`**,
+charge automatiquement par Galette en complement du `.mo` (les cles presentes
+dans ce fichier prennent le pas sur la traduction par defaut).
+
+Pour personnaliser le plugin :
+
+1. Ouvrir `lang/courses_fr_FR.utf8_local_lang.php`
+2. Modifier la valeur `$site_url` en tete du fichier (URL de l'espace adherent du club)
+3. Adapter les corps de courriels (signature, formules, mentions specifiques)
+4. Ajouter au besoin des cles supplementaires (par exemple `$lang['Nickname'] = 'Chien';` pour un club canin)
+5. Vider le cache Twig si necessaire
+
+Pour revenir au comportement strictement generique, supprimer ou vider le
+fichier `_local_lang.php` : le `.mo` redevient la seule source de traduction.
+
 ### Ajouter une nouvelle langue
 
 1. Creer le fichier PO : `lang/courses_{locale}.utf8.po` (copier depuis le francais)
 2. Traduire les `msgstr`
 3. Creer le repertoire : `lang/{locale}.utf8/LC_MESSAGES/`
 4. Compiler : `msgfmt -o lang/{locale}.utf8/LC_MESSAGES/courses.mo lang/courses_{locale}.utf8.po`
+5. (Optionnel) Creer `lang/courses_{locale}.utf8_local_lang.php` pour les surcharges locales
 
 ---
 
