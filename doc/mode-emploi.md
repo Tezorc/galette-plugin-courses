@@ -279,6 +279,7 @@ Le bandeau detaille le nom de chaque membre concerne et la raison precise (cotis
   - Bouton **"Filtrer"** disponible pour declencher explicitement le filtre (utile en cas de doute)
   - Bouton **"Effacer le filtre"** : reinitialise tous les filtres aux valeurs par defaut (date du jour)
 - Boutons sur chaque carte : **"S'inscrire"** (vert, si eligible en propre nom) et/ou **"Inscrire un enfant"** (teal, si un enfant est eligible)
+- **Section "Seances annulees"** : en bas de l'onglet, une section rouge distincte liste les seances futures **annulees** correspondant aux groupes de l'adherent (et de ses enfants), pour l'informer qu'un creneau existe mais qu'il n'aura pas lieu. Chaque carte affiche le motif et le commentaire d'annulation et un bouton **"Details"** (pas de bouton d'inscription). Les seances ou l'adherent (ou un enfant) est deja inscrit n'apparaissent pas ici — elles figurent deja dans l'onglet "Mes inscriptions". Les filtres Type / Activite / Date s'appliquent aussi a cette section.
 
 #### Onglet "Mes inscriptions"
 
@@ -297,6 +298,8 @@ Sections du tableau de bord personnel :
 **Nom du moniteur** : affiche sous les informations de la seance sur toutes les cards (Prochaine seance, A venir, Annulees) si un moniteur est assigne.
 
 **Bouton "iCal"** (toutes mes inscriptions) en haut a droite de l'onglet — exporte toutes les inscriptions actives en un seul fichier `.ics`.
+
+> **Mise a jour de l'affichage** : s'inscrire, se desinscrire ou rejoindre la liste d'attente depuis la page **Mes inscriptions** (onglets *Trouver une seance* et *Mes inscriptions*) renvoie automatiquement sur cette meme page rechargee. Les deux onglets refletent immediatement l'etat a jour : la seance disparait de *Trouver une seance* (puisqu'on y est desormais inscrit) et apparait dans *Mes inscriptions*. Aucun rechargement manuel n'est necessaire. Les memes actions declenchees depuis la fiche detail d'une seance continuent a renvoyer sur cette fiche, comme avant.
 
 ### 7. Consulter toutes les inscriptions (staff / responsable de groupe)
 
@@ -395,12 +398,15 @@ Cas typique d'usage : un moniteur volontaire prend en charge sa seance de bout e
 Les moniteurs eligibles sont les responsables des groupes associes a l'evenement.
 
 > **Seances passees** : les boutons Affecter et Retirer un moniteur sont masques. Les moniteurs restes affiches en lecture seule.
+>
+> **Seances annulees** : le formulaire **"Affecter un moniteur"** est masque et l'action est refusee cote serveur — une seance annulee n'aura pas lieu, aucun moniteur ne peut y etre affecte. Le retrait d'un moniteur reste possible (utile pour nettoyer).
 
 #### Se porter volontaire (responsable de groupe)
 
 1. Aller sur la page de detail d'une seance **future ou du jour**
 2. Cliquer sur le bouton teal **"Se porter volontaire comme moniteur"**
 3. Le bouton n'apparait que si le responsable gere un des groupes de l'evenement et n'est pas deja moniteur
+4. Le bouton n'apparait pas (et l'action est refusee cote serveur) sur une **seance annulee** : une seance annulee n'aura pas lieu, aucun moniteur ne peut s'y porter volontaire
 
 #### Indicateur dans la liste des seances
 
@@ -823,7 +829,7 @@ Pour ajouter ou modifier des types, intervenir directement en base de donnees da
 | Mes notifications | Tous | Mes preferences de notifications email |
 
 La page **Mes inscriptions** comprend deux onglets :
-- **Trouver une seance** : catalogue des seances disponibles avec filtres (type, activite, date) et inscription directe
+- **Trouver une seance** : catalogue des seances disponibles avec filtres (type, activite, date) et inscription directe, suivi d'une section rouge "Seances annulees" listant les creneaux futurs annules (informatif, sans inscription)
 - **Mes inscriptions** : seances a venir, annulees et passees
 
 La page **Mes seances comme moniteur** est visible pour :
@@ -833,7 +839,7 @@ La page **Mes seances comme moniteur** est visible pour :
 Les admins et le staff ne voient pas l'entree par defaut : ils gerent les affectations de moniteurs depuis le menu *Gestion des inscriptions*.
 
 Elle presente deux onglets :
-- **Trouver une seance** : catalogue des seances sans moniteur ou l'utilisateur peut se proposer (avec filtres Type / Activite / Date et boutons **"Filtrer"** + **"Effacer le filtre"**, identiques a "Mes inscriptions")
+- **Trouver une seance** : catalogue des seances sans moniteur ou l'utilisateur peut se proposer (avec filtres Type / Activite / Date et boutons **"Filtrer"** + **"Effacer le filtre"**, identiques a "Mes inscriptions"), suivi d'une section rouge "Seances annulees" listant les creneaux futurs annules dans son perimetre (informatif, sans bouton "Se porter volontaire") — les seances ou l'utilisateur est deja moniteur ne sont pas reprises ici (elles figurent dans l'onglet "Mes seances comme moniteur")
 - **Mes seances comme moniteur** : seances groupees en quatre sections (*Prochaine seance*, *A venir*, *Annulees*, *Passees* repliable). Chaque carte affiche le nom de l'evenement, la date, le lieu, le ou les moniteurs, la jauge d'inscrits, et propose les boutons **Details**, **iCal** et — si l'utilisateur est responsable de groupe, staff ou admin — **Export CSV des inscrits**.
 
 ### Menu "Gestion des inscriptions" (moniteur, responsable de groupe, staff, admin)
@@ -1116,7 +1122,9 @@ Si l'evenement est rejete, vous recevez un email et pouvez le modifier puis le r
 2. Dans la section **Moniteurs**, cliquer sur le bouton teal **"Se porter volontaire comme moniteur"**
 3. Votre nom apparait dans la liste des moniteurs de la seance
 
-Vous ne pouvez vous porter volontaire que si vous gerez un des groupes associes a l'evenement.
+Vous ne pouvez vous porter volontaire que si vous gerez un des groupes associes a l'evenement. Le volontariat est impossible sur une seance **annulee** (elle n'aura pas lieu) : le bouton est masque et l'action est refusee cote serveur.
+
+> **Mise a jour de l'affichage** : se porter volontaire depuis la page **Mes seances comme moniteur** (onglet *Trouver une seance*) renvoie automatiquement sur cette meme page rechargee. La seance disparait de *Trouver une seance* et apparait dans *Mes seances comme moniteur* sans rechargement manuel. Depuis la fiche detail d'une seance, le comportement est inchange (retour sur la fiche).
 
 ### Inscrire un membre par procuration
 
@@ -1175,9 +1183,11 @@ Le staff et les administrateurs peuvent :
 
 #### Affecter un moniteur
 
-1. Sur la page de detail d'une seance, dans la section **Moniteurs**
+1. Sur la page de detail d'une seance **future ou du jour et non annulee**, dans la section **Moniteurs**
 2. Utiliser le select pour choisir un responsable de groupe eligible
 3. Cliquer sur **"Affecter un moniteur"**
+
+Le formulaire d'affectation n'est pas disponible sur une seance annulee ou passee.
 
 #### Modifier une seance
 

@@ -152,7 +152,7 @@
                 {% endif %}
 
                 {# Session manager (staff or session instructor): assign another instructor #}
-                {% if is_session_manager and eligible_instructors|length > 0 and session.getSessionDate() >= "now"|date("Y-m-d") %}
+                {% if is_session_manager and eligible_instructors|length > 0 and session.getStatus() != 'cancelled' and session.getSessionDate() >= "now"|date("Y-m-d") %}
                     <div class="ui divider"></div>
                     <form action="{{ url_for("coursesDoAssignInstructor", {"id": session.getId()}) }}" method="post" class="ui form">
                         <div class="inline fields">
@@ -174,7 +174,7 @@
                 {% endif %}
 
                 {# Group manager: volunteer as instructor #}
-                {% if login.isGroupManager() and not login.isAdmin() and not login.isStaff() and not is_instructor and session.getSessionDate() >= "now"|date("Y-m-d") %}
+                {% if login.isGroupManager() and not login.isAdmin() and not login.isStaff() and not is_instructor and session.getStatus() != 'cancelled' and session.getSessionDate() >= "now"|date("Y-m-d") %}
                     <div class="ui divider"></div>
                     <form action="{{ url_for("coursesDoVolunteerInstructor", {"id": session.getId()}) }}" method="post" class="ui form">
                         <button type="submit" class="ui small labeled icon teal button">

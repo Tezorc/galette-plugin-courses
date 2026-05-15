@@ -58,6 +58,24 @@ class RegistrationsController extends AbstractController
     #[Inject("Plugin Galette Courses")]
     protected array $module_info;
 
+    /**
+     * Resolve the post-action redirect URL.
+     *
+     * Register / unregister / waitlist actions triggered from the
+     * "My registrations" page carry redirect_to=my_registrations so the page
+     * reloads with fresh data (both the "Find a session" and "My registrations"
+     * tabs reflect the change). Everything else falls back to the session
+     * detail page, as before.
+     */
+    private function resolveReturnUrl(Request $request, int $sessionId): string
+    {
+        $post = $request->getParsedBody();
+        if (is_array($post) && ($post['redirect_to'] ?? '') === 'my_registrations') {
+            return $this->routeparser->urlFor('coursesMyRegistrations');
+        }
+        return $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$sessionId]);
+    }
+
     public function doRegister(Request $request, Response $response, int $id): Response
     {
         $session = new Session($this->zdb, $id);
@@ -73,13 +91,15 @@ class RegistrationsController extends AbstractController
             return $response->withStatus(302)->withHeader("Location", $this->routeparser->urlFor("coursesSessions"));
         }
 
+        $returnUrl = $this->resolveReturnUrl($request, $id);
+
         // Phase 47.2: enforce active + status + cotisation in one call.
         $err = $this->getMemberEligibilityError($member_id);
         if ($err !== null) {
             $this->flash->addMessage('error_detected', $err);
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         // Check session is open
@@ -87,7 +107,7 @@ class RegistrationsController extends AbstractController
             $this->flash->addMessage('error_detected', _T('This session is not open for registration.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         // Block registration when no instructor is assigned, unless the event explicitly allows it.
@@ -98,7 +118,7 @@ class RegistrationsController extends AbstractController
             $this->flash->addMessage('error_detected', _T('No instructor assigned to this session. Registration is not yet possible.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         // Check group access for self-registration (own groups only, not family).
@@ -108,7 +128,7 @@ class RegistrationsController extends AbstractController
             $this->flash->addMessage('error_detected', _T('You do not have access to this event.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         // Check not already registered
@@ -116,7 +136,7 @@ class RegistrationsController extends AbstractController
             $this->flash->addMessage('warning_detected', _T('You are already registered for this session.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         // Warn if another session overlaps on the same day
@@ -129,7 +149,7 @@ class RegistrationsController extends AbstractController
             $this->flash->addMessage('warning_detected', _T('This session is full. You can join the waitlist.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         // Register
@@ -149,7 +169,7 @@ class RegistrationsController extends AbstractController
 
         return $response
             ->withStatus(302)
-            ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+            ->withHeader('Location', $returnUrl);
     }
 
     public function doParentUnregister(Request $request, Response $response, int $id): Response
@@ -162,19 +182,21 @@ class RegistrationsController extends AbstractController
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
         }
 
+        $returnUrl = $this->resolveReturnUrl($request, $id);
+
         $post = $request->getParsedBody();
         $child_id = (int)($post['member_id'] ?? 0);
         $parent_id = (int)$this->login->id;
         if ($parent_id <= 0) {
             $this->flash->addMessage('error_detected', _T('Invalid request.', 'courses'));
-            return $response->withStatus(302)->withHeader("Location", $this->routeparser->urlFor("coursesSessionShow", ["id" => (string)$id]));
+            return $response->withStatus(302)->withHeader("Location", $returnUrl);
         }
 
         if ($child_id <= 0) {
             $this->flash->addMessage('error_detected', _T('Invalid request.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         // Verify parent-child relationship
@@ -183,13 +205,13 @@ class RegistrationsController extends AbstractController
                 $this->flash->addMessage('error_detected', _T('You can only unregister your own linked members.', 'courses'));
                 return $response
                     ->withStatus(302)
-                    ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                    ->withHeader('Location', $returnUrl);
             }
         } catch (\Throwable $e) {
             $this->flash->addMessage('error_detected', _T('An error occurred during unregistration.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         $registration = Registration::findRegistration($this->zdb, $id, $child_id);
@@ -197,7 +219,7 @@ class RegistrationsController extends AbstractController
             $this->flash->addMessage('error_detected', _T('Registration not found.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         $event = $session->getEvent();
@@ -219,7 +241,7 @@ class RegistrationsController extends AbstractController
 
         return $response
             ->withStatus(302)
-            ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+            ->withHeader('Location', $returnUrl);
     }
 
     public function doUnregister(Request $request, Response $response, int $id): Response
@@ -232,6 +254,8 @@ class RegistrationsController extends AbstractController
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
         }
 
+        $returnUrl = $this->resolveReturnUrl($request, $id);
+
         $member_id = (int)$this->login->id;
         $registration = Registration::findRegistration($this->zdb, $id, $member_id);
 
@@ -239,7 +263,7 @@ class RegistrationsController extends AbstractController
             $this->flash->addMessage('error_detected', _T('Registration not found.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         $event = $session->getEvent();
@@ -263,7 +287,7 @@ class RegistrationsController extends AbstractController
 
         return $response
             ->withStatus(302)
-            ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+            ->withHeader('Location', $returnUrl);
     }
 
     public function doWaitlist(Request $request, Response $response, int $id): Response
@@ -281,13 +305,15 @@ class RegistrationsController extends AbstractController
             return $response->withStatus(302)->withHeader("Location", $this->routeparser->urlFor("coursesSessions"));
         }
 
+        $returnUrl = $this->resolveReturnUrl($request, $id);
+
         // Phase 47.2: enforce active + status + cotisation in one call.
         $err = $this->getMemberEligibilityError($member_id);
         if ($err !== null) {
             $this->flash->addMessage('error_detected', $err);
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         // Check session is open
@@ -295,7 +321,7 @@ class RegistrationsController extends AbstractController
             $this->flash->addMessage('error_detected', _T('This session is not open for registration.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         // Block registration when no instructor is assigned, unless the event explicitly allows it.
@@ -306,7 +332,7 @@ class RegistrationsController extends AbstractController
             $this->flash->addMessage('error_detected', _T('No instructor assigned to this session. Registration is not yet possible.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         // Check group access first (blocking) before non-blocking warnings
@@ -315,7 +341,7 @@ class RegistrationsController extends AbstractController
             $this->flash->addMessage('error_detected', _T('You do not have access to this event.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         // Check not already registered
@@ -323,7 +349,7 @@ class RegistrationsController extends AbstractController
             $this->flash->addMessage('warning_detected', _T('You are already registered for this session.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         // Check not already on waitlist
@@ -331,7 +357,7 @@ class RegistrationsController extends AbstractController
             $this->flash->addMessage('warning_detected', _T('You are already on the waitlist for this session.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         // Non-blocking overlap warning
@@ -358,7 +384,7 @@ class RegistrationsController extends AbstractController
 
         return $response
             ->withStatus(302)
-            ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+            ->withHeader('Location', $returnUrl);
     }
 
     public function doLeaveWaitlist(Request $request, Response $response, int $id): Response
@@ -648,6 +674,28 @@ class RegistrationsController extends AbstractController
             $browse_eligible_children[$sid] = $eligible;
         }
 
+        // Phase 52: surface cancelled upcoming sessions in the "Browse" tab so
+        // members are informed when a session they might look for was cancelled.
+        // Same group scoping as the open list (setPersonalMemberId). Sessions the
+        // member (or a child) is registered to are skipped — those already appear
+        // in the "My registrations" cancelled section.
+        $browse_cancelled_filters = new SessionsList();
+        $browse_cancelled_filters->date_from = date('Y-m-d');
+        $browse_cancelled_filters->status_filter = Session::STATUS_CANCELLED;
+        $cancelled_repo = new Sessions($this->zdb, $this->login, $browse_cancelled_filters);
+        $cancelled_repo->setPersonalMemberId($member_id);
+        $browse_cancelled_sessions = [];
+        foreach ($cancelled_repo->getList() as $cs) {
+            if (isset($sessions[$cs->getId()])) {
+                continue; // already shown in the "My registrations" tab
+            }
+            $browse_cancelled_sessions[] = $cs;
+            $eid = $cs->getEventId();
+            if (!isset($browse_events[$eid])) {
+                $browse_events[$eid] = new Event($this->zdb, $eid);
+            }
+        }
+
         $this->view->render(
             $response,
             $this->getTemplate('pages/my_registrations'),
@@ -669,6 +717,7 @@ class RegistrationsController extends AbstractController
                 'browse_eligible_children'    => $browse_eligible_children,
                 'browse_event_types'          => EventType::getList($this->zdb),
                 'browse_available_names'      => $browse_available_names,
+                'browse_cancelled_sessions'   => $browse_cancelled_sessions,
                 'member_is_up2date'       => $this->login->isUp2Date()
                                              || $this->login->isAdmin()
                                              || $this->login->isStaff()
@@ -898,10 +947,12 @@ class RegistrationsController extends AbstractController
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
         }
 
+        $returnUrl = $this->resolveReturnUrl($request, $id);
+
         if ($this->login->isSuperAdmin() || !$this->login->isLogged()) {
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         $parent_id = (int)$this->login->id;
@@ -912,14 +963,14 @@ class RegistrationsController extends AbstractController
             $this->flash->addMessage('error_detected', $err);
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         if (!$session->isOpen()) {
             $this->flash->addMessage('error_detected', _T('This session is not open for registration.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         if (
@@ -929,7 +980,7 @@ class RegistrationsController extends AbstractController
             $this->flash->addMessage('error_detected', _T('No instructor assigned to this session. Registration is not yet possible.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         $post = $request->getParsedBody();
@@ -938,7 +989,7 @@ class RegistrationsController extends AbstractController
             $this->flash->addMessage('error_detected', _T('Select a linked member to register.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         // Verify parent-child relationship
@@ -947,13 +998,13 @@ class RegistrationsController extends AbstractController
                 $this->flash->addMessage('error_detected', _T('You can only register your own linked members.', 'courses'));
                 return $response
                     ->withStatus(302)
-                    ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                    ->withHeader('Location', $returnUrl);
             }
         } catch (\Throwable $e) {
             $this->flash->addMessage('error_detected', _T('An error occurred during registration.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         // Phase 47.2: child must also be active + non-"non-member" + a jour
@@ -972,7 +1023,7 @@ class RegistrationsController extends AbstractController
             $this->flash->addMessage('error_detected', $err);
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         // Check child belongs to required event group
@@ -989,7 +1040,7 @@ class RegistrationsController extends AbstractController
                     $this->flash->addMessage('error_detected', _T('This linked member does not belong to a required group for this event.', 'courses'));
                     return $response
                         ->withStatus(302)
-                        ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                        ->withHeader('Location', $returnUrl);
                 }
             } catch (\Throwable $e) {
                 Analog::log('Error checking group for child #' . $child_id . ': ' . $e->getMessage(), Analog::ERROR);
@@ -1000,7 +1051,7 @@ class RegistrationsController extends AbstractController
             $this->flash->addMessage('warning_detected', _T('This linked member is already registered for this session.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         // Warn if another session overlaps on the same day for the linked member
@@ -1012,7 +1063,7 @@ class RegistrationsController extends AbstractController
             $this->flash->addMessage('warning_detected', _T('This session is full.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         $registration = new Registration($this->zdb);
@@ -1032,7 +1083,7 @@ class RegistrationsController extends AbstractController
 
         return $response
             ->withStatus(302)
-            ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+            ->withHeader('Location', $returnUrl);
     }
 
     public function doProxyRegister(Request $request, Response $response, int $id): Response

@@ -62,7 +62,7 @@
             <i class="info circle icon" aria-hidden="true"></i>
             {{ _T("To become instructor for a session, please ask the staff to assign you.", "courses") }}
         </div>
-    {% elseif volunteer_sessions|length == 0 %}
+    {% elseif volunteer_sessions|length == 0 and volunteer_cancelled_sessions|length == 0 %}
         <div class="ui info message">
             <i class="calendar outline icon" aria-hidden="true"></i>
             {{ _T("No session available for you to volunteer as instructor.", "courses") }}
@@ -115,6 +115,7 @@
             {{ _T("No session matches your filters.", "courses") }}
         </div>
 
+        {% if volunteer_sessions|length > 0 %}
         <div class="ui stackable three column grid courses-cards-grid" id="instr-browse-cards-grid">
             {% for sid, s in volunteer_sessions %}
                 {% set ev = volunteer_events[s.getEventId()] %}
@@ -155,6 +156,7 @@
                         {% endif %}
                         <div class="extra content">
                             <form action="{{ url_for("coursesDoVolunteerInstructor", {"id": sid}) }}" method="post" class="ui form courses-inline-form">
+                                <input type="hidden" name="redirect_to" value="my_instructor_sessions"/>
                                 <button type="submit" class="ui tiny labeled icon teal button">
                                     <i class="hand paper icon" aria-hidden="true"></i>
                                     {{ _T("Volunteer as instructor", "courses") }}
@@ -169,6 +171,67 @@
                 </div>
             {% endfor %}
         </div>
+        {% endif %}{# end if volunteer_sessions > 0 #}
+
+        {# Seances annulees — purement informatif : le moniteur potentiel voit
+           qu'un creneau qu'il aurait pu prendre a ete annule. #}
+        {% if volunteer_cancelled_sessions|length > 0 %}
+        <div id="instr-browse-cancelled-section" class="ui red segment courses-section-mt">
+            <h3 class="ui red header">
+                <i class="ban icon" aria-hidden="true"></i>
+                {{ _T("Cancelled sessions", "courses") }}
+            </h3>
+            <div class="ui stackable three column grid courses-cards-grid" id="instr-browse-cancelled-grid">
+                {% for sid, s in volunteer_cancelled_sessions %}
+                    {% set ev = volunteer_events[s.getEventId()] %}
+                    <div class="column courses-browse-card-col"
+                         data-type-id="{{ ev.getTypeId() }}"
+                         data-event-name="{{ ev.getName() }}"
+                         data-date="{{ s.getSessionDate() }}">
+                        <div class="ui fluid card courses-card courses-card-cancelled">
+                            <div class="content">
+                                <div class="right floated meta">
+                                    <span class="ui red label">{{ _T("Cancelled", "courses") }}</span>
+                                </div>
+                                <div class="header">{{ ev.getName() }}</div>
+                                <div class="meta">
+                                    <i class="calendar icon" aria-hidden="true"></i>
+                                    <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
+                                    <span class="courses-date-month">{{ s.getMonthYear() }}</span>
+                                    &nbsp;&middot;&nbsp;
+                                    {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
+                                </div>
+                                {% if ev.getLocation() %}
+                                    <div class="meta">
+                                        <i class="map pin icon" aria-hidden="true"></i>
+                                        {{ ev.getLocation() }}
+                                    </div>
+                                {% endif %}
+                                {% if s.getCancellationReason() %}
+                                    <div class="courses-cancel-detail">
+                                        <strong>{{ _T("Reason:", "courses") }}</strong>
+                                        {{ s.getCancellationReasonLabel() }}
+                                    </div>
+                                {% endif %}
+                                {% if s.getCancellationComment() %}
+                                    <div class="courses-cancel-detail">
+                                        <i class="comment outline icon" aria-hidden="true"></i>
+                                        {{ s.getCancellationComment() }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="extra content">
+                                <a href="{{ url_for("coursesSessionShow", {"id": sid}) }}" class="ui tiny basic button">
+                                    <i class="eye icon" aria-hidden="true"></i>
+                                    {{ _T("Details", "courses") }}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
     {% endif %}
 </div>
 
@@ -485,35 +548,45 @@ $(function() {
     var $today = $('#instr_browse_date_from').val();
 
     function applyInstrBrowseFilters() {
-        if (!$('#instr-browse-cards-grid').length) { return; }
         var fType = $('#instr_browse_type_filter').val() || '';
         var fName = $('#instr_browse_name_filter').val() || '';
         var fDate = $('#instr_browse_date_from').val() || '';
-        var visible = 0;
 
-        $('#instr-browse-cards-grid .courses-browse-card-col').each(function() {
-            var $col = $(this);
-            var cType = ($col.attr('data-type-id') || '').toString();
-            var cName = ($col.attr('data-event-name') || '').toString();
-            var cDate = $col.attr('data-date') || '';
+        // Shared per-card show/hide test — returns the number of visible cards.
+        function filterGrid($cards) {
+            var shown = 0;
+            $cards.each(function() {
+                var $col = $(this);
+                var cType = ($col.attr('data-type-id') || '').toString();
+                var cName = ($col.attr('data-event-name') || '').toString();
+                var cDate = $col.attr('data-date') || '';
 
-            var show = true;
-            if (fType && cType !== fType.toString())                                show = false;
-            if (fName && cName.trim().toLowerCase() !== fName.trim().toLowerCase()) show = false;
-            if (fDate && cDate < fDate)                                             show = false;
+                var show = true;
+                if (fType && cType !== fType.toString())                                show = false;
+                if (fName && cName.trim().toLowerCase() !== fName.trim().toLowerCase()) show = false;
+                if (fDate && cDate < fDate)                                             show = false;
 
-            // Inline `!important` is the only thing that beats Fomantic
-            // UI's `.ui.grid > .column { display: ... !important }` rule
-            // (more specific than any of our classes).
-            if (show) {
-                $col[0].style.removeProperty('display');
-            } else {
-                $col[0].style.setProperty('display', 'none', 'important');
-            }
-            if (show) visible++;
-        });
+                // Inline `!important` is the only thing that beats Fomantic
+                // UI's `.ui.grid > .column { display: ... !important }` rule
+                // (more specific than any of our classes).
+                if (show) {
+                    $col[0].style.removeProperty('display');
+                } else {
+                    $col[0].style.setProperty('display', 'none', 'important');
+                }
+                if (show) shown++;
+            });
+            return shown;
+        }
 
-        $('#instr-browse-no-results').toggle(visible === 0);
+        var visible = filterGrid($('#instr-browse-cards-grid .courses-browse-card-col'));
+        // Cancelled sessions are informational — filtered with the same criteria,
+        // and the whole section is hidden when nothing matches.
+        var cancelledVisible = filterGrid($('#instr-browse-cancelled-grid .courses-browse-card-col'));
+        $('#instr-browse-cancelled-section').toggle(cancelledVisible > 0);
+
+        var hasGrid = $('#instr-browse-cards-grid').length > 0 || $('#instr-browse-cancelled-grid').length > 0;
+        $('#instr-browse-no-results').toggle(visible === 0 && cancelledVisible === 0 && hasGrid);
         var $badge = $('#instructor-browse-badge');
         if ($badge.length) {
             $badge.text(visible);

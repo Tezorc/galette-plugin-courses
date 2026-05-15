@@ -526,6 +526,17 @@ class SessionsController extends AbstractPluginController
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
         }
 
+        // A cancelled session will not happen — no instructor can be assigned to it.
+        if ($session->getStatus() === Session::STATUS_CANCELLED) {
+            $this->flash->addMessage(
+                'error_detected',
+                _T('This session has been cancelled.', 'courses')
+            );
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+        }
+
         $post = $request->getParsedBody();
         $memberId = (int)($post['member_id'] ?? 0);
         if ($memberId <= 0) {
@@ -641,6 +652,26 @@ class SessionsController extends AbstractPluginController
             return $response->withStatus(302)->withHeader("Location", $this->routeparser->urlFor("coursesSessions"));
         }
 
+        // Actions triggered from the "My instructor sessions" page carry
+        // redirect_to=my_instructor_sessions so the page reloads with fresh
+        // data (the volunteered session leaves the "Find a session" tab and
+        // appears under "My instructor sessions"). Default: session detail page.
+        $post = $request->getParsedBody();
+        $returnUrl = (is_array($post) && ($post['redirect_to'] ?? '') === 'my_instructor_sessions')
+            ? $this->routeparser->urlFor('coursesMyInstructorSessions')
+            : $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]);
+
+        // A cancelled session will not happen — no instructor can be assigned to it.
+        if ($session->getStatus() === Session::STATUS_CANCELLED) {
+            $this->flash->addMessage(
+                'error_detected',
+                _T('This session has been cancelled.', 'courses')
+            );
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $returnUrl);
+        }
+
         // Eligibility: admin/staff can self-assign for any session.
         // Group managers must manage one of the event's groups (or no group restriction).
         $event = $session->getEvent();
@@ -665,14 +696,14 @@ class SessionsController extends AbstractPluginController
             $this->flash->addMessage('error_detected', _T('You do not manage any group associated with this event.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         if (SessionInstructor::isInstructor($this->zdb, $id, $memberId)) {
             $this->flash->addMessage('warning_detected', _T('You are already an instructor for this session.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         $wasWithoutInstructor = !SessionInstructor::hasInstructor($this->zdb, $id);
@@ -704,7 +735,7 @@ class SessionsController extends AbstractPluginController
 
         return $response
             ->withStatus(302)
-            ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+            ->withHeader('Location', $returnUrl);
     }
 
     public function doClose(Request $request, Response $response, int $id): Response
@@ -1612,6 +1643,7 @@ class SessionsController extends AbstractPluginController
         $can_volunteer     = $is_admin_or_staff || $is_group_manager;
 
         $volunteer_sessions     = [];
+        $volunteer_cancelled_sessions = [];
         $volunteer_events       = [];
         $volunteer_event_types  = [];
         $volunteer_available_names = [];
@@ -1634,6 +1666,23 @@ class SessionsController extends AbstractPluginController
             $own_session_id_set = array_flip($session_ids);
             $managed_groups = $this->login->getManagedGroups();
 
+            // Shared eligibility test: may the current user be instructor for $event?
+            $isEligibleEvent = static function (Event $event) use ($is_admin_or_staff, $managed_groups): bool {
+                if ($is_admin_or_staff) {
+                    return true;
+                }
+                $eventGroups = $event->getGroups();
+                if (empty($eventGroups)) {
+                    return true;
+                }
+                foreach ($eventGroups as $gid) {
+                    if (in_array($gid, $managed_groups, true)) {
+                        return true;
+                    }
+                }
+                return false;
+            };
+
             foreach ($candidates as $sid => $s) {
                 // Skip sessions I'm already instructor of (shown in Tab 2)
                 if (isset($own_session_id_set[$sid])) {
@@ -1650,26 +1699,8 @@ class SessionsController extends AbstractPluginController
                     $event->loadGroups();
                     $volunteer_events[$eid] = $event;
                 }
-                $event = $volunteer_events[$eid];
 
-                // Eligibility
-                $eligible = false;
-                if ($is_admin_or_staff) {
-                    $eligible = true;
-                } else {
-                    $eventGroups = $event->getGroups();
-                    if (empty($eventGroups)) {
-                        $eligible = true;
-                    } else {
-                        foreach ($eventGroups as $gid) {
-                            if (in_array($gid, $managed_groups, true)) {
-                                $eligible = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-                if (!$eligible) {
+                if (!$isEligibleEvent($volunteer_events[$eid])) {
                     continue;
                 }
 
@@ -1683,9 +1714,47 @@ class SessionsController extends AbstractPluginController
                 );
             });
 
+            // Phase 52: cancelled upcoming sessions — informational, so a potential
+            // instructor knows a slot they might consider has been cancelled. Same
+            // eligibility scope as the volunteer list; sessions the user is already
+            // instructor of are skipped (they appear in the "My instructor sessions"
+            // tab cancelled section).
+            $cancelled_filters = new SessionsList();
+            $cancelled_filters->date_from = date('Y-m-d');
+            $cancelled_filters->status_filter = Session::STATUS_CANCELLED;
+            $cancelled_repo = new Sessions($this->zdb, $this->login, $cancelled_filters);
+            foreach ($cancelled_repo->getList() as $sid => $s) {
+                if (isset($own_session_id_set[$sid])) {
+                    continue;
+                }
+
+                $eid = $s->getEventId();
+                if (!isset($volunteer_events[$eid])) {
+                    $event = new Event($this->zdb, $eid);
+                    $event->loadGroups();
+                    $volunteer_events[$eid] = $event;
+                }
+
+                if (!$isEligibleEvent($volunteer_events[$eid])) {
+                    continue;
+                }
+
+                $volunteer_cancelled_sessions[$sid] = $s;
+            }
+
+            uasort($volunteer_cancelled_sessions, static function (Session $a, Session $b): int {
+                return strcmp(
+                    $a->getSessionDate() . $a->getStartTime(),
+                    $b->getSessionDate() . $b->getStartTime()
+                );
+            });
+
             // Drop loaded events that aren't actually shown
             $shown_event_ids = [];
             foreach ($volunteer_sessions as $s) {
+                $shown_event_ids[$s->getEventId()] = true;
+            }
+            foreach ($volunteer_cancelled_sessions as $s) {
                 $shown_event_ids[$s->getEventId()] = true;
             }
             $volunteer_events = array_intersect_key($volunteer_events, $shown_event_ids);
@@ -1719,6 +1788,7 @@ class SessionsController extends AbstractPluginController
                                           || $this->login->isGroupManager(),
                 'can_volunteer'             => $can_volunteer,
                 'volunteer_sessions'        => $volunteer_sessions,
+                'volunteer_cancelled_sessions' => $volunteer_cancelled_sessions,
                 'volunteer_events'          => $volunteer_events,
                 'volunteer_event_types'     => $volunteer_event_types,
                 'volunteer_available_names' => $volunteer_available_names,
