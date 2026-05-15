@@ -216,9 +216,9 @@ class CourseNotification
     /**
      * Phase 59: enqueue a per-(member, session) row for the weekly member digest.
      *
-     * The eligible-members SQL is the same as `getEligibleMemberEmails()` but we
-     * keep only the member IDs — emails are re-fetched at sweep time so that
-     * any preference change between enqueue and send is honoured.
+     * Delegates to `getEligibleMemberIds()` to select eligible members — emails
+     * are re-fetched at sweep time so that any preference change between
+     * enqueue and send is honoured.
      */
     private function enqueueMemberNotifications(Event $event, Session $session, string $ref): void
     {
@@ -516,9 +516,6 @@ class CourseNotification
                         $sessions[$sid] = $sess;
                     }
                 }
-                if (empty($sessions)) {
-                    continue;
-                }
                 $eventsBlock = $this->renderEventsBlock($sessions);
                 [$subject, $message] = $this->renderTemplate(MailTemplate::REF_WEEKLY_DIGEST_MEMBER, [
                     'events_block' => $eventsBlock,
@@ -536,9 +533,6 @@ class CourseNotification
 
             // 2) Child-with-own-email separate mails.
             foreach ($childOwnMails as $mid => $info) {
-                if (empty($info['sessions'])) {
-                    continue;
-                }
                 $eventsBlock = $this->renderEventsBlock($info['sessions']);
                 [$subject, $message] = $this->renderTemplate(MailTemplate::REF_WEEKLY_DIGEST_MEMBER, [
                     'events_block' => $eventsBlock,
@@ -1067,66 +1061,10 @@ class CourseNotification
     }
 
     /**
-     * Get eligible member emails for an event (respecting group restrictions).
-     *
-     * @return array<string, array{name: string, member_id: int}> [email => ['name' => ..., 'member_id' => ...]]
-     */
-    private function getEligibleMemberEmails(Event $event): array
-    {
-        $emails = [];
-        try {
-            $select = $this->zdb->select(Adherent::TABLE, 'a');
-            $select->columns(['id_adh', 'email_adh', 'nom_adh', 'prenom_adh']);
-            $select->where->isNotNull('a.email_adh');
-            $select->where->notEqualTo('a.email_adh', '');
-            $select->where->equalTo('a.activite_adh', true);
-
-            if ($this->memberPreferences !== null) {
-                // LEFT JOIN: members with no row are opted in by default (opt-out system)
-                $select->join(
-                    ['mp' => PREFIX_DB . MemberPreferences::TABLE],
-                    'a.id_adh = mp.member_id',
-                    [],
-                    \Laminas\Db\Sql\Select::JOIN_LEFT
-                );
-                $select->where('(mp.member_id IS NULL OR mp.notifications_enabled = 1)');
-            }
-
-            if ($event->isRestricted()) {
-                $event->loadGroups();
-                $groups = $event->getGroups();
-                if (!empty($groups)) {
-                    $select->join(
-                        ['gm' => PREFIX_DB . 'groups_members'],
-                        'a.id_adh = gm.id_adh',
-                        []
-                    );
-                    $select->where->in('gm.id_group', $groups);
-                    $select->quantifier('DISTINCT');
-                }
-            }
-
-            $results = $this->zdb->execute($select);
-            foreach ($results as $r) {
-                if (!empty($r->email_adh)) {
-                    $name = trim(($r->prenom_adh ?? '') . ' ' . ($r->nom_adh ?? ''));
-                    $emails[(string)$r->email_adh] = [
-                        'name'      => $name ?: (string)$r->email_adh,
-                        'member_id' => (int)$r->id_adh,
-                    ];
-                }
-            }
-        } catch (Throwable $e) {
-            Analog::log('Error getting eligible member emails: ' . $e->getMessage(), Analog::ERROR);
-        }
-        return $emails;
-    }
-
-    /**
      * Phase 59: get eligible member IDs for enqueueing weekly digest notifications.
      *
-     * Same scope as getEligibleMemberEmails() but without email/opt-in filtering —
-     * those filters are re-applied at sweep time so that any change between
+     * Selects active members (respecting group restrictions and notification opt-out).
+     * Emails are re-fetched at sweep time so that any preference change between
      * enqueue and send is honoured. We still require an email and opt-in here
      * because there's no point enqueueing for someone who cannot receive.
      *
@@ -1189,7 +1127,7 @@ class CourseNotification
      * Recipients are keyed by email (already deduplicated by the callers' SQL),
      * so a parent sharing the child's address won't be added twice.
      *
-     * @param  array<string, array{name: string, member_id: int}> $recipients
+     * @param array<string, array{name: string, member_id: int}> $recipients
      * @return array<string, array{name: string, member_id: int}>
      */
     private function expandRecipientsToFamily(array $recipients): array
