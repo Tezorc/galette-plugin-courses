@@ -320,6 +320,14 @@ $app->get(
     [GaletteCourses\Controllers\CronController::class, 'sendDigest']
 )->setName('coursesCronSendDigest');
 
+// Cron: send the weekly member digest (Phase 59). Skipped unless today matches
+// the configured day-of-week (see Préférences > Digest hebdomadaire). Use
+// `?force=1` for an out-of-band manual trigger.
+$app->get(
+    '/cron/send-weekly-digest',
+    [GaletteCourses\Controllers\CronController::class, 'sendWeeklyDigest']
+)->setName('coursesCronSendWeeklyDigest');
+
 // Email templates (admin)
 $app->get(
     '/admin/mail-templates',

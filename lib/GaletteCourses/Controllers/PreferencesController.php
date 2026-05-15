@@ -59,6 +59,7 @@ class PreferencesController extends AbstractController
             'test_email'            => $pluginPrefs->getTestEmail(),
             'closure_dates'         => $pluginPrefs->getClosureDates(),
             'cron_token'            => $pluginPrefs->getCronToken(),
+            'weekly_digest_day'     => $pluginPrefs->getWeeklyDigestDay(),
             'is_admin'              => $this->login->isAdmin() || $this->login->isSuperAdmin(),
         ];
 
@@ -82,6 +83,13 @@ class PreferencesController extends AbstractController
 
             $testEmail = trim((string)($post['test_email'] ?? ''));
             $pluginPrefs->set(PluginPreferences::TEST_EMAIL, $testEmail);
+
+            // Phase 59: weekly member-digest day-of-week (ISO 1..7).
+            $weeklyDay = (int)($post['weekly_digest_day'] ?? 1);
+            if ($weeklyDay < 1 || $weeklyDay > 7) {
+                $weeklyDay = 1;
+            }
+            $pluginPrefs->set(PluginPreferences::WEEKLY_DIGEST_DAY, (string)$weeklyDay);
         }
 
         // Parse closure date ranges (free-form label used as cancellation comment

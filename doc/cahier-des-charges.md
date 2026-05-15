@@ -654,6 +654,80 @@ Le developpement est organise en phases progressives.
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Phase 59 - Digest hebdomadaire membre + regroupement parent/enfants
+
+**Statut : TERMINEE**
+
+- Demande utilisateur : "limiter l'envoi de mail pour ne pas submerger les membres a un seul par semaine. Regrouper les parents & enfants sauf si enfant a son propre mail. Tu propose quoi ?" — apres echange : decoupage urgent / hebdo, regle parent+enfants partagee, parent toujours notifie meme sans inscription personnelle, enfant a email distinct reçoit egalement son mail.
+
+- Justification : avant Phase 59, un club actif pouvait generer plusieurs courriels par jour aux memes membres (1 par creation de seance opt-in, 1 par affectation de moniteur, ×N evenements de leurs groupes). Cela conduisait au desabonnement massif. La Phase 36 avait deja resolu ce probleme pour les responsables de groupe (digest moniteur quotidien) ; cette phase applique la meme logique aux membres, avec un rythme hebdomadaire (les notifications membres sont moins urgentes que les invitations moniteur).
+
+- **Decoupage urgent / hebdomadaire** :
+
+  | Template | Cadence avant | Cadence apres | Justification |
+  | -------- | ------------- | ------------- | ------------- |
+  | `instructor_assigned` | Immediat | **Hebdo** | Informationnel — la seance est annoncee a l'avance |
+  | `session_open` | Immediat | **Hebdo** | Idem |
+  | `cancellation` | Immediat | Immediat | Urgent — le membre risque de se deplacer pour rien |
+  | `waitlist_promotion` | Immediat | Immediat | Le membre vient d'etre inscrit, il doit le savoir |
+  | `waitlist_cancellation` | Immediat | Immediat | Contractuel — sortie de file d'attente |
+
+- Schema BDD : **aucune migration**. La table `galette_courses_pending_notifications` (Phase 36) est reutilisee — ses 4 colonnes `member_id / event_id / session_id / ref` couvrent les 2 nouveaux refs (`instructor_assigned`, `session_open`) sans changement. La cle unique `(member_id, session_id, ref)` garantit l'idempotence des enqueues.
+
+- Nouveau template `REF_WEEKLY_DIGEST_MEMBER` (11e ref dans `MailTemplate`) :
+  - Variables : `{events_block}` (meme convention que `REF_DAILY_DIGEST_MANAGER`).
+  - Sujet par defaut : "[Courses] Vos prochaines seances".
+  - Body par defaut : "Bonjour,\n\nVoici les prochaines seances ouvertes aux inscriptions :\n\n{events_block}\nConnectez-vous pour vous inscrire des que possible — les places sont limitees.\n\nA bientot !".
+
+- `CourseNotification::notifyInstructorAssigned()` et `notifySessionOpenWithoutInstructor()` :
+  - Ne font plus de `sendMail()` direct.
+  - Delegues a `enqueueMemberNotifications(Event, Session, ref)` (helper prive nouveau) qui fait un INSERT par (membre eligible, seance, ref) dans la queue, en passant par `getEligibleMemberIds(Event)` (variante sans email/name de `getEligibleMemberEmails`, juste les IDs — les emails sont re-fetches au sweep pour respecter les changements de preferences entre enqueue et envoi).
+  - `notifyNewSessions()` continue d'invoquer `notifySessionOpenWithoutInstructor()` quand l'evenement a `allow_registration_without_instructor=1` — mais comme cette derniere passe par l'enqueue, le mail membre est desormais retarde au prochain jour de digest hebdo.
+
+- Nouvelle methode publique `CourseNotification::sendWeeklyDigestMember(): array{recipients,sessions,errors}` :
+  1. Garde `pluginPrefs->isNotificationsEnabled()` (skip si OFF).
+  2. Snapshot `MAX(id_pending) WHERE ref IN (REF_INSTRUCTOR_ASSIGNED, REF_SESSION_OPEN)` — scope pour ne pas interferer avec la queue moniteur.
+  3. `loadPendingWeeklyDigestRows()` : SELECT joint avec `courses_sessions / courses_events / adherents / courses_member_preferences`, filtre `status=OPEN`, `session_date >= today`, opt-in, email valide, `activite_adh=1`, `pn.ref IN (...)`, dedupe via `DISTINCT` (gere le cas ou les 2 refs coexistent pour la meme (membre, seance)).
+  4. Resolution du **chef de foyer** : pour chaque membre enqueue, lit `parent_id` ; charge les parents candidats via `loadFamilyHeadCandidates($parentIds)` (JOIN identique aux helpers existants : active + opt-in + email + non-vide). Si parent joignable -> head = parent ; sinon head = membre lui-meme.
+  5. Construction des deux maps :
+     - `$households[$headEmailLower] = ['email', 'name', 'member_id', 'members' => [memberId => true]]` — chaque foyer regroupe les membres lies (parent + enfants enqueues).
+     - `$childOwnMails[$childMemberId] = info` — un enfant a `email_enfant !== email_parent` declenche ce mail separe.
+  6. Pour chaque foyer : `renderEventsBlock()` consolide toutes les seances (dedupe par session_id pour gerer le cas freres+sœurs eligibles a la meme seance), `renderTemplate(REF_WEEKLY_DIGEST_MEMBER, {events_block})`, `sendMail()`.
+  7. Pour chaque `childOwnMails` : meme template, lignes de cet enfant uniquement, mail a son email propre.
+  8. Purge `DELETE FROM pending_notifications WHERE id_pending <= snapshot AND ref IN (...)` — scope pour ne pas wipe la queue moniteur.
+
+- **Helper prive `expandRecipientsToFamily(array $recipients)`** pour les mails urgents :
+  - Input : `[email => ['name', 'member_id']]` (le format standard des helpers existants).
+  - Pour chaque `member_id`, SELECT `parent_id` ; pour les parents trouves, `getMemberEmailsByIds($parentIds)` (avec opt-in/email/active).
+  - Ajoute le parent au map (keye par email) SAUF si l'email du parent est deja present (cas familles ou tout le monde partage la meme adresse — pas de doublon).
+  - Applique a `notifySessionCancellation` (apres `getRegisteredMemberEmails`), `notifyWaitlistSessionCancellation` (apres `getMemberEmailsByIds`), `notifyWaitlistPromotion` (apres `getCreatorEmail`).
+
+- **Modifications complementaires au digest moniteur (`sendDailyDigest`)** : la queue accueille maintenant 3 refs en parallele -> scope obligatoire :
+  - `loadPendingDigestRows()` : ajout de `$select->where->equalTo('pn.ref', REF_NEW_SESSIONS_MANAGER)`.
+  - Snapshot : ajout du meme filtre dans le `SELECT MAX(id_pending)`.
+  - Purge : `DELETE ... WHERE id_pending <= snapshot AND ref = REF_NEW_SESSIONS_MANAGER` — au lieu de wipe toute la table.
+
+- **Cron** :
+  - Nouvelle route GET `/cron/send-weekly-digest?token=XXX` (sans `add($authenticate)`, token-protected comme les autres crons), pointant vers `CronController::sendWeeklyDigest`.
+  - Guard "jour de la semaine" : `if (date('N') !== $pluginPrefs->getWeeklyDigestDay()) -> 200 OK + body explicatif "skipped"` sauf si `?force=1`.
+  - Quand le digest s'execute : `$notification->sendWeeklyDigestMember()`, body = rapport `X email(s) sent, Y session(s) listed, Z error(s)`.
+  - Le digest est aussi appele a la fin de `/cron/generate-sessions` quand `date('N') === getWeeklyDigestDay()` — un seul cron quotidien gere tout (recurrence + digest moniteur + digest membre 1× par semaine).
+
+- **Preference admin `WEEKLY_DIGEST_DAY`** :
+  - Constante dans `PluginPreferences::WEEKLY_DIGEST_DAY = 'courses_weekly_digest_day'`.
+  - Getter `getWeeklyDigestDay(): int` (defaut 1 = lundi ISO, clamp a [1,7]).
+  - Setter via `set()` generique.
+  - UI dans `preferences.html.twig` : nouveau champ "Weekly member digest" (admin uniquement, sous le test_email) avec un `<select>` 1-7 jours + help-text expliquant la cadence et la regle parent/enfants.
+  - Bonus : un paragraphe d'info ajoute sous le bloc cron "Automatic session generation" indique l'URL `/cron/send-weekly-digest` pour les setups qui veulent programmer le digest separement.
+
+- Tests :
+  - `MailTemplateTest::testGetAvailableRefsReturnsAllElevenCanonicalRefs` : count passe a 11, nouvelle assertion `assertContains(REF_WEEKLY_DIGEST_MEMBER)`.
+  - Nouveau test `testWeeklyMemberDigestExposesEventsBlockAndUsesItInBody` : meme contrat que `testDailyDigestExposesEventsBlockAndUsesItInBody` — si un refactor futur enleve `{events_block}` du body par defaut, le cron enverrait un mail vide. **55 tests verts, 88 assertions.**
+
+- **Tradeoff accepte** : latence max 6 jours entre `instructor_assigned` / `session_open` et la notification membre. Le besoin "informer le membre rapidement" est secondaire pour ces 2 notifications (les seances sont planifiees a l'avance), et le besoin "limiter le flood" prime. Les 3 mails urgents (cancellation, waitlist_promotion, waitlist_cancellation) restent immediats car ils sont rares ET le membre doit pouvoir reagir.
+
+- Aucune migration BDD ; aucune nouvelle table ; aucune nouvelle colonne. Pas de changement sur les routes existantes (les `notifyInstructorAssigned` / `notifySessionOpenWithoutInstructor` gardent leur signature publique pour la compatibilite avec les controllers qui les appellent).
+
 ### Phase 44 - Periodes de fermeture du club -> seances generees en `cancelled`
 
 **Statut : TERMINEE**

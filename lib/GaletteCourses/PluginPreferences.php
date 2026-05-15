@@ -38,6 +38,7 @@ class PluginPreferences
     public const CLOSURE_DATES       = 'courses_closure_dates';
     public const CRON_TOKEN          = 'courses_cron_token';
     public const TEST_EMAIL          = 'courses_test_email';
+    public const WEEKLY_DIGEST_DAY   = 'courses_weekly_digest_day';
 
     /** @var array<string, string> */
     private array $prefs = [];
@@ -186,6 +187,17 @@ class PluginPreferences
             }
         }
         return null;
+    }
+
+    /**
+     * Get the weekly member-digest day-of-week (1 = Monday … 7 = Sunday, ISO-8601).
+     * Defaults to Monday. Anything outside [1, 7] falls back to 1.
+     */
+    public function getWeeklyDigestDay(): int
+    {
+        $raw = $this->get(self::WEEKLY_DIGEST_DAY, '1');
+        $n   = (int)$raw;
+        return ($n >= 1 && $n <= 7) ? $n : 1;
     }
 
     /**

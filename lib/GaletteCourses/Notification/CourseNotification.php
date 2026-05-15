@@ -197,25 +197,76 @@ class CourseNotification
     }
 
     /**
-     * Notify eligible members that a session is open for registration even
-     * though no instructor has been assigned yet. Used only for events that
-     * have allow_registration_without_instructor = true.
+     * Enqueue a "session open without instructor" notification for the weekly
+     * member digest (Phase 59).
+     *
+     * Used only for events that have allow_registration_without_instructor = true.
+     * The eligible members are not emailed immediately: one row per (member, session)
+     * is appended to the pending_notifications queue with ref = REF_SESSION_OPEN,
+     * and the weekly cron `sendWeeklyDigestMember()` later consolidates everything
+     * into a single email per recipient (with parent/child family grouping).
      */
     public function notifySessionOpenWithoutInstructor(Session $session, Event $event): void
     {
-        $recipients = $this->getEligibleMemberEmails($event);
-        if (empty($recipients)) {
+        $this->enqueueMemberNotifications($event, $session, MailTemplate::REF_SESSION_OPEN);
+    }
+
+    /**
+     * Phase 59: enqueue a per-(member, session) row for the weekly member digest.
+     *
+     * The eligible-members SQL is the same as `getEligibleMemberEmails()` but we
+     * keep only the member IDs — emails are re-fetched at sweep time so that
+     * any preference change between enqueue and send is honoured.
+     */
+    private function enqueueMemberNotifications(Event $event, Session $session, string $ref): void
+    {
+        $sessionId = (int)$session->getId();
+        $eventId   = (int)$event->getId();
+        if ($sessionId <= 0 || $eventId <= 0) {
             return;
         }
 
-        [$subject, $message] = $this->renderTemplate(MailTemplate::REF_SESSION_OPEN, [
-            'event_name'        => $event->getName(),
-            'event_description' => $this->buildDescriptionBlock($event->getDescription()),
-            'session_date'      => $session->getFormattedDateShort(),
-            'session_time'      => $session->getStartTime() . ' - ' . $session->getEndTime(),
-        ]);
+        $memberIds = $this->getEligibleMemberIds($event);
+        if (empty($memberIds)) {
+            return;
+        }
 
-        $this->sendMail($recipients, $subject, $message);
+        $now      = date('Y-m-d H:i:s');
+        $enqueued = 0;
+        foreach ($memberIds as $memberId) {
+            if ($memberId <= 0) {
+                continue;
+            }
+            if ($this->isPendingEnqueued($memberId, $sessionId, $ref)) {
+                continue;
+            }
+            try {
+                $insert = $this->zdb->insert(self::PENDING_TABLE);
+                $insert->values([
+                    'member_id'  => $memberId,
+                    'event_id'   => $eventId,
+                    'session_id' => $sessionId,
+                    'ref'        => $ref,
+                    'created_at' => $now,
+                ]);
+                $this->zdb->execute($insert);
+                $enqueued++;
+            } catch (Throwable $e) {
+                Analog::log(
+                    'enqueueMemberNotifications skipped (member=' . $memberId
+                    . ', session=' . $sessionId . ', ref=' . $ref . '): ' . $e->getMessage(),
+                    Analog::DEBUG
+                );
+            }
+        }
+
+        if ($enqueued > 0) {
+            Analog::log(
+                'Weekly digest: ' . $enqueued . ' member notification(s) enqueued for session #'
+                . $sessionId . ' (ref=' . $ref . ')',
+                Analog::INFO
+            );
+        }
     }
 
     /**
@@ -241,9 +292,12 @@ class CourseNotification
 
         // Snapshot: only process rows that exist NOW. Anything enqueued
         // during processing is held back for the next run.
+        // Phase 59: scope by manager refs only — member rows (instructor_assigned,
+        // session_open) coexist in the queue but are swept by sendWeeklyDigestMember.
         try {
             $select = $this->zdb->select(self::PENDING_TABLE);
             $select->columns(['max_id' => new \Laminas\Db\Sql\Expression('MAX(id_pending)')]);
+            $select->where->equalTo('ref', MailTemplate::REF_NEW_SESSIONS_MANAGER);
             $rs     = $this->zdb->execute($select);
             $row    = $rs->current();
             $maxId  = $row !== null ? (int)($row->max_id ?? 0) : 0;
@@ -315,15 +369,347 @@ class CourseNotification
 
         // Purge processed rows (including filtered-out ones — they are no
         // longer relevant either, no point in keeping them around).
+        // Phase 59: scope by ref to avoid wiping member-targeted rows.
         try {
             $delete = $this->zdb->delete(self::PENDING_TABLE);
             $delete->where->lessThanOrEqualTo('id_pending', $maxId);
+            $delete->where->equalTo('ref', MailTemplate::REF_NEW_SESSIONS_MANAGER);
             $this->zdb->execute($delete);
         } catch (Throwable $e) {
             Analog::log('Daily digest purge error: ' . $e->getMessage(), Analog::ERROR);
         }
 
         return $report;
+    }
+
+    /**
+     * Phase 59: sweep the queue for member-targeted notifications and send one
+     * consolidated email per household (parent + children).
+     *
+     * Rules (mirroring sendDailyDigest):
+     *   - Snapshot MAX(id_pending) up front; rows enqueued during processing
+     *     are held back for the next weekly run.
+     *   - Filter to refs IN [instructor_assigned, session_open].
+     *   - Drop rows whose session is no longer OPEN, is past, or whose member
+     *     opted out / is inactive / has no email.
+     *   - Family rule:
+     *       * For each enqueued member, look up parent_id.
+     *       * Household head = parent (when present + active + opt-in + has email),
+     *         else the member themselves.
+     *       * 1 mail to head with the consolidated lines from head + children.
+     *       * If a child has their own email DIFFERENT from head's: also 1 mail
+     *         to that child with their own lines only.
+     *   - Purge id_pending <= snapshot once everything has been processed.
+     *
+     * @return array{recipients:int, sessions:int, errors:int}
+     */
+    public function sendWeeklyDigestMember(): array
+    {
+        $report = ['recipients' => 0, 'sessions' => 0, 'errors' => 0];
+
+        if ($this->pluginPreferences !== null && !$this->pluginPreferences->isNotificationsEnabled()) {
+            Analog::log('Weekly digest skipped (notifications disabled)', Analog::DEBUG);
+            return $report;
+        }
+
+        $memberRefs = [MailTemplate::REF_INSTRUCTOR_ASSIGNED, MailTemplate::REF_SESSION_OPEN];
+
+        try {
+            $select = $this->zdb->select(self::PENDING_TABLE);
+            $select->columns(['max_id' => new \Laminas\Db\Sql\Expression('MAX(id_pending)')]);
+            $select->where->in('ref', $memberRefs);
+            $rs    = $this->zdb->execute($select);
+            $row   = $rs->current();
+            $maxId = $row !== null ? (int)($row->max_id ?? 0) : 0;
+        } catch (Throwable $e) {
+            Analog::log('Weekly digest snapshot error: ' . $e->getMessage(), Analog::ERROR);
+            return $report;
+        }
+
+        if ($maxId === 0) {
+            return $report;
+        }
+
+        $rows = $this->loadPendingWeeklyDigestRows($maxId, $memberRefs);
+
+        if (!empty($rows)) {
+            // Build per-member buckets (dedupe by session_id within each member).
+            // $perMember[memberId] = [
+            //   'email' => ..., 'name' => ..., 'parent_id' => int,
+            //   'sessions' => [sessionId => ['event_name', 'date_short', 'start', 'end']],
+            // ]
+            $perMember = [];
+            foreach ($rows as $r) {
+                $mid = $r['member_id'];
+                if (!isset($perMember[$mid])) {
+                    $perMember[$mid] = [
+                        'email'     => $r['email'],
+                        'name'      => $r['name'],
+                        'parent_id' => $r['parent_id'],
+                        'sessions'  => [],
+                    ];
+                }
+                $perMember[$mid]['sessions'][$r['session_id']] = [
+                    'event_name' => $r['event_name'],
+                    'date_short' => $r['date_short'],
+                    'start'      => $r['start'],
+                    'end'        => $r['end'],
+                ];
+            }
+
+            // Resolve household heads: parent if active + opt-in + has email, else self.
+            $parentIds = array_filter(array_unique(array_column($perMember, 'parent_id')));
+            $parentInfo = empty($parentIds) ? [] : $this->loadFamilyHeadCandidates($parentIds);
+
+            // $households[headEmail] = ['name', 'member_id', 'members' => [memberId => true]]
+            // $childOwnMails[memberId] = same payload but for the child's own copy
+            $households    = [];
+            $childOwnMails = [];
+
+            foreach ($perMember as $mid => $info) {
+                $pid = $info['parent_id'];
+                if ($pid > 0 && isset($parentInfo[$pid])) {
+                    $head     = $parentInfo[$pid];
+                    $headKey  = strtolower((string)$head['email']);
+                    // Always send to household head.
+                    if (!isset($households[$headKey])) {
+                        $households[$headKey] = [
+                            'email'     => $head['email'],
+                            'name'      => $head['name'],
+                            'member_id' => $head['member_id'],
+                            'members'   => [],
+                        ];
+                    }
+                    $households[$headKey]['members'][$mid] = true;
+                    // Child also has own distinct email? -> separate mail.
+                    if (strtolower((string)$info['email']) !== $headKey) {
+                        $childOwnMails[$mid] = $info;
+                    }
+                } else {
+                    // No parent (or parent not reachable): the member is their own head.
+                    $selfKey = strtolower((string)$info['email']);
+                    if (!isset($households[$selfKey])) {
+                        $households[$selfKey] = [
+                            'email'     => $info['email'],
+                            'name'      => $info['name'],
+                            'member_id' => $mid,
+                            'members'   => [],
+                        ];
+                    }
+                    $households[$selfKey]['members'][$mid] = true;
+                }
+            }
+
+            // Ensure parent's OWN sessions (if any) appear in the head's mail.
+            // The parent themselves may be enqueued as a regular eligible member —
+            // they are already covered by $perMember[parentId] which maps to the
+            // same headKey, so this is handled by the loop above.
+
+            // 1) Household head mails: consolidate all sessions from all linked members.
+            foreach ($households as $head) {
+                $sessions = [];
+                foreach (array_keys($head['members']) as $mid) {
+                    foreach ($perMember[$mid]['sessions'] as $sid => $sess) {
+                        // Dedupe across siblings (multiple kids eligible for same session)
+                        $sessions[$sid] = $sess;
+                    }
+                }
+                if (empty($sessions)) {
+                    continue;
+                }
+                $eventsBlock = $this->renderEventsBlock($sessions);
+                [$subject, $message] = $this->renderTemplate(MailTemplate::REF_WEEKLY_DIGEST_MEMBER, [
+                    'events_block' => $eventsBlock,
+                ]);
+                $recipient = [
+                    $head['email'] => ['name' => $head['name'], 'member_id' => $head['member_id']],
+                ];
+                if ($this->sendMail($recipient, $subject, $message)) {
+                    $report['recipients']++;
+                    $report['sessions'] += count($sessions);
+                } else {
+                    $report['errors']++;
+                }
+            }
+
+            // 2) Child-with-own-email separate mails.
+            foreach ($childOwnMails as $mid => $info) {
+                if (empty($info['sessions'])) {
+                    continue;
+                }
+                $eventsBlock = $this->renderEventsBlock($info['sessions']);
+                [$subject, $message] = $this->renderTemplate(MailTemplate::REF_WEEKLY_DIGEST_MEMBER, [
+                    'events_block' => $eventsBlock,
+                ]);
+                $recipient = [
+                    $info['email'] => ['name' => $info['name'], 'member_id' => $mid],
+                ];
+                if ($this->sendMail($recipient, $subject, $message)) {
+                    $report['recipients']++;
+                    $report['sessions'] += count($info['sessions']);
+                } else {
+                    $report['errors']++;
+                }
+            }
+        }
+
+        try {
+            $delete = $this->zdb->delete(self::PENDING_TABLE);
+            $delete->where->lessThanOrEqualTo('id_pending', $maxId);
+            $delete->where->in('ref', $memberRefs);
+            $this->zdb->execute($delete);
+        } catch (Throwable $e) {
+            Analog::log('Weekly digest purge error: ' . $e->getMessage(), Analog::ERROR);
+        }
+
+        return $report;
+    }
+
+    /**
+     * Render a list of sessions as a plain-text block for the digest template.
+     *
+     * @param array<int, array{event_name:string, date_short:string, start:string, end:string}> $sessions
+     */
+    private function renderEventsBlock(array $sessions): string
+    {
+        // Group consecutively by event name for readability.
+        $byEvent = [];
+        foreach ($sessions as $sess) {
+            $name = $sess['event_name'];
+            if (!isset($byEvent[$name])) {
+                $byEvent[$name] = [];
+            }
+            $byEvent[$name][] = $sess;
+        }
+        $block = '';
+        foreach ($byEvent as $name => $list) {
+            $block .= '- ' . $name . "\n";
+            foreach ($list as $sess) {
+                $block .= '   ' . $sess['date_short']
+                    . ' (' . $sess['start'] . ' - ' . $sess['end'] . ')' . "\n";
+            }
+            $block .= "\n";
+        }
+        return rtrim($block) . "\n";
+    }
+
+    /**
+     * Load actionable rows for the weekly member digest.
+     *
+     * @param string[] $refs
+     * @return list<array{
+     *   member_id:int, session_id:int, event_id:int, event_name:string,
+     *   date_short:string, start:string, end:string,
+     *   email:string, name:string, parent_id:int
+     * }>
+     */
+    private function loadPendingWeeklyDigestRows(int $maxId, array $refs): array
+    {
+        $rows = [];
+        try {
+            $select = $this->zdb->select(self::PENDING_TABLE, 'pn');
+            $select->columns(['member_id', 'event_id', 'session_id']);
+            $select->join(
+                ['s' => PREFIX_DB . 'courses_sessions'],
+                'pn.session_id = s.id_session',
+                ['session_date', 'start_time', 'end_time']
+            );
+            $select->join(
+                ['e' => PREFIX_DB . 'courses_events'],
+                'pn.event_id = e.id_event',
+                ['event_name' => 'name']
+            );
+            $select->join(
+                ['a' => PREFIX_DB . 'adherents'],
+                'pn.member_id = a.id_adh',
+                ['email_adh', 'nom_adh', 'prenom_adh', 'parent_id']
+            );
+            $select->join(
+                ['mp' => PREFIX_DB . 'courses_member_preferences'],
+                'pn.member_id = mp.member_id',
+                [],
+                \Laminas\Db\Sql\Select::JOIN_LEFT
+            );
+
+            $select->where->lessThanOrEqualTo('pn.id_pending', $maxId);
+            $select->where->in('pn.ref', $refs);
+            $select->where->equalTo('s.status', Session::STATUS_OPEN);
+            $select->where->greaterThanOrEqualTo('s.session_date', date('Y-m-d'));
+            $select->where('(mp.member_id IS NULL OR mp.notifications_enabled = 1)');
+            $select->where->isNotNull('a.email_adh');
+            $select->where->notEqualTo('a.email_adh', '');
+            $select->where->equalTo('a.activite_adh', true);
+            $select->order(['pn.member_id ASC', 's.session_date ASC', 's.start_time ASC']);
+            $select->quantifier('DISTINCT');
+
+            $results = $this->zdb->execute($select);
+            foreach ($results as $r) {
+                $name = trim(($r->prenom_adh ?? '') . ' ' . ($r->nom_adh ?? ''));
+                try {
+                    $dt   = new \DateTime((string)$r->session_date);
+                    $date = $dt->format('d/m/Y');
+                } catch (Throwable $e) {
+                    $date = (string)$r->session_date;
+                }
+                $rows[] = [
+                    'member_id'  => (int)$r->member_id,
+                    'session_id' => (int)$r->session_id,
+                    'event_id'   => (int)$r->event_id,
+                    'event_name' => (string)$r->event_name,
+                    'date_short' => $date,
+                    'start'      => substr((string)$r->start_time, 0, 5),
+                    'end'        => substr((string)$r->end_time, 0, 5),
+                    'email'      => (string)$r->email_adh,
+                    'name'       => $name !== '' ? $name : (string)$r->email_adh,
+                    'parent_id'  => (int)($r->parent_id ?? 0),
+                ];
+            }
+        } catch (Throwable $e) {
+            Analog::log('Weekly digest load error: ' . $e->getMessage(), Analog::ERROR);
+        }
+        return $rows;
+    }
+
+    /**
+     * Load parents that can receive a household-head mail (active + opt-in + email).
+     *
+     * @param int[] $parentIds
+     * @return array<int, array{email:string, name:string, member_id:int}>
+     */
+    private function loadFamilyHeadCandidates(array $parentIds): array
+    {
+        if (empty($parentIds)) {
+            return [];
+        }
+        $out = [];
+        try {
+            $select = $this->zdb->select(Adherent::TABLE, 'a');
+            $select->columns(['id_adh', 'email_adh', 'nom_adh', 'prenom_adh']);
+            $select->join(
+                ['mp' => PREFIX_DB . MemberPreferences::TABLE],
+                'a.id_adh = mp.member_id',
+                [],
+                \Laminas\Db\Sql\Select::JOIN_LEFT
+            );
+            $select->where->in('a.id_adh', $parentIds);
+            $select->where->isNotNull('a.email_adh');
+            $select->where->notEqualTo('a.email_adh', '');
+            $select->where->equalTo('a.activite_adh', true);
+            $select->where('(mp.member_id IS NULL OR mp.notifications_enabled = 1)');
+
+            $results = $this->zdb->execute($select);
+            foreach ($results as $r) {
+                $name = trim(($r->prenom_adh ?? '') . ' ' . ($r->nom_adh ?? ''));
+                $out[(int)$r->id_adh] = [
+                    'email'     => (string)$r->email_adh,
+                    'name'      => $name !== '' ? $name : (string)$r->email_adh,
+                    'member_id' => (int)$r->id_adh,
+                ];
+            }
+        } catch (Throwable $e) {
+            Analog::log('loadFamilyHeadCandidates error: ' . $e->getMessage(), Analog::ERROR);
+        }
+        return $out;
     }
 
     /**
@@ -391,6 +777,7 @@ class CourseNotification
             );
 
             $select->where->lessThanOrEqualTo('pn.id_pending', $maxId);
+            $select->where->equalTo('pn.ref', MailTemplate::REF_NEW_SESSIONS_MANAGER);
             $select->where->equalTo('s.status', Session::STATUS_OPEN);
             $select->where->greaterThanOrEqualTo('s.session_date', date('Y-m-d'));
             $select->where->isNull('si.id_instructor');
@@ -429,6 +816,8 @@ class CourseNotification
 
     /**
      * Notify a member who has been promoted from the waitlist.
+     * Phase 59: parent of the promoted member is also notified (centralisation),
+     * unless they share the same email.
      */
     public function notifyWaitlistPromotion(Session $session, Event $event, int $memberId): void
     {
@@ -436,6 +825,7 @@ class CourseNotification
         if (empty($recipient)) {
             return;
         }
+        $recipient = $this->expandRecipientsToFamily($recipient);
 
         [$subject, $message] = $this->renderTemplate(MailTemplate::REF_WAITLIST_PROMOTION, [
             'event_name'        => $event->getName(),
@@ -448,28 +838,24 @@ class CourseNotification
     }
 
     /**
-     * Notify registered members when the first instructor is assigned (session becomes open).
+     * Enqueue an "instructor assigned" notification for the weekly member digest (Phase 59).
+     *
+     * Was previously sent immediately to eligible members. Now appended to
+     * `pending_notifications` with ref = REF_INSTRUCTOR_ASSIGNED so the weekly
+     * cron consolidates everything into a single mail per recipient.
+     *
+     * Note: $instructorName is intentionally NOT enqueued — the digest groups
+     * sessions across many events and resolves instructor info at send time
+     * from `courses_session_instructors`.
      */
     public function notifyInstructorAssigned(Session $session, Event $event, string $instructorName): void
     {
-        $recipients = $this->getEligibleMemberEmails($event);
-        if (empty($recipients)) {
-            return;
-        }
-
-        [$subject, $message] = $this->renderTemplate(MailTemplate::REF_INSTRUCTOR_ASSIGNED, [
-            'event_name'        => $event->getName(),
-            'event_description' => $this->buildDescriptionBlock($event->getDescription()),
-            'session_date'      => $session->getFormattedDateShort(),
-            'session_time'      => $session->getStartTime() . ' - ' . $session->getEndTime(),
-            'instructor_name'   => $instructorName,
-        ]);
-
-        $this->sendMail($recipients, $subject, $message);
+        $this->enqueueMemberNotifications($event, $session, MailTemplate::REF_INSTRUCTOR_ASSIGNED);
     }
 
     /**
      * Notify waitlist members when a session is cancelled.
+     * Phase 59: parents of waitlisted children also receive the mail (centralisation).
      *
      * @param int[] $memberIds
      */
@@ -488,6 +874,7 @@ class CourseNotification
         if (empty($recipients)) {
             return;
         }
+        $recipients = $this->expandRecipientsToFamily($recipients);
 
         $reasonBlock  = $reason !== null
             ? "\n\n" . _T('Reason: ', 'courses') . $session->getCancellationReasonLabel()
@@ -510,6 +897,7 @@ class CourseNotification
 
     /**
      * Notify registered members when a session is cancelled.
+     * Phase 59: parents of registered children also receive the mail (centralisation).
      */
     public function notifySessionCancellation(
         Session $session,
@@ -521,6 +909,7 @@ class CourseNotification
         if (empty($recipients)) {
             return;
         }
+        $recipients = $this->expandRecipientsToFamily($recipients);
 
         $reasonBlock  = $reason !== null
             ? "\n\n" . _T('Reason: ', 'courses') . $session->getCancellationReasonLabel()
@@ -729,6 +1118,125 @@ class CourseNotification
             Analog::log('Error getting eligible member emails: ' . $e->getMessage(), Analog::ERROR);
         }
         return $emails;
+    }
+
+    /**
+     * Phase 59: get eligible member IDs for enqueueing weekly digest notifications.
+     *
+     * Same scope as getEligibleMemberEmails() but without email/opt-in filtering —
+     * those filters are re-applied at sweep time so that any change between
+     * enqueue and send is honoured. We still require an email and opt-in here
+     * because there's no point enqueueing for someone who cannot receive.
+     *
+     * @return int[] member IDs
+     */
+    private function getEligibleMemberIds(Event $event): array
+    {
+        $ids = [];
+        try {
+            $select = $this->zdb->select(Adherent::TABLE, 'a');
+            $select->columns(['id_adh']);
+            $select->where->isNotNull('a.email_adh');
+            $select->where->notEqualTo('a.email_adh', '');
+            $select->where->equalTo('a.activite_adh', true);
+
+            if ($this->memberPreferences !== null) {
+                $select->join(
+                    ['mp' => PREFIX_DB . MemberPreferences::TABLE],
+                    'a.id_adh = mp.member_id',
+                    [],
+                    \Laminas\Db\Sql\Select::JOIN_LEFT
+                );
+                $select->where('(mp.member_id IS NULL OR mp.notifications_enabled = 1)');
+            }
+
+            if ($event->isRestricted()) {
+                $event->loadGroups();
+                $groups = $event->getGroups();
+                if (!empty($groups)) {
+                    $select->join(
+                        ['gm' => PREFIX_DB . 'groups_members'],
+                        'a.id_adh = gm.id_adh',
+                        []
+                    );
+                    $select->where->in('gm.id_group', $groups);
+                    $select->quantifier('DISTINCT');
+                } else {
+                    return [];
+                }
+            }
+
+            $results = $this->zdb->execute($select);
+            foreach ($results as $r) {
+                $ids[] = (int)$r->id_adh;
+            }
+        } catch (Throwable $e) {
+            Analog::log('Error getting eligible member IDs: ' . $e->getMessage(), Analog::ERROR);
+        }
+        return array_values(array_unique($ids));
+    }
+
+    /**
+     * Phase 59: expand a recipient map to include each member's parent.
+     *
+     * Implements the "centralisation parent + envoi enfant si mail renseigné"
+     * rule: for every member in the input, if they have a `parent_id` and the
+     * parent has an active opt-in email NOT already in the map, the parent is
+     * added as an additional recipient.
+     *
+     * Recipients are keyed by email (already deduplicated by the callers' SQL),
+     * so a parent sharing the child's address won't be added twice.
+     *
+     * @param  array<string, array{name: string, member_id: int}> $recipients
+     * @return array<string, array{name: string, member_id: int}>
+     */
+    private function expandRecipientsToFamily(array $recipients): array
+    {
+        if (empty($recipients)) {
+            return $recipients;
+        }
+
+        $memberIds = [];
+        foreach ($recipients as $info) {
+            $mid = (int)($info['member_id'] ?? 0);
+            if ($mid > 0) {
+                $memberIds[] = $mid;
+            }
+        }
+        if (empty($memberIds)) {
+            return $recipients;
+        }
+
+        $parentIds = [];
+        try {
+            $select = $this->zdb->select(Adherent::TABLE, 'a');
+            $select->columns(['parent_id']);
+            $select->where->in('a.id_adh', $memberIds);
+            $select->where->isNotNull('a.parent_id');
+            $results = $this->zdb->execute($select);
+            foreach ($results as $r) {
+                $pid = (int)$r->parent_id;
+                if ($pid > 0) {
+                    $parentIds[$pid] = true;
+                }
+            }
+        } catch (Throwable $e) {
+            Analog::log('expandRecipientsToFamily: parent lookup error: ' . $e->getMessage(), Analog::ERROR);
+            return $recipients;
+        }
+
+        if (empty($parentIds)) {
+            return $recipients;
+        }
+
+        $existingEmails = array_change_key_case($recipients, CASE_LOWER);
+        $parents        = $this->getMemberEmailsByIds(array_keys($parentIds));
+        foreach ($parents as $email => $info) {
+            if (!isset($existingEmails[strtolower($email)])) {
+                $recipients[$email] = $info;
+            }
+        }
+        return $recipients;
     }
 
     /**

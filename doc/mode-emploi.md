@@ -686,19 +686,23 @@ Le compte `Digest: N email(s) sent` confirme l'envoi du digest moniteur. Si une 
 
 Le menu **Gestion des inscriptions > Modeles de courriels** (accessible aux **administrateurs uniquement**) permet de personnaliser les textes des emails automatiques du plugin.
 
-9 modeles sont disponibles :
+11 modeles sont disponibles :
 
 | Modele | Destinataires | Declencheur |
 | ------ | ------------ | ----------- |
-| Soumission pour validation | Administrateurs | Soumission d'un evenement |
-| Evenement valide | Createur de l'evenement | Validation par le staff |
-| Evenement rejete | Createur de l'evenement | Rejet par le staff |
-| Evenement publie (moniteurs) | Responsables de groupe concernes | Publication d'un evenement |
-| Nouvelles seances generees (moniteurs) | Responsables de groupe concernes | Generation de seances recurrentes |
-| Seance ouverte (premier moniteur affecte) | Adherents eligibles | Affectation du premier moniteur |
-| Promotion de la liste d'attente | Membre promu | Place liberee → promotion auto |
-| Seance annulee (inscrits) | Membres inscrits a la seance | Annulation d'une seance |
-| Seance annulee (liste d'attente) | Membres en liste d'attente | Annulation d'une seance |
+| Soumission pour validation | Administrateurs | Soumission d'un evenement (immediat) |
+| Evenement valide | Createur de l'evenement | Validation par le staff (immediat) |
+| Evenement rejete | Createur de l'evenement | Rejet par le staff (immediat) |
+| Nouvelles seances generees (moniteurs) | Responsables de groupe concernes | Generation de seances ou reactivation sans moniteur — **empile dans le digest quotidien** (Phase 36) |
+| Digest quotidien — seances a encadrer (moniteurs) | Responsables de groupe | 1× par jour via cron — recap des seances sans moniteur |
+| Seance ouverte (premier moniteur affecte) | Adherents eligibles | Affectation du premier moniteur — **empile dans le digest hebdomadaire** (Phase 59) |
+| Seance ouverte aux inscriptions (sans moniteur) | Adherents eligibles | Creation de seance sur evenement opt-in `allow_registration_without_instructor` — **empile dans le digest hebdomadaire** |
+| Digest hebdomadaire — vos prochaines seances (membres) | Membres + parents (centralisation) | 1× par semaine via cron, jour configurable dans Preferences |
+| Promotion de la liste d'attente | Membre promu + parent | Place liberee → promotion auto (immediat) |
+| Seance annulee (inscrits) | Membres inscrits + parents | Annulation d'une seance (immediat) |
+| Seance annulee (liste d'attente) | Membres en liste d'attente + parents | Annulation d'une seance (immediat) |
+
+**Regroupement parent/enfants (Phase 59)** : pour tous les courriels destines a un membre, le parent (lien `parent_id` dans la fiche Galette) reçoit aussi le mail. Si l'enfant a son propre email **distinct** du parent, il reçoit egalement son propre mail. Si l'enfant n'a pas d'email ou partage celui du parent, seul le parent est notifie (pas de doublon).
 
 Chaque modele dispose :
 
@@ -1279,11 +1283,19 @@ Pour les evenements recurrents :
 
 - Activer/desactiver toutes les notifications automatiques du plugin
 
+**Digest hebdomadaire des membres** (admin uniquement, Phase 59) :
+
+- Choisir le jour de la semaine ou le digest hebdomadaire est envoye aux membres (lundi par defaut)
+- Le digest regroupe les nouvelles seances ouvertes aux inscriptions et les seances ayant recu un moniteur dans un mail unique
+- Chaque parent reçoit le mail consolide (le sien + celui de ses enfants) ; un enfant ayant un email distinct reçoit aussi son propre mail
+- Tradeoff : delai max 6 jours entre la mise en ligne d'une seance et sa notification au membre
+
 **Generation automatique des seances** (admin uniquement) :
 
 1. Copier l'URL affichee (contient le code de securite)
 2. Transmettre l'URL a votre responsable technique pour programmer une execution automatique chaque nuit
 3. Les seances des evenements recurrents valides sont generees automatiquement sans intervention manuelle
+4. **Bonus** : le meme cron quotidien envoie aussi le digest moniteur tous les jours et le digest membre une fois par semaine (au jour configure ci-dessus) — aucune programmation supplementaire n'est necessaire
 
 **Regenerer le code de securite** : si le code est compromis, cliquer sur le bouton de regeneration (admin uniquement).
 
@@ -1291,6 +1303,6 @@ Pour les evenements recurrents :
 
 **Gestion des inscriptions > Modeles de courriels** :
 
-- Personnaliser les textes des 10 emails automatiques (soumission, validation, rejet, publication membres/moniteurs, nouvelles seances membres/moniteurs, promotion liste d'attente, annulation inscrits/liste d'attente)
+- Personnaliser les textes des 11 emails automatiques (soumission, validation, rejet, digest moniteur + invitation nouvelle seance, seance ouverte avec/sans moniteur, digest membre hebdomadaire, promotion liste d'attente, annulation inscrits/liste d'attente)
 - Cliquer sur **Reinitialiser** pour revenir au modele par defaut
 - Les variables disponibles sont affichees sous forme de pastilles cliquables pour chaque modele

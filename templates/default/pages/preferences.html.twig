@@ -43,6 +43,24 @@
                 {% endif %}
             </p>
         </div>
+        <div class="field" style="margin-top:1em">
+            <label for="weekly_digest_day">
+                <i class="calendar alternate icon" aria-hidden="true"></i>
+                {{ _T('Weekly member digest', 'courses') }}
+            </label>
+            <select name="weekly_digest_day" id="weekly_digest_day" class="ui dropdown" style="width:auto">
+                <option value="1"{% if weekly_digest_day == 1 %} selected{% endif %}>{{ _T('Monday', 'courses') }}</option>
+                <option value="2"{% if weekly_digest_day == 2 %} selected{% endif %}>{{ _T('Tuesday', 'courses') }}</option>
+                <option value="3"{% if weekly_digest_day == 3 %} selected{% endif %}>{{ _T('Wednesday', 'courses') }}</option>
+                <option value="4"{% if weekly_digest_day == 4 %} selected{% endif %}>{{ _T('Thursday', 'courses') }}</option>
+                <option value="5"{% if weekly_digest_day == 5 %} selected{% endif %}>{{ _T('Friday', 'courses') }}</option>
+                <option value="6"{% if weekly_digest_day == 6 %} selected{% endif %}>{{ _T('Saturday', 'courses') }}</option>
+                <option value="7"{% if weekly_digest_day == 7 %} selected{% endif %}>{{ _T('Sunday', 'courses') }}</option>
+            </select>
+            <p class="ui small grey text courses-help-text">
+                {{ _T('Day of the week when the consolidated email is sent to members (new sessions and instructor assignments). One mail per parent covering themselves and their children; children with their own distinct email also receive a copy.', 'courses') }}
+            </p>
+        </div>
     </div>
     {% endif %}
 
@@ -140,6 +158,11 @@
     <p class="ui tiny text courses-cron-note">
         {{ _T('Example cron (every day at 1am):', 'courses') }}
         <code>0 1 * * * curl -s "https://votre-site.fr{{ url_for('coursesCronGenerateSessions') }}?token={{ cron_token }}"</code>
+    </p>
+    <p class="ui small grey text" style="margin-top:1em">
+        <i class="info circle icon" aria-hidden="true"></i>
+        {{ _T('The same cron also sends the daily manager digest, and runs the weekly member digest once a week on the day selected above. To trigger the weekly digest separately, schedule:', 'courses') }}
+        <code>{{ url_for('coursesCronSendWeeklyDigest') }}?token={{ cron_token }}</code>
     </p>
 
     <div class="courses-cron-regenerate">

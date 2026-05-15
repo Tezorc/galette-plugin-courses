@@ -118,6 +118,16 @@ class CronController extends AbstractController
         // get enqueued during the run, then the digest goes out in one pass.
         $digest = $notification->sendDailyDigest();
 
+        // Phase 59: piggy-back the weekly member digest when today matches the
+        // configured day-of-week (ISO 1=Monday … 7=Sunday). Otherwise this is a no-op.
+        $todayDow      = (int)date('N');
+        $weeklyDigest  = ['recipients' => 0, 'sessions' => 0, 'errors' => 0];
+        $weeklyRan     = false;
+        if ($todayDow === $pluginPrefs->getWeeklyDigestDay()) {
+            $weeklyDigest = $notification->sendWeeklyDigestMember();
+            $weeklyRan    = true;
+        }
+
         $body = '[' . date('Y-m-d H:i:s') . '] Auto-generation complete. '
             . $totalCreated . ' session(s) created.' . "\n"
             . implode("\n", $report) . "\n"
@@ -126,11 +136,20 @@ class CronController extends AbstractController
                 $digest['recipients'],
                 $digest['sessions'],
                 $digest['errors']
-            );
+            ) . "\n"
+            . ($weeklyRan
+                ? sprintf(
+                    'Weekly member digest: %d email(s) sent, %d session(s) listed, %d error(s).',
+                    $weeklyDigest['recipients'],
+                    $weeklyDigest['sessions'],
+                    $weeklyDigest['errors']
+                )
+                : 'Weekly member digest: skipped (not the configured day).');
 
         Analog::log(
             'Cron generate-sessions: ' . $totalCreated . ' session(s) created; digest '
-            . $digest['recipients'] . ' email(s).',
+            . $digest['recipients'] . ' email(s); weekly '
+            . ($weeklyRan ? $weeklyDigest['recipients'] . ' email(s)' : 'skipped'),
             Analog::INFO
         );
 
@@ -181,6 +200,75 @@ class CronController extends AbstractController
 
         Analog::log(
             'Cron send-digest: ' . $digest['recipients'] . ' email(s) sent, '
+            . $digest['sessions'] . ' session(s) listed.',
+            Analog::INFO
+        );
+
+        $response->getBody()->write($body);
+        return $response->withHeader('Content-Type', 'text/plain');
+    }
+
+    /**
+     * Phase 59: sweep the pending-notifications queue for member-targeted refs
+     * (instructor_assigned, session_open) and send the weekly consolidated email.
+     *
+     * Parent/child grouping: the household head (parent if reachable, else the
+     * member) receives a single mail covering all linked members; children with
+     * their own distinct email also receive their own copy.
+     *
+     * Called via cron: GET /plugins/courses/cron/send-weekly-digest?token=XXX
+     * Also runs at the end of /cron/generate-sessions when today matches the
+     * configured day-of-week, so a single daily cron call covers both digests.
+     *
+     * Add `&force=1` to the URL to bypass the day-of-week check (manual trigger).
+     */
+    public function sendWeeklyDigest(Request $request, Response $response): Response
+    {
+        $pluginPrefs = new PluginPreferences($this->zdb);
+
+        $params        = $request->getQueryParams();
+        $providedToken = $params['token'] ?? '';
+        $expectedToken = $pluginPrefs->getCronToken();
+
+        if ($providedToken === '' || !hash_equals($expectedToken, $providedToken)) {
+            $response->getBody()->write('Unauthorized');
+            return $response->withStatus(403);
+        }
+
+        $force    = !empty($params['force']);
+        $todayDow = (int)date('N');
+        $cfgDow   = $pluginPrefs->getWeeklyDigestDay();
+        if (!$force && $todayDow !== $cfgDow) {
+            $body = sprintf(
+                "[%s] Weekly digest skipped: today is day %d, configured day is %d. Use ?force=1 to override.\n",
+                date('Y-m-d H:i:s'),
+                $todayDow,
+                $cfgDow
+            );
+            $response->getBody()->write($body);
+            return $response->withHeader('Content-Type', 'text/plain');
+        }
+
+        $notification = new CourseNotification(
+            $this->zdb,
+            $this->preferences,
+            $pluginPrefs,
+            new MemberPreferences($this->zdb),
+            $this->history
+        );
+
+        $digest = $notification->sendWeeklyDigestMember();
+
+        $body = sprintf(
+            "[%s] Weekly member digest complete.\n%d email(s) sent, %d session(s) listed, %d error(s).\n",
+            date('Y-m-d H:i:s'),
+            $digest['recipients'],
+            $digest['sessions'],
+            $digest['errors']
+        );
+
+        Analog::log(
+            'Cron send-weekly-digest: ' . $digest['recipients'] . ' email(s) sent, '
             . $digest['sessions'] . ' session(s) listed.',
             Analog::INFO
         );
