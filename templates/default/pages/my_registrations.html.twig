@@ -495,6 +495,20 @@
                                     </div>
                                 {% endif %}
                             </div>
+                            {# Jauge capacité #}
+                            {% if s.getMaxCapacity() %}
+                                <div class="content">
+                                    <div class="ui tiny progress{% if s.isFull() %} red{% elseif s.getCapacityPercent() > 75 %} yellow{% else %} green{% endif %}" data-percent="{{ s.getCapacityPercent() }}">
+                                        <div class="bar" style="width:{{ s.getCapacityPercent() }}%"></div>
+                                        <div class="label">{{ s.getCurrentRegistrations() }} / {{ s.getMaxCapacity() }}</div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="content">
+                                    <i class="users icon" aria-hidden="true"></i>
+                                    {{ s.getCurrentRegistrations() }} {{ _T("registered", "courses") }}
+                                </div>
+                            {% endif %}
                             <div class="extra content">
                                 <a href="{{ url_for("coursesSessionShow", {"id": s.getId()}) }}" class="ui small primary button">
                                     <i class="eye icon" aria-hidden="true"></i>
@@ -589,6 +603,20 @@
                                         </div>
                                     {% endif %}
                                 </div>
+                                {# Jauge capacité #}
+                                {% if s.getMaxCapacity() %}
+                                    <div class="content">
+                                        <div class="ui tiny progress{% if s.isFull() %} red{% elseif s.getCapacityPercent() > 75 %} yellow{% else %} green{% endif %}" data-percent="{{ s.getCapacityPercent() }}">
+                                            <div class="bar" style="width:{{ s.getCapacityPercent() }}%"></div>
+                                            <div class="label">{{ s.getCurrentRegistrations() }} / {{ s.getMaxCapacity() }}</div>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="content">
+                                        <i class="users icon" aria-hidden="true"></i>
+                                        {{ s.getCurrentRegistrations() }} {{ _T("registered", "courses") }}
+                                    </div>
+                                {% endif %}
                                 <div class="extra content">
                                     <a href="{{ url_for("coursesSessionShow", {"id": s.getId()}) }}" class="ui small primary button">
                                         <i class="eye icon" aria-hidden="true"></i>
@@ -695,6 +723,20 @@
                                         </div>
                                     {% endif %}
                                 </div>
+                                {# Jauge capacité #}
+                                {% if s.getMaxCapacity() %}
+                                    <div class="content">
+                                        <div class="ui tiny progress{% if s.isFull() %} red{% elseif s.getCapacityPercent() > 75 %} yellow{% else %} green{% endif %}" data-percent="{{ s.getCapacityPercent() }}">
+                                            <div class="bar" style="width:{{ s.getCapacityPercent() }}%"></div>
+                                            <div class="label">{{ s.getCurrentRegistrations() }} / {{ s.getMaxCapacity() }}</div>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="content">
+                                        <i class="users icon" aria-hidden="true"></i>
+                                        {{ s.getCurrentRegistrations() }} {{ _T("registered", "courses") }}
+                                    </div>
+                                {% endif %}
                                 <div class="extra content">
                                     <a href="{{ url_for("coursesSessionShow", {"id": s.getId()}) }}" class="ui small primary button">
                                         <i class="eye icon" aria-hidden="true"></i>
@@ -772,6 +814,20 @@
                                         </div>
                                     {% endif %}
                                 </div>
+                                {# Jauge capacité #}
+                                {% if s.getMaxCapacity() %}
+                                    <div class="content">
+                                        <div class="ui tiny progress{% if s.isFull() %} red{% elseif s.getCapacityPercent() > 75 %} yellow{% else %} green{% endif %}" data-percent="{{ s.getCapacityPercent() }}">
+                                            <div class="bar" style="width:{{ s.getCapacityPercent() }}%"></div>
+                                            <div class="label">{{ s.getCurrentRegistrations() }} / {{ s.getMaxCapacity() }}</div>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="content">
+                                        <i class="users icon" aria-hidden="true"></i>
+                                        {{ s.getCurrentRegistrations() }} {{ _T("registered", "courses") }}
+                                    </div>
+                                {% endif %}
                                 <div class="extra content">
                                     {% if s.getStatus() == 'cancelled' %}
                                         <span class="ui red tiny label">
@@ -897,8 +953,9 @@ $(function() {
         localStorage.setItem('my_sessions_tab', tab);
         if (tab === 'browse') {
             applyBrowseFilters();
-            $('.ui.progress:visible').progress();
         }
+        // Re-init progress bars in the newly visible tab (gauges shown in both tabs).
+        $('.ui.progress:visible').progress();
     });
 
     // Restore tab from localStorage

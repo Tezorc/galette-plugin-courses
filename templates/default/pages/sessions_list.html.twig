@@ -108,11 +108,11 @@
             {% endif %}
         {% endfor %}
 
-        {# --- Color legend --- #}
+        {# --- Color legend (visible only in "By course" view; pills scroll to course section) --- #}
         {% if event_colors|length > 1 %}
-            <div class="courses-legend">
+            <div class="courses-legend" id="courses-legend" style="display: none;">
                 {% for eid in event_order %}
-                    <span class="courses-legend-item">
+                    <span class="courses-legend-item courses-legend-clickable" data-event="{{ eid }}" role="button" tabindex="0" title="{{ _T("Jump to this course", "courses") }}">
                         <span class="ui {{ event_colors[eid] }} empty circular label"></span>
                         <span class="courses-legend-text">{{ event_names[eid] }}</span>
                     </span>
@@ -238,7 +238,7 @@
         {# --- View: By course (hidden by default) --- #}
         <div id="sessions-view-course" style="display: none;">
             {% for eid in event_order %}
-                <h3 class="ui {{ event_colors[eid] }} dividing header courses-group-header">
+                <h3 class="ui {{ event_colors[eid] }} dividing header courses-group-header" id="course-group-{{ eid }}">
                     <span class="ui {{ event_colors[eid] }} empty circular label"></span>
                     {{ event_names[eid] }}
                 </h3>
@@ -335,13 +335,36 @@
                 if (view === 'course') {
                     $('#sessions-view-date').hide();
                     $('#sessions-view-course').show();
+                    $('#courses-legend').show();
                 } else {
                     $('#sessions-view-course').hide();
                     $('#sessions-view-date').show();
+                    $('#courses-legend').hide();
                 }
                 // Re-init progress bars in the newly shown view
                 $('.ui.progress:visible').progress();
             }
+
+            // Legend pill click: switch to "By course" view (if needed) then scroll to the course section
+            function scrollToCourse(eid) {
+                var $target = $('#course-group-' + eid);
+                if (!$target.length) {
+                    return;
+                }
+                var offset = $target.offset().top - 20;
+                $('html, body').animate({ scrollTop: offset }, 300);
+            }
+            $('#courses-legend').on('click', '.courses-legend-clickable', function() {
+                var eid = $(this).data('event');
+                scrollToCourse(eid);
+            });
+            $('#courses-legend').on('keydown', '.courses-legend-clickable', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    var eid = $(this).data('event');
+                    scrollToCourse(eid);
+                }
+            });
 
             // Past sessions collapsible toggles
             $('.courses-past-content').hide();

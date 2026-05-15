@@ -33,7 +33,6 @@ Plugin Galette pour la gestion de cours, entrainements et evenements sportifs av
 - Filtres en session : `$this->getFilterName('events')` -> cle avec prefix plugin
 - Tables DB : prefixees `galette_courses_` (Laminas DB auto-prefixe `galette_`)
 
-
 ### Patterns Galette a suivre
 
 - Entites : suivre le pattern de `Galette\Entity\Document` (TABLE, PK, load, loadFromRS, store, remove)
@@ -55,7 +54,7 @@ Plugin Galette pour la gestion de cours, entrainements et evenements sportifs av
 
 ## Structure des fichiers
 
-```
+```text
 galette-plugin-courses/
   CLAUDE.md                        # Ce fichier
   _config.inc.php                  # Constante COURSES_PREFIX

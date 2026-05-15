@@ -153,6 +153,9 @@ tr.courses-pending { background-color: #fffde7 !important; }
 /* ----- COLOR LEGEND ----- */
 .courses-legend { margin: .8em 0; display: flex; flex-wrap: wrap; align-items: center; gap: .3em 1em; }
 .courses-legend-item { display: inline-flex; align-items: center; gap: .35em; }
+.courses-legend-clickable { cursor: pointer; padding: .15em .4em; border-radius: 3px; transition: background-color .15s ease; }
+.courses-legend-clickable:hover,
+.courses-legend-clickable:focus { background-color: #f0f0f0; outline: none; }
 
 /* ----- GROUP / ACCORDION HEADERS ----- */
 .courses-group-header { margin-top: 1.5em !important; padding-bottom: .4em !important; }
