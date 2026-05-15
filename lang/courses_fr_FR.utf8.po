@@ -1869,3 +1869,71 @@ msgstr "Impossible de vérifier l'éligibilité de l'adhérent."
 msgid "Registration will not be possible for the following member(s) until the situation is fixed:"
 msgstr "L'inscription ne sera pas possible pour le(s) membre(s) suivant(s) tant que la situation n'est pas régularisée :"
 
+# --- Phase 59 : digest hebdomadaire membre + regroupement parent/enfants ---
+
+# Template REF_WEEKLY_DIGEST_MEMBER
+msgid "Weekly digest — upcoming sessions"
+msgstr "Digest hebdomadaire — vos prochaines séances"
+
+msgid "Weekly consolidated email sent by the cron to each eligible member, listing upcoming sessions open for registration. Replaces the per-session \"instructor assigned\" / \"session open\" emails to cap the inbox at one mail per week. Parents receive a single mail covering themselves and their children; a child with their own distinct email also receives their own copy."
+msgstr "Courriel hebdomadaire consolidé envoyé par le cron à chaque adhérent éligible, listant les prochaines séances ouvertes aux inscriptions. Remplace les envois individuels « moniteur affecté » / « séance ouverte » pour limiter la boîte à un courriel par semaine. Les parents reçoivent un courriel unique couvrant leur situation et celle de leurs enfants ; un enfant disposant d'une adresse de courriel propre reçoit également sa propre copie."
+
+msgid "[Courses] Vos prochaines séances"
+msgstr "[Cours] Vos prochaines séances"
+
+# Refonte des descriptions des refs membre (suite Phase 59)
+msgid "Enqueued for eligible members when a session is created on an event that allows registration without an assigned instructor. In normal operation it is consolidated into the weekly member digest — it remains available for direct manual sends."
+msgstr "Mis en file pour les adhérents éligibles à la création d'une séance sur un événement autorisant l'inscription sans moniteur affecté. En fonctionnement normal il est consolidé dans le digest hebdomadaire membre — il reste disponible pour un envoi manuel direct."
+
+# UI préférences (dropdown + helps)
+msgid "Weekly member digest"
+msgstr "Digest hebdomadaire (membres)"
+
+msgid "Day of the week when the consolidated email is sent to members (new sessions and instructor assignments). One mail per parent covering themselves and their children; children with their own distinct email also receive a copy."
+msgstr "Jour de la semaine où le courriel consolidé est envoyé aux adhérents (nouvelles séances et affectations de moniteur). Un courriel par parent couvrant sa situation et celle de ses enfants ; les enfants ayant une adresse de courriel distincte en reçoivent aussi une copie."
+
+msgid "The same cron also sends the daily manager digest, and runs the weekly member digest once a week on the day selected above. To trigger the weekly digest separately, schedule:"
+msgstr "Le même cron envoie aussi le digest quotidien moniteur et exécute le digest hebdomadaire membre une fois par semaine, le jour choisi ci-dessus. Pour déclencher le digest hebdomadaire séparément, programmer :"
+
+# Body par défaut du digest hebdomadaire membre
+msgid ""
+"Bonjour,\n"
+"\n"
+"Voici les prochaines séances ouvertes aux inscriptions :\n"
+"\n"
+"{events_block}\n"
+"Connectez-vous pour vous inscrire dès que possible — les places sont limitées.\n"
+"\n"
+"À bientôt !"
+msgstr ""
+"Bonjour,\n"
+"\n"
+"Voici les prochaines séances ouvertes aux inscriptions :\n"
+"\n"
+"{events_block}\n"
+"Connectez-vous pour vous inscrire dès que possible — les places sont limitées.\n"
+"\n"
+"À bientôt !"
+
+# Jours de la semaine (utilisés dans le dropdown du digest)
+msgid "Monday"
+msgstr "Lundi"
+
+msgid "Tuesday"
+msgstr "Mardi"
+
+msgid "Wednesday"
+msgstr "Mercredi"
+
+msgid "Thursday"
+msgstr "Jeudi"
+
+msgid "Friday"
+msgstr "Vendredi"
+
+msgid "Saturday"
+msgstr "Samedi"
+
+msgid "Sunday"
+msgstr "Dimanche"
+

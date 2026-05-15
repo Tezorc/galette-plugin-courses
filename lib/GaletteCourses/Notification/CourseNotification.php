@@ -114,8 +114,9 @@ class CourseNotification
      * email per recipient. This caps the inbox flood for multi-group managers
      * who would otherwise receive one email per recurrence generation.
      *
-     * Members are still notified individually when the first instructor is
-     * assigned (notifyInstructorAssigned), not by this method.
+     * Phase 59: when the event allows registration without instructor, eligible
+     * members are ALSO enqueued (via notifySessionOpenWithoutInstructor) for
+     * the weekly member digest — they are no longer notified immediately.
      *
      * @param Session[] $sessions Newly created (or reactivated) sessions
      */
@@ -186,9 +187,10 @@ class CourseNotification
             );
         }
 
-        // Phase 40: when the event allows registration without an instructor,
-        // members can register on the session right away — notify them now
-        // (per session, immediate) instead of waiting for an instructor to volunteer.
+        // Phase 40 (+ Phase 59): when the event allows registration without an
+        // instructor, eligible members are enqueued for the weekly digest via
+        // notifySessionOpenWithoutInstructor (no immediate send — capped at one
+        // mail per week per recipient).
         if ($event->isRegistrationAllowedWithoutInstructor()) {
             foreach ($sessions as $session) {
                 $this->notifySessionOpenWithoutInstructor($session, $event);
@@ -1207,35 +1209,57 @@ class CourseNotification
             return $recipients;
         }
 
-        $parentIds = [];
+        // One-shot self-join: for each child in $memberIds, fetch their parent
+        // (active + has email) and apply the opt-out filter on the parent.
+        // Replaces the previous 2-query implementation (lookup parent_id then
+        // getMemberEmailsByIds) with a single round-trip.
+        $existingEmails = [];
+        foreach (array_keys($recipients) as $email) {
+            $existingEmails[strtolower((string)$email)] = true;
+        }
+
         try {
-            $select = $this->zdb->select(Adherent::TABLE, 'a');
+            $select = $this->zdb->select(Adherent::TABLE, 'c');
             $select->columns(['parent_id']);
-            $select->where->in('a.id_adh', $memberIds);
-            $select->where->isNotNull('a.parent_id');
+            $select->join(
+                ['p' => PREFIX_DB . Adherent::TABLE],
+                'c.parent_id = p.id_adh',
+                ['id_adh', 'email_adh', 'nom_adh', 'prenom_adh']
+            );
+            if ($this->memberPreferences !== null) {
+                $select->join(
+                    ['mp' => PREFIX_DB . MemberPreferences::TABLE],
+                    'p.id_adh = mp.member_id',
+                    [],
+                    \Laminas\Db\Sql\Select::JOIN_LEFT
+                );
+                $select->where('(mp.member_id IS NULL OR mp.notifications_enabled = 1)');
+            }
+            $select->where->in('c.id_adh', $memberIds);
+            $select->where->isNotNull('c.parent_id');
+            $select->where->isNotNull('p.email_adh');
+            $select->where->notEqualTo('p.email_adh', '');
+            $select->where->equalTo('p.activite_adh', true);
+            $select->quantifier('DISTINCT');
+
             $results = $this->zdb->execute($select);
             foreach ($results as $r) {
-                $pid = (int)$r->parent_id;
-                if ($pid > 0) {
-                    $parentIds[$pid] = true;
+                $email = (string)$r->email_adh;
+                $key   = strtolower($email);
+                if ($email === '' || isset($existingEmails[$key])) {
+                    continue;
                 }
+                $name = trim(($r->prenom_adh ?? '') . ' ' . ($r->nom_adh ?? ''));
+                $recipients[$email] = [
+                    'name'      => $name !== '' ? $name : $email,
+                    'member_id' => (int)$r->id_adh,
+                ];
+                $existingEmails[$key] = true;
             }
         } catch (Throwable $e) {
-            Analog::log('expandRecipientsToFamily: parent lookup error: ' . $e->getMessage(), Analog::ERROR);
-            return $recipients;
+            Analog::log('expandRecipientsToFamily error: ' . $e->getMessage(), Analog::ERROR);
         }
 
-        if (empty($parentIds)) {
-            return $recipients;
-        }
-
-        $existingEmails = array_change_key_case($recipients, CASE_LOWER);
-        $parents        = $this->getMemberEmailsByIds(array_keys($parentIds));
-        foreach ($parents as $email => $info) {
-            if (!isset($existingEmails[strtolower($email)])) {
-                $recipients[$email] = $info;
-            }
-        }
         return $recipients;
     }
 
