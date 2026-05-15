@@ -1365,7 +1365,7 @@ msgid "New sessions generated (instructors)"
 msgstr "Nouvelles séances générées (moniteurs)"
 
 msgid "Daily digest — sessions to lead"
-msgstr "Digest quotidien — séances à encadrer"
+msgstr "Récapitulatif quotidien — séances à encadrer"
 
 msgid "Promoted from waitlist"
 msgstr "Promu depuis la liste d'attente"
@@ -1386,7 +1386,7 @@ msgid "Sent to the event creator when their event is rejected."
 msgstr "Envoyé au créateur de l'événement lorsque son événement est rejeté."
 
 msgid "Sent to group managers when new sessions are generated (or a cancelled session is reactivated without instructor), so they can volunteer as instructor. Note: in normal operation this template is replaced by the daily digest — it remains available for direct manual sends."
-msgstr "Envoyé aux responsables de groupe lorsque de nouvelles séances sont générées (ou qu'une séance annulée est réactivée sans moniteur), pour qu'ils puissent se porter volontaires comme moniteur. Note : en fonctionnement normal, ce modèle est remplacé par le digest quotidien — il reste disponible pour des envois manuels directs."
+msgstr "Envoyé aux responsables de groupe lorsque de nouvelles séances sont générées (ou qu'une séance annulée est réactivée sans moniteur), pour qu'ils puissent se porter volontaires comme moniteur. Note : en fonctionnement normal, ce modèle est remplacé par le récapitulatif quotidien — il reste disponible pour des envois manuels directs."
 
 msgid "Daily consolidated email sent by the cron to each group manager, listing all sessions still without an instructor. Replaces the per-event \"new sessions\" emails to limit inbox flooding."
 msgstr "Courriel quotidien consolidé envoyé par le cron à chaque responsable de groupe, listant toutes les séances encore sans moniteur. Remplace les courriels « nouvelles séances » individuels pour limiter le volume reçu."
@@ -1873,27 +1873,27 @@ msgstr "L'inscription ne sera pas possible pour le(s) membre(s) suivant(s) tant 
 
 # Template REF_WEEKLY_DIGEST_MEMBER
 msgid "Weekly digest — upcoming sessions"
-msgstr "Digest hebdomadaire — vos prochaines séances"
+msgstr "Récapitulatif hebdomadaire — vos prochaines séances"
 
 msgid "Weekly consolidated email sent by the cron to each eligible member, listing upcoming sessions open for registration. Replaces the per-session \"instructor assigned\" / \"session open\" emails to cap the inbox at one mail per week. Parents receive a single mail covering themselves and their children; a child with their own distinct email also receives their own copy."
-msgstr "Courriel hebdomadaire consolidé envoyé par le cron à chaque adhérent éligible, listant les prochaines séances ouvertes aux inscriptions. Remplace les envois individuels « moniteur affecté » / « séance ouverte » pour limiter la boîte à un courriel par semaine. Les parents reçoivent un courriel unique couvrant leur situation et celle de leurs enfants ; un enfant disposant d'une adresse de courriel propre reçoit également sa propre copie."
+msgstr "Courriel récapitulatif hebdomadaire envoyé par le cron à chaque adhérent éligible, listant les prochaines séances ouvertes aux inscriptions. Remplace les envois individuels « moniteur affecté » / « séance ouverte » pour limiter la boîte à un courriel par semaine. Les parents reçoivent un courriel unique couvrant leur situation et celle de leurs enfants ; un enfant disposant d'une adresse de courriel propre reçoit également sa propre copie."
 
 msgid "[Courses] Vos prochaines séances"
 msgstr "[Cours] Vos prochaines séances"
 
 # Refonte des descriptions des refs membre (suite Phase 59)
 msgid "Enqueued for eligible members when a session is created on an event that allows registration without an assigned instructor. In normal operation it is consolidated into the weekly member digest — it remains available for direct manual sends."
-msgstr "Mis en file pour les adhérents éligibles à la création d'une séance sur un événement autorisant l'inscription sans moniteur affecté. En fonctionnement normal il est consolidé dans le digest hebdomadaire membre — il reste disponible pour un envoi manuel direct."
+msgstr "Mis en file pour les adhérents éligibles à la création d'une séance sur un événement autorisant l'inscription sans moniteur affecté. En fonctionnement normal il est consolidé dans le récapitulatif hebdomadaire membre — il reste disponible pour un envoi manuel direct."
 
 # UI préférences (dropdown + helps)
 msgid "Weekly member digest"
-msgstr "Digest hebdomadaire (membres)"
+msgstr "Récapitulatif hebdomadaire (membres)"
 
 msgid "Day of the week when the consolidated email is sent to members (new sessions and instructor assignments). One mail per parent covering themselves and their children; children with their own distinct email also receive a copy."
-msgstr "Jour de la semaine où le courriel consolidé est envoyé aux adhérents (nouvelles séances et affectations de moniteur). Un courriel par parent couvrant sa situation et celle de ses enfants ; les enfants ayant une adresse de courriel distincte en reçoivent aussi une copie."
+msgstr "Jour de la semaine où le courriel récapitulatif est envoyé aux adhérents (nouvelles séances et affectations de moniteur). Un courriel par parent couvrant sa situation et celle de ses enfants ; les enfants ayant une adresse de courriel distincte en reçoivent aussi une copie."
 
 msgid "The same cron also sends the daily manager digest, and runs the weekly member digest once a week on the day selected above. To trigger the weekly digest separately, schedule:"
-msgstr "Le même cron envoie aussi le digest quotidien moniteur et exécute le digest hebdomadaire membre une fois par semaine, le jour choisi ci-dessus. Pour déclencher le digest hebdomadaire séparément, programmer :"
+msgstr "Le même cron envoie aussi le récapitulatif quotidien moniteur et exécute le récapitulatif hebdomadaire membre une fois par semaine, le jour choisi ci-dessus. Pour déclencher le récapitulatif hebdomadaire séparément, programmer :"
 
 # Body par défaut du digest hebdomadaire membre
 msgid ""

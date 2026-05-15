@@ -78,7 +78,7 @@ Pour un evenement ponctuel, une seance unique est creee automatiquement a la cre
 | `galette_courses_preferences` | Preferences globales du plugin |
 | `galette_courses_mail_templates` | Modeles d'emails personnalisables |
 | `galette_courses_member_preferences` | Preferences par membre (notifications, code de desabonnement) |
-| `galette_courses_pending_notifications` | Queue digest quotidien des invitations moniteur (Phase 36) |
+| `galette_courses_pending_notifications` | Queue du récapitulatif quotidien des invitations moniteur (Phase 36) |
 
 ---
 
@@ -639,8 +639,8 @@ La section **"Generation automatique des seances"** affiche une URL a transmettr
 - Transmettre l'URL a votre administrateur systeme pour qu'il programme la tache (exemple : chaque jour a 6h du matin)
 - Cette tache effectue **deux operations en une seule passe** :
   1. **Generation des nouvelles seances** des evenements recurrents valides (fenetre de generation = parametre `advance_weeks`)
-  2. **Envoi du digest quotidien moniteur** : sweep de la queue d'invitations accumulees pendant la journee, regroupement par responsable de groupe, et envoi d'un seul mail consolide listant toutes les seances en attente d'un moniteur (Phase 36)
-- Chaque generation de seances est enregistree dans le **journal Galette** (menu Historique) avec le detail par evenement (nombre de seances creees) et le compte d'emails de digest envoyes
+  2. **Envoi du récapitulatif quotidien moniteur** : sweep de la queue d'invitations accumulees pendant la journee, regroupement par responsable de groupe, et envoi d'un seul mail consolide listant toutes les seances en attente d'un moniteur (Phase 36)
+- Chaque generation de seances est enregistree dans le **journal Galette** (menu Historique) avec le detail par evenement (nombre de seances creees) et le compte d'emails récapitulatifs envoyés
 - Cette URL est publique mais protegee par le code de securite — seule cette URL permet de declencher la generation
 
 #### Configuration de la tache cron (responsable technique)
@@ -651,13 +651,13 @@ Sur un serveur Linux, ajouter une seule ligne dans la crontab :
 0 6 * * * curl -s "https://VOTRE_DOMAINE/plugins/courses/cron/generate-sessions?token=VOTRE_TOKEN" > /dev/null
 ```
 
-Remplacer `VOTRE_DOMAINE` et `VOTRE_TOKEN` par les valeurs affichees dans la section **Generation automatique des seances** des preferences. **Cette unique entree cron suffit** : elle declenche la generation des seances ET l'envoi du digest moniteur.
+Remplacer `VOTRE_DOMAINE` et `VOTRE_TOKEN` par les valeurs affichees dans la section **Generation automatique des seances** des preferences. **Cette unique entree cron suffit** : elle declenche la generation des seances ET l'envoi du récapitulatif moniteur.
 
-**Horaire recommande** : tot le matin (6h-8h). Les responsables qui se sont portes volontaires la veille au soir (ou les nouvelles seances creees dans la nuit) sont visibles a leur prochaine consultation des emails. La latence maximum entre la creation d'une seance et la reception du mail digest est de **24 heures** ; ce tradeoff a ete accepte pour atteindre l'objectif "1 mail/jour max" pour les responsables multi-groupes.
+**Horaire recommande** : tot le matin (6h-8h). Les responsables qui se sont portes volontaires la veille au soir (ou les nouvelles seances creees dans la nuit) sont visibles a leur prochaine consultation des emails. La latence maximum entre la creation d'une seance et la reception du courriel récapitulatif est de **24 heures** ; ce tradeoff a ete accepte pour atteindre l'objectif "1 mail/jour max" pour les responsables multi-groupes.
 
-#### Endpoint dedie au digest (optionnel, multi-creneaux)
+#### Endpoint dédié au récapitulatif (optionnel, multi-creneaux)
 
-Si vous souhaitez separer les deux operations (par exemple : digest tot le matin, generation un peu plus tard), un second endpoint est disponible :
+Si vous souhaitez separer les deux operations (par exemple : récapitulatif tôt le matin, generation un peu plus tard), un second endpoint est disponible :
 
 ```cron
 0 6 * * * curl -s "https://VOTRE_DOMAINE/plugins/courses/cron/send-digest?token=VOTRE_TOKEN" > /dev/null
@@ -678,7 +678,7 @@ Entrainement adulte: 4 session(s) created
 Digest: 3 email(s) sent, 18 session(s) listed, 0 error(s).
 ```
 
-Le compte `Digest: N email(s) sent` confirme l'envoi du digest moniteur. Si une seance est creee mais qu'aucun moniteur n'est responsable de son groupe (ou que tous se sont desinscrits des notifications), le compteur reste a 0 — c'est normal.
+Le compte `Digest: N email(s) sent` (texte natif de sortie du cron) confirme l'envoi du récapitulatif moniteur. Si une seance est creee mais qu'aucun moniteur n'est responsable de son groupe (ou que tous se sont desinscrits des notifications), le compteur reste a 0 — c'est normal.
 
 ---
 
@@ -693,11 +693,11 @@ Le menu **Gestion des inscriptions > Modeles de courriels** (accessible aux **ad
 | Soumission pour validation | Administrateurs | Soumission d'un evenement (immediat) |
 | Evenement valide | Createur de l'evenement | Validation par le staff (immediat) |
 | Evenement rejete | Createur de l'evenement | Rejet par le staff (immediat) |
-| Nouvelles seances generees (moniteurs) | Responsables de groupe concernes | Generation de seances ou reactivation sans moniteur — **empile dans le digest quotidien** (Phase 36) |
-| Digest quotidien — seances a encadrer (moniteurs) | Responsables de groupe | 1× par jour via cron — recap des seances sans moniteur |
-| Seance ouverte (premier moniteur affecte) | Adherents eligibles | Affectation du premier moniteur — **empile dans le digest hebdomadaire** (Phase 59) |
-| Seance ouverte aux inscriptions (sans moniteur) | Adherents eligibles | Creation de seance sur evenement opt-in `allow_registration_without_instructor` — **empile dans le digest hebdomadaire** |
-| Digest hebdomadaire — vos prochaines seances (membres) | Membres + parents (centralisation) | 1× par semaine via cron, jour configurable dans Preferences |
+| Nouvelles seances generees (moniteurs) | Responsables de groupe concernes | Generation de seances ou reactivation sans moniteur — **empile dans le récapitulatif quotidien** (Phase 36) |
+| Récapitulatif quotidien — seances a encadrer (moniteurs) | Responsables de groupe | 1× par jour via cron — recap des seances sans moniteur |
+| Seance ouverte (premier moniteur affecte) | Adherents eligibles | Affectation du premier moniteur — **empile dans le récapitulatif hebdomadaire** (Phase 59) |
+| Seance ouverte aux inscriptions (sans moniteur) | Adherents eligibles | Creation de seance sur evenement opt-in `allow_registration_without_instructor` — **empile dans le récapitulatif hebdomadaire** |
+| Récapitulatif hebdomadaire — vos prochaines seances (membres) | Membres + parents (centralisation) | 1× par semaine via cron, jour configurable dans Preferences |
 | Promotion de la liste d'attente | Membre promu + parent | Place liberee → promotion auto (immediat) |
 | Seance annulee (inscrits) | Membres inscrits + parents | Annulation d'une seance (immediat) |
 | Seance annulee (liste d'attente) | Membres en liste d'attente + parents | Annulation d'une seance (immediat) |
@@ -768,12 +768,12 @@ Le plugin envoie des notifications automatiques :
 | Soumission pour validation | Administrateurs | Immediat | Nom de l'evenement + createur |
 | Validation | Createur | Immediat | Confirmation que l'evenement est publie |
 | Rejet | Createur | Immediat | Information que l'evenement est rejete et remis en brouillon |
-| **Digest quotidien** (moniteurs) | Responsables de groupe concernes | **1 fois par jour** par le cron | Liste consolidee de toutes les seances en attente d'un moniteur (regroupees par evenement) — invitation a se porter volontaire |
+| **Récapitulatif quotidien** (moniteurs) | Responsables de groupe concernes | **1 fois par jour** par le cron | Liste consolidee de toutes les seances en attente d'un moniteur (regroupees par evenement) — invitation a se porter volontaire |
 | Seance ouverte (premier moniteur affecte) | Adherents eligibles | Immediat | La seance est desormais ouverte (nom, descriptif, date/heure, moniteur), invitation a s'inscrire |
 | Promotion liste d'attente | Membre promu | Immediat | Confirmation d'inscription automatique avec nom, descriptif, date/heure |
 | Annulation de seance | Inscrits a la seance | Immediat | Information d'annulation avec nom, descriptif, date/heure |
 
-**Digest quotidien moniteur (Phase 36)** : pour limiter le nombre de courriels recus par les responsables de groupe (notamment ceux en charge de plusieurs groupes), les invitations a se porter volontaire comme moniteur sont **regroupees** dans un seul mail quotidien envoye par le cron. Concretement : chaque fois qu'une seance est creee (creation d'evenement, generation recurrente, reactivation d'une seance annulee), une ligne est empilee dans la queue interne ; le cron quotidien sweep cette queue et envoie un seul mail recap par moniteur listant toutes les seances disponibles ce jour-la, regroupees par evenement. Si une seance recoit un moniteur ou est annulee entre l'enqueue et l'envoi, elle disparait silencieusement du digest.
+**Récapitulatif quotidien moniteur (Phase 36)** : pour limiter le nombre de courriels recus par les responsables de groupe (notamment ceux en charge de plusieurs groupes), les invitations a se porter volontaire comme moniteur sont **regroupees** dans un seul courriel quotidien envoye par le cron. Concretement : chaque fois qu'une seance est creee (creation d'evenement, generation recurrente, reactivation d'une seance annulee), une ligne est empilee dans la queue interne ; le cron quotidien sweep cette queue et envoie un seul courriel récapitulatif par moniteur listant toutes les seances disponibles ce jour-la, regroupees par evenement. Si une seance recoit un moniteur ou est annulee entre l'enqueue et l'envoi, elle disparait silencieusement du récapitulatif.
 
 Chaque email individuel contient un **lien de desinscription personnalise** en pied de message.
 
@@ -947,8 +947,8 @@ Toutes les routes sont prefixees par `/plugins/courses/`.
 | POST | `/admin/mail-templates` | Sauvegarder les modeles |
 | GET | `/my-preferences` | Preferences notifications adherent |
 | POST | `/my-preferences` | Sauvegarder preferences adherent |
-| GET | `/cron/generate-sessions` | Generation automatique des seances + sweep digest moniteur (token, sans auth) |
-| GET | `/cron/send-digest` | Sweep autonome de la queue digest moniteur (token, sans auth) |
+| GET | `/cron/generate-sessions` | Generation automatique des seances + sweep récapitulatif moniteur (token, sans auth) |
+| GET | `/cron/send-digest` | Sweep autonome de la queue récapitulatif moniteur (token, sans auth) |
 | GET | `/unsubscribe/{token}` | Desinscription emails en un clic (public, sans auth) |
 
 ---
@@ -1003,7 +1003,7 @@ Toutes les phases de developpement sont terminees :
 - **Phase 33** : Aucun courriel n'est envoye aux moniteurs ou aux membres a la creation ni a la validation d'un evenement. Les courriels d'invitation aux moniteurs (responsables de groupe) ne partent qu'a la **creation des seances** : auto-creees a la creation d'un evenement (ponctuel ou recurrent), ou via "Generer les seances" / cron. La notification au createur de l'evenement (validation par le staff) est conservee.
 - **Phase 34** : Nettoyage du modele de courriel `REF_PUBLICATION_MANAGER` (devenu inutile apres Phase 33). La reactivation d'une seance annulee sans moniteur reutilise desormais le modele `REF_NEW_SESSIONS_MANAGER` (semantiquement equivalent : invitation aux responsables a se porter volontaire). Le plugin maintient maintenant 8 modeles de courriels (au lieu de 9). Aucun changement visible cote utilisateur final, juste un nettoyage de l'interface admin "Modeles de courriels".
 - **Phase 35** : Validation d'un evenement -> invitation aux responsables de groupe pour les seances futures sans moniteur. Comble la lacune du workflow "responsable cree en brouillon -> soumet -> staff valide" : a la validation, le staff peut compter sur le fait que les responsables eligibles seront automatiquement invites a se porter volontaire pour les seances qui n'ont pas encore d'encadrant.
-- **Phase 36** : Digest quotidien des invitations moniteur — pour limiter le nombre de courriels recus par les responsables de groupe (notamment ceux en charge de plusieurs groupes), les invitations a se porter volontaire comme moniteur sont desormais regroupees dans un seul mail quotidien envoye par le cron, listant toutes les seances disponibles ce jour-la (regroupees par evenement). Au lieu de N mails (un par evenement / par seance generee), chaque responsable recoit au maximum un mail recapitulatif. Latence acceptee : jusqu'a 24h entre la creation d'une seance et la reception du mail. Les autres notifications (annulation, promotion liste d'attente, seance ouverte) restent immediates.
+- **Phase 36** : Récapitulatif quotidien des invitations moniteur — pour limiter le nombre de courriels recus par les responsables de groupe (notamment ceux en charge de plusieurs groupes), les invitations a se porter volontaire comme moniteur sont desormais regroupees dans un seul courriel quotidien envoye par le cron, listant toutes les seances disponibles ce jour-la (regroupees par evenement). Au lieu de N courriels (un par evenement / par seance generee), chaque responsable recoit au maximum un courriel récapitulatif. Latence acceptee : jusqu'a 24h entre la creation d'une seance et la reception du courriel. Les autres notifications (annulation, promotion liste d'attente, seance ouverte) restent immediates.
 - **Phase 17** : Correction du controle d'acces a l'auto-inscription par groupe — tous les membres (admin, staff, reguliers) doivent appartenir au groupe requis pour s'inscrire en propre nom (seul le superadmin est exclu) ; suppression du bypass `isAdmin/isStaff` ; verification SQL directe sur `groups_members` ; un parent voit le bouton enfant sans le bouton vert auto-inscription
 - **Phase 18** : Refonte UX page "Mes inscriptions" — masquage automatique des seances deja inscrites dans l'onglet browse (already + no_action_left) ; boutons uniformes parent/enfant sur toutes les cards (Details + iCal mini + Desinscrire) ; nom du moniteur sur toutes les sections ; section rouge distincte pour les seances futures annulees ; onglets mobiles 50/50 icone+texte ; bouton iCal global avec libelle "iCal" ; alignement boutons staff sur mobile dans la page de detail seance ; optimisation CSS responsive (fusion blocs @media, suppression doublons)
 - **Phase 19** : Durcissement securite (revue ACL et timing) — ACL `staff/responsable de groupe` ajoutee sur l'inscription par procuration, l'export CSV des inscrits et le mailing seance ; verification `Event::canAccess($login)` sur les pages de detail evenement et seance (blocage des acces directs par ID a des drafts ou des seances de groupes restreints) ; comparaison constant-time (`hash_equals`) et validation de format (regex hex 48 caracteres) sur le token de desinscription email ; extraction des gardes ACL dans un trait reutilisable `CoursesAclGuard`
@@ -1283,11 +1283,11 @@ Pour les evenements recurrents :
 
 - Activer/desactiver toutes les notifications automatiques du plugin
 
-**Digest hebdomadaire des membres** (admin uniquement, Phase 59) :
+**Récapitulatif hebdomadaire des membres** (admin uniquement, Phase 59) :
 
-- Choisir le jour de la semaine ou le digest hebdomadaire est envoye aux membres (lundi par defaut)
-- Le digest regroupe les nouvelles seances ouvertes aux inscriptions et les seances ayant recu un moniteur dans un mail unique
-- Chaque parent reçoit le mail consolide (le sien + celui de ses enfants) ; un enfant ayant un email distinct reçoit aussi son propre mail
+- Choisir le jour de la semaine ou le récapitulatif hebdomadaire est envoye aux membres (lundi par defaut)
+- Le récapitulatif regroupe les nouvelles seances ouvertes aux inscriptions et les seances ayant recu un moniteur dans un courriel unique
+- Chaque parent reçoit le courriel consolide (le sien + celui de ses enfants) ; un enfant ayant un email distinct reçoit aussi son propre courriel
 - Tradeoff : delai max 6 jours entre la mise en ligne d'une seance et sa notification au membre
 
 **Generation automatique des seances** (admin uniquement) :
@@ -1295,7 +1295,7 @@ Pour les evenements recurrents :
 1. Copier l'URL affichee (contient le code de securite)
 2. Transmettre l'URL a votre responsable technique pour programmer une execution automatique chaque nuit
 3. Les seances des evenements recurrents valides sont generees automatiquement sans intervention manuelle
-4. **Bonus** : le meme cron quotidien envoie aussi le digest moniteur tous les jours et le digest membre une fois par semaine (au jour configure ci-dessus) — aucune programmation supplementaire n'est necessaire
+4. **Bonus** : le meme cron quotidien envoie aussi le récapitulatif moniteur tous les jours et le récapitulatif membre une fois par semaine (au jour configure ci-dessus) — aucune programmation supplementaire n'est necessaire
 
 **Regenerer le code de securite** : si le code est compromis, cliquer sur le bouton de regeneration (admin uniquement).
 
@@ -1303,6 +1303,6 @@ Pour les evenements recurrents :
 
 **Gestion des inscriptions > Modeles de courriels** :
 
-- Personnaliser les textes des 11 emails automatiques (soumission, validation, rejet, digest moniteur + invitation nouvelle seance, seance ouverte avec/sans moniteur, digest membre hebdomadaire, promotion liste d'attente, annulation inscrits/liste d'attente)
+- Personnaliser les textes des 11 emails automatiques (soumission, validation, rejet, récapitulatif moniteur + invitation nouvelle seance, seance ouverte avec/sans moniteur, récapitulatif membre hebdomadaire, promotion liste d'attente, annulation inscrits/liste d'attente)
 - Cliquer sur **Reinitialiser** pour revenir au modele par defaut
 - Les variables disponibles sont affichees sous forme de pastilles cliquables pour chaque modele
