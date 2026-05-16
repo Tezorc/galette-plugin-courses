@@ -302,6 +302,45 @@ class SessionInstructor
     }
 
     /**
+     * Phase 61: returns true if the given member is already registered as
+     * instructor on another non-cancelled session on the same date whose
+     * time range overlaps [startTime, endTime). Used to block double-booking.
+     */
+    public static function hasOverlappingSession(
+        Db $zdb,
+        int $memberId,
+        string $date,
+        string $startTime,
+        string $endTime,
+        int $excludeSessionId
+    ): bool {
+        if ($memberId <= 0) {
+            return false;
+        }
+        try {
+            $select = $zdb->select(self::TABLE, 'si');
+            $select->join(
+                ['s' => PREFIX_DB . Session::TABLE],
+                'si.session_id = s.' . Session::PK,
+                []
+            );
+            $select->where(['si.member_id' => $memberId, 's.session_date' => $date]);
+            $select->where->notEqualTo('s.status', Session::STATUS_CANCELLED);
+            $select->where->notEqualTo('si.session_id', $excludeSessionId);
+            $select->where->lessThan('s.start_time', $endTime);
+            $select->where->greaterThan('s.end_time', $startTime);
+
+            return $zdb->execute($select)->count() > 0;
+        } catch (Throwable $e) {
+            Analog::log(
+                'Error checking overlapping instructor sessions for member #' . $memberId . ': ' . $e->getMessage(),
+                Analog::ERROR
+            );
+            return false;
+        }
+    }
+
+    /**
      * Find instructor entry by session and member
      */
     public static function findEntry(Db $zdb, int $sessionId, int $memberId): ?self

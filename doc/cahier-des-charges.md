@@ -654,6 +654,45 @@ Le developpement est organise en phases progressives.
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Phase 61 - Signalisation des conflits horaires (inscriptions + blocage moniteur)
+
+**Statut : TERMINEE**
+
+- Demande utilisateur, en deux temps :
+  1. "verifier qu'un membre (parent+pseudo ou enfant+pseudo) ne peut etre inscrit a plusieurs seances sur une plage horaire commune et meme jour" -> arbitrage : **non-bloquant avec avertissement** + signalisation visuelle (badge orange).
+  2. "pareil pour les moniteurs ; qu'ils ne puissent pas s'inscrire comme moniteur a deux seances meme jour et plage horaire" -> **blocage strict cote serveur** pour les moniteurs (physiquement impossible d'animer deux seances simultanees) + badge.
+
+- **Detection serveur (deja existant)** : `Registration::hasOverlappingSession(zdb, memberId, date, start, end, excludeSessionId)` etait deja en place pour declencher un flash `warning_detected` non-bloquant dans `doRegister` / `doWaitlist` / `doParentRegister`. Phase 61 conserve ce comportement et ajoute la visualisation prealable.
+
+- **Nouvelle methode** `SessionInstructor::hasOverlappingSession(...)` (analogue stricte de `Registration::hasOverlappingSession` : JOIN sessions, filtre `status != cancelled`, `notEqualTo session_id`, overlap classique `start < endTime AND end > startTime`). Appelee dans `SessionsController::doAssignInstructor` (apres le check `isInstructor`) et `doVolunteerInstructor` (apres le check `isInstructor`) avec un flash `error_detected` + redirect — l'ecriture en base est refusee.
+
+- **Calcul des conflits cote controleur** :
+  - `RegistrationsController::myRegistrations` :
+    - `$active_future_by_member[memberId]` = liste plate des `[reg_id, session_id, event_name, date, start, end, member_name]` pour les inscriptions `STATUS_REGISTERED` sur seances `status != cancelled AND session_date >= today`. Toutes constituees a partir de `$registrations`/`$sessions`/`$events` deja charges — pas de SQL supplementaire.
+    - `$my_conflicts[reg_id]` (cards "Mes inscriptions") : produit cartesien interne PAR MEMBRE (un parent ne peut etre que sur une seance, idem chaque enfant ; on ne marque PAS comme conflit deux seances de deux membres differents qui se chevaucheraient meme si la logistique parent peut etre genee — perimetre simple et clair).
+    - `$browse_conflicts[session_id]` (cards "Trouver une seance") : pour chaque seance candidate, on prend l'union des candidats (le membre lui-meme si `browse_can_self_register[sid]` + chaque enfant dans `browse_eligible_children[sid]`) et on cherche dans `$active_future_by_member` une seance qui chevauche.
+    - Helper anonyme `formatConflictLabel($r)` produit `"<event> (<nickname-ou-nom>) <d/m> <hh:mm>-<hh:mm>"`, joined par ` ; ` dans le tooltip.
+  - `SessionsController::myInstructorSessions` : meme principe avec `$active_future_instr` (mes propres seances comme moniteur), `$instr_conflicts[session_id]` (collisions internes a mes affectations existantes — utile si historique pre-Phase 61) et `$volunteer_conflicts[session_id]` (sessions candidates au volontariat dont l'horaire chevauche une de mes seances). Helper sans `member_name` ici car toutes les seances sont les miennes.
+
+- **UI** (3 fichiers templates) :
+  - `my_registrations.html.twig` (3 cartes : browse + next + upcoming) : `<span class="ui orange basic label">` avec icone `exclamation triangle`, libelle `{{ _T("Schedule conflict", "courses") }}` et `title=` listant les autres seances. Ajoute dans le meme `<div class="right floated meta">` que le badge statut (apparait a cote, pas a la place). Premiere iteration en `mini` puis aligne sur la taille normale du badge statut a la demande utilisateur.
+  - `my_instructor_sessions.html.twig` (3 cartes : volunteer + next + upcoming) : meme markup, `volunteer_conflicts[sid]` ou `instr_conflicts[sid]` selon le contexte.
+
+- **i18n** :
+  - 4 nouvelles entrees dans `lang/courses_fr_FR.utf8.po` :
+    - `Schedule conflict` -> `Conflit horaire`
+    - `Schedule conflict with:` -> `Conflit horaire avec :`
+    - `This member already runs another session at the same time on this day.` -> `Ce membre anime déjà une autre séance sur la même plage horaire ce jour-là.`
+    - `You already run another session at the same time on this day.` -> `Vous animez déjà une autre séance sur la même plage horaire ce jour-là.`
+  - `.mo` recompile via msgfmt (shim pybabel local).
+
+- **Tradeoffs assumes** :
+  - Pour les inscriptions : non-bloquant volontaire — un parent peut vouloir inscrire son enfant a deux seances qui se chevauchent (ex: cours essai + concours), le warning suffit ; l'utilisateur ne souhaite pas bloquer mecaniquement.
+  - Pour les moniteurs : blocage strict — physiquement impossible d'etre a deux endroits ; la regle est plus dure cote serveur, mais le badge visuel reste utile a titre informatif pour les conflits HISTORIQUES (avant Phase 61) ou pour aider a comprendre pourquoi un volontariat est refuse.
+  - Pas de detection cross-famille (parent A + enfant A se chevauchant ne signale rien) : compromis volontaire pour rester sur la regle simple "un membre ne peut etre qu'a un endroit a la fois".
+
+- **Tests** : 55 tests existants verts (pas de nouveau test, la logique est pure et tres similaire a la detection deja couverte indirectement par `Registration::hasOverlappingSession`).
+
 ### Phase 60 - Depersonnalisation du plugin via `_local_lang.php`
 
 **Statut : TERMINEE**

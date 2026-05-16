@@ -674,6 +674,110 @@ class RegistrationsController extends AbstractController
             $browse_eligible_children[$sid] = $eligible;
         }
 
+        // Phase 61: schedule conflict detection (non-blocking visual hint).
+        // Builds per-member list of "active future registrations", then flags:
+        //  - $my_conflicts[reg_id]      => pairs of overlapping regs of the SAME member
+        //  - $browse_conflicts[sid]     => sessions in the browse whose schedule overlaps
+        //                                   with an existing reg of the member OR an eligible child
+        // The server-side `hasOverlappingSession` warning at register time stays in place;
+        // this just surfaces the conflict in the UI before the user clicks.
+        $active_future_by_member = [];
+        foreach ($registrations as $reg) {
+            if ($reg->getStatus() !== Registration::STATUS_REGISTERED) {
+                continue;
+            }
+            $s = $sessions[$reg->getSessionId()] ?? null;
+            if ($s === null || $s->getStatus() === Session::STATUS_CANCELLED) {
+                continue;
+            }
+            if ($s->getSessionDate() < $today) {
+                continue;
+            }
+            $mid = $reg->getMemberId();
+            $ev  = $events[$s->getEventId()] ?? null;
+            $memberDisplay = $reg_members[$mid]['nickname'] ?? '';
+            if ($memberDisplay === '') {
+                $memberDisplay = $reg_members[$mid]['name'] ?? '';
+            }
+            $active_future_by_member[$mid][] = [
+                'reg_id'      => $reg->getId(),
+                'session_id'  => $s->getId(),
+                'event_name'  => $ev !== null ? (string)$ev->getName() : '',
+                'date'        => $s->getSessionDate(),
+                'start'       => $s->getStartTime(),
+                'end'         => $s->getEndTime(),
+                'member_name' => $memberDisplay,
+            ];
+        }
+
+        $formatConflictLabel = static function (array $r): string {
+            $name = $r['event_name'] !== '' ? $r['event_name'] : '#' . $r['session_id'];
+            $who  = $r['member_name'] !== '' ? ' (' . $r['member_name'] . ')' : '';
+            $dateLabel = (string)$r['date'];
+            try {
+                $dt = new \DateTime($dateLabel);
+                $dateLabel = $dt->format('d/m');
+            } catch (\Throwable) {
+            }
+            $start = substr((string)$r['start'], 0, 5);
+            $end   = substr((string)$r['end'], 0, 5);
+            return $name . $who . ' ' . $dateLabel . ' ' . $start . '-' . $end;
+        };
+
+        $my_conflicts = [];
+        foreach ($active_future_by_member as $regs) {
+            $count = count($regs);
+            for ($i = 0; $i < $count; $i++) {
+                for ($j = $i + 1; $j < $count; $j++) {
+                    $a = $regs[$i];
+                    $b = $regs[$j];
+                    if ($a['date'] !== $b['date']) {
+                        continue;
+                    }
+                    if ($a['start'] >= $b['end'] || $a['end'] <= $b['start']) {
+                        continue;
+                    }
+                    $my_conflicts[$a['reg_id']][] = $formatConflictLabel($b);
+                    $my_conflicts[$b['reg_id']][] = $formatConflictLabel($a);
+                }
+            }
+        }
+
+        $browse_conflicts = [];
+        foreach ($available_sessions as $s) {
+            $sid = $s->getId();
+            $candidateIds = [];
+            if (!empty($browse_can_self_register[$sid])) {
+                $candidateIds[] = $member_id;
+            }
+            if (!empty($browse_eligible_children[$sid])) {
+                foreach (array_keys($browse_eligible_children[$sid]) as $cid) {
+                    $candidateIds[] = (int)$cid;
+                }
+            }
+            $labels = [];
+            foreach ($candidateIds as $mid) {
+                if (!isset($active_future_by_member[$mid])) {
+                    continue;
+                }
+                foreach ($active_future_by_member[$mid] as $other) {
+                    if ($other['session_id'] === $sid) {
+                        continue;
+                    }
+                    if ($other['date'] !== $s->getSessionDate()) {
+                        continue;
+                    }
+                    if ($other['start'] >= $s->getEndTime() || $other['end'] <= $s->getStartTime()) {
+                        continue;
+                    }
+                    $labels[] = $formatConflictLabel($other);
+                }
+            }
+            if (!empty($labels)) {
+                $browse_conflicts[$sid] = array_values(array_unique($labels));
+            }
+        }
+
         // Phase 52: surface cancelled upcoming sessions in the "Browse" tab so
         // members are informed when a session they might look for was cancelled.
         // Same group scoping as the open list (setPersonalMemberId). Sessions the
@@ -724,6 +828,8 @@ class RegistrationsController extends AbstractController
                                              || $this->login->isGroupManager(),
                 'ineligible_members'      => $ineligible_members,
                 'out_of_group_regs'       => $out_of_group_regs,
+                'my_conflicts'            => $my_conflicts,
+                'browse_conflicts'        => $browse_conflicts,
             ]
         );
         return $response;

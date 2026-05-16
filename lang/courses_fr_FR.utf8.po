@@ -1935,3 +1935,17 @@ msgstr "Samedi"
 msgid "Sunday"
 msgstr "Dimanche"
 
+# --- Phase 61 : signalisation visuelle des conflits horaires + blocage moniteur ---
+
+msgid "Schedule conflict"
+msgstr "Conflit horaire"
+
+msgid "Schedule conflict with:"
+msgstr "Conflit horaire avec :"
+
+msgid "This member already runs another session at the same time on this day."
+msgstr "Ce membre anime déjà une autre séance sur la même plage horaire ce jour-là."
+
+msgid "You already run another session at the same time on this day."
+msgstr "Vous animez déjà une autre séance sur la même plage horaire ce jour-là."
+

@@ -189,6 +189,12 @@
                             {% else %}
                                 <span class="ui green label">{{ _T("Open", "courses") }}</span>
                             {% endif %}
+                            {% if browse_conflicts[sid] is defined %}
+                                <span class="ui orange basic label" title="{{ _T("Schedule conflict with:", "courses") }} {{ browse_conflicts[sid]|join(' ; ') }}">
+                                    <i class="exclamation triangle icon" aria-hidden="true"></i>
+                                    {{ _T("Schedule conflict", "courses") }}
+                                </span>
+                            {% endif %}
                         </div>
 
                         <div class="header">{{ ev.getName() }}</div>
@@ -459,6 +465,12 @@
                                     {% else %}
                                         <span class="ui green label">{{ reg.getStatusLabel() }}</span>
                                     {% endif %}
+                                    {% if my_conflicts[reg.getId()] is defined %}
+                                        <span class="ui orange basic label" title="{{ _T("Schedule conflict with:", "courses") }} {{ my_conflicts[reg.getId()]|join(' ; ') }}">
+                                            <i class="exclamation triangle icon" aria-hidden="true"></i>
+                                            {{ _T("Schedule conflict", "courses") }}
+                                        </span>
+                                    {% endif %}
                                 </div>
                                 <a class="header" href="{{ url_for("coursesEventShow", {"id": ev.getId()}) }}">
                                     {{ ev.getName() }}
@@ -566,6 +578,12 @@
                                             </span>
                                         {% else %}
                                             <span class="ui green label">{{ reg.getStatusLabel() }}</span>
+                                        {% endif %}
+                                        {% if my_conflicts[reg.getId()] is defined %}
+                                            <span class="ui orange basic label" title="{{ _T("Schedule conflict with:", "courses") }} {{ my_conflicts[reg.getId()]|join(' ; ') }}">
+                                                <i class="exclamation triangle icon" aria-hidden="true"></i>
+                                                {{ _T("Schedule conflict", "courses") }}
+                                            </span>
                                         {% endif %}
                                     </div>
                                     <a class="header" href="{{ url_for("coursesEventShow", {"id": ev.getId()}) }}">

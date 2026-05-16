@@ -306,6 +306,8 @@ Sections du tableau de bord personnel :
 
 **Bouton "iCal"** (toutes mes inscriptions) en haut a droite de l'onglet — exporte toutes les inscriptions actives en un seul fichier `.ics`.
 
+**Badge "Conflit horaire"** (Phase 61) : si deux inscriptions du **meme membre** (parent OU un enfant individuellement) tombent le meme jour avec des plages horaires qui se chevauchent, un badge orange `Conflit horaire` apparait sur chaque carte concernee — a cote du badge statut. Le tooltip (survol) liste les autres seances en collision (nom de l'evenement, nom/pseudo, date, plage). Le meme badge apparait sur les cartes de l'onglet **"Trouver une seance"** lorsque la candidate chevaucherait une inscription deja active du membre ou d'un enfant eligible. **Avertissement non-bloquant** : on peut quand meme s'inscrire si on assume la collision (cas typique : cours d'essai + concours).
+
 > **Mise a jour de l'affichage** : s'inscrire, se desinscrire ou rejoindre la liste d'attente depuis la page **Mes inscriptions** (onglets *Trouver une seance* et *Mes inscriptions*) renvoie automatiquement sur cette meme page rechargee. Les deux onglets refletent immediatement l'etat a jour : la seance disparait de *Trouver une seance* (puisqu'on y est desormais inscrit) et apparait dans *Mes inscriptions*. Aucun rechargement manuel n'est necessaire. Les memes actions declenchees depuis la fiche detail d'une seance continuent a renvoyer sur cette fiche, comme avant.
 
 ### 7. Consulter toutes les inscriptions (staff / responsable de groupe)
@@ -409,6 +411,8 @@ Les moniteurs eligibles sont les responsables des groupes associes a l'evenement
 > **Seances passees** : les boutons Affecter et Retirer un moniteur sont masques. Les moniteurs restes affiches en lecture seule.
 >
 > **Seances annulees** : le formulaire **"Affecter un moniteur"** est masque et l'action est refusee cote serveur — une seance annulee n'aura pas lieu, aucun moniteur ne peut y etre affecte. Le retrait d'un moniteur reste possible (utile pour nettoyer).
+>
+> **Conflit horaire (Phase 61)** : l'affectation est **refusee cote serveur** si le membre cible anime deja une autre seance non-annulee sur la meme date et une plage qui se chevauche — message flash `Ce membre anime déjà une autre séance sur la même plage horaire ce jour-là.` Idem pour l'auto-volontariat (`Vous animez déjà une autre séance sur la même plage horaire ce jour-là.`). Sur la page **Mes seances comme moniteur**, un badge orange `Conflit horaire` (tooltip) signale aussi visuellement les collisions deja en base (utile pour l'historique anterieur a Phase 61 ou pour comprendre un refus de volontariat).
 
 #### Se porter volontaire (responsable de groupe)
 
@@ -416,6 +420,7 @@ Les moniteurs eligibles sont les responsables des groupes associes a l'evenement
 2. Cliquer sur le bouton teal **"Se porter volontaire comme moniteur"**
 3. Le bouton n'apparait que si le responsable gere un des groupes de l'evenement et n'est pas deja moniteur
 4. Le bouton n'apparait pas (et l'action est refusee cote serveur) sur une **seance annulee** : une seance annulee n'aura pas lieu, aucun moniteur ne peut s'y porter volontaire
+5. **Conflit horaire (Phase 61)** : le volontariat est refuse cote serveur si l'utilisateur anime deja une autre seance sur la meme plage. Le badge `Conflit horaire` apparait aussi en prevention sur la carte de l'onglet "Trouver une seance" pour eviter le clic en vain
 
 #### Indicateur dans la liste des seances
 

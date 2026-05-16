@@ -553,6 +553,25 @@ class SessionsController extends AbstractPluginController
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
         }
 
+        // Phase 61: block double-booking — an instructor cannot run two
+        // overlapping sessions on the same day.
+        if (SessionInstructor::hasOverlappingSession(
+            $this->zdb,
+            $memberId,
+            $session->getSessionDate(),
+            $session->getStartTime(),
+            $session->getEndTime(),
+            $id
+        )) {
+            $this->flash->addMessage(
+                'error_detected',
+                _T('This member already runs another session at the same time on this day.', 'courses')
+            );
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+        }
+
         $wasWithoutInstructor = !SessionInstructor::hasInstructor($this->zdb, $id);
 
         $instructor = new SessionInstructor($this->zdb);
@@ -701,6 +720,25 @@ class SessionsController extends AbstractPluginController
 
         if (SessionInstructor::isInstructor($this->zdb, $id, $memberId)) {
             $this->flash->addMessage('warning_detected', _T('You are already an instructor for this session.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $returnUrl);
+        }
+
+        // Phase 61: block double-booking — cannot volunteer on a session that
+        // overlaps another session already assigned to this instructor.
+        if (SessionInstructor::hasOverlappingSession(
+            $this->zdb,
+            $memberId,
+            $session->getSessionDate(),
+            $session->getStartTime(),
+            $session->getEndTime(),
+            $id
+        )) {
+            $this->flash->addMessage(
+                'error_detected',
+                _T('You already run another session at the same time on this day.', 'courses')
+            );
             return $response
                 ->withStatus(302)
                 ->withHeader('Location', $returnUrl);
@@ -1774,6 +1812,79 @@ class SessionsController extends AbstractPluginController
             }
         }
 
+        // Phase 61: schedule conflict detection for instructor assignments.
+        // Build list of "active future instructor sessions" then flag:
+        //  - $instr_conflicts[sid]      => pairs of my own overlapping sessions
+        //  - $volunteer_conflicts[sid]  => candidate sessions overlapping one I already run
+        $today = date('Y-m-d');
+        $active_future_instr = [];
+        foreach ($sessions as $sid => $s) {
+            if ($s->getStatus() === Session::STATUS_CANCELLED) {
+                continue;
+            }
+            if ($s->getSessionDate() < $today) {
+                continue;
+            }
+            $ev = $events[$s->getEventId()] ?? null;
+            $active_future_instr[] = [
+                'sid'        => $sid,
+                'event_name' => $ev !== null ? (string)$ev->getName() : '',
+                'date'       => $s->getSessionDate(),
+                'start'      => $s->getStartTime(),
+                'end'        => $s->getEndTime(),
+            ];
+        }
+
+        $formatConflictLabel = static function (array $r): string {
+            $name = $r['event_name'] !== '' ? $r['event_name'] : '#' . $r['sid'];
+            $dateLabel = (string)$r['date'];
+            try {
+                $dt = new \DateTime($dateLabel);
+                $dateLabel = $dt->format('d/m');
+            } catch (\Throwable) {
+            }
+            $start = substr((string)$r['start'], 0, 5);
+            $end   = substr((string)$r['end'], 0, 5);
+            return $name . ' ' . $dateLabel . ' ' . $start . '-' . $end;
+        };
+
+        $instr_conflicts = [];
+        $count = count($active_future_instr);
+        for ($i = 0; $i < $count; $i++) {
+            for ($j = $i + 1; $j < $count; $j++) {
+                $a = $active_future_instr[$i];
+                $b = $active_future_instr[$j];
+                if ($a['date'] !== $b['date']) {
+                    continue;
+                }
+                if ($a['start'] >= $b['end'] || $a['end'] <= $b['start']) {
+                    continue;
+                }
+                $instr_conflicts[$a['sid']][] = $formatConflictLabel($b);
+                $instr_conflicts[$b['sid']][] = $formatConflictLabel($a);
+            }
+        }
+
+        $volunteer_conflicts = [];
+        foreach ($volunteer_sessions as $sid => $s) {
+            $labels = [];
+            foreach ($active_future_instr as $other) {
+                if ($other['sid'] === $sid) {
+                    continue;
+                }
+                if ($other['date'] !== $s->getSessionDate()) {
+                    continue;
+                }
+                if ($other['start'] >= $s->getEndTime() || $other['end'] <= $s->getStartTime()) {
+                    continue;
+                }
+                $labels[] = $formatConflictLabel($other);
+            }
+            if (!empty($labels)) {
+                $volunteer_conflicts[$sid] = array_values(array_unique($labels));
+            }
+        }
+
         $this->view->render(
             $response,
             $this->getTemplate('pages/my_instructor_sessions'),
@@ -1792,6 +1903,8 @@ class SessionsController extends AbstractPluginController
                 'volunteer_events'          => $volunteer_events,
                 'volunteer_event_types'     => $volunteer_event_types,
                 'volunteer_available_names' => $volunteer_available_names,
+                'instr_conflicts'           => $instr_conflicts,
+                'volunteer_conflicts'       => $volunteer_conflicts,
             ]
         );
         return $response;
