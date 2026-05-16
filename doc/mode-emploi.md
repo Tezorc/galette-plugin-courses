@@ -363,6 +363,7 @@ Le menu **Gestion des inscriptions > Statistiques** affiche un tableau de bord c
 - **Taux de remplissage moyen** : tableau compact des 10 evenements les plus remplis avec barres de progression colorees
 - **Activite recente** : tableau des 20 derniers membres actifs avec date de derniere participation et nombre total de seances
 - **Membres actifs sur une periode** : section filtrable avec selecteur de dates (debut / fin), raccourcis rapides (Ce mois-ci, 3 derniers mois, 6 derniers mois, Cette annee, L'annee derniere), compteur de membres actifs, tableau exportable en CSV
+  - **Taux de participation (Phase 62)** : encart bleu en haut de la section affichant le **pourcentage d'adherents actifs ayant participe sur la periode** (`actifs / (actifs + inactifs)`), avec une jauge progress coloree selon le seuil (rouge < 20 %, jaune 20-39 %, teal 40-74 %, vert ≥ 75 %) et la ligne `N / M adhérents actifs ont participé sur la période`. Le pourcentage se recalcule automatiquement a chaque changement de periode.
 - **Membres inactifs sur la periode** : section separee (encadre rouge) listant tous les adherents actifs n'ayant participe a aucune seance sur la periode, avec compteur et export CSV
 
 #### Filtrer les membres actifs et inactifs par periode

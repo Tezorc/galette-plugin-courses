@@ -175,6 +175,29 @@ tr.courses-pending { background-color: #fffde7 !important; }
 .courses-stat-num.blue   { color: #2185d0; }
 .courses-period-active   { border-top: 3px solid #2185d0 !important; }
 .courses-period-inactive { border-top: 3px solid #db2828 !important; }
+
+/* ----- PARTICIPATION SUMMARY (Phase 62) ----- */
+.courses-participation-summary {
+    display: flex; align-items: center; gap: 1.25em;
+    margin: .8em 0 1em; padding: .9em 1.1em;
+    background: #f0f6fb; border-left: 4px solid #2185d0; border-radius: .35em;
+    flex-wrap: wrap;
+}
+.courses-participation-rate {
+    font-size: 2.4rem; font-weight: 700; color: #2185d0; line-height: 1;
+    min-width: 5em; text-align: center;
+}
+.courses-participation-detail { flex: 1 1 200px; min-width: 200px; }
+.courses-participation-label {
+    font-weight: 600; color: #444; font-size: .95rem; margin-bottom: .4em;
+}
+.courses-participation-detail .ui.progress { margin: .25em 0 .35em !important; }
+.courses-participation-sub { color: #666; font-size: .85rem; }
+@media (max-width: 480px) {
+    .courses-participation-summary { gap: .6em; padding: .7em .85em; }
+    .courses-participation-rate { font-size: 1.9rem; min-width: 0; flex: 0 0 auto; }
+    .courses-participation-detail { flex: 1 1 100%; }
+}
 .courses-filter-row { align-items: flex-end !important; flex-wrap: wrap !important; gap: .5em !important; }
 .courses-chart-container { position: relative; width: 100%; min-height: 250px; }
 

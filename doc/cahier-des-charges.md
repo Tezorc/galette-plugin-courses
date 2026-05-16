@@ -654,6 +654,24 @@ Le developpement est organise en phases progressives.
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Phase 62 - Taux de participation des membres dans les statistiques
+
+**Statut : TERMINEE**
+
+- Demande utilisateur : "dans statistique, rajouter Membres actifs sur une période en % suivant les périodes"
+
+- **Modifications** :
+  - `StatsController::show` : calcul du `participation_rate = round(active * 100 / total, 1)` ou `total = active + inactive` (deja produit par `getMemberActivityByPeriod`). Le ratio est donc base sur les adherents `activite_adh = true` (cas Galette standard) ; pas de SQL supplementaire. Deux nouvelles cles ajoutees a `$stats` : `participation_rate` (float) et `total_adherents` (int).
+  - `templates/default/pages/stats.html.twig` : nouvel encart `courses-participation-summary` insere entre le formulaire de filtre et le tableau des actifs. Affiche `XX,X %` en grand (2.4rem, couleur bleue), libelle `Taux de participation`, jauge progress Fomantic coloree selon 4 seuils (`< 20 %` rouge, `20-39 %` jaune, `40-74 %` teal, `≥ 75 %` vert), et sous-ligne `N / M adhérents actifs ont participé sur la période`. Visible seulement si `total_adherents > 0` (evite division par zero et l'affichage parasite sur une installation vide).
+  - `webroot/galette_courses.css` : nouvelle classe `.courses-participation-summary` (flex, background `#f0f6fb`, bordure gauche bleue 4px, radius .35em) + `.courses-participation-rate` (gros chiffre) + `.courses-participation-detail` / `.courses-participation-label` / `.courses-participation-sub`. Media-query `≤480px` : repli des proportions pour smartphone (chiffre 1.9rem, detail plein largeur).
+  - `lang/courses_fr_FR.utf8.po` + `.mo` recompile : 2 nouvelles cles `Participation rate` -> `Taux de participation` et `active adherents participated over the period` -> `adhérents actifs ont participé sur la période`.
+
+- **Tradeoffs** :
+  - Le denominateur reste `activite_adh = true` (adherents non archives), pas `cotisation a jour` — coherent avec la regle deja utilisee par la section "Membres inactifs", evite que le % chute artificiellement parce qu'on inclut les retards de cotisation.
+  - Pas de seuil configurable pour les couleurs : valeurs en dur dans le template, choisies pour donner un signal visuel immediat (rouge = faible, vert = excellent). A affiner si retour utilisateur.
+
+- **Tests** : 55 tests existants verts, pas de nouveau test (calcul trivial sur arrays PHP, deja teste indirectement via les listes active/inactive).
+
 ### Phase 61 - Signalisation des conflits horaires (inscriptions + blocage moniteur)
 
 **Statut : TERMINEE**

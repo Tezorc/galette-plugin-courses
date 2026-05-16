@@ -193,6 +193,24 @@
             </div>
         </form>
 
+        {# Taux de participation sur la période (Phase 62) #}
+        {% if stats.total_adherents > 0 %}
+            <div class="courses-participation-summary">
+                <div class="courses-participation-rate">
+                    {{ stats.participation_rate|number_format(1, ',', ' ') }}&nbsp;%
+                </div>
+                <div class="courses-participation-detail">
+                    <div class="courses-participation-label">{{ _T("Participation rate", "courses") }}</div>
+                    <div class="ui tiny progress {% if stats.participation_rate >= 75 %}green{% elseif stats.participation_rate >= 40 %}teal{% elseif stats.participation_rate >= 20 %}yellow{% else %}red{% endif %}" data-percent="{{ stats.participation_rate }}">
+                        <div class="bar" style="width:{{ stats.participation_rate }}%"></div>
+                    </div>
+                    <div class="courses-participation-sub">
+                        {{ stats.active_members|length }} / {{ stats.total_adherents }} {{ _T("active adherents participated over the period", "courses") }}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
         {# Résultats #}
         <div>
         {% if stats.active_members|length > 0 %}

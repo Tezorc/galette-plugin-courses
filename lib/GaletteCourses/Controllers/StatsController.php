@@ -61,6 +61,13 @@ class StatsController extends AbstractController
 
         $memberActivity = $this->getMemberActivityByPeriod($dateFrom, $dateTo);
 
+        $activeCount   = count($memberActivity['active']);
+        $inactiveCount = count($memberActivity['inactive']);
+        $totalAdherents = $activeCount + $inactiveCount;
+        $participationRate = $totalAdherents > 0
+            ? round($activeCount * 100 / $totalAdherents, 1)
+            : 0.0;
+
         $stats = [
             'fill_rates'             => $this->getAverageFillRates(),
             'registrations_by_month' => $this->getRegistrationsByMonth(),
@@ -69,6 +76,8 @@ class StatsController extends AbstractController
             'summary'                => $this->getSummary(),
             'active_members'         => $memberActivity['active'],
             'inactive_members'       => $memberActivity['inactive'],
+            'participation_rate'     => $participationRate,
+            'total_adherents'        => $totalAdherents,
         ];
 
         $this->view->render(

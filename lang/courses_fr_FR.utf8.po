@@ -1949,3 +1949,11 @@ msgstr "Ce membre anime déjà une autre séance sur la même plage horaire ce j
 msgid "You already run another session at the same time on this day."
 msgstr "Vous animez déjà une autre séance sur la même plage horaire ce jour-là."
 
+# --- Phase 62 : taux de participation des membres dans les statistiques ---
+
+msgid "Participation rate"
+msgstr "Taux de participation"
+
+msgid "active adherents participated over the period"
+msgstr "adhérents actifs ont participé sur la période"
+
