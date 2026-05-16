@@ -555,18 +555,8 @@ class SessionsController extends AbstractPluginController
 
         // Phase 61: block double-booking — an instructor cannot run two
         // overlapping sessions on the same day.
-        if (SessionInstructor::hasOverlappingSession(
-            $this->zdb,
-            $memberId,
-            $session->getSessionDate(),
-            $session->getStartTime(),
-            $session->getEndTime(),
-            $id
-        )) {
-            $this->flash->addMessage(
-                'error_detected',
-                _T('This member already runs another session at the same time on this day.', 'courses')
-            );
+        if (SessionInstructor::hasOverlappingSession($this->zdb, $memberId, $session->getSessionDate(), $session->getStartTime(), $session->getEndTime(), $id)) {
+            $this->flash->addMessage('error_detected', _T('This member already runs another session at the same time on this day.', 'courses'));
             return $response
                 ->withStatus(302)
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
@@ -727,18 +717,8 @@ class SessionsController extends AbstractPluginController
 
         // Phase 61: block double-booking — cannot volunteer on a session that
         // overlaps another session already assigned to this instructor.
-        if (SessionInstructor::hasOverlappingSession(
-            $this->zdb,
-            $memberId,
-            $session->getSessionDate(),
-            $session->getStartTime(),
-            $session->getEndTime(),
-            $id
-        )) {
-            $this->flash->addMessage(
-                'error_detected',
-                _T('You already run another session at the same time on this day.', 'courses')
-            );
+        if (SessionInstructor::hasOverlappingSession($this->zdb, $memberId, $session->getSessionDate(), $session->getStartTime(), $session->getEndTime(), $id)) {
+            $this->flash->addMessage('error_detected', _T('You already run another session at the same time on this day.', 'courses'));
             return $response
                 ->withStatus(302)
                 ->withHeader('Location', $returnUrl);
