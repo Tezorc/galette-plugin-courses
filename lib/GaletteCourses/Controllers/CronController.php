@@ -49,6 +49,26 @@ class CronController extends AbstractController
     protected array $module_info;
 
     /**
+     * Constant-time cron token check. Returns null when the request is
+     * authorized, or a ready-to-emit 403 Response otherwise.
+     */
+    private function verifyCronToken(
+        Request $request,
+        Response $response,
+        PluginPreferences $pluginPrefs
+    ): ?Response {
+        $params        = $request->getQueryParams();
+        $providedToken = (string)($params['token'] ?? '');
+        $expectedToken = $pluginPrefs->getCronToken();
+
+        if ($providedToken === '' || !hash_equals($expectedToken, $providedToken)) {
+            $response->getBody()->write('Unauthorized');
+            return $response->withStatus(403);
+        }
+        return null;
+    }
+
+    /**
      * Auto-generate sessions for all validated recurring events.
      * Called via cron: GET /plugins/courses/cron/generate-sessions?token=XXX
      */
@@ -56,14 +76,8 @@ class CronController extends AbstractController
     {
         $pluginPrefs = new PluginPreferences($this->zdb);
 
-        // Token verification
-        $params = $request->getQueryParams();
-        $providedToken = $params['token'] ?? '';
-        $expectedToken = $pluginPrefs->getCronToken();
-
-        if ($providedToken === '' || !hash_equals($expectedToken, $providedToken)) {
-            $response->getBody()->write('Unauthorized');
-            return $response->withStatus(403);
+        if (($denied = $this->verifyCronToken($request, $response, $pluginPrefs)) !== null) {
+            return $denied;
         }
 
         // Load all validated recurring events
@@ -171,13 +185,8 @@ class CronController extends AbstractController
     {
         $pluginPrefs = new PluginPreferences($this->zdb);
 
-        $params        = $request->getQueryParams();
-        $providedToken = $params['token'] ?? '';
-        $expectedToken = $pluginPrefs->getCronToken();
-
-        if ($providedToken === '' || !hash_equals($expectedToken, $providedToken)) {
-            $response->getBody()->write('Unauthorized');
-            return $response->withStatus(403);
+        if (($denied = $this->verifyCronToken($request, $response, $pluginPrefs)) !== null) {
+            return $denied;
         }
 
         $notification = new CourseNotification(
@@ -226,15 +235,11 @@ class CronController extends AbstractController
     {
         $pluginPrefs = new PluginPreferences($this->zdb);
 
-        $params        = $request->getQueryParams();
-        $providedToken = $params['token'] ?? '';
-        $expectedToken = $pluginPrefs->getCronToken();
-
-        if ($providedToken === '' || !hash_equals($expectedToken, $providedToken)) {
-            $response->getBody()->write('Unauthorized');
-            return $response->withStatus(403);
+        if (($denied = $this->verifyCronToken($request, $response, $pluginPrefs)) !== null) {
+            return $denied;
         }
 
+        $params   = $request->getQueryParams();
         $force    = !empty($params['force']);
         $todayDow = (int)date('N');
         $cfgDow   = $pluginPrefs->getWeeklyDigestDay();

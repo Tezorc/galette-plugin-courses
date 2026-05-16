@@ -99,6 +99,7 @@
 .courses-date-month { font-size: 1.8em; font-weight: bold; line-height: 1; }
 .courses-date-month { text-transform: uppercase; }
 
+
 /* ----- TABLES ----- */
 tr.courses-pending { background-color: #fffde7 !important; }
 .courses-icon-btn  { padding: 0 !important; background: none !important; border: none !important; box-shadow: none !important; cursor: pointer; }
