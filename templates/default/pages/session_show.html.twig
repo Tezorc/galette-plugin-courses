@@ -860,6 +860,33 @@
                             </div>
                         </div>
                     {% endif %}
+                    <div class="item">
+                        <i class="sync icon" aria-hidden="true"></i>
+                        <div class="content">
+                            <div class="header">{{ _T("Frequency", "courses") }}</div>
+                            {% if event.isRecurring() %}
+                                {{ _T("Recurring session", "courses") }}
+                                {% if event.getRecurrenceTypeLabel() %}
+                                    ({{ event.getRecurrenceTypeLabel()|lower }})
+                                {% endif %}
+                            {% else %}
+                                {{ _T("Single session", "courses") }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="item">
+                        <i class="users icon" aria-hidden="true"></i>
+                        <div class="content">
+                            <div class="header">{{ _T("Group restriction", "courses") }}</div>
+                            {% if restricted_group_names|length > 0 %}
+                                {% for name in restricted_group_names %}
+                                    <span class="ui small label">{{ name }}</span>
+                                {% endfor %}
+                            {% else %}
+                                {{ _T("Open to all members", "courses") }}
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
                 <div class="ui divider"></div>
                 <a href="{{ url_for("coursesSessionIcal", {"id": session.getId()}) }}" class="ui small fluid labeled icon button">

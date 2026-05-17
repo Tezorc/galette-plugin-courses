@@ -240,7 +240,7 @@ Quand vous modifiez un evenement existant, les changements sont automatiquement 
      - **"Se desinscrire"** : bouton rouge
      - **"Rejoindre la liste d'attente"** : bouton bleu avec position
    - **Description** de l'evenement dans un segment separe (si existante)
-   - **Informations complementaires** dans un panneau lateral (statut, prix, deadline)
+   - **Informations complementaires** dans un panneau lateral (statut, prix, deadline d'inscription, **frequence** = Seance unique / Seance recurrente avec type, **restriction de groupe** = liste des groupes autorises ou "Ouverte a tous les membres")
    - **Liste des inscrits** : liste avec icones utilisateur (admin/staff uniquement)
    - **Liste d'attente** : liste numerotee propre (admin/staff uniquement)
 4. Cliquer sur le bouton vert **"S'inscrire"** (icone paw)

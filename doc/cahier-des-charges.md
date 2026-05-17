@@ -654,6 +654,27 @@ Le developpement est organise en phases progressives.
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Phase 63 - Rappel frequence + restriction de groupe dans la fiche seance
+
+**Statut : TERMINEE**
+
+- Demande utilisateur : "dans seance rappel dans information presicer si seance unique ou recurrente, la restriction groupe".
+
+- **Objectif** : a l'arrivee sur `session_show`, un membre sait immediatement si la seance est ponctuelle ou s'inscrit dans une serie recurrente, et a quels groupes l'inscription est reservee — sans avoir a remonter sur la fiche evenement parente.
+
+- **Modifications** :
+  - `SessionsController::show` : ajout d'un `$event->loadGroups()` inconditionnel juste apres le `canAccess`. Le flag interne `groups_loaded` rend tous les `loadGroups()` ulterieurs (lignes 275 / 421 / 340 deja en place) gratuits, donc pas de doublon SQL. Resolution des noms via une unique requete `SELECT id_group, group_name FROM galette_groups WHERE id_group IN (...) ORDER BY group_name ASC`. Le tableau `$restricted_group_names` (liste de strings triees) est passe au template.
+  - `templates/default/pages/session_show.html.twig` : 2 nouveaux `<div class="item">` ajoutes apres `Registration deadline` dans le bloc Information (colonne droite) :
+    - **Frequency** (icone `sync`) : `Single session` si `event.isRecurring()` est faux ; sinon `Recurring session (<recurrence-type-en-minuscules>)`.
+    - **Group restriction** (icone `users`) : liste chaque groupe autorise dans un `ui small label`, ou affiche `Open to all members` si `restricted_group_names` est vide.
+  - `lang/courses_fr_FR.utf8.po` + `.mo` recompile via msgfmt : 5 nouvelles cles (`Frequency` -> `Frequence`, `Single session` -> `Seance unique`, `Recurring session` -> `Seance recurrente`, `Group restriction` -> `Restriction de groupe`, `Open to all members` -> `Ouverte a tous les membres`).
+
+- **Tradeoffs** :
+  - Aucune duplication d'info : la frequence et la restriction de groupe sont des proprietes de l'evenement, deja accessibles en remontant via le titre cliquable de la card — mais l'objectif est d'eviter ce clic supplementaire pour une info contextuelle frequemment regardee (cf. role membre qui s'inscrit).
+  - Mise en minuscules du type de recurrence pour rendre la phrase fluide (`Seance recurrente (hebdomadaire)`). Le label `getRecurrenceTypeLabel()` etant deja localise (`Weekly`/`Biweekly`/`Monthly`), `|lower` filter Twig fonctionne pour FR (`Hebdomadaire` -> `hebdomadaire`).
+
+- **Tests** : 55 tests existants verts, pas de nouveau test (rendu template trivial, pas de logique branchee).
+
 ### Phase 62 - Taux de participation des membres dans les statistiques
 
 **Statut : TERMINEE**

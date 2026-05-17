@@ -1957,3 +1957,20 @@ msgstr "Taux de participation"
 msgid "active adherents participated over the period"
 msgstr "adhérents actifs ont participé sur la période"
 
+# --- Phase 63 : rappel frequence + restriction groupe dans le bloc Information de la seance ---
+
+msgid "Frequency"
+msgstr "Fréquence"
+
+msgid "Single session"
+msgstr "Séance unique"
+
+msgid "Recurring session"
+msgstr "Séance récurrente"
+
+msgid "Group restriction"
+msgstr "Restriction de groupe"
+
+msgid "Open to all members"
+msgstr "Ouverte à tous les membres"
+

@@ -187,6 +187,24 @@ class SessionsController extends AbstractPluginController
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
         }
 
+        // Restricted groups: resolve names once for the Information block.
+        $event->loadGroups();
+        $restricted_group_names = [];
+        $eventGroupIds = $event->getGroups();
+        if (!empty($eventGroupIds)) {
+            try {
+                $select = $this->zdb->select('groups');
+                $select->columns(['id_group', 'group_name']);
+                $select->where->in('id_group', $eventGroupIds);
+                $select->order('group_name ASC');
+                foreach ($this->zdb->execute($select) as $row) {
+                    $restricted_group_names[] = (string)$row->group_name;
+                }
+            } catch (\Throwable $e) {
+                Analog::log('Error loading group names for event #' . $event->getId() . ': ' . $e->getMessage(), Analog::ERROR);
+            }
+        }
+
         // Load registrations for this session
         $regs_repo = new Registrations($this->zdb);
         $registrations = $regs_repo->getForSession($id);
@@ -502,6 +520,7 @@ class SessionsController extends AbstractPluginController
                 'current_member_name' => isset($currentAdherent) ? ($currentAdherent->sname ?? '') : '',
                 'current_member_nickname'  => isset($currentAdherent) && !empty($currentAdherent->nickname) ? (string)$currentAdherent->nickname : '',
                 'walkin_eligible_members' => $walkin_eligible_members,
+                'restricted_group_names' => $restricted_group_names,
             ]
         );
         return $response;
