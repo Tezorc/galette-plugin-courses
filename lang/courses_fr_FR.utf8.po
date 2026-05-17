@@ -1226,7 +1226,7 @@ msgid "%d existing session(s) have been cancelled and concerned members notified
 msgstr "%d séance(s) existante(s) ont été annulées et les membres concernés notifiés."
 
 msgid "[Courses] Session cancelled (club closure)"
-msgstr "[Courses] Séance annulée (fermeture du club)"
+msgstr "[Cours] Séance annulée (fermeture du club)"
 
 msgid "Add a closure period"
 msgstr "Ajouter une période de fermeture"
@@ -1798,7 +1798,7 @@ msgid "An error occurred during cancellation."
 msgstr "Une erreur est survenue lors de l'annulation."
 
 msgid "[Courses] Registration cancelled by staff/instructor"
-msgstr "[Courses] Inscription annulée par le staff/moniteur"
+msgstr "[Cours] Inscription annulée par le staff/moniteur"
 
 msgid "You do not have permission to cancel this registration."
 msgstr "Vous n'avez pas la permission d'annuler cette inscription."
@@ -1833,7 +1833,7 @@ msgid "This session is full and the member is already on the waitlist."
 msgstr "Cette séance est complète et le membre est déjà sur la liste d'attente."
 
 msgid "[Courses] Member added to waitlist by staff"
-msgstr "[Courses] Membre ajouté à la liste d'attente par le staff"
+msgstr "[Cours] Membre ajouté à la liste d'attente par le staff"
 
 #, php-format
 msgid "Session is full. Member added to the waitlist (position %d)."
