@@ -28,6 +28,7 @@ use Galette\Core\PluginControllerTrait;
 use GaletteCourses\Entity\Event;
 use GaletteCourses\Entity\Registration;
 use GaletteCourses\Entity\Session;
+use GaletteCourses\Entity\SessionInstructor;
 use Laminas\Db\Sql\Expression;
 use Slim\Psr7\Request;
 use Slim\Psr7\Response;
@@ -78,6 +79,7 @@ class StatsController extends AbstractController
             'inactive_members'       => $memberActivity['inactive'],
             'participation_rate'     => $participationRate,
             'total_adherents'        => $totalAdherents,
+            'instructor_activity'    => $this->getInstructorActivityByPeriod($dateFrom, $dateTo),
         ];
 
         $this->view->render(
@@ -267,7 +269,7 @@ class StatsController extends AbstractController
      * Active  = at least one non-cancelled registration on a session in the period.
      * Inactive = no such registration.
      *
-     * @return array{active: array<int, array{member_id: int, member_name: string, nickname: string, session_count: int, events: string}>, inactive: array<int, array{member_id: int, member_name: string, nickname: string}>}
+     * @return array{active: array<int, array{member_id: int, member_name: string, nickname: string, session_count: int, attended_count: int, present_unregistered_count: int, events: string}>, inactive: array<int, array{member_id: int, member_name: string, nickname: string}>}
      */
     private function getMemberActivityByPeriod(string $dateFrom, string $dateTo): array
     {
@@ -291,10 +293,14 @@ class StatsController extends AbstractController
 
             // `WHERE a.activite_adh` (no `= 1`) is truthy in both MySQL (tinyint(1))
             // and PostgreSQL (boolean) — `= 1` would fail under PostgreSQL's strict typing.
+            // attended_count = membre inscrit ET venu (status attended).
+            // present_unregistered_count = présent sans inscription préalable (walk-in).
             $sql = "SELECT a.id_adh, a.nom_adh, a.prenom_adh, a.pseudo_adh,
                         COUNT(DISTINCT s.$pkSess) AS session_count,
-                        COUNT(DISTINCT CASE WHEN r.status IN ('$statusAttended', '$statusPresentUnregistered')
-                            THEN s.$pkSess END) AS attendance_count,
+                        COUNT(DISTINCT CASE WHEN r.status = '$statusAttended'
+                            THEN s.$pkSess END) AS attended_count,
+                        COUNT(DISTINCT CASE WHEN r.status = '$statusPresentUnregistered'
+                            THEN s.$pkSess END) AS present_unregistered_count,
                         $concatExpr AS events
                     FROM $tAdh a
                     LEFT JOIN $tReg r
@@ -324,12 +330,13 @@ class StatsController extends AbstractController
 
                 if ($count > 0) {
                     $result['active'][] = [
-                        'member_id'        => $id,
-                        'member_name'      => $label,
-                        'nickname'         => $nickname,
-                        'session_count'    => $count,
-                        'attendance_count' => (int)$r['attendance_count'],
-                        'events'           => (string)($r['events'] ?? ''),
+                        'member_id'                  => $id,
+                        'member_name'                => $label,
+                        'nickname'                   => $nickname,
+                        'session_count'              => $count,
+                        'attended_count'             => (int)$r['attended_count'],
+                        'present_unregistered_count' => (int)$r['present_unregistered_count'],
+                        'events'                     => (string)($r['events'] ?? ''),
                     ];
                 } else {
                     $result['inactive'][] = [
@@ -343,6 +350,83 @@ class StatsController extends AbstractController
             Analog::log('Error getting member activity by period: ' . $e->getMessage(), Analog::ERROR);
         }
         return $result;
+    }
+
+    /**
+     * Get instructor involvement for the given period.
+     * Lists every member assigned as instructor on at least one non-cancelled
+     * session in the period, with the number of sessions run, the number of
+     * distinct months in which they ran sessions (a regularity indicator over
+     * the year) and the events they covered. Ordered by session count desc.
+     *
+     * @return array<int, array{member_id: int, member_name: string, nickname: string, session_count: int, active_months: int, events: string}>
+     */
+    private function getInstructorActivityByPeriod(string $dateFrom, string $dateTo): array
+    {
+        $instructors = [];
+        try {
+            $tAdh   = PREFIX_DB . \Galette\Entity\Adherent::TABLE;
+            $tInstr = PREFIX_DB . SessionInstructor::TABLE;
+            $tSess  = PREFIX_DB . Session::TABLE;
+            $tEvt   = PREFIX_DB . Event::TABLE;
+            $pkSess = Session::PK;
+            $pkEvt  = Event::PK;
+
+            $statusCancelled = Session::STATUS_CANCELLED;
+
+            // DATE_FORMAT is MySQL-only; TO_CHAR is the PostgreSQL equivalent.
+            $monthExpr = $this->zdb->isPostgres()
+                ? "TO_CHAR(s.session_date, 'YYYY-MM')"
+                : "DATE_FORMAT(s.session_date, '%Y-%m')";
+
+            // GROUP_CONCAT is MySQL-only; STRING_AGG is the PostgreSQL equivalent.
+            $concatExpr = $this->zdb->isPostgres()
+                ? "STRING_AGG(DISTINCT e.name, ', ' ORDER BY e.name)"
+                : "GROUP_CONCAT(DISTINCT e.name ORDER BY e.name SEPARATOR ', ')";
+
+            // Borne haute = min(dateTo, today) : on ne compte que les seances
+            // effectivement assurees (passees), meme si le filtre deborde sur le futur.
+            $today    = date('Y-m-d');
+            $dateToEff = $dateTo < $today ? $dateTo : $today;
+
+            $sql = "SELECT a.id_adh, a.nom_adh, a.prenom_adh, a.pseudo_adh,
+                        COUNT(DISTINCT s.$pkSess) AS session_count,
+                        COUNT(DISTINCT $monthExpr) AS active_months,
+                        $concatExpr AS events
+                    FROM $tInstr si
+                    JOIN $tSess s
+                        ON s.$pkSess = si.session_id
+                        AND s.session_date BETWEEN ? AND ?
+                        AND s.status != ?
+                    JOIN $tAdh a
+                        ON a.id_adh = si.member_id
+                    LEFT JOIN $tEvt e
+                        ON e.$pkEvt = s.event_id
+                    GROUP BY a.id_adh, a.nom_adh, a.prenom_adh, a.pseudo_adh
+                    ORDER BY session_count DESC, a.nom_adh ASC, a.prenom_adh ASC";
+
+            $rows = $this->zdb->db->query($sql, [
+                $dateFrom,
+                $dateToEff,
+                $statusCancelled,
+            ]);
+
+            foreach ($rows as $r) {
+                $name  = trim(($r['prenom_adh'] ?? '') . ' ' . ($r['nom_adh'] ?? ''));
+                $label = $name ?: _T('Unknown member', 'courses');
+                $instructors[] = [
+                    'member_id'     => (int)$r['id_adh'],
+                    'member_name'   => $label,
+                    'nickname'      => (string)($r['pseudo_adh'] ?? ''),
+                    'session_count' => (int)$r['session_count'],
+                    'active_months' => (int)$r['active_months'],
+                    'events'        => (string)($r['events'] ?? ''),
+                ];
+            }
+        } catch (Throwable $e) {
+            Analog::log('Error getting instructor activity by period: ' . $e->getMessage(), Analog::ERROR);
+        }
+        return $instructors;
     }
 
     /**

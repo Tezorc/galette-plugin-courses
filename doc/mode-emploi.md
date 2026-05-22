@@ -364,17 +364,21 @@ Le menu **Gestion des inscriptions > Statistiques** affiche un tableau de bord c
 - **Activite recente** : tableau des 20 derniers membres actifs avec date de derniere participation et nombre total de seances
 - **Membres actifs sur une periode** : section filtrable avec selecteur de dates (debut / fin), raccourcis rapides (Ce mois-ci, 3 derniers mois, 6 derniers mois, Cette annee, L'annee derniere), compteur de membres actifs, tableau exportable en CSV
   - **Taux de participation (Phase 62)** : encart bleu en haut de la section affichant le **pourcentage d'adherents actifs ayant participe sur la periode** (`actifs / (actifs + inactifs)`), avec une jauge progress coloree selon le seuil (rouge < 20 %, jaune 20-39 %, teal 40-74 %, vert ≥ 75 %) et la ligne `N / M adhérents actifs ont participé sur la période`. Le pourcentage se recalcule automatiquement a chaque changement de periode.
+- **Presence des moniteurs sur la periode (Phase 64)** : section separee (encadre teal) listant chaque moniteur ayant assure au moins une seance non annulee sur la periode, triee par nombre de seances decroissant. Colonnes : Moniteur, Pseudo, **Seances assurees**, **Mois actifs** (nombre de mois distincts ou il a encadre une seance — indicateur de regularite sur l'annee, badge vert ≥ 6 mois / jaune 3-5 / gris < 3), Evenements. Tableau exportable en CSV. Permet d'identifier les moniteurs reguliers et ceux ponctuels.
 - **Membres inactifs sur la periode** : section separee (encadre rouge) listant tous les adherents actifs n'ayant participe a aucune seance sur la periode, avec compteur et export CSV
 
 #### Filtrer les membres actifs et inactifs par periode
 
 1. Saisir les dates **Du** et **Au** (format `aaaa-mm-jj`) via les champs de date natifs ou utiliser les boutons de raccourci (les raccourcis remplissent les champs, cliquer ensuite sur **Filtrer**)
 2. Cliquer sur **Filtrer** : la page se recharge avec deux sections :
-   - **Membres actifs** : membres ayant au moins une seance sur la periode (colonnes : Membre, Pseudo, Seances, Presences, Evenements)
+   - **Membres actifs** : membres ayant au moins une seance sur la periode (colonnes : Membre, Pseudo, Seances, **Presents**, **Presents (non-inscrits)**, Evenements)
    - **Membres inactifs** : membres actifs de l'association sans aucune participation sur la periode
 3. Cliquer sur **Export CSV** de la section souhaitee pour telecharger la liste au format CSV (UTF-8 avec BOM pour Excel)
 
-La colonne **Presences** compte uniquement les seances ou le membre a ete pointe "Present" ou "Present (non inscrit)", distinctement du simple nombre d'inscriptions.
+Les deux colonnes de presence (Phase 64) distinguent desormais :
+
+- **Presents** : seances ou le membre etait inscrit puis a ete pointe "Present" (statut `attended`).
+- **Presents (non-inscrits)** : seances ou le membre s'est presente sans inscription prealable et a ete pointe "Present (non inscrit)" (statut `present_unregistered`) — utile pour reperer les participants reguliers qui ne passent pas par l'inscription en ligne.
 
 ### 12. Voir le detail d'une seance (staff / responsable de groupe)
 

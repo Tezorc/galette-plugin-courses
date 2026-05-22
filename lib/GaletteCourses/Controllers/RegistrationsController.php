@@ -800,6 +800,17 @@ class RegistrationsController extends AbstractController
             }
         }
 
+        // Phase 65: open + cancelled browse sessions are merged into ONE grid,
+        // sorted chronologically (earliest first). The template branches per card
+        // on the session status; cancelled cards carry data-cancelled for the JS.
+        $browse_all_sessions = array_merge(array_values($available_sessions), $browse_cancelled_sessions);
+        usort($browse_all_sessions, static function (Session $a, Session $b): int {
+            return strcmp(
+                $a->getSessionDate() . $a->getStartTime(),
+                $b->getSessionDate() . $b->getStartTime()
+            );
+        });
+
         $this->view->render(
             $response,
             $this->getTemplate('pages/my_registrations'),
@@ -822,6 +833,7 @@ class RegistrationsController extends AbstractController
                 'browse_event_types'          => EventType::getList($this->zdb),
                 'browse_available_names'      => $browse_available_names,
                 'browse_cancelled_sessions'   => $browse_cancelled_sessions,
+                'browse_all_sessions'         => $browse_all_sessions,
                 'member_is_up2date'       => $this->login->isUp2Date()
                                              || $this->login->isAdmin()
                                              || $this->login->isStaff()

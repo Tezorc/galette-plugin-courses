@@ -1974,3 +1974,28 @@ msgstr "Restriction de groupe"
 msgid "Open to all members"
 msgstr "Ouverte à tous les membres"
 
+# Phase 64 : présents non-inscrits + suivi des moniteurs
+msgid "Present (not registered)"
+msgstr "Présents (non-inscrits)"
+
+msgid "Instructor attendance by period"
+msgstr "Présence des moniteurs sur la période"
+
+msgid "Instructors running sessions, with regularity over the year"
+msgstr "Moniteurs assurant des séances, avec leur régularité sur l'année"
+
+msgid "instructors from"
+msgstr "moniteurs du"
+
+msgid "Instructor"
+msgstr "Moniteur"
+
+msgid "Sessions run"
+msgstr "Séances assurées"
+
+msgid "Active months"
+msgstr "Mois actifs"
+
+msgid "No instructor ran a session during this period."
+msgstr "Aucun moniteur n'a assuré de séance sur cette période."
+

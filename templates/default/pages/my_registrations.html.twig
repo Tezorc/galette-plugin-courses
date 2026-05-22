@@ -28,35 +28,19 @@
 {# =========================================================
    Préparer les données
    ========================================================= #}
-{% set upcoming_active = [] %}
-{% set upcoming_cancelled = [] %}
+{# Phase 65 : un seul flux chronologique pour les seances a venir (actives ET
+   annulees). Le tri par date est deja garanti par Registrations::getForMembers
+   (session_date ASC, start_time ASC). #}
+{% set upcoming = [] %}
 {% set past = [] %}
 {% for reg in registrations %}
     {% set s = sessions[reg.getSessionId()] %}
     {% if s.getSessionDate() >= "now"|date("Y-m-d") %}
-        {% if s.getStatus() == 'cancelled' %}
-            {% set upcoming_cancelled = upcoming_cancelled|merge([reg]) %}
-        {% else %}
-            {% set upcoming_active = upcoming_active|merge([reg]) %}
-        {% endif %}
+        {% set upcoming = upcoming|merge([reg]) %}
     {% else %}
         {% set past = past|merge([reg]) %}
     {% endif %}
 {% endfor %}
-
-{# Grouper les prochaines séances : next_group = toutes celles à la date la plus proche, rest_group = le reste #}
-{% set next_group = [] %}
-{% set rest_group = [] %}
-{% if upcoming_active|length > 0 %}
-    {% set next_date = sessions[(upcoming_active|first).getSessionId()].getSessionDate() %}
-    {% for reg in upcoming_active %}
-        {% if sessions[reg.getSessionId()].getSessionDate() == next_date %}
-            {% set next_group = next_group|merge([reg]) %}
-        {% else %}
-            {% set rest_group = rest_group|merge([reg]) %}
-        {% endif %}
-    {% endfor %}
-{% endif %}
 
 {# Compter les séances disponibles : doit correspondre EXACTEMENT au
    filtre de la boucle de cartes ci-dessous (déjà inscrit OU plus aucune
@@ -83,8 +67,8 @@
     <a class="item" data-tab="mine">
         <i class="calendar check icon" aria-hidden="true"></i>
         <span class="courses-tab-text">{{ _T("My registrations", "courses") }}</span>
-        {% if upcoming_active|length > 0 %}
-            <span class="ui green circular label" style="margin-left:.4em">{{ upcoming_active|length }}</span>
+        {% if upcoming|length > 0 %}
+            <span class="ui green circular label" style="margin-left:.4em">{{ upcoming|length }}</span>
         {% endif %}
     </a>
 </div>
@@ -155,11 +139,60 @@
             {{ _T("No upcoming session available.", "courses") }}
         </div>
     {% else %}
-        {% if available_sessions|length > 0 %}
+        {% if browse_all_sessions|length > 0 %}
         <div class="ui stackable three column grid courses-cards-grid" id="browse-cards-grid">
-        {% for s in available_sessions %}
+        {# Phase 65 : seances ouvertes ET annulees dans une seule grille triee par date #}
+        {% for s in browse_all_sessions %}
             {% set sid = s.getId() %}
             {% set ev = browse_events[s.getEventId()] %}
+            {% if s.getStatus() == 'cancelled' %}
+            {# ---- Carte annulee (informatif, melangee chronologiquement) ---- #}
+            <div class="column courses-browse-card-col"
+                 data-cancelled="1"
+                 data-type-id="{{ ev.getTypeId() }}"
+                 data-event-name="{{ ev.getName() }}"
+                 data-date="{{ s.getSessionDate() }}">
+                <div class="ui fluid card courses-card courses-card-cancelled">
+                    <div class="content">
+                        <div class="right floated meta">
+                            <span class="ui red label">{{ _T("Cancelled", "courses") }}</span>
+                        </div>
+                        <div class="header">{{ ev.getName() }}</div>
+                        <div class="meta">
+                            <i class="calendar icon" aria-hidden="true"></i>
+                            <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
+                            <span class="courses-date-month">{{ s.getMonthYear() }}</span>
+                            &nbsp;&middot;&nbsp;
+                            {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
+                        </div>
+                        {% if ev.getLocation() %}
+                            <div class="meta">
+                                <i class="map pin icon" aria-hidden="true"></i>
+                                {{ ev.getLocation() }}
+                            </div>
+                        {% endif %}
+                        {% if s.getCancellationReason() %}
+                            <div class="courses-cancel-detail">
+                                <strong>{{ _T("Reason:", "courses") }}</strong>
+                                {{ s.getCancellationReasonLabel() }}
+                            </div>
+                        {% endif %}
+                        {% if s.getCancellationComment() %}
+                            <div class="courses-cancel-detail">
+                                <i class="comment outline icon" aria-hidden="true"></i>
+                                {{ s.getCancellationComment() }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="extra content">
+                        <a href="{{ url_for("coursesSessionShow", {"id": sid}) }}" class="ui tiny basic button">
+                            <i class="eye icon" aria-hidden="true"></i>
+                            {{ _T("Details", "courses") }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% else %}
             {% set already = sid in registered_session_ids %}
             {% set on_wl = browse_on_waitlist[sid] %}
             {% set has_instr = browse_has_instructor[sid] %}
@@ -347,70 +380,10 @@
                 </div>
             </div>
             {% endif %}{# end if not already #}
+            {% endif %}{# end if cancelled / else #}
         {% endfor %}
         </div>
-        {% endif %}{# end if available_sessions > 0 #}
-
-        {# Seances annulees — purement informatif : l'adherent voit que le creneau
-           existe mais qu'il est annule (pas de bouton d'inscription). #}
-        {% if browse_cancelled_sessions|length > 0 %}
-        <div id="browse-cancelled-section" class="ui red segment courses-section-mt">
-            <h3 class="ui red header">
-                <i class="ban icon" aria-hidden="true"></i>
-                {{ _T("Cancelled sessions", "courses") }}
-            </h3>
-            <div class="ui stackable three column grid courses-cards-grid" id="browse-cancelled-grid">
-            {% for s in browse_cancelled_sessions %}
-                {% set sid = s.getId() %}
-                {% set ev = browse_events[s.getEventId()] %}
-                <div class="column courses-browse-card-col"
-                     data-type-id="{{ ev.getTypeId() }}"
-                     data-event-name="{{ ev.getName() }}"
-                     data-date="{{ s.getSessionDate() }}">
-                    <div class="ui fluid card courses-card courses-card-cancelled">
-                        <div class="content">
-                            <div class="right floated meta">
-                                <span class="ui red label">{{ _T("Cancelled", "courses") }}</span>
-                            </div>
-                            <div class="header">{{ ev.getName() }}</div>
-                            <div class="meta">
-                                <i class="calendar icon" aria-hidden="true"></i>
-                                <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
-                                <span class="courses-date-month">{{ s.getMonthYear() }}</span>
-                                &nbsp;&middot;&nbsp;
-                                {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
-                            </div>
-                            {% if ev.getLocation() %}
-                                <div class="meta">
-                                    <i class="map pin icon" aria-hidden="true"></i>
-                                    {{ ev.getLocation() }}
-                                </div>
-                            {% endif %}
-                            {% if s.getCancellationReason() %}
-                                <div class="courses-cancel-detail">
-                                    <strong>{{ _T("Reason:", "courses") }}</strong>
-                                    {{ s.getCancellationReasonLabel() }}
-                                </div>
-                            {% endif %}
-                            {% if s.getCancellationComment() %}
-                                <div class="courses-cancel-detail">
-                                    <i class="comment outline icon" aria-hidden="true"></i>
-                                    {{ s.getCancellationComment() }}
-                                </div>
-                            {% endif %}
-                        </div>
-                        <div class="extra content">
-                            <a href="{{ url_for("coursesSessionShow", {"id": sid}) }}" class="ui tiny basic button">
-                                <i class="eye icon" aria-hidden="true"></i>
-                                {{ _T("Details", "courses") }}
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-            </div>
-        </div>
-        {% endif %}
+        {% endif %}{# end if browse_all_sessions > 0 #}
     {% endif %}
 </div>
 
@@ -439,22 +412,105 @@
             </a>
         </div>
 
-        {# Prochaine séance #}
-        {% if next_group|length > 0 %}
-
-            {# Votre prochaine séance — toutes les inscriptions à la date la plus proche #}
+        {# Phase 65 : flux unique des seances a venir (actives + annulees), par date #}
+        {% if upcoming|length > 0 %}
             <h3 class="ui header courses-section-mt-sm">
-                <i class="star icon" aria-hidden="true"></i>
-                {{ _T("Your next session", "courses") }}
+                <i class="clock icon" aria-hidden="true"></i>
+                {{ _T("Upcoming", "courses") }}
             </h3>
             <div class="ui stackable three column grid courses-cards-grid">
-                {% for reg in next_group %}
+                {% for reg in upcoming %}
                     {% set s = sessions[reg.getSessionId()] %}
                     {% set ev = events[s.getEventId()] %}
                     {% set mid = reg.getMemberId() %}
+                    {% if s.getStatus() == 'cancelled' %}
+                    {# ---- Carte seance annulee (informatif + desinscription) ---- #}
+                    <div class="column">
+                        <div class="ui fluid card courses-card courses-card-cancelled">
+                            <div class="content">
+                                <div class="right floated meta">
+                                    <span class="ui red label">{{ _T("Cancelled", "courses") }}</span>
+                                </div>
+                                <div class="header">{{ ev.getName() }}</div>
+                                <div class="meta">
+                                    <i class="calendar icon" aria-hidden="true"></i>
+                                    <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
+                                    <span class="courses-date-month">{{ s.getMonthYear() }}</span>
+                                    &nbsp;&middot;&nbsp;
+                                    {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
+                                </div>
+                                {% if ev.getLocation() %}
+                                    <div class="meta">
+                                        <i class="map pin icon" aria-hidden="true"></i>
+                                        {{ ev.getLocation() }}
+                                    </div>
+                                {% endif %}
+                                {% if mine_instructor_names[s.getId()] is defined %}
+                                    <div class="meta">
+                                        <i class="chalkboard teacher icon" aria-hidden="true"></i>
+                                        {{ mine_instructor_names[s.getId()] }}
+                                    </div>
+                                {% endif %}
+                                {% if reg_members[mid] is defined %}
+                                    <div class="meta courses-member-meta">
+                                        <i class="user icon" aria-hidden="true"></i>
+                                        {{ reg_members[mid].name }}
+                                        {% if reg_members[mid].nickname %}
+                                            <span class="ui teal mini label">
+                                                <i class="tag icon" aria-hidden="true"></i>
+                                                {{ reg_members[mid].nickname }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                                {% if s.getCancellationReason() %}
+                                    <div class="courses-cancel-detail">
+                                        <strong>{{ _T("Reason:", "courses") }}</strong>
+                                        {{ s.getCancellationReasonLabel() }}
+                                    </div>
+                                {% endif %}
+                                {% if s.getCancellationComment() %}
+                                    <div class="courses-cancel-detail">
+                                        <i class="comment outline icon" aria-hidden="true"></i>
+                                        {{ s.getCancellationComment() }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="extra content">
+                                <a href="{{ url_for("coursesSessionShow", {"id": s.getId()}) }}" class="ui small primary button">
+                                    <i class="eye icon" aria-hidden="true"></i>
+                                    {{ _T("Details", "courses") }}
+                                </a>
+                                <a href="{{ url_for("coursesSessionIcal", {"id": s.getId()}) }}" class="ui mini icon button" title="{{ _T("Export iCal", "courses") }}">
+                                    <i class="calendar download icon" aria-hidden="true"></i>
+                                </a>
+                                {% if mid == current_member_id %}
+                                    <form action="{{ url_for("coursesDoUnregister", {"id": s.getId()}) }}" method="post" class="ui form courses-inline-form">
+                                        <input type="hidden" name="redirect_to" value="my_registrations"/>
+                                        <button type="submit" class="ui small red labeled icon button">
+                                            <i class="times icon" aria-hidden="true"></i>
+                                            {{ _T("Unregister", "courses") }}
+                                        </button>
+                                        {% include 'components/forms/csrf.html.twig' %}
+                                    </form>
+                                {% else %}
+                                    <form action="{{ url_for("coursesDoParentUnregister", {"id": s.getId()}) }}" method="post" class="ui form courses-inline-form">
+                                        <input type="hidden" name="redirect_to" value="my_registrations"/>
+                                        <input type="hidden" name="member_id" value="{{ mid }}">
+                                        <button type="submit" class="ui small red labeled icon button">
+                                            <i class="times icon" aria-hidden="true"></i>
+                                            {{ _T("Unregister", "courses") }}
+                                        </button>
+                                        {% include 'components/forms/csrf.html.twig' %}
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
                     {% set is_out_of_group = out_of_group_regs[reg.getId()] is defined %}
                     <div class="column">
-                        <div class="ui fluid card courses-card courses-next-session{% if is_out_of_group %} courses-card-out-of-group{% endif %}">
+                        <div class="ui fluid card courses-card{% if is_out_of_group %} courses-card-out-of-group{% endif %}">
                             <div class="content">
                                 <div class="right floated meta">
                                     {% if is_out_of_group %}
@@ -552,242 +608,14 @@
                             </div>
                         </div>
                     </div>
+                    {% endif %}{# fin branche annulee / active #}
                 {% endfor %}
             </div>
-
-            {# Autres séances à venir (dates ultérieures) #}
-            {% if rest_group|length > 0 %}
-                <h3 class="ui header courses-section-mt">
-                    <i class="clock icon" aria-hidden="true"></i>
-                    {{ _T("Upcoming", "courses") }}
-                </h3>
-                <div class="ui stackable three column grid courses-cards-grid">
-                    {% for reg in rest_group %}
-                        {% set s = sessions[reg.getSessionId()] %}
-                        {% set ev = events[s.getEventId()] %}
-                        {% set mid = reg.getMemberId() %}
-                        {% set is_out_of_group = out_of_group_regs[reg.getId()] is defined %}
-                        <div class="column">
-                            <div class="ui fluid card courses-card{% if is_out_of_group %} courses-card-out-of-group{% endif %}">
-                                <div class="content">
-                                    <div class="right floated meta">
-                                        {% if is_out_of_group %}
-                                            <span class="ui orange label" title="{{ _T("You no longer belong to the required group for this event.", "courses") }}">
-                                                <i class="exclamation triangle icon" aria-hidden="true"></i>
-                                                {{ _T("Out of group", "courses") }}
-                                            </span>
-                                        {% else %}
-                                            <span class="ui green label">{{ reg.getStatusLabel() }}</span>
-                                        {% endif %}
-                                        {% if my_conflicts[reg.getId()] is defined %}
-                                            <span class="ui orange basic label" title="{{ _T("Schedule conflict with:", "courses") }} {{ my_conflicts[reg.getId()]|join(' ; ') }}">
-                                                <i class="exclamation triangle icon" aria-hidden="true"></i>
-                                                {{ _T("Schedule conflict", "courses") }}
-                                            </span>
-                                        {% endif %}
-                                    </div>
-                                    <a class="header" href="{{ url_for("coursesEventShow", {"id": ev.getId()}) }}">
-                                        {{ ev.getName() }}
-                                    </a>
-                                    <div class="meta">
-                                        <i class="calendar icon" aria-hidden="true"></i>
-                                        <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
-                                        <span class="courses-date-month">{{ s.getMonthYear() }}</span>
-                                        &nbsp;&middot;&nbsp;
-                                        {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
-                                    </div>
-                                    {% if ev.getLocation() %}
-                                        <div class="meta">
-                                            <i class="map pin icon" aria-hidden="true"></i>
-                                            {{ ev.getLocation() }}
-                                        </div>
-                                    {% endif %}
-                                    {% if mine_instructor_names[s.getId()] is defined %}
-                                        <div class="meta">
-                                            <i class="chalkboard teacher icon" aria-hidden="true"></i>
-                                            {{ mine_instructor_names[s.getId()] }}
-                                        </div>
-                                    {% endif %}
-                                    {% if reg_members[mid] is defined %}
-                                        <div class="meta courses-member-meta">
-                                            <i class="user icon" aria-hidden="true"></i>
-                                            {{ reg_members[mid].name }}
-                                            {% if reg_members[mid].nickname %}
-                                                <span class="ui teal mini label">
-                                                    <i class="tag icon" aria-hidden="true"></i>
-                                                    {{ reg_members[mid].nickname }}
-                                                </span>
-                                            {% endif %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                {# Jauge capacité #}
-                                {% if s.getMaxCapacity() %}
-                                    <div class="content">
-                                        <div class="ui tiny progress{% if s.isFull() %} red{% elseif s.getCapacityPercent() > 75 %} yellow{% else %} green{% endif %}" data-percent="{{ s.getCapacityPercent() }}">
-                                            <div class="bar" style="width:{{ s.getCapacityPercent() }}%"></div>
-                                            <div class="label">{{ s.getCurrentRegistrations() }} / {{ s.getMaxCapacity() }}</div>
-                                        </div>
-                                    </div>
-                                {% else %}
-                                    <div class="content">
-                                        <i class="users icon" aria-hidden="true"></i>
-                                        {{ s.getCurrentRegistrations() }} {{ _T("registered", "courses") }}
-                                    </div>
-                                {% endif %}
-                                <div class="extra content">
-                                    <a href="{{ url_for("coursesSessionShow", {"id": s.getId()}) }}" class="ui small primary button">
-                                        <i class="eye icon" aria-hidden="true"></i>
-                                        {{ _T("Details", "courses") }}
-                                    </a>
-                                    <a href="{{ url_for("coursesSessionIcal", {"id": s.getId()}) }}" class="ui mini icon button" title="{{ _T("Export iCal", "courses") }}">
-                                        <i class="calendar download icon" aria-hidden="true"></i>
-                                    </a>
-                                    {% if mid == current_member_id %}
-                                        <form action="{{ url_for("coursesDoUnregister", {"id": s.getId()}) }}" method="post" class="ui form courses-inline-form">
-                                            <input type="hidden" name="redirect_to" value="my_registrations"/>
-                                            <button type="submit" class="ui small red labeled icon button">
-                                                <i class="times icon" aria-hidden="true"></i>
-                                                {{ _T("Unregister", "courses") }}
-                                            </button>
-                                            {% include 'components/forms/csrf.html.twig' %}
-                                        </form>
-                                    {% else %}
-                                        <form action="{{ url_for("coursesDoParentUnregister", {"id": s.getId()}) }}" method="post" class="ui form courses-inline-form">
-                                            <input type="hidden" name="redirect_to" value="my_registrations"/>
-                                            <input type="hidden" name="member_id" value="{{ mid }}">
-                                            <button type="submit" class="ui small red labeled icon button">
-                                                <i class="times icon" aria-hidden="true"></i>
-                                                {{ _T("Unregister", "courses") }}
-                                            </button>
-                                            {% include 'components/forms/csrf.html.twig' %}
-                                        </form>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
 
         {% else %}
             <div class="ui info message">
                 <i class="info circle icon" aria-hidden="true"></i>
                 {{ _T("No upcoming session", "courses") }}
-            </div>
-        {% endif %}
-
-        {# Séances annulées #}
-        {% if upcoming_cancelled|length > 0 %}
-            <div class="ui red segment courses-section-mt">
-                <h3 class="ui red header">
-                    <i class="ban icon" aria-hidden="true"></i>
-                    {{ _T("Cancelled sessions", "courses") }}
-                    <span class="ui red circular label">{{ upcoming_cancelled|length }}</span>
-                </h3>
-                <div class="ui stackable three column grid courses-cards-grid">
-                    {% for reg in upcoming_cancelled %}
-                        {% set s = sessions[reg.getSessionId()] %}
-                        {% set ev = events[s.getEventId()] %}
-                        {% set mid = reg.getMemberId() %}
-                        <div class="column">
-                            <div class="ui fluid card courses-card courses-card-cancelled">
-                                <div class="content">
-                                    <div class="right floated meta">
-                                        <span class="ui red label">{{ _T("Cancelled", "courses") }}</span>
-                                    </div>
-                                    <div class="header">{{ ev.getName() }}</div>
-                                    <div class="meta">
-                                        <i class="calendar icon" aria-hidden="true"></i>
-                                        <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
-                                        <span class="courses-date-month">{{ s.getMonthYear() }}</span>
-                                        &nbsp;&middot;&nbsp;
-                                        {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
-                                    </div>
-                                    {% if ev.getLocation() %}
-                                        <div class="meta">
-                                            <i class="map pin icon" aria-hidden="true"></i>
-                                            {{ ev.getLocation() }}
-                                        </div>
-                                    {% endif %}
-                                    {% if mine_instructor_names[s.getId()] is defined %}
-                                        <div class="meta">
-                                            <i class="chalkboard teacher icon" aria-hidden="true"></i>
-                                            {{ mine_instructor_names[s.getId()] }}
-                                        </div>
-                                    {% endif %}
-                                    {% if reg_members[mid] is defined %}
-                                        <div class="meta courses-member-meta">
-                                            <i class="user icon" aria-hidden="true"></i>
-                                            {{ reg_members[mid].name }}
-                                            {% if reg_members[mid].nickname %}
-                                                <span class="ui teal mini label">
-                                                    <i class="tag icon" aria-hidden="true"></i>
-                                                    {{ reg_members[mid].nickname }}
-                                                </span>
-                                            {% endif %}
-                                        </div>
-                                    {% endif %}
-                                    {% if s.getCancellationReason() %}
-                                        <div class="courses-cancel-detail">
-                                            <strong>{{ _T("Reason:", "courses") }}</strong>
-                                            {{ s.getCancellationReasonLabel() }}
-                                        </div>
-                                    {% endif %}
-                                    {% if s.getCancellationComment() %}
-                                        <div class="courses-cancel-detail">
-                                            <i class="comment outline icon" aria-hidden="true"></i>
-                                            {{ s.getCancellationComment() }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                {# Jauge capacité #}
-                                {% if s.getMaxCapacity() %}
-                                    <div class="content">
-                                        <div class="ui tiny progress{% if s.isFull() %} red{% elseif s.getCapacityPercent() > 75 %} yellow{% else %} green{% endif %}" data-percent="{{ s.getCapacityPercent() }}">
-                                            <div class="bar" style="width:{{ s.getCapacityPercent() }}%"></div>
-                                            <div class="label">{{ s.getCurrentRegistrations() }} / {{ s.getMaxCapacity() }}</div>
-                                        </div>
-                                    </div>
-                                {% else %}
-                                    <div class="content">
-                                        <i class="users icon" aria-hidden="true"></i>
-                                        {{ s.getCurrentRegistrations() }} {{ _T("registered", "courses") }}
-                                    </div>
-                                {% endif %}
-                                <div class="extra content">
-                                    <a href="{{ url_for("coursesSessionShow", {"id": s.getId()}) }}" class="ui small primary button">
-                                        <i class="eye icon" aria-hidden="true"></i>
-                                        {{ _T("Details", "courses") }}
-                                    </a>
-                                    <a href="{{ url_for("coursesSessionIcal", {"id": s.getId()}) }}" class="ui mini icon button" title="{{ _T("Export iCal", "courses") }}">
-                                        <i class="calendar download icon" aria-hidden="true"></i>
-                                    </a>
-                                    {% if mid == current_member_id %}
-                                        <form action="{{ url_for("coursesDoUnregister", {"id": s.getId()}) }}" method="post" class="ui form courses-inline-form">
-                                            <input type="hidden" name="redirect_to" value="my_registrations"/>
-                                            <button type="submit" class="ui small red labeled icon button">
-                                                <i class="times icon" aria-hidden="true"></i>
-                                                {{ _T("Unregister", "courses") }}
-                                            </button>
-                                            {% include 'components/forms/csrf.html.twig' %}
-                                        </form>
-                                    {% else %}
-                                        <form action="{{ url_for("coursesDoParentUnregister", {"id": s.getId()}) }}" method="post" class="ui form courses-inline-form">
-                                            <input type="hidden" name="redirect_to" value="my_registrations"/>
-                                            <input type="hidden" name="member_id" value="{{ mid }}">
-                                            <button type="submit" class="ui small red labeled icon button">
-                                                <i class="times icon" aria-hidden="true"></i>
-                                                {{ _T("Unregister", "courses") }}
-                                            </button>
-                                            {% include 'components/forms/csrf.html.twig' %}
-                                        </form>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
             </div>
         {% endif %}
 
@@ -906,18 +734,19 @@ $(function() {
             return shown;
         }
 
+        // Phase 65: open + cancelled cards share one grid, filtered together.
         var visible = filterGrid($('#browse-cards-grid .courses-browse-card-col'));
-        // Cancelled sessions are informational — filtered with the same criteria,
-        // and the whole section is hidden when nothing matches.
-        var cancelledVisible = filterGrid($('#browse-cancelled-grid .courses-browse-card-col'));
-        $('#browse-cancelled-section').toggle(cancelledVisible > 0);
 
-        var hasGrid = $('#browse-cards-grid').length > 0 || $('#browse-cancelled-grid').length > 0;
-        $('#browse-no-results').toggle(visible === 0 && cancelledVisible === 0 && hasGrid);
+        var hasGrid = $('#browse-cards-grid').length > 0;
+        $('#browse-no-results').toggle(visible === 0 && hasGrid);
+        // Badge counts only actionable (non-cancelled) sessions still visible.
         var $badge = $('#browse-count-badge');
         if ($badge.length) {
-            $badge.text(visible);
-            $badge.toggle(visible > 0);
+            var actionable = $('#browse-cards-grid .courses-browse-card-col:not([data-cancelled])').filter(function() {
+                return this.style.getPropertyValue('display') !== 'none';
+            }).length;
+            $badge.text(actionable);
+            $badge.toggle(actionable > 0);
         }
     }
 

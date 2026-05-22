@@ -25,7 +25,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 1 - MVP : Evenements ponctuels et inscriptions
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 #### F1.1 - Gestion des evenements
 
@@ -76,7 +76,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 2 - Workflow de validation et notifications
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 #### F2.1 - Workflow de validation
 
@@ -107,7 +107,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 3 - Evenements recurrents
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 #### F3.1 - Configuration de la recurrence
 
@@ -144,7 +144,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 4 - Liste d'attente, export iCal et statistiques
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 #### F4.1 - Liste d'attente
 
@@ -183,7 +183,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 5-7 - Moniteurs, pointage, UX avancee
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Gestion des moniteurs : assignation (staff), volontariat (responsable de groupe), blocage inscription si aucun moniteur
 - Inscription par procuration (responsable/staff) via routes dediees
@@ -195,7 +195,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 8 - Inscription d'un enfant par le parent
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 #### F8.1 - Inscription d'un enfant
 
@@ -224,7 +224,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 10 - Filtres avances, fermeture de seance, preferences et statistiques ameliorees
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 #### F10.1 - Filtres cascade Type / Nom sur seances et inscriptions
 
@@ -293,7 +293,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 9 - Optimisation responsive et UX
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 #### F9.1 - CSS responsive
 
@@ -322,7 +322,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 11 - Desinscription emails, edition de seance et restructuration menus
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 #### F11.1 - Desinscription emails (opt-out par lien)
 
@@ -381,7 +381,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 12 - Filtres membre, notification ouverture seance et refonte page detail seance
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 #### F12.1 - Filtres dynamiques sur l'onglet "Trouver une seance"
 
@@ -425,7 +425,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 13 - Export CSV des inscrits et liste d'attente
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 #### F13.1 - Export CSV depuis la page de detail seance
 
@@ -441,7 +441,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 14 - Ameliorations liste des inscriptions et courriel depuis la seance
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 #### F14.1 - Liste des inscriptions : filtres et affichage ameliores
 
@@ -459,7 +459,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 15 - Descriptif de l'evenement dans les courriels de notification
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 #### F15.1 - Variable `{event_description}` dans les modeles d'emails
 
@@ -470,7 +470,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 17 - Correction du controle d'acces a l'auto-inscription par groupe
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 #### F17.1 - canRegisterSelf() : verification stricte de l'appartenance au groupe
 
@@ -495,7 +495,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 16 - Correction des flux de notification manquants
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 #### F16.1 - Notification lors de la creation d'une seance pour la liste d'attente
 
@@ -511,7 +511,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 18 - Refonte UX page "Mes inscriptions" et responsive
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 #### F18.1 - Masquage automatique des seances deja traitees dans l'onglet browse
 
@@ -547,7 +547,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 19 - Durcissement securite (revue ACL et timing)
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 #### F19.1 - ACL sur l'inscription proxy (staff/group manager only)
 
@@ -579,7 +579,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 20 - Mise en place de l'infrastructure de tests
 
-**Statut : EN COURS - 35 tests verts (ACL + securite token + templates email)**
+**Statut :** EN COURS - 35 tests verts (ACL + securite token + templates email)
 
 #### F20.1 - Outillage PHPUnit
 
@@ -634,7 +634,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 58 - Polish smartphone du tableau des periodes de fermeture (preferences)
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : suite du polish responsive (apres Phase 51 events_list et Phase 57 stats) — sur smartphone, le tableau des periodes de fermeture du club (`#closure-table` dans `preferences.html.twig`) restait tabulaire avec scroll horizontal et plusieurs colonnes cachees (Duration en ≤1024px, Status en ≤767px) pour preserver Reason. Les inputs date/text se touchaient au bord de l'ecran et la cellule actions etait collee a la cellule Status.
 
@@ -654,9 +654,50 @@ Le developpement est organise en phases progressives.
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Phase 65 - Fusion chronologique des seances annulees dans le flux (Mes inscriptions / Mes seances moniteur)
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : (1) "dans mes seances membres et moniteur dans les 2 onglets mettre les seances annulees chronologiquement" ; (2) "les seances annulees les mettre par ordre chrono avec les autres blocks" (choix retenu via question : "tout fusionne, prochaine incluse" pour l'onglet inscriptions/seances + "dans la meme grille, par date" pour l'onglet Trouver une seance).
+
+- **Objectif** : supprimer les blocs "Cancelled sessions" separes et fondre les seances annulees futures dans le meme flux chronologique que les seances actives, sur les 4 emplacements (page membre `my_registrations` + page moniteur `my_instructor_sessions`, onglets "Trouver une seance" et "Mes inscriptions"/"Mes seances").
+
+- **Onglet "Mes inscriptions" / "Mes seances"** : les anciens buckets `next_group` / `rest_group` (separation "prochaine seance" vs "a venir") et le bloc rouge `upcoming_cancelled` separe sont remplaces par UN seul flux `upcoming` (toutes les inscriptions/seances futures, statut quelconque), rendu dans une grille unique sous le titre "Upcoming". Le tri par date est deja garanti en amont : `Registrations::getForMembers` ordonne `session_date ASC, start_time ASC` (page membre) ; `SessionsController::myInstructorSessions` fait un `uasort` date+heure sur `$sessions` (page moniteur). Chaque carte branche en Twig sur `s.getStatus() == 'cancelled'` : carte rouge (motif/commentaire d'annulation, Details + iCal + desinscription) ou carte active habituelle (badge statut, jauge, conflit, out-of-group, Details + iCal + desinscription). La zone "Your next session" disparait (la prochaine seance est simplement la premiere du flux).
+
+- **Onglet "Trouver une seance"** : la grille des seances ouvertes et la grille rouge des seances annulees sont fusionnees en UNE grille triee par date. Cote controleur : `RegistrationsController` construit `$browse_all_sessions = array_merge(array_values($available_sessions), $browse_cancelled_sessions)` puis `usort` (cle `session_date . start_time`) ; `SessionsController` construit `$volunteer_all_sessions = $volunteer_sessions + $volunteer_cancelled_sessions` (**union `+` et non `array_merge`**, pour preserver les cles entieres = session-id dont le template a besoin ; les deux ensembles sont disjoints) puis `uasort`. Le template boucle la liste fusionnee et branche par carte ; les cartes annulees portent `data-cancelled="1"`.
+
+- **JS** : un seul `filterGrid` par onglet (plus de grille annulee separee a masquer). Le badge d'onglet "Trouver une seance" ne compte que les cartes **actionnables** encore visibles, via le selecteur `.courses-browse-card-col:not([data-cancelled])` filtre sur `style.display !== 'none'`.
+
+- **Stats — recentrage du filtre periode** : suite a un retour UI sur "Membres actifs sur une periode", `webroot/galette_courses.css` ajoute `justify-content: center` a `.courses-filter-row` (groupe Du/Au/Filtrer centre) et une regle de base `.courses-filter-shortcuts { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:.4em; margin-top:.6em; }` (raccourcis centres au lieu de coller a gauche/droite). Les regles mobiles `@media (max-width:767px)` existantes restent prioritaires (empilement pleine largeur, boutons 50%).
+
+- Aucune migration BDD, aucune nouvelle chaine i18n (toutes les chaines des cartes annulees etaient deja traduites). `browse_cancelled_sessions` / `volunteer_cancelled_sessions` restent passes au template pour les tests de presence (`|length`) mais ne servent plus au rendu.
+
+### Phase 64 - Presence des moniteurs + distinction presents / presents non-inscrits (statistiques)
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : "rajouter une statistique pour le moniteur pour suivre les moniteurs impliques et assurant des cours regulierement au cours de l'annee. Pour Membres actifs sur une periode distingue les presents et ceux present non-inscrit."
+
+- **Objectif** : (1) donner au staff/admin une vue de l'implication des moniteurs sur la periode filtree, avec un indicateur de regularite sur l'annee ; (2) dans le tableau "Membres actifs sur une periode", separer les vrais presents (inscrits + venus) des walk-in (presents sans inscription prealable), auparavant fusionnes dans une colonne unique "Presences".
+
+- **Modifications** :
+  - `StatsController::getMemberActivityByPeriod` : la colonne agregee `attendance_count` (qui comptait `status IN (attended, present_unregistered)`) est scindee en deux `COUNT(DISTINCT CASE ...)` distincts -> `attended_count` (`status = attended`) et `present_unregistered_count` (`status = present_unregistered`). Aucun SQL supplementaire (memes JOIN, deux expressions conditionnelles de plus).
+  - `StatsController::getInstructorActivityByPeriod($dateFrom, $dateTo)` (nouvelle methode) : requete brute `galette_courses_session_instructors si JOIN sessions s (BETWEEN ? AND ? AND status != cancelled) JOIN adherents a LEFT JOIN events e`, groupee par adherent. Colonnes : `session_count` (COUNT DISTINCT seances), `active_months` (COUNT DISTINCT du mois `YYYY-MM` de `session_date` — indicateur de regularite sur l'annee, compatible MySQL `DATE_FORMAT` / PostgreSQL `TO_CHAR`), `events` (GROUP_CONCAT / STRING_AGG des noms d'evenements). Triee `session_count DESC`. Import `use GaletteCourses\Entity\SessionInstructor;` ajoute. Resultat expose sous `stats.instructor_activity`.
+  - `templates/default/pages/stats.html.twig` :
+    - Tableau "Membres actifs" : la colonne "Present" passe a `attended_count` (label vert), nouvelle colonne "Present (not registered)" (label orange, `present_unregistered_count`). En-tete + export CSV mis a jour (6 colonnes).
+    - Nouveau segment "Instructor attendance by period" (encadre teal `.courses-period-instructors`) entre les membres actifs et inactifs : tableau Moniteur / Pseudo / Sessions run / Active months (badge vert ≥ 6 / jaune 3-5 / gris < 3) / Events, compteur + export CSV (`#export-instructors-csv-btn`).
+  - `webroot/galette_courses.css` : ajout `.courses-period-instructors { border-top: 3px solid #00b5ad }` (teal, coherent avec les bords bleu/rouge des sections actifs/inactifs).
+  - `lang/courses_fr_FR.utf8.po` + `.mo` recompile via msgfmt : 8 nouvelles cles (`Present (not registered)`, `Instructor attendance by period`, `Instructors running sessions, with regularity over the year`, `instructors from`, `Instructor`, `Sessions run`, `Active months`, `No instructor ran a session during this period.`).
+
+- **Tradeoffs** :
+  - `active_months` choisi comme proxy de "regularite" plutot qu'un calcul de cadence plus fin (ex : ecart-type entre seances) : lisible immediatement et borne par la periode filtree (par defaut annee en cours). Un moniteur a 6 mois actifs sur l'annee = present regulierement ; a 1 mois = ponctuel.
+  - Le suivi moniteur ne compte que les seances **effectivement assurees (passees)** : la borne haute effective est `min(dateTo, aujourd'hui)` (`$dateToEff`). Ainsi, meme si le staff elargit le filtre sur le futur, les affectations a venir ne gonflent ni "Sessions run" ni "Active months" — l'intitule "assurees" reste exact. Le tableau des membres actifs conserve lui la borne `dateTo` d'origine (les presences/inscriptions futures eventuelles ne sont pas masquees).
+
+- **Tests** : aucun nouveau test (calcul SQL trivial, pas de logique metier branchee). `php -l` propre, `.mo` compile sans erreur.
+
 ### Phase 63 - Rappel frequence + restriction de groupe dans la fiche seance
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : "dans seance rappel dans information presicer si seance unique ou recurrente, la restriction groupe".
 
@@ -677,7 +718,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 62 - Taux de participation des membres dans les statistiques
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : "dans statistique, rajouter Membres actifs sur une période en % suivant les périodes"
 
@@ -695,7 +736,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 61 - Signalisation des conflits horaires (inscriptions + blocage moniteur)
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur, en deux temps :
   1. "verifier qu'un membre (parent+pseudo ou enfant+pseudo) ne peut etre inscrit a plusieurs seances sur une plage horaire commune et meme jour" -> arbitrage : **non-bloquant avec avertissement** + signalisation visuelle (badge orange).
@@ -734,7 +775,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 60 - Depersonnalisation du plugin via `_local_lang.php`
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : "depersonnaliser le plugin pour le rendre utilisable par d'autre association / mettre la personnalisation dans local lang"
 
@@ -767,7 +808,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 59 - Digest hebdomadaire membre + regroupement parent/enfants
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : "limiter l'envoi de mail pour ne pas submerger les membres a un seul par semaine. Regrouper les parents & enfants sauf si enfant a son propre mail. Tu propose quoi ?" — apres echange : decoupage urgent / hebdo, regle parent+enfants partagee, parent toujours notifie meme sans inscription personnelle, enfant a email distinct reçoit egalement son mail.
 
@@ -841,7 +882,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 44 - Periodes de fermeture du club -> seances generees en `cancelled`
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : "Les seances recurrentes durant les periodes de fermeture du club devraient etre creees en annule avec la cause de l'annulation (fermeture annuelle, concours, AG, etc.)" — au lieu d'etre **sautees silencieusement** comme c'etait le cas depuis la Phase 10.
 
@@ -900,7 +941,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 53 - Rafraichissement de l'affichage apres action d'inscription (retour sur la page d'origine)
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Bug observe par l'utilisateur : sur la page **Mes inscriptions** (onglets *Trouver une seance* + *Mes inscriptions*), s'inscrire a une seance via le bouton inline renvoyait sur la fiche seance (`coursesSessionShow`) ; en revenant ensuite sur Mes inscriptions, la seance restait visible dans *Trouver une seance* et absente de *Mes inscriptions* — la page n'avait pas ete rechargee, l'affichage etait **perime**. Meme symptome pour la desinscription depuis l'onglet *Mes inscriptions* et pour le volontariat moniteur depuis *Mes seances comme moniteur > Trouver une seance*.
 - Cause racine : tous les handlers `do*Register/do*Unregister/doWaitlist` redirigent toujours vers `coursesSessionShow`, sans tenir compte de la page d'origine. Acceptable depuis la fiche seance (l'utilisateur revient sur la fiche), inadequat depuis la page Mes inscriptions (l'utilisateur veut continuer a parcourir et voir l'effet de son action).
@@ -919,7 +960,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 52 - Seances annulees affichees dans l'onglet "Trouver une seance"
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : "dans mes seances > trouver une seance, les seances annulees doivent etre affichees pour informer les adherents". Auparavant l'onglet *Trouver une seance* (`my_registrations.html.twig`, vue browse) ne chargeait que les seances **ouvertes** futures (`status_filter = 'open'`, `date_from = today`) — une seance annulee disparaissait purement et simplement du catalogue, laissant l'adherent sans information sur l'absence du creneau.
 - Controleur (`RegistrationsController::myRegistrations`) : apres le chargement de la liste browse existante, une seconde requete `Sessions` est lancee avec `status_filter = Session::STATUS_CANCELLED` et `date_from = today`, sous le meme scope `setPersonalMemberId($member_id)` (groupes de l'adherent + de ses enfants, evenements valides). Les seances deja presentes dans le map `$sessions` (parent ou enfant inscrit) sont ignorees — elles figurent deja dans l'onglet "Mes inscriptions". Resultat passe au template via `browse_cancelled_sessions` ; les events manquants sont ajoutes au map `browse_events` existant.
@@ -934,7 +975,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 50 - Propagation du jour de la semaine (recurrent) lors de l'edition d'un evenement
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : "dans seances changement horaire ok mais egalement jour". Suite directe de Phase 41 qui propageait deja les horaires (`start_time` / `end_time` des slots) aux seances futures non-annulees, mais n'agissait pas sur le jour de la semaine.
 
@@ -959,7 +1000,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 51 - Refonte responsive smartphone de la liste des evenements
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : "ameliorer l'affichage responsive smartphone des evenements". Choix A + B retenu : refonte de la carte mobile (titre + meta + actions structures) + boutons d'action explicites avec libelle texte (au lieu d'icones nues).
 
@@ -992,7 +1033,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 49 - Proxy-register : moniteur autorise + bascule waitlist sur seance pleine
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : "si un moniteur et staff inscrivent un membre a une seance et que la seance est complete, rajouter sur liste d'attente". Deux changements lies dans `RegistrationsController` :
   1. **ACL** : un moniteur (SessionInstructor de la seance) doit pouvoir utiliser le formulaire "Register a member" — la UI etait deja exposee aux moniteurs depuis la Phase 43, mais le handler `doProxyRegister` rejetait via `denyUnlessStaffOrGroupManager`.
@@ -1012,7 +1053,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 48 - Detection passive des inscriptions hors groupe (changement de niveau)
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : "si changement de groupe de niveau comment faire?". Option retenue : detection passive a l'affichage de "Mes inscriptions" — pas de hook sur la modification d'adherent (que le plugin ne controle pas), pas de cron, pas de desinscription automatique. Le flag est calcule en SQL au chargement de la page et le membre garde la main pour se desinscrire manuellement.
 
@@ -1035,7 +1076,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 47 - Avertissement cotisation (parent ou enfant non a jour) sur "Mes inscriptions"
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : "si le membre parent ou enfant n'est pas a jour de cotisation alors mettre un message sur mes inscription".
 
@@ -1049,7 +1090,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 47.2 - Eligibilite des membres pour l'inscription (actif + statut + cotisation)
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : "il faut rajouter les conditions suivantes le membre (parent ou enfant) doit etre a jour de cotisation mais etre egalement et le compte actif et statut <>'non membre'". Etend l'enforcement existant (cotisation a jour) avec deux conditions supplementaires : compte adherent actif (`adherents.activite_adh = 1`) ET statut different de "Non membre" (`statuts.priorite_statut < 99`, convention Galette).
 
@@ -1079,7 +1120,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 47.1 - Blocage "Mes inscriptions" pour le super admin
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : "j'ai une fille qui a sa cotisation non a jour alors qu'elle est bien a jour" puis "oups! erreur c'est lorsque que je suis connecte en super admin, je ne devrais pas avoir acces a mes inscriptions". Faux positif observe sur l'avertissement Phase 47, cause par l'absence de fiche adherent du super admin.
 
@@ -1099,7 +1140,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 46 - Droits "auteur d'evenements" etendus aux moniteurs
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : "Le moniteur seul doit voir egalement les evenements et modifier ceux qu'il a cree." Suite logique de la Phase 43 (droits staff au niveau seance pour les moniteurs) : extension au niveau **evenement**. Un membre affecte comme `SessionInstructor` sur au moins une seance (donc reconnu comme moniteur) doit pouvoir creer ses propres evenements, les modifier, les soumettre a validation — sans etre groupmanager.
 
@@ -1130,7 +1171,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 43 - Droits staff scopes a la seance pour les moniteurs
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : un moniteur (`SessionInstructor` affecte a la seance) doit avoir les memes droits que le staff sur **cette seance precise** : modifier (date / horaire / capacite), ajouter / retirer des moniteurs, ajouter / retirer des inscrits, fermer / rouvrir / annuler / reactiver, gerer la liste d'attente.
 
@@ -1160,7 +1201,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 42 - Consolidation des boutons d'inscription parent/enfants (UI dropdown unique)
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : limiter le nombre de boutons "S'inscrire" / "Inscrire un enfant" affiches simultanement sur une seance (le mix bouton vert + bouton teal + bouton dropdown enfant n'etait pas lisible, surtout sur mobile) et eliminer la page picker intermediaire `/session/{id}/parent-register` (GET) qui faisait perdre un clic des qu'il n'y avait qu'un seul enfant eligible.
 
@@ -1195,7 +1236,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 41 - Propagation des modifications d'evenement aux seances futures
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : lorsqu'un staff/responsable modifie un evenement existant, les seances futures non-annulees doivent automatiquement refleter les nouvelles valeurs (jauge, creneaux horaires, drapeau "inscription sans moniteur"). Avant : seul `max_capacity` etait propage et il bloquait toute reduction sous le nombre d'inscrits actuels.
 
@@ -1220,7 +1261,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 40 - Toggle par evenement "Autoriser les inscriptions sans moniteur affecte"
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : pouvoir choisir, evenement par evenement, si les inscriptions a une seance sont autorisees alors qu'aucun moniteur n'est affecte. Comportement historique = blocage en l'absence de moniteur ; certains evenements doivent pouvoir s'en affranchir (par ex. quand un moniteur peut etre trouve apres coup, ou quand l'inscription elle-meme aide a recruter un moniteur volontaire).
 
@@ -1268,7 +1309,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 36 - Digest quotidien des invitations moniteur (1 mail/jour max par responsable)
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : limiter le nombre de courriels recus par les moniteurs (responsables de groupe), notamment ceux en charge de plusieurs groupes qui, lors d'une generation de seances recurrentes (ex. samedi), pouvaient recevoir plusieurs mails consecutifs (un par evenement). Objectif : un seul mail par jour par moniteur regroupant toutes les seances disponibles.
 
@@ -1319,7 +1360,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 35 - Validation d'evenement : invitation aux moniteurs sur les seances en attente
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Lacune identifiee apres la Phase 33 : dans le workflow standard "responsable cree en brouillon -> soumet -> staff valide", les seances avaient ete creees au stade brouillon (donc aucun courriel envoye, regle Phase 33). Une fois l'evenement valide, aucune notification ne partait aux responsables de groupe -> les seances futures sans moniteur restaient invisibles tant qu'un staff ne cliquait pas sur "Generer les seances" (qui de toute facon ne genere que pour les recurrents).
 
@@ -1341,7 +1382,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 34 - Nettoyage : suppression complete de REF_PUBLICATION_MANAGER et notifyPublication
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Suite a la Phase 33, `notifyPublication($event)` n'etait plus utilisee que par `SessionsController::doReactivate` quand on reactivait une seance annulee sans moniteur. Le template `REF_PUBLICATION_MANAGER` etait donc maintenu juste pour ce cas residuel, ce qui n'avait pas de sens semantiquement (reactivation = remise en circulation d'une seance, pas publication d'un evenement).
 
@@ -1361,7 +1402,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 33 - Suppression des courriels de publication a la creation/validation d'evenement
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : aucun courriel ne doit etre envoye aux moniteurs (responsables de groupe) ni aux membres lors de la creation ou de la validation d'un evenement. Les courriels d'invitation aux moniteurs ne doivent partir que lors de la **creation des seances** (recurrentes ou ponctuelles).
 
@@ -1380,7 +1421,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 32 - Acces "Mes seances comme moniteur" : responsables de groupe + moniteurs affectes
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : un responsable de groupe (potentiel moniteur) doit pouvoir acceder a la page "Mes seances comme moniteur" meme s'il n'a pas (encore) de seance assignee. C'est par cette page qu'il peut se proposer comme moniteur via l'onglet *Trouver une seance*. **Les admins et staff ne doivent PAS voir l'entree** par defaut (ils gerent les affectations de moniteurs depuis "Gestion des inscriptions").
 
@@ -1396,7 +1437,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 31 - Filtres "Trouver une seance" : selects natifs + bouton Filtrer + masquage force des cartes
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Probleme remonte : sur les pages *Mes inscriptions* et *Mes seances comme moniteur* (onglet *Trouver une seance*), la selection d'une valeur dans les dropdowns Type ou Activite ne filtrait pas les cartes affichees.
 
@@ -1425,7 +1466,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 30 - Page "Mes seances comme moniteur" en deux onglets (Trouver / Mes seances)
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur : organiser la page comme "Mes inscriptions" avec deux onglets — *Trouver une seance* (pour devenir moniteur) et *Mes seances comme moniteur* (contenu actuel).
 
@@ -1448,7 +1489,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 29 - Correction badge "Trouver une seance" (compteur erroné)
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Probleme : sur la page "Mes inscriptions", l'onglet *Trouver une seance* affiche un badge avec le nombre de seances disponibles. Le calcul cote serveur (`browse_count`) ne correspondait pas au filtre reellement applique aux cartes :
   - Le badge excluait les seances ou l'utilisateur etait deja sur liste d'attente, alors que les cartes correspondantes etaient bien rendues -> sous-comptage.
@@ -1462,7 +1503,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 28 - Page "Mes seances comme moniteur" + nettoyage menu (suppression doublon "Ajouter un evenement")
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Demande utilisateur :
   1. L'entree "Ajouter un evenement" du menu *Gestion des inscriptions* est un doublon, le bouton est deja accessible en haut de la liste des evenements.
@@ -1502,7 +1543,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 27 - Compaction du haut de page detail seance (boutons Retour + Modifier dans le bandeau)
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Probleme : sur la page detail seance, deux segments distincts au-dessus et en dessous du bandeau colore consommaient inutilement de la hauteur :
   - Un segment dedie au bouton "Retour" (au-dessus du bandeau).
@@ -1529,7 +1570,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 26 - Liste des inscrits compacte sur mobile (une ligne par membre)
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Probleme : depuis la phase 25, le tableau des inscrits sur la page detail seance utilisait `courses-responsive-table` -> en mobile chaque ligne se transformait en card empilant les 4 cellules verticalement (Membre / Surnom / Date / Presence) + dropdown a 100% de largeur. Une dizaine d'inscrits = une page interminable a scroller.
 - Demande utilisateur : revenir a une seule ligne par inscrit en mobile.
@@ -1551,7 +1592,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 25 - Optimisation responsive du detail des seances (smartphones)
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Probleme : la page `session_show.html.twig` reste tres dense sur smartphone. Le tableau des inscrits scrollait horizontalement (4 colonnes + dropdown de presence), les boutons d'actions de section (Send email / Export) restaient sur la meme ligne que le titre h3 et tronquaient, les inputs des accordions de gestion liste d'attente avaient des largeurs fixes (`style="width:6em"`, `style="width:12em"`) qui debordaient, et les boutons d'action de modale (Confirmer / Annuler) restaient cote-a-cote au lieu de prendre toute la largeur. Page d'edition de seance (`session_edit.html.twig`) : la rangee `<div class="fields">` (sans compteur) ne s'empilait pas non plus en mobile.
 
@@ -1585,7 +1626,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 24 - Alignement horizontal des boutons d'action sur PC
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Probleme signale : sur la page detail de seance (`session_show.html.twig`), les 3 boutons admin/staff "Inscrire un membre / Fermer la seance / Annuler la seance" s'empilaient verticalement sur PC au lieu d'etre alignes horizontalement. Meme souci sur la page detail evenement (`event_show.html.twig`).
 - Cause : la regle `.courses-inline-form { display: inline; }` ne s'applique pas correctement aux `<form>` (Fomantic UI force `.ui.form` en `display: block`). Les anciennes regles `.courses-actions form + form { margin-left: .4em !important; }` n'avaient pas non plus de quoi forcer un layout en ligne.
@@ -1594,7 +1635,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 23 - CSS externalise (issue #6 - Johan Cwiklinski)
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 - Probleme : `templates/default/headers.html.twig` contenait un bloc `<style>` inline de 369 lignes. Inline CSS = pas de cache navigateur, pas de minification, plus difficile a maintenir, viole la separation HTML/CSS.
 - Le contenu CSS est deplace dans `webroot/galette_courses.css` (368 lignes, identique au mot pres). Convention de nommage Galette : `webroot/galette_<plugin>.css` (cf. plugin-events officiel).
@@ -1607,7 +1648,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 22 - Support PostgreSQL (schema + code SQL)
 
-**Statut : TERMINEE**
+**Statut :** TERMINEE
 
 #### F22.1 - Schema PostgreSQL
 
@@ -1636,7 +1677,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 21 - Internationalisation de Session (cles BDD et formatage des dates)
 
-**Statut : TERMINEE - 52 tests verts**
+**Statut :** TERMINEE - 52 tests verts
 
 #### F21.1 - Cles `CANCEL_REASONS` rendues langue-neutres
 

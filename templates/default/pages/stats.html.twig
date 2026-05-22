@@ -233,6 +233,7 @@
                         <th>{{ _T("Nickname", "courses") }}</th>
                         <th class="collapsing center aligned">{{ _T("Sessions attended", "courses") }}</th>
                         <th class="collapsing center aligned">{{ _T("Present", "courses") }}</th>
+                        <th class="collapsing center aligned">{{ _T("Present (not registered)", "courses") }}</th>
                         <th>{{ _T("Events", "courses") }}</th>
                     </tr>
                 </thead>
@@ -246,8 +247,15 @@
                         </td>
                         <td data-label="{{ _T("Sessions attended", "courses") }}" class="center aligned"><span class="ui small blue label">{{ m.session_count }}</span></td>
                         <td data-label="{{ _T("Present", "courses") }}" class="center aligned">
-                            {% if m.attendance_count > 0 %}
-                                <span class="ui small green label">{{ m.attendance_count }}</span>
+                            {% if m.attended_count > 0 %}
+                                <span class="ui small green label">{{ m.attended_count }}</span>
+                            {% else %}
+                                <span class="ui grey text">—</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="{{ _T("Present (not registered)", "courses") }}" class="center aligned">
+                            {% if m.present_unregistered_count > 0 %}
+                                <span class="ui small orange label">{{ m.present_unregistered_count }}</span>
                             {% else %}
                                 <span class="ui grey text">—</span>
                             {% endif %}
@@ -262,6 +270,67 @@
             <div class="ui warning message">
                 <i class="exclamation triangle icon" aria-hidden="true"></i>
                 {{ _T("No active member for this period.", "courses") }}
+            </div>
+        {% endif %}
+        </div>
+
+    </div>
+
+    {# ===== MONITEURS ACTIFS SUR LA PÉRIODE ===== #}
+    <div class="ui segment courses-segment-gap courses-period-instructors">
+
+        <div class="ui small header courses-segment-hdr">
+            <i class="teal chalkboard teacher icon" aria-hidden="true"></i>
+            {{ _T("Instructor attendance by period", "courses") }}
+            <span class="sub header">{{ _T("Instructors running sessions, with regularity over the year", "courses") }}</span>
+        </div>
+
+        <div>
+        {% if stats.instructor_activity|length > 0 %}
+            <div class="courses-results-header">
+                <span>
+                    <span class="ui teal label">{{ stats.instructor_activity|length }}</span>
+                    {{ _T("instructors from", "courses") }}
+                    <strong>{{ stats_from }}</strong> → <strong>{{ stats_to }}</strong>
+                </span>
+                <button type="button" class="ui mini labeled icon basic button" id="export-instructors-csv-btn">
+                    <i class="download icon" aria-hidden="true"></i>
+                    {{ _T("Export CSV", "courses") }}
+                </button>
+            </div>
+            <div class="courses-table-scroll">
+            <table class="ui celled striped compact small table courses-responsive-table" id="instructor-activity-table">
+                <thead>
+                    <tr>
+                        <th>{{ _T("Instructor", "courses") }}</th>
+                        <th>{{ _T("Nickname", "courses") }}</th>
+                        <th class="collapsing center aligned">{{ _T("Sessions run", "courses") }}</th>
+                        <th class="collapsing center aligned">{{ _T("Active months", "courses") }}</th>
+                        <th>{{ _T("Events", "courses") }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in stats.instructor_activity %}
+                    <tr>
+                        <td data-label="{{ _T("Instructor", "courses") }}"><a href="{{ url_for("member", {"id": i.member_id}) }}">{{ i.member_name }}</a></td>
+                        <td data-label="{{ _T("Nickname", "courses") }}">
+                            {% if i.nickname %}<i class="tag icon" aria-hidden="true"></i> {{ i.nickname }}
+                            {% else %}<span class="ui grey text">—</span>{% endif %}
+                        </td>
+                        <td data-label="{{ _T("Sessions run", "courses") }}" class="center aligned"><span class="ui small teal label">{{ i.session_count }}</span></td>
+                        <td data-label="{{ _T("Active months", "courses") }}" class="center aligned">
+                            <span class="ui small {% if i.active_months >= 6 %}green{% elseif i.active_months >= 3 %}yellow{% else %}grey{% endif %} label">{{ i.active_months }}</span>
+                        </td>
+                        <td data-label="{{ _T("Events", "courses") }}" class="courses-events-cell">{{ i.events }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        {% else %}
+            <div class="ui warning message">
+                <i class="exclamation triangle icon" aria-hidden="true"></i>
+                {{ _T("No instructor ran a session during this period.", "courses") }}
             </div>
         {% endif %}
         </div>
@@ -347,8 +416,16 @@ $(function() {
     $('#export-csv-btn').on('click', function() {
         exportTableCsv(
             'active-members-table',
-            ['{{ _T("Member", "courses") }}','{{ _T("Nickname", "courses") }}','{{ _T("Sessions attended", "courses") }}','{{ _T("Present", "courses") }}','{{ _T("Events", "courses") }}'],
+            ['{{ _T("Member", "courses") }}','{{ _T("Nickname", "courses") }}','{{ _T("Sessions attended", "courses") }}','{{ _T("Present", "courses") }}','{{ _T("Present (not registered)", "courses") }}','{{ _T("Events", "courses") }}'],
             'membres-actifs-{{ stats_from }}-{{ stats_to }}.csv'
+        );
+    });
+
+    $('#export-instructors-csv-btn').on('click', function() {
+        exportTableCsv(
+            'instructor-activity-table',
+            ['{{ _T("Instructor", "courses") }}','{{ _T("Nickname", "courses") }}','{{ _T("Sessions run", "courses") }}','{{ _T("Active months", "courses") }}','{{ _T("Events", "courses") }}'],
+            'moniteurs-{{ stats_from }}-{{ stats_to }}.csv'
         );
     });
 

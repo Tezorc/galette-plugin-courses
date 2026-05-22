@@ -176,6 +176,7 @@ tr.courses-pending { background-color: #fffde7 !important; }
 .courses-stat-num.blue   { color: #2185d0; }
 .courses-period-active   { border-top: 3px solid #2185d0 !important; }
 .courses-period-inactive { border-top: 3px solid #db2828 !important; }
+.courses-period-instructors { border-top: 3px solid #00b5ad !important; }
 
 /* ----- PARTICIPATION SUMMARY (Phase 62) ----- */
 .courses-participation-summary {
@@ -199,7 +200,9 @@ tr.courses-pending { background-color: #fffde7 !important; }
     .courses-participation-rate { font-size: 1.9rem; min-width: 0; flex: 0 0 auto; }
     .courses-participation-detail { flex: 1 1 100%; }
 }
-.courses-filter-row { align-items: flex-end !important; flex-wrap: wrap !important; gap: .5em !important; }
+.courses-filter-row { align-items: flex-end !important; flex-wrap: wrap !important; gap: .5em !important; justify-content: center !important; }
+/* Quick-select shortcuts: centered, wrapping row (desktop). Mobile overrides below. */
+.courses-filter-shortcuts { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .4em; margin-top: .6em; }
 .courses-chart-container { position: relative; width: 100%; min-height: 250px; }
 
 /* ----- FILL RATE PROGRESS BAR ----- */

@@ -1681,6 +1681,7 @@ class SessionsController extends AbstractPluginController
 
         $volunteer_sessions     = [];
         $volunteer_cancelled_sessions = [];
+        $volunteer_all_sessions = [];
         $volunteer_events       = [];
         $volunteer_event_types  = [];
         $volunteer_available_names = [];
@@ -1780,6 +1781,18 @@ class SessionsController extends AbstractPluginController
             }
 
             uasort($volunteer_cancelled_sessions, static function (Session $a, Session $b): int {
+                return strcmp(
+                    $a->getSessionDate() . $a->getStartTime(),
+                    $b->getSessionDate() . $b->getStartTime()
+                );
+            });
+
+            // Phase 65: open + cancelled volunteer sessions in ONE grid, sorted by
+            // date. Union (+) keeps the integer session-id keys (the template needs
+            // them); the two sets are disjoint, so no collision. array_merge would
+            // reindex integer keys, so it must NOT be used here.
+            $volunteer_all_sessions = $volunteer_sessions + $volunteer_cancelled_sessions;
+            uasort($volunteer_all_sessions, static function (Session $a, Session $b): int {
                 return strcmp(
                     $a->getSessionDate() . $a->getStartTime(),
                     $b->getSessionDate() . $b->getStartTime()
@@ -1899,6 +1912,7 @@ class SessionsController extends AbstractPluginController
                 'can_volunteer'             => $can_volunteer,
                 'volunteer_sessions'        => $volunteer_sessions,
                 'volunteer_cancelled_sessions' => $volunteer_cancelled_sessions,
+                'volunteer_all_sessions'    => $volunteer_all_sessions,
                 'volunteer_events'          => $volunteer_events,
                 'volunteer_event_types'     => $volunteer_event_types,
                 'volunteer_available_names' => $volunteer_available_names,
