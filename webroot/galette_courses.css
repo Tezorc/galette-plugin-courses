@@ -91,7 +91,7 @@
 .courses-stat-sub      { font-size: .9em; color: #555; margin-top: .2em; }
 .courses-fill-pct      { white-space: nowrap; min-width: 3em; text-align: right; font-size: .9em; color: #555; }
 .courses-activity-date { font-size: .9em; color: #666; }
-.courses-filter-label  { font-size: .9em; }
+.courses-filter-label  { font-size: .9em; margin: 0 !important; white-space: nowrap; }
 .courses-empty-state   { color: #aaa; }
 
 /* ----- DATE DISPLAY ----- */
@@ -200,9 +200,11 @@ tr.courses-pending { background-color: #fffde7 !important; }
     .courses-participation-rate { font-size: 1.9rem; min-width: 0; flex: 0 0 auto; }
     .courses-participation-detail { flex: 1 1 100%; }
 }
-.courses-filter-row { align-items: flex-end !important; flex-wrap: wrap !important; gap: .5em !important; justify-content: center !important; }
+.courses-filter-row { align-items: center !important; flex-wrap: wrap !important; gap: .75em !important; justify-content: center !important; }
+/* Inline label + input on one line (Du [date] Au [date] [Filter]), vertically centered. */
+.courses-filter-row .field { display: flex !important; align-items: center !important; gap: .4em !important; margin: 0 !important; }
 /* Quick-select shortcuts: centered, wrapping row (desktop). Mobile overrides below. */
-.courses-filter-shortcuts { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .4em; margin-top: .6em; }
+.courses-filter-shortcuts { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .4em; margin-top: .5em; }
 .courses-chart-container { position: relative; width: 100%; min-height: 250px; }
 
 /* ----- FILL RATE PROGRESS BAR ----- */
@@ -597,7 +599,8 @@ tr.courses-pending { background-color: #fffde7 !important; }
        Empile verticalement, chaque champ pleine largeur. Inputs date
        avec hauteur tactile 44px. */
     .courses-filter-row { flex-direction: column !important; align-items: stretch !important; }
-    .courses-filter-row .field { width: 100% !important; margin: 0 0 .5em 0 !important; }
+    /* Mobile: re-stack label above input (the desktop inline rule is overridden here). */
+    .courses-filter-row .field { width: 100% !important; margin: 0 0 .5em 0 !important; flex-direction: column !important; align-items: stretch !important; gap: .25em !important; }
     .courses-filter-row .field input,
     .courses-filter-row .field .button { width: 100% !important; min-height: 44px !important; box-sizing: border-box !important; }
 
