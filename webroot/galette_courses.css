@@ -142,6 +142,11 @@ tr.courses-pending { background-color: #fffde7 !important; }
 .courses-card .ui.dropdown.active,
 .courses-actions .ui.simple.dropdown:hover,
 .courses-actions .ui.dropdown.active { position: relative; z-index: 50; }
+/* Phase 65: cards now share one grid (open + cancelled interleaved), so an open
+   register dropdown could be painted UNDER the next card. Raise the whole grid
+   column above the following siblings while its dropdown is open. */
+.courses-cards-grid .column:has(.ui.dropdown.active),
+.courses-cards-grid .column:has(.ui.simple.dropdown:hover) { position: relative; z-index: 200; }
 
 /* ----- DASHBOARD BUTTON ----- */
 .ui.card > .content > .ui.labeled.icon.button,

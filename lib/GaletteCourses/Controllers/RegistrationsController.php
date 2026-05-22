@@ -139,9 +139,12 @@ class RegistrationsController extends AbstractController
                 ->withHeader('Location', $returnUrl);
         }
 
-        // Warn if another session overlaps on the same day
+        // Schedule conflict: warn AND block the registration (was non-blocking before).
         if (Registration::hasOverlappingSession($this->zdb, $member_id, $session->getSessionDate(), $session->getStartTime(), $session->getEndTime(), $id)) {
-            $this->flash->addMessage('warning_detected', _T('Warning: you are already registered for another session at the same time on this day.', 'courses'));
+            $this->flash->addMessage('error_detected', _T('You are already registered for another session at the same time on this day. Registration is not allowed.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $returnUrl);
         }
 
         // Check capacity - redirect to waitlist if full
@@ -360,9 +363,13 @@ class RegistrationsController extends AbstractController
                 ->withHeader('Location', $returnUrl);
         }
 
-        // Non-blocking overlap warning
+        // Schedule conflict: warn AND block joining the waitlist (a promotion would
+        // otherwise create the conflict silently).
         if (Registration::hasOverlappingSession($this->zdb, $member_id, $session->getSessionDate(), $session->getStartTime(), $session->getEndTime(), $id)) {
-            $this->flash->addMessage('warning_detected', _T('Warning: you are already registered for another session at the same time on this day.', 'courses'));
+            $this->flash->addMessage('error_detected', _T('You are already registered for another session at the same time on this day. Registration is not allowed.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $returnUrl);
         }
 
         $waitlist = new Waitlist($this->zdb);
@@ -1172,9 +1179,12 @@ class RegistrationsController extends AbstractController
                 ->withHeader('Location', $returnUrl);
         }
 
-        // Warn if another session overlaps on the same day for the linked member
+        // Schedule conflict: warn AND block the registration for the linked member.
         if (Registration::hasOverlappingSession($this->zdb, $child_id, $session->getSessionDate(), $session->getStartTime(), $session->getEndTime(), $id)) {
-            $this->flash->addMessage('warning_detected', _T('Warning: this linked member is already registered for another session at the same time on this day.', 'courses'));
+            $this->flash->addMessage('error_detected', _T('This linked member is already registered for another session at the same time on this day. Registration is not allowed.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $returnUrl);
         }
 
         if ($session->isFull()) {

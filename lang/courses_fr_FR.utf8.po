@@ -42,6 +42,12 @@ msgstr "Attention : vous êtes déjà inscrit(e) à une autre séance au même c
 msgid "Warning: this linked member is already registered for another session at the same time on this day."
 msgstr "Attention : ce membre rattaché est déjà inscrit à une autre séance au même créneau horaire ce jour."
 
+msgid "You are already registered for another session at the same time on this day. Registration is not allowed."
+msgstr "Vous êtes déjà inscrit(e) à une autre séance au même créneau horaire ce jour-là. Inscription impossible."
+
+msgid "This linked member is already registered for another session at the same time on this day. Registration is not allowed."
+msgstr "Ce membre rattaché est déjà inscrit à une autre séance au même créneau horaire ce jour-là. Inscription impossible."
+
 msgid "[Courses] Member left waitlist"
 msgstr "[Cours] Retrait de la liste d'attente"
 
