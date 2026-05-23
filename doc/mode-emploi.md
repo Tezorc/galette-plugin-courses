@@ -323,12 +323,15 @@ Sections du tableau de bord personnel :
 
 Quand une seance est pleine, un adherent peut rejoindre la liste d'attente :
 
-1. Aller sur la page de detail de la seance
+1. Aller sur la page de detail de la seance (ou rester sur l'onglet "Trouver une seance")
 2. Si la seance est pleine, un message jaune s'affiche avec le bouton bleu **"Rejoindre la liste d'attente"**
-3. Cliquer pour rejoindre la file — votre position est affichee (ex: "position 3")
-4. Pour quitter la file : cliquer sur le bouton orange **"Quitter la liste d'attente"**
+3. **Comptes avec membres rattaches (parent + enfants)** : comme pour l'inscription, si plusieurs membres peuvent rejoindre la file, le bouton devient un menu deroulant listant chaque membre eligible (vous-meme + chaque enfant). Choisir le membre concerne pour l'ajouter a la liste d'attente.
+4. Cliquer pour rejoindre la file — la position est affichee (ex: "position 3")
+5. Pour quitter la file : cliquer sur le bouton orange **"Quitter la liste d'attente"**
 
 **Promotion automatique** : quand un inscrit se desinscrit, le premier en file d'attente est automatiquement inscrit et recoit un email de notification.
+
+**Suivi depuis "Mes inscriptions"** (Phase 67) : toutes les seances ou vous (ou un de vos membres rattaches) etes en liste d'attente apparaissent dans un bloc dedie **"Sur liste d'attente"** entre la grille "Upcoming" et les seances passees. Chaque carte affiche le numero de position, le nom du membre concerne (si ce n'est pas vous-meme) et un bouton orange "Quitter la liste d'attente" -- valable aussi pour les enfants (le retrait passe par `coursesDoParentLeaveWaitlist`).
 
 Les admins, staff et responsables de groupe voient la liste d'attente complete sur la page de detail (position, nom, date d'ajout).
 

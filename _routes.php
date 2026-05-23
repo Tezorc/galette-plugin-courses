@@ -200,9 +200,19 @@ $app->post(
 )->setName('coursesDoWaitlist')->add($authenticate);
 
 $app->post(
+    '/session/{id:[0-9]+}/parent-waitlist',
+    [RegistrationsController::class, 'doParentWaitlist']
+)->setName('coursesDoParentWaitlist')->add($authenticate);
+
+$app->post(
     '/session/{id:[0-9]+}/leave-waitlist',
     [RegistrationsController::class, 'doLeaveWaitlist']
 )->setName('coursesDoLeaveWaitlist')->add($authenticate);
+
+$app->post(
+    '/session/{id:[0-9]+}/parent-leave-waitlist',
+    [RegistrationsController::class, 'doParentLeaveWaitlist']
+)->setName('coursesDoParentLeaveWaitlist')->add($authenticate);
 
 // Attendance marking
 $app->post(

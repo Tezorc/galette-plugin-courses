@@ -60,9 +60,12 @@ class RecurrenceHandler
 
         $event->loadSlots();
         $slots = $event->getSlots();
-        $firstSlot = $slots[0] ?? null;
-        $startTime = $firstSlot ? $firstSlot['start_time'] : '09:00';
-        $endTime = $firstSlot ? $firstSlot['end_time'] : '10:00';
+        // Phase 69: an event can have multiple time slots. For each occurrence
+        // date, one session is created per slot (so 2 slots -> 2 sessions per
+        // date). Fallback when no slot defined keeps the single-session default.
+        if (empty($slots)) {
+            $slots = [['start_time' => '09:00', 'end_time' => '10:00']];
+        }
 
         // Determine start date
         if ($startDate === null) {
@@ -93,49 +96,69 @@ class RecurrenceHandler
             $event->getRecurrenceInterval() ?? 1
         );
 
-        // Update future sessions without instructor: apply new slot times and capacity
-        $updated = $this->refreshNoInstructorSessions($event, $startTime, $endTime);
-        if ($updated > 0) {
-            Analog::log(
-                'Updated ' . $updated . ' no-instructor sessions for event #' . $event->getId(),
-                Analog::INFO
-            );
-        }
-
-        // Filter out dates that already have sessions
-        $existingDates = $this->getExistingSessionDates($event->getId());
-        $newDates = array_filter($dates, function (string $d) use ($existingDates): bool {
-            return !in_array($d, $existingDates);
-        });
-
-        // Create sessions. Dates that fall within a club closure period are
-        // created with status=cancelled and the closure label as comment, so
-        // members see the cancelled slot in the calendar with the reason.
-        $created = [];
-        foreach ($newDates as $date) {
-            $session = new Session($this->zdb);
-            $session->setEventId($event->getId());
-            $session->setSessionDate($date);
-            $session->setStartTime($startTime);
-            $session->setEndTime($endTime);
-            $session->setMaxCapacity($event->getMaxCapacity());
-
-            $closure = $this->pluginPrefs?->getClosureForDate($date);
-            if ($closure !== null) {
-                $session->setStatus(Session::STATUS_CANCELLED);
-                $session->setCancellationReason('club_closure');
-                $label = trim($closure['label'] ?? '');
-                $session->setCancellationComment($label !== '' ? $label : null);
+        // Auto-realign future no-instructor sessions only when the event is
+        // single-slot — multi-slot has no unambiguous "primary" slot to align to.
+        if (count($slots) === 1) {
+            $updated = $this->refreshNoInstructorSessions($event, $slots[0]['start_time'], $slots[0]['end_time']);
+            if ($updated > 0) {
                 Analog::log(
-                    'Creating cancelled session on closure date ' . $date
-                    . ' for event #' . $event->getId()
-                    . ($label !== '' ? ' (' . $label . ')' : ''),
+                    'Updated ' . $updated . ' no-instructor sessions for event #' . $event->getId(),
                     Analog::INFO
                 );
             }
+        }
 
-            if ($session->store()) {
-                $created[] = $session;
+        // Phase 69: backfill missing slot-sessions on existing FUTURE dates
+        // before generating new ones. Covers the legacy case where a multi-slot
+        // event was created when only slot[0] was generating sessions.
+        $backfilled = $this->backfillMissingSlots($event, $slots);
+        $created = [];
+        if (!empty($backfilled)) {
+            $created = array_merge($created, $backfilled);
+        }
+
+        // Existing session keys = "date|start_time" so we don't recreate a
+        // (date, slot) tuple that already exists. Multi-slot events can share
+        // a date across slots (each slot is a different key). Re-read AFTER
+        // the backfill, since backfill may have added rows.
+        $existingKeys = $this->getExistingSessionDateTimes($event->getId());
+
+        // Create sessions per (date, slot). Dates that fall within a club
+        // closure period are created with status=cancelled and the closure label
+        // as comment, so members see the cancelled slot in the calendar with
+        // the reason.
+        $created = [];
+        foreach ($dates as $date) {
+            foreach ($slots as $slot) {
+                $key = $date . '|' . $slot['start_time'];
+                if (in_array($key, $existingKeys, true)) {
+                    continue;
+                }
+
+                $session = new Session($this->zdb);
+                $session->setEventId($event->getId());
+                $session->setSessionDate($date);
+                $session->setStartTime($slot['start_time']);
+                $session->setEndTime($slot['end_time']);
+                $session->setMaxCapacity($event->getMaxCapacity());
+
+                $closure = $this->pluginPrefs?->getClosureForDate($date);
+                if ($closure !== null) {
+                    $session->setStatus(Session::STATUS_CANCELLED);
+                    $session->setCancellationReason('club_closure');
+                    $label = trim($closure['label'] ?? '');
+                    $session->setCancellationComment($label !== '' ? $label : null);
+                    Analog::log(
+                        'Creating cancelled session on closure date ' . $date
+                        . ' for event #' . $event->getId()
+                        . ($label !== '' ? ' (' . $label . ')' : ''),
+                        Analog::INFO
+                    );
+                }
+
+                if ($session->store()) {
+                    $created[] = $session;
+                }
             }
         }
 
@@ -283,27 +306,100 @@ class RecurrenceHandler
     }
 
     /**
-     * Get all existing session dates for an event.
+     * Backfill missing slot-sessions on existing FUTURE dates. Used to migrate
+     * legacy multi-slot events whose sessions were created when only slot[0]
+     * was generating sessions, so the other slots have no rows. Public so it
+     * can also be called from EventsController on event-edit (after storeSlots)
+     * to immediately materialise sessions for a newly-added slot.
      *
-     * @return string[] Array of dates (yyyy-mm-dd)
+     * For each existing future non-cancelled date, ensure one session exists
+     * per slot. New sessions inherit max_capacity from the event.
+     *
+     * @param array<int, array<string, string>> $slots
+     * @return Session[] newly-created sessions
      */
-    private function getExistingSessionDates(int $eventId): array
+    public function backfillMissingSlots(Event $event, array $slots): array
     {
-        $dates = [];
+        $created = [];
+        if (empty($slots) || $event->getId() === null) {
+            return $created;
+        }
+
         try {
+            // Collect existing future-or-today (date, start_time) tuples.
             $select = $this->zdb->select(Session::TABLE);
-            $select->columns(['session_date']);
-            $select->where(['event_id' => $eventId]);
-            $results = $this->zdb->execute($select);
-            foreach ($results as $r) {
-                $dates[] = (string)$r->session_date;
+            $select->columns(['session_date', 'start_time']);
+            $select->where(['event_id' => $event->getId()]);
+            $select->where->greaterThanOrEqualTo('session_date', date('Y-m-d'));
+            $rs = $this->zdb->execute($select);
+
+            $datesPresent = [];   // [date => [start_time => true]]
+            foreach ($rs as $r) {
+                $d = (string)$r->session_date;
+                $st = (string)$r->start_time;
+                $datesPresent[$d][$st] = true;
+            }
+
+            foreach ($datesPresent as $date => $slotsPresent) {
+                foreach ($slots as $slot) {
+                    if (isset($slotsPresent[$slot['start_time']])) {
+                        continue;
+                    }
+                    $session = new Session($this->zdb);
+                    $session->setEventId($event->getId());
+                    $session->setSessionDate($date);
+                    $session->setStartTime($slot['start_time']);
+                    $session->setEndTime($slot['end_time']);
+                    $session->setMaxCapacity($event->getMaxCapacity());
+
+                    $closure = $this->pluginPrefs?->getClosureForDate($date);
+                    if ($closure !== null) {
+                        $session->setStatus(Session::STATUS_CANCELLED);
+                        $session->setCancellationReason('club_closure');
+                        $label = trim($closure['label'] ?? '');
+                        $session->setCancellationComment($label !== '' ? $label : null);
+                    }
+
+                    if ($session->store()) {
+                        $created[] = $session;
+                    }
+                }
             }
         } catch (Throwable $e) {
             Analog::log(
-                'Error getting existing session dates: ' . $e->getMessage(),
+                'Error backfilling missing slot-sessions for event #' . $event->getId() . ': ' . $e->getMessage(),
                 Analog::ERROR
             );
         }
-        return $dates;
+
+        return $created;
+    }
+
+    /**
+     * Get all existing (date, slot-start-time) tuples for an event, encoded as
+     * "YYYY-MM-DD|HH:MM:SS". Used to skip duplicates when regenerating: a
+     * multi-slot event has multiple sessions per date, so the de-dup key must
+     * include the slot start time.
+     *
+     * @return string[] Array of "date|start_time" keys
+     */
+    private function getExistingSessionDateTimes(int $eventId): array
+    {
+        $keys = [];
+        try {
+            $select = $this->zdb->select(Session::TABLE);
+            $select->columns(['session_date', 'start_time']);
+            $select->where(['event_id' => $eventId]);
+            $results = $this->zdb->execute($select);
+            foreach ($results as $r) {
+                $keys[] = (string)$r->session_date . '|' . (string)$r->start_time;
+            }
+        } catch (Throwable $e) {
+            Analog::log(
+                'Error getting existing session date+time keys: ' . $e->getMessage(),
+                Analog::ERROR
+            );
+        }
+        return $keys;
     }
 }

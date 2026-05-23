@@ -757,6 +757,34 @@ msgstr "Vous êtes déjà sur la liste d'attente pour cette séance."
 msgid "You have been added to the waitlist (position %d)."
 msgstr "Vous avez été ajouté à la liste d'attente (position %d)."
 
+msgid "This linked member is already on the waitlist for this session."
+msgstr "Ce membre rattaché est déjà sur la liste d'attente pour cette séance."
+
+#, php-format
+msgid "The linked member has been added to the waitlist (position %d)."
+msgstr "Le membre rattaché a été ajouté à la liste d'attente (position %d)."
+
+msgid "[Courses] Linked member joined waitlist"
+msgstr "[Cours] Membre rattaché ajouté à la liste d'attente"
+
+msgid "On the waitlist"
+msgstr "Sur liste d'attente"
+
+msgid "Select a linked member."
+msgstr "Choisir un membre rattaché."
+
+msgid "You can only manage your own linked members."
+msgstr "Vous ne pouvez gérer que vos propres membres rattachés."
+
+msgid "This linked member is not on the waitlist for this session."
+msgstr "Ce membre rattaché n'est pas sur la liste d'attente pour cette séance."
+
+msgid "The linked member has been removed from the waitlist."
+msgstr "Le membre rattaché a été retiré de la liste d'attente."
+
+msgid "[Courses] Linked member left waitlist"
+msgstr "[Cours] Membre rattaché retiré de la liste d'attente"
+
 msgid "An error occurred joining the waitlist."
 msgstr "Une erreur est survenue en rejoignant la liste d'attente."
 

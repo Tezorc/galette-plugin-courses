@@ -654,6 +654,130 @@ Le developpement est organise en phases progressives.
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Phase 70.1 - Fix dropdown multi-plages : enfants utilisables sur une plage ou le parent est deja inscrit/en attente
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : "Dans ce cas, je ne peux inscrire un second chien lors le premier est sur liste d'attente" (apres Phase 70).
+
+- **Bug** : dans la carte multi-plages, le gate de chaque plage etait `... and not browse_on_waitlist[ms_sid] and ms_sid not in registered_session_ids`. Cela retirait la plage entiere du dropdown si le parent etait inscrit OU en attente sur cette plage -- les enfants n'avaient alors plus aucun acces a cette plage via le dropdown. Symetrique du bug Phase 68 mais cote multi-plages, jamais corrige.
+
+- **Fix** : decouplage des conditions parent vs enfants par plage. Nouvelles variables par slot :
+  - `ms_slot_open` = plage non-annulee + moniteur (ou allow_no_instructor)
+  - `ms_self_act` = `ms_slot_open and can_self and not on_wl and not registered` -> le parent peut s'inscrire ou s'inscrire en liste d'attente
+  - `ms_kids_act` = `ms_slot_open and children_eligible non-empty` -> au moins un enfant peut agir
+  La plage apparait dans le dropdown si `ms_self_act OR ms_kids_act` (au lieu de l'ancien ET implicite). Le `header` de plage est emis pareil. Le lien "Myself" est gate sur `ms_self_act`. Les liens enfants sont toujours emis quand l'enfant est dans `browse_eligible_children[ms_sid]`. Le bloc `<form>` cache pour "self" est gate sur `ms_self_act`, les forms enfants restent emis pour chaque enfant eligible.
+
+- Aucune migration BDD, aucune nouvelle chaine i18n, aucun CSS nouveau. Tests 55/55 verts ; balances Twig (if=74/endif=74, for=22/endfor=22). Les enfants deja sur la liste d'attente d'une plage restent visibles dans le dropdown (le handler `doParentWaitlist` refuse de maniere idempotente avec un warning) -- polish a venir si besoin (map `browse_child_on_waitlist[sid][child_id]` cote controleur).
+
+### Phase 70 - Carte multi-plages avec dropdown de choix (plage x membre) dans "Trouver une seance"
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : "pour les seances avec plusieurs plage horaire, je veux un block seance avec un dropdown pour choisir sa plage horaire et s'inscrire" (suite de Phase 69 : la generation marche, on rend l'UX cohérente).
+
+- **Probleme avant** : depuis Phase 69, un evenement multi-plages genere N seances par date. Dans la liste "Trouver une seance", chaque slot apparait comme une carte distincte -> pour 5 dates x 2 plages = 10 cartes adjacentes, encombrement visuel et confusion (l'utilisateur croit a 10 evenements differents).
+
+- **Solution** : groupement par (event_id, session_date). Pour les groupes de >= 2 plages, on rend UNE seule carte avec :
+  - Header partage : nom evenement, date, lieu, badge teal "N Time slots"
+  - Liste compacte des plages (`.courses-multislot-list`) : 1 ligne par plage avec horaire en gras + badge statut (Open / Full / Waitlist / Cancelled) + jauge (X/Y)
+  - **Dropdown unique d'inscription** : entrees imbriquees groupees par plage, chaque entree etant une combinaison (plage, membre) qui declenche un POST cache sur la bonne action. Action = `register` si la plage est ouverte, `waitlist` si elle est complete. Plages annulees, plages avec parent deja inscrit ou deja en attente, et plages sans moniteur (si l'event ne permet pas l'inscription sans moniteur) sont filtrees du dropdown. Pour chaque plage actionnable, on liste "Myself" (si `browse_can_self_register[ms_sid]`) + chaque enfant eligible.
+  - Bouton "Details" pointant vers la plage primaire (premiere par `start_time`).
+
+- **Backend** (`RegistrationsController::myRegistrations`) : nouveau pre-calcul juste apres le tri `browse_all_sessions` :
+  - `$browse_groups_tmp[date|eid] = [Session, ...]` collecte les seances par cle (event + date).
+  - Pour chaque groupe de >= 2 plages, tri par `start_time` ASC ; le premier devient le `primary` ; on remplit `$browse_group_siblings[primary_sid] = [Session, ...]` (>= 2 entries) et `$browse_skip[non_primary_sid] = true` pour les suivants.
+  - Deux nouvelles variables passees au template : `browse_group_siblings`, `browse_skip`.
+
+- **Template** (`my_registrations.html.twig`) : la boucle `{% for s in browse_all_sessions %}` enchaine maintenant trois branches en tete :
+  1. `{% if browse_skip[sid] is defined %}` -> rien (la plage est rendue dans le dropdown de la carte primaire de son groupe).
+  2. `{% elseif browse_group_siblings[sid] is defined %}` -> carte multi-plages (~120 lignes Twig dediees).
+  3. `{% elseif s.getStatus() == 'cancelled' %}` -> carte annulee existante (Phase 65, inchangee).
+  4. `{% else %}` -> carte mono-plage existante (inchangee).
+  L'attribut `data-cancelled="1"` sur la carte multi-plages est emis SEULEMENT si toutes les plages du groupe sont annulees, pour rester coherent avec le filtre JS (`:not([data-cancelled])` du badge "actionable").
+
+- **CSS** (`webroot/galette_courses.css`) : nouvelles regles `.courses-multislot-list`, `.courses-multislot-row` (flex avec bordure pointillee inter-lignes), `.courses-multislot-cap` (jauge alignee a droite via `margin-left: auto`), `.courses-multislot-menu-header` (en-tete de groupe de plage dans le dropdown, fond gris clair).
+
+- **i18n** : reutilise `Time slots` (deja traduit en "Plages horaires") + libelles statut existants. Aucune nouvelle chaine. Aucune migration BDD. Tests 55/55 verts ; balances Twig OK (if=76/endif=76, for=22/endfor=22). Pas de regression sur mono-plage / carte annulee / Mine tab.
+
+- **Choix d'UX** : un seul dropdown unifie au lieu de N (un par plage) -> moins de boutons visibles, moins de clic pour distinguer "je veux quelle plage pour qui". L'en-tete de chaque section du menu rappelle l'horaire + un badge `Waitlist` mini quand la plage est complete, pour que l'utilisateur sache avant clic que ce sera une liste d'attente et non une inscription directe. Les options non-actionnables (parent deja inscrit/attente, pas d'instructeur) restent visibles via la liste compacte du haut de carte (informative) mais sont absentes du dropdown.
+
+### Phase 69 - Generation correcte des seances multi-plages
+
+**Statut :** TERMINEE (etape 1/2 : generateur + backfill ; UX dropdown a venir en Phase 70 si besoin)
+
+- Demande utilisateur : "si seances avec plusieur plage horaire ; deja, cette possibilite ne fonctionne pas".
+
+- **Bug** : un evenement avec N plages horaires definies dans `courses_slots` ne generait des seances que pour la PREMIERE plage. `RecurrenceHandler::generateSessions` lisait `$slots[0]` (RecurrenceHandler.php:62) et `EventsController::createSessionForEvent` lisait `$post['slots'][0]` (EventsController.php:577). Les plages 2..N etaient stockees en BDD mais ignorees a la generation.
+
+- **Modele choisi** apres echange : option 1 (N seances par date, jauge par plage). Aucune migration BDD (table `sessions` inchangee). Une plage = une `Session` avec ses propres `start_time`/`end_time`/`max_capacity`. Pour les multi-plages : 2 plages -> 2 sessions par date.
+
+- **Corrections** :
+  - `RecurrenceHandler::generateSessions` : remplace la lecture de `$slots[0]` par une double boucle `foreach ($dates as $date) { foreach ($slots as $slot) { ... } }`. Fallback `[['start_time' => '09:00', 'end_time' => '10:00']]` quand aucune plage definie. La de-duplication via `$existingKeys` passe d'un set de dates a un set de cles `"YYYY-MM-DD|HH:MM:SS"` (nouvelle methode privee `getExistingSessionDateTimes` qui remplace `getExistingSessionDates`). `refreshNoInstructorSessions` n'est plus appele que pour les evenements mono-plage (pas de "plage primaire" non-ambigue avec plusieurs slots).
+  - `EventsController::createSessionForEvent` renomme en `createSessionsForEvent` (pluriel) et retourne `Session[]` : boucle sur `$post['slots']`, cree une seance par slot non-vide sur le `session_date` donne. Conserve le fallback `09:00`-`10:00`.
+  - **Migration automatique** (backfill) : nouvelle methode publique `RecurrenceHandler::backfillMissingSlots(Event, slots): Session[]` qui, pour chaque date future deja en BDD, cree les seances manquantes des plages non-couvertes (legacy events crees avant le fix). Idempotente : un evenement mono-plage ou deja a jour ne genere rien. Appelee :
+    - Au debut de `generateSessions` (avant la boucle de creation par dates futures), pour migrer en place a la prochaine generation/cron quotidien.
+    - Dans `EventsController::doStore` apres `storeSlots` quand `$id !== null` (edition d'un evenement existant) : la sauvegarde declenche immediatement la creation des seances pour les nouvelles plages.
+  - `createSessionsForEvent` n'est plus appele a l'EDITION d'un evenement ponctuel : le backfill couvre deja le besoin (creer les seances manquantes pour les plages ajoutees, sur le seul `session_date` existant).
+
+- **CRON** : `/cron/generate-sessions` invoque `generateSessions` sur chaque evenement recurrent, qui declenche desormais `backfillMissingSlots` en premier -> migration progressive a chaque execution.
+
+- **Restant pour Phase 70 (UX)** : groupement visuel dans la liste "Trouver une seance" : pour les evenements multi-plages, presenter une seule carte par (evenement, date) avec un dropdown listant les plages, au lieu de N cartes adjacentes. Non couvert ici a la demande de l'utilisateur pour pouvoir tester la base d'abord.
+
+- Aucune migration BDD ni nouvelle chaine i18n. Tests 55/55 verts ; `php -l` propre sur les 2 fichiers modifies.
+
+### Phase 68 - Liste d'attente pour les enfants quand le parent est deja inscrit ou en attente
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : "Je ne peux toujours pas inscrire en liste d'attente, si j'ai plusieurs chiens concernes" (apres Phase 66).
+
+- **Bugs en cascade** non couverts par Phase 66 (qui supposait que le parent etait "ni inscrit ni en attente") :
+  1. **Fiche seance** (`session_show.html.twig`) : la cascade `if is_registered / elseif is_on_waitlist / elseif open+not_full / elseif full` court-circuitait l'action enfants des qu'une condition parent matchait. Si le parent etait deja inscrit ou en attente, le dropdown enfants n'apparaissait jamais sur une seance complete.
+  2. **"Mes inscriptions" -> Trouver une seance** : la carte etait **completement masquee** quand le parent etait deja inscrit (Phase 18 : `{% if not already and not no_action_left %}`), empechant les enfants de rejoindre la liste d'attente meme s'ils etaient eligibles.
+  3. Meme page, branche `on_wl` (parent en attente) : seul "Details" s'affichait, le dropdown enfants etait absent.
+
+- **Corrections** :
+  - `session_show.html.twig` : nouveau bloc "Action enfants" emis APRES la cascade parent (avant "Desinscription enfants inscrits"), garde par `(session.isFull() and (is_registered or is_on_waitlist)) or (not session.isFull() and is_on_waitlist)` -> couvre exactement les cas ou la cascade aurait swallow l'action. Variables `extra_unregistered_children` + `show_extra_children_action` = `'waitlist'` ou `'register'` decident URL + classes + libelles via tableaux ternaires. Reutilise le pattern dropdown / single-option / form cache.
+  - `my_registrations.html.twig` :
+    - Condition de visibilite carte relaxee : `{% if not no_action_left and (not already or children_have_action) %}` -> la carte reste visible quand le parent est inscrit MAIS un enfant peut encore agir.
+    - Dropdowns parent (register et waitlist) : `self_count`/`wl_self_count` deviennent `(browse_can_self_register[sid] and not already) ? 1 : 0` -> le parent inscrit n'apparait plus dans la liste deroulante (son nom serait incongru). Les conditions `{% if browse_can_self_register[sid] %}` -> `{% if self_count == 1 %}` / `{% if wl_self_count == 1 %}` dans le rendu des items du menu et des forms caches.
+    - Branche `on_wl` (parent en attente) : apres "Details", ajout d'un dropdown enfants (register si seance ouverte non complete, waitlist si complete) garde par `children_have_action and (has_instr or allow_no_instructor) and member_is_up2date`. Tableaux ternaires `onwl_action_url` / `onwl_btn_class` / `onwl_icon` / `onwl_label` / `onwl_prefix` evitent la duplication.
+
+- Pas de modification controleur (donnees `browse_eligible_children` + `browse_can_self_register` + `browse_on_waitlist` deja en place). Aucune nouvelle chaine i18n (reutilisation de `Join waitlist` / `Register` / `Register a linked member` / `Myself` deja traduites). Aucune migration BDD. Tests 55/55 verts ; balances Twig OK (my_registrations if=61/endif=61 for=15/endfor=15 ; session_show if=82/endif=82 for=21/endfor=21).
+
+### Phase 67 - Bloc dedie "Sur liste d'attente" dans "Mes inscriptions"
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : "Faire apparaitre les seances en liste d'attente dans mes inscriptions mais dans un bloc specifique comme les annulations auparavant".
+
+- **Probleme** : les inscriptions en liste d'attente du foyer (parent + enfants) n'apparaissaient nulle part sur "Mes inscriptions". Le membre devait aller fiche par fiche, ou utiliser le badge "Waitlist" sur l'onglet "Trouver une seance" (qui n'a aucune indication de position). Pour les enfants, il n'existait carrement aucun moyen de quitter la liste d'attente depuis l'interface : `doLeaveWaitlist` ne gere que `$this->login->id`.
+
+- **Nouveau bloc** "On the waitlist" (titre + badge bleu rond avec le compte) insere dans l'onglet "Mes inscriptions" entre la grille `upcoming` (inscriptions confirmees) et la grille `past` (passees). Cartes Fomantic standard (badge `Waitlist #N`, nom de l'evenement, date + horaires, lieu si renseigne, **nom du membre si ce n'est pas le parent connecte**, boutons Details + bouton orange "Leave waitlist"). Tri chronologique (`session_date` + `start_time` ASC), meme regle que `upcoming`. Le badge de l'onglet "Mes inscriptions" compte maintenant `upcoming|length + my_waitlist_entries|length`.
+
+- **Backend** :
+  - Nouvelle methode `Waitlist::getForMembers(Db, int[] $memberIds): array` (SELECT ordered by `position ASC`, retourne `Waitlist[]`).
+  - `RegistrationsController::myRegistrations` appelle `Waitlist::getForMembers($member_ids)` apres la boucle `$registrations`, charge a la volee les `Session`/`Event` manquants (rangees deja inscrites partagent le cache), filtre cancellees + passees, tri usort chronologique. Variable `my_waitlist_entries` passee au template.
+  - `doLeaveWaitlist` honore `redirect_to` via `resolveReturnUrl` (au lieu de toujours rediriger vers `coursesSessionShow`).
+  - Nouveau handler `doParentLeaveWaitlist` (route POST `coursesDoParentLeaveWaitlist` -> `/session/{id}/parent-leave-waitlist`, ACL `member`) : valide super-admin/logged, recupere `member_id` du POST, verifie `isChildOf`, charge `Waitlist::findEntry` pour cet enfant, supprime, flash + history, honore `redirect_to`.
+
+- i18n : 6 nouvelles chaines (`On the waitlist`, `Select a linked member.`, `You can only manage your own linked members.`, `This linked member is not on the waitlist for this session.`, `The linked member has been removed from the waitlist.`, `[Courses] Linked member left waitlist`), `.mo` recompile via msgfmt. Aucune migration BDD (table `waitlist` inchangee). Tests 55/55 verts.
+
+### Phase 66 - Liste d'attente parent/enfants : dropdown de choix du membre (comme l'inscription)
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : "Si seance en liste d'attente, si plusieurs chien (enfant et parent), mettre dropdown comme pour l'inscription".
+
+- **Bug corrige** : sur une seance complete, seul le parent (le membre connecte) pouvait rejoindre la liste d'attente. Les enfants n'avaient aucun bouton d'action -- un simple lien "Details" renvoyait vers la fiche seance, ou (avant cette phase) le meme manque existait. Il n'existait carrement aucun handler "parent -> liste d'attente" : `doWaitlist` ne gere que `$this->login->id`.
+
+- **Nouveau handler** `RegistrationsController::doParentWaitlist(Request, Response, int $id)` (route POST `coursesDoParentWaitlist` -> `/session/{id}/parent-waitlist`, `add($authenticate)`, ACL `member`). Calque la chaine de validation de `doParentRegister` (session ouverte, moniteur ou event `allow_no_instructor`, `member_id` du POST, `isChildOf`, eligibilite enfant via `getMemberEligibilityError`, appartenance au groupe requis, pas deja inscrit, **pas deja sur la liste d'attente**, **conflit horaire bloquant** comme Phase 65) puis fait un `Waitlist::store()` au lieu d'un `Registration::store()`. Flash succes avec la position (`The linked member has been added to the waitlist (position %d).`), history `[Courses] Linked member joined waitlist`. Honore `redirect_to` (retour sur `my_registrations`).
+
+- **UI** : la branche "seance complete" des 2 vues d'inscription adopte la meme logique de choix que l'inscription (Phase 42) : 0 option -> bouton Details seul ; 1 option (membre OU 1 enfant) -> bouton direct portant le nom ; >= 2 options -> dropdown bleu "Join waitlist" listant le membre ("Myself"/nickname) + chaque enfant eligible, chaque item declenchant un formulaire cache (`courses-register-trigger` reutilise). Vues touchees : `my_registrations.html.twig` (onglet "Trouver une seance", liste `browse_eligible_children[sid]`) et `session_show.html.twig` (bloc detail, recalcule `wl_children_available` = enfants non inscrits a partir de `children` / `children_registered`). Le fix z-index dropdown de Phase 65 couvre le nouveau dropdown.
+
+- Migration BDD : aucune (table `waitlist` inchangee). i18n : 3 chaines ajoutees (`This linked member is already on the waitlist for this session.`, `The linked member has been added to the waitlist (position %d).`, `[Courses] Linked member joined waitlist`), `.mo` recompile via msgfmt. Les enfants deja sur la liste d'attente ne sont pas filtres en amont du dropdown (pas de map disponible cote vue) mais le handler renvoie un warning idempotent.
+
 ### Phase 65 - Fusion chronologique des seances annulees dans le flux (Mes inscriptions / Mes seances moniteur)
 
 **Statut :** TERMINEE

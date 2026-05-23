@@ -367,7 +367,18 @@
                                 {{ _T("%d person(s) on waitlist.", "courses")|format(waitlist_count) }}
                             {% endif %}
                         </div>
-                        {% if parent_eligible %}
+                        {# Liste d'attente : membre lui-même + enfants non inscrits, même UX que l'inscription #}
+                        {% set wl_children_available = [] %}
+                        {% for child_id, child in children %}
+                            {% if child_id not in children_registered %}
+                                {% set wl_children_available = wl_children_available|merge({(child_id): child}) %}
+                            {% endif %}
+                        {% endfor %}
+                        {% set wl_self_count = parent_eligible ? 1 : 0 %}
+                        {% set wl_children_count = wl_children_available|length %}
+                        {% set wl_total_options = wl_self_count + wl_children_count %}
+                        {% if wl_total_options == 1 and parent_eligible %}
+                            {# Seule option : le membre lui-même #}
                             <form action="{{ url_for("coursesDoWaitlist", {"id": session.getId()}) }}" method="post" class="ui form">
                                 <button type="submit" class="ui small labeled icon blue button">
                                     <i class="clock icon" aria-hidden="true"></i>
@@ -375,6 +386,107 @@
                                 </button>
                                 {% include 'components/forms/csrf.html.twig' %}
                             </form>
+                        {% elseif wl_total_options == 1 %}
+                            {# Seule option : un seul enfant — POST direct, bouton porte son nom #}
+                            {% set only_wl_child_id = wl_children_available|keys|first %}
+                            {% set only_wl_child = wl_children_available[only_wl_child_id] %}
+                            <form action="{{ url_for("coursesDoParentWaitlist", {"id": session.getId()}) }}" method="post" class="ui form courses-inline-form">
+                                <input type="hidden" name="member_id" value="{{ only_wl_child_id }}"/>
+                                <button type="submit" class="ui small labeled icon blue button">
+                                    <i class="clock icon" aria-hidden="true"></i>
+                                    {{ only_wl_child.nickname ? only_wl_child.nickname : only_wl_child.name }}
+                                </button>
+                                {% include 'components/forms/csrf.html.twig' %}
+                            </form>
+                        {% elseif wl_total_options >= 2 %}
+                            {# Plusieurs options : un seul bouton dropdown qui liste les choix #}
+                            <div class="ui simple dropdown small labeled icon blue button">
+                                <i class="clock icon" aria-hidden="true"></i>
+                                <span class="text">{{ _T("Join waitlist", "courses") }}</span>
+                                <i class="dropdown icon" aria-hidden="true"></i>
+                                <div class="menu">
+                                    {% if parent_eligible %}
+                                        <a class="item courses-register-trigger" data-target="wl-self-detail-{{ session.getId() }}">
+                                            <i class="user icon" aria-hidden="true"></i>
+                                            {{ current_member_nickname ? current_member_nickname : _T("Myself", "courses") }}
+                                        </a>
+                                    {% endif %}
+                                    {% for child_id, child in wl_children_available %}
+                                        <a class="item courses-register-trigger" data-target="wl-child-detail-{{ session.getId() }}-{{ child_id }}">
+                                            <i class="user icon" aria-hidden="true"></i>
+                                            {{ child.nickname ? child.nickname : child.name }}
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% if parent_eligible %}
+                                <form id="wl-self-detail-{{ session.getId() }}" action="{{ url_for("coursesDoWaitlist", {"id": session.getId()}) }}" method="post" class="courses-hidden-form">
+                                    {% include 'components/forms/csrf.html.twig' %}
+                                </form>
+                            {% endif %}
+                            {% for child_id, child in wl_children_available %}
+                                <form id="wl-child-detail-{{ session.getId() }}-{{ child_id }}" action="{{ url_for("coursesDoParentWaitlist", {"id": session.getId()}) }}" method="post" class="courses-hidden-form">
+                                    <input type="hidden" name="member_id" value="{{ child_id }}"/>
+                                    {% include 'components/forms/csrf.html.twig' %}
+                                </form>
+                            {% endfor %}
+                        {% endif %}
+                    {% endif %}
+
+                    {# Phase 68 : action enfants TOUJOURS visible (separee de la cascade parent).
+                       Couvre les scenarios ou la cascade ci-dessus a swallow l'action :
+                       - parent inscrit OU en attente + seance complete -> enfants peuvent rejoindre la liste d'attente
+                       - parent en attente + seance ouverte non complete  -> enfants peuvent s'inscrire
+                       Le cas "parent ni inscrit ni en attente" est deja traite par la cascade. #}
+                    {% set extra_unregistered_children = [] %}
+                    {% for child_id, child in children %}
+                        {% if child_id not in children_registered %}
+                            {% set extra_unregistered_children = extra_unregistered_children|merge({(child_id): child}) %}
+                        {% endif %}
+                    {% endfor %}
+                    {% set show_extra_children_action = false %}
+                    {% if session.isOpen() and extra_unregistered_children|length > 0 %}
+                        {% if session.isFull() and (is_registered or is_on_waitlist) %}{% set show_extra_children_action = 'waitlist' %}{% endif %}
+                        {% if not session.isFull() and is_on_waitlist %}{% set show_extra_children_action = 'register' %}{% endif %}
+                    {% endif %}
+                    {% if show_extra_children_action %}
+                        <div class="ui divider"></div>
+                        {% set xa_action_url = (show_extra_children_action == 'waitlist') ? url_for("coursesDoParentWaitlist", {"id": session.getId()}) : url_for("coursesDoParentRegister", {"id": session.getId()}) %}
+                        {% set xa_btn_class  = (show_extra_children_action == 'waitlist') ? 'ui small labeled icon blue button' : 'ui small labeled icon green button' %}
+                        {% set xa_icon       = (show_extra_children_action == 'waitlist') ? 'clock' : 'user plus' %}
+                        {% set xa_label      = (show_extra_children_action == 'waitlist') ? _T("Join waitlist", "courses") : _T("Register a linked member", "courses") %}
+                        {% set xa_form_prefix = (show_extra_children_action == 'waitlist') ? 'wl-extra-child' : 'reg-extra-child' %}
+                        {% if extra_unregistered_children|length == 1 %}
+                            {% set only_xa_child_id = extra_unregistered_children|keys|first %}
+                            {% set only_xa_child = extra_unregistered_children[only_xa_child_id] %}
+                            <form action="{{ xa_action_url }}" method="post" class="ui form courses-inline-form">
+                                <input type="hidden" name="member_id" value="{{ only_xa_child_id }}"/>
+                                <button type="submit" class="{{ xa_btn_class }}">
+                                    <i class="{{ xa_icon }} icon" aria-hidden="true"></i>
+                                    {{ only_xa_child.nickname ? only_xa_child.nickname : only_xa_child.name }}
+                                </button>
+                                {% include 'components/forms/csrf.html.twig' %}
+                            </form>
+                        {% else %}
+                            <div class="ui simple dropdown {{ xa_btn_class }}">
+                                <i class="{{ xa_icon }} icon" aria-hidden="true"></i>
+                                <span class="text">{{ xa_label }}</span>
+                                <i class="dropdown icon" aria-hidden="true"></i>
+                                <div class="menu">
+                                    {% for child_id, child in extra_unregistered_children %}
+                                        <a class="item courses-register-trigger" data-target="{{ xa_form_prefix }}-{{ session.getId() }}-{{ child_id }}">
+                                            <i class="user icon" aria-hidden="true"></i>
+                                            {{ child.nickname ? child.nickname : child.name }}
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% for child_id, child in extra_unregistered_children %}
+                                <form id="{{ xa_form_prefix }}-{{ session.getId() }}-{{ child_id }}" action="{{ xa_action_url }}" method="post" class="courses-hidden-form">
+                                    <input type="hidden" name="member_id" value="{{ child_id }}"/>
+                                    {% include 'components/forms/csrf.html.twig' %}
+                                </form>
+                            {% endfor %}
                         {% endif %}
                     {% endif %}
 

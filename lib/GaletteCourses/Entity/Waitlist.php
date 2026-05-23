@@ -272,6 +272,38 @@ class Waitlist
      *
      * @return self[]
      */
+    /**
+     * Load all waitlist entries for a set of members (parent + children),
+     * used by the "My registrations" page to display a dedicated block.
+     * No ordering by date here: the controller joins to sessions to sort.
+     *
+     * @param int[] $memberIds
+     * @return Waitlist[]
+     */
+    public static function getForMembers(Db $zdb, array $memberIds): array
+    {
+        if (empty($memberIds)) {
+            return [];
+        }
+        try {
+            $select = $zdb->select(self::TABLE);
+            $select->where->in('member_id', $memberIds);
+            $select->order('position ASC');
+            $results = $zdb->execute($select);
+            $entries = [];
+            foreach ($results as $r) {
+                $entries[] = new self($zdb, $r);
+            }
+            return $entries;
+        } catch (Throwable $e) {
+            Analog::log(
+                'Error loading waitlist for members: ' . $e->getMessage(),
+                Analog::ERROR
+            );
+            return [];
+        }
+    }
+
     public static function getForSession(Db $zdb, int $sessionId): array
     {
         try {

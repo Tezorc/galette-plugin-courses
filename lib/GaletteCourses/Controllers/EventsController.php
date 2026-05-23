@@ -342,11 +342,27 @@ class EventsController extends AbstractPluginController
             // notify group managers in a single batch below.
             $createdSessions = [];
 
-            // For non-recurring event: auto-create a single session
-            if (!$event->isRecurring() && !empty($post['session_date'])) {
-                $session = $this->createSessionForEvent($event, $post);
-                if ($session !== null) {
-                    $createdSessions[] = $session;
+            // Phase 69: backfill missing slot-sessions on existing future dates.
+            // Idempotent — single-slot events with all slots present trigger no
+            // inserts. Covers (1) edit of an existing event where the user
+            // added a slot, and (2) migration of legacy multi-slot events.
+            // Skipped at creation time to avoid double-counting with the
+            // create-block below (createSessionsForEvent / generateSessions).
+            if ($id !== null && !empty($slots)) {
+                $handler = new RecurrenceHandler($this->zdb);
+                $backfilled = $handler->backfillMissingSlots($event, $slots);
+                if (!empty($backfilled)) {
+                    $createdSessions = array_merge($createdSessions, $backfilled);
+                }
+            }
+
+            // For non-recurring event: auto-create one session per defined slot
+            // on the chosen date (Phase 69 — multi-slot support). Skipped on
+            // edit since backfill above already covers the existing date.
+            if (!$event->isRecurring() && !empty($post['session_date']) && $id === null) {
+                $created = $this->createSessionsForEvent($event, $post);
+                if (!empty($created)) {
+                    $createdSessions = array_merge($createdSessions, $created);
                 }
             }
 
@@ -567,20 +583,46 @@ class EventsController extends AbstractPluginController
     }
 
     /**
+     * Auto-create one session per defined time slot for a non-recurring event
+     * on the chosen date. Phase 69: multi-slot events generate multiple sessions
+     * (e.g. 2 slots -> 2 sessions on the same date with their own capacity).
+     * Returns the list of created Session objects.
+     *
      * @param array<string, mixed> $post
+     * @return Session[]
      */
-    private function createSessionForEvent(Event $event, array $post): ?Session
+    private function createSessionsForEvent(Event $event, array $post): array
     {
-        $session = new Session($this->zdb);
-        $session->setEventId($event->getId());
-        $session->setSessionDate($post['session_date']);
-        $session->setStartTime($post['slots'][0]['start_time'] ?? '09:00');
-        $session->setEndTime($post['slots'][0]['end_time'] ?? '10:00');
-        $session->setMaxCapacity($event->getMaxCapacity());
-        if (!$session->store()) {
-            return null;
+        $slots = [];
+        if (isset($post['slots']) && is_array($post['slots'])) {
+            foreach ($post['slots'] as $slot) {
+                if (!empty($slot['start_time']) && !empty($slot['end_time'])) {
+                    $slots[] = [
+                        'start_time' => $slot['start_time'],
+                        'end_time'   => $slot['end_time'],
+                    ];
+                }
+            }
         }
-        return $session;
+        if (empty($slots)) {
+            // Fallback: keep the legacy single-session default to avoid silently
+            // failing when an event is saved without slots.
+            $slots = [['start_time' => '09:00', 'end_time' => '10:00']];
+        }
+
+        $created = [];
+        foreach ($slots as $slot) {
+            $session = new Session($this->zdb);
+            $session->setEventId($event->getId());
+            $session->setSessionDate($post['session_date']);
+            $session->setStartTime($slot['start_time']);
+            $session->setEndTime($slot['end_time']);
+            $session->setMaxCapacity($event->getMaxCapacity());
+            if ($session->store()) {
+                $created[] = $session;
+            }
+        }
+        return $created;
     }
 
     /**

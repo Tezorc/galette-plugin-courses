@@ -67,8 +67,9 @@
     <a class="item" data-tab="mine">
         <i class="calendar check icon" aria-hidden="true"></i>
         <span class="courses-tab-text">{{ _T("My registrations", "courses") }}</span>
-        {% if upcoming|length > 0 %}
-            <span class="ui green circular label" style="margin-left:.4em">{{ upcoming|length }}</span>
+        {% set mine_badge = upcoming|length + my_waitlist_entries|length %}
+        {% if mine_badge > 0 %}
+            <span class="ui green circular label" style="margin-left:.4em">{{ mine_badge }}</span>
         {% endif %}
     </a>
 </div>
@@ -142,10 +143,154 @@
         {% if browse_all_sessions|length > 0 %}
         <div class="ui stackable three column grid courses-cards-grid" id="browse-cards-grid">
         {# Phase 65 : seances ouvertes ET annulees dans une seule grille triee par date #}
+        {# Phase 70 : multi-plages groupees en UNE carte (non-primaires ignorees via browse_skip) #}
         {% for s in browse_all_sessions %}
             {% set sid = s.getId() %}
             {% set ev = browse_events[s.getEventId()] %}
-            {% if s.getStatus() == 'cancelled' %}
+            {% if browse_skip[sid] is defined %}
+                {# Plage non-primaire d'un groupe multi-plages : deja rendue dans le dropdown de la carte primaire #}
+            {% elseif browse_group_siblings[sid] is defined %}
+            {# ====================== Carte multi-plages (Phase 70) ====================== #}
+            {% set ms_slots = browse_group_siblings[sid] %}
+            {% set ms_all_cancelled = true %}
+            {% for ms_slot in ms_slots %}
+                {% if ms_slot.getStatus() != 'cancelled' %}{% set ms_all_cancelled = false %}{% endif %}
+            {% endfor %}
+            <div class="column courses-browse-card-col"
+                 {% if ms_all_cancelled %}data-cancelled="1"{% endif %}
+                 data-type-id="{{ ev.getTypeId() }}"
+                 data-event-name="{{ ev.getName() }}"
+                 data-date="{{ s.getSessionDate() }}">
+                <div class="ui fluid card courses-card">
+                    <div class="content">
+                        <div class="right floated meta">
+                            <span class="ui small teal label">
+                                <i class="clock icon" aria-hidden="true"></i>
+                                {{ ms_slots|length }} {{ _T("Time slots", "courses") }}
+                            </span>
+                        </div>
+                        <div class="header">{{ ev.getName() }}</div>
+                        <div class="meta">
+                            <i class="calendar icon" aria-hidden="true"></i>
+                            <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
+                            <span class="courses-date-month">{{ s.getMonthYear() }}</span>
+                        </div>
+                        {% if ev.getLocation() %}
+                            <div class="meta">
+                                <i class="map pin icon" aria-hidden="true"></i>
+                                {{ ev.getLocation() }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    {# Liste compacte des plages avec leur statut #}
+                    <div class="content courses-multislot-list">
+                        {% for ms_slot in ms_slots %}
+                            {% set ms_sid = ms_slot.getId() %}
+                            <div class="courses-multislot-row">
+                                <strong>{{ ms_slot.getFormattedStartTime() }} - {{ ms_slot.getFormattedEndTime() }}</strong>
+                                {% if ms_slot.getStatus() == 'cancelled' %}
+                                    <span class="ui tiny red label">{{ _T("Cancelled", "courses") }}</span>
+                                {% elseif browse_on_waitlist[ms_sid] %}
+                                    <span class="ui tiny blue label">{{ _T("Waitlist", "courses") }}</span>
+                                {% elseif ms_slot.isFull() %}
+                                    <span class="ui tiny orange label">{{ _T("Full", "courses") }}</span>
+                                {% else %}
+                                    <span class="ui tiny green label">{{ _T("Open", "courses") }}</span>
+                                {% endif %}
+                                {% if ms_slot.getMaxCapacity() and ms_slot.getStatus() != 'cancelled' %}
+                                    <small class="courses-multislot-cap">({{ ms_slot.getCurrentRegistrations() }}/{{ ms_slot.getMaxCapacity() }})</small>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    {# Dropdown unique : (plage × membre) -> action register/waitlist #}
+                    <div class="extra content">
+                        <div class="courses-actions">
+                            {# Phase 70.1 : la presence d'une plage dans le dropdown depend
+                               desormais SOIT du parent (self_actionable), SOIT des enfants
+                               eligibles, independamment. Cela permet d'inscrire un enfant sur
+                               une plage ou le parent est deja inscrit ou en attente. #}
+                            {% set ms_has_items = false %}
+                            {% for ms_slot in ms_slots %}
+                                {% set ms_sid = ms_slot.getId() %}
+                                {% set ms_slot_open = ms_slot.getStatus() != 'cancelled' and (browse_has_instructor[ms_sid] or ev.isRegistrationAllowedWithoutInstructor()) %}
+                                {% set ms_self_act = ms_slot_open and browse_can_self_register[ms_sid] and not browse_on_waitlist[ms_sid] and ms_sid not in registered_session_ids %}
+                                {% set ms_kids_act = ms_slot_open and (browse_eligible_children[ms_sid] is defined and browse_eligible_children[ms_sid]|length > 0) %}
+                                {% if ms_self_act or ms_kids_act %}{% set ms_has_items = true %}{% endif %}
+                            {% endfor %}
+
+                            {% if ms_has_items and member_is_up2date %}
+                                <div class="ui simple dropdown tiny labeled icon green button">
+                                    <i class="user plus icon" aria-hidden="true"></i>
+                                    <span class="text">{{ _T("Register", "courses") }}</span>
+                                    <i class="dropdown icon" aria-hidden="true"></i>
+                                    <div class="menu">
+                                        {% for ms_slot in ms_slots %}
+                                            {% set ms_sid = ms_slot.getId() %}
+                                            {% set ms_slot_open = ms_slot.getStatus() != 'cancelled' and (browse_has_instructor[ms_sid] or ev.isRegistrationAllowedWithoutInstructor()) %}
+                                            {% set ms_self_act = ms_slot_open and browse_can_self_register[ms_sid] and not browse_on_waitlist[ms_sid] and ms_sid not in registered_session_ids %}
+                                            {% set ms_children = ms_slot_open and browse_eligible_children[ms_sid] is defined ? browse_eligible_children[ms_sid] : {} %}
+                                            {% if ms_self_act or ms_children|length > 0 %}
+                                                <div class="header courses-multislot-menu-header">
+                                                    <i class="clock icon" aria-hidden="true"></i>
+                                                    {{ ms_slot.getFormattedStartTime() }} - {{ ms_slot.getFormattedEndTime() }}
+                                                    {% if ms_slot.isFull() %}
+                                                        <span class="ui mini orange label">{{ _T("Waitlist", "courses") }}</span>
+                                                    {% endif %}
+                                                </div>
+                                                {% if ms_self_act %}
+                                                    {% set ms_self_nick = (reg_members[login.id] is defined and reg_members[login.id].nickname) ? reg_members[login.id].nickname : '' %}
+                                                    <a class="item courses-register-trigger" data-target="ms-self-{{ ms_sid }}">
+                                                        <i class="user icon" aria-hidden="true"></i>
+                                                        {{ ms_self_nick ?: _T("Myself", "courses") }}
+                                                    </a>
+                                                {% endif %}
+                                                {% for child_id, child_info in ms_children %}
+                                                    <a class="item courses-register-trigger" data-target="ms-child-{{ ms_sid }}-{{ child_id }}">
+                                                        <i class="user icon" aria-hidden="true"></i>
+                                                        {{ child_info.nickname ?: child_info.name }}
+                                                    </a>
+                                                {% endfor %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {# Hidden forms : 1 par (slot, membre, action). Memes gardes que le menu. #}
+                                {% for ms_slot in ms_slots %}
+                                    {% set ms_sid = ms_slot.getId() %}
+                                    {% set ms_slot_open = ms_slot.getStatus() != 'cancelled' and (browse_has_instructor[ms_sid] or ev.isRegistrationAllowedWithoutInstructor()) %}
+                                    {% if ms_slot_open %}
+                                        {% set ms_self_url = ms_slot.isFull() ? url_for("coursesDoWaitlist", {"id": ms_sid}) : url_for("coursesDoRegister", {"id": ms_sid}) %}
+                                        {% set ms_child_url = ms_slot.isFull() ? url_for("coursesDoParentWaitlist", {"id": ms_sid}) : url_for("coursesDoParentRegister", {"id": ms_sid}) %}
+                                        {% set ms_self_act = browse_can_self_register[ms_sid] and not browse_on_waitlist[ms_sid] and ms_sid not in registered_session_ids %}
+                                        {% if ms_self_act %}
+                                            <form id="ms-self-{{ ms_sid }}" action="{{ ms_self_url }}" method="post" class="courses-hidden-form">
+                                                <input type="hidden" name="redirect_to" value="my_registrations"/>
+                                                {% include "components/forms/csrf.html.twig" %}
+                                            </form>
+                                        {% endif %}
+                                        {% if browse_eligible_children[ms_sid] is defined %}
+                                            {% for child_id, child_info in browse_eligible_children[ms_sid] %}
+                                                <form id="ms-child-{{ ms_sid }}-{{ child_id }}" action="{{ ms_child_url }}" method="post" class="courses-hidden-form">
+                                                    <input type="hidden" name="redirect_to" value="my_registrations"/>
+                                                    <input type="hidden" name="member_id" value="{{ child_id }}"/>
+                                                    {% include "components/forms/csrf.html.twig" %}
+                                                </form>
+                                            {% endfor %}
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                            <a href="{{ url_for("coursesSessionShow", {"id": sid}) }}" class="ui tiny basic button">
+                                {{ _T("Details", "courses") }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% elseif s.getStatus() == 'cancelled' %}
             {# ---- Carte annulee (informatif, melangee chronologiquement) ---- #}
             <div class="column courses-browse-card-col"
                  data-cancelled="1"
@@ -198,7 +343,9 @@
             {% set has_instr = browse_has_instructor[sid] %}
 
             {% set no_action_left = not browse_can_self_register[sid] and not browse_on_waitlist[sid] and (browse_eligible_children[sid] is not defined or browse_eligible_children[sid]|length == 0) %}
-            {% if not already and not no_action_left %}
+            {# Phase 68 : ne pas masquer la carte si les enfants peuvent encore agir (inscription ou liste d'attente) #}
+            {% set children_have_action = browse_eligible_children[sid] is defined and browse_eligible_children[sid]|length > 0 %}
+            {% if not no_action_left and (not already or children_have_action) %}
             <div class="column courses-browse-card-col"
                  data-type-id="{{ ev.getTypeId() }}"
                  data-event-name="{{ ev.getName() }}"
@@ -266,11 +413,52 @@
                     {# Actions #}
                     <div class="extra content">
                         {% if on_wl %}
-                            {# Sur liste d'attente #}
+                            {# Parent sur liste d'attente. Phase 68 : on permet aussi aux enfants d'agir #}
                             <a href="{{ url_for("coursesSessionShow", {"id": sid}) }}" class="ui tiny button">
                                 <i class="eye icon" aria-hidden="true"></i>
                                 {{ _T("Details", "courses") }}
                             </a>
+                            {% if children_have_action and (has_instr or ev.isRegistrationAllowedWithoutInstructor()) and member_is_up2date %}
+                                {% set onwl_action_url = s.isFull() ? url_for("coursesDoParentWaitlist", {"id": sid}) : url_for("coursesDoParentRegister", {"id": sid}) %}
+                                {% set onwl_btn_class = s.isFull() ? 'ui tiny labeled icon blue button' : 'ui tiny labeled icon teal button' %}
+                                {% set onwl_icon      = s.isFull() ? 'clock' : 'user plus' %}
+                                {% set onwl_label     = s.isFull() ? _T("Join waitlist", "courses") : _T("Register", "courses") %}
+                                {% set onwl_prefix    = s.isFull() ? 'wl-onwl-child' : 'reg-onwl-child' %}
+                                {% if browse_eligible_children[sid]|length == 1 %}
+                                    {% set onwl_only_child_id = browse_eligible_children[sid]|keys|first %}
+                                    {% set onwl_only_child = browse_eligible_children[sid][onwl_only_child_id] %}
+                                    <form action="{{ onwl_action_url }}" method="post" class="ui form courses-inline-form">
+                                        <input type="hidden" name="redirect_to" value="my_registrations"/>
+                                        <input type="hidden" name="member_id" value="{{ onwl_only_child_id }}"/>
+                                        <button type="submit" class="{{ onwl_btn_class }}">
+                                            <i class="{{ onwl_icon }} icon" aria-hidden="true"></i>
+                                            {{ onwl_only_child.nickname ? onwl_only_child.nickname : onwl_only_child.name }}
+                                        </button>
+                                        {% include "components/forms/csrf.html.twig" %}
+                                    </form>
+                                {% else %}
+                                    <div class="ui simple dropdown {{ onwl_btn_class }}">
+                                        <i class="{{ onwl_icon }} icon" aria-hidden="true"></i>
+                                        <span class="text">{{ onwl_label }}</span>
+                                        <i class="dropdown icon" aria-hidden="true"></i>
+                                        <div class="menu">
+                                            {% for child_id, child_info in browse_eligible_children[sid] %}
+                                                <a class="item courses-register-trigger" data-target="{{ onwl_prefix }}-{{ sid }}-{{ child_id }}">
+                                                    <i class="user icon" aria-hidden="true"></i>
+                                                    {{ child_info.nickname ? child_info.nickname : child_info.name }}
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% for child_id, child_info in browse_eligible_children[sid] %}
+                                        <form id="{{ onwl_prefix }}-{{ sid }}-{{ child_id }}" action="{{ onwl_action_url }}" method="post" class="courses-hidden-form">
+                                            <input type="hidden" name="redirect_to" value="my_registrations"/>
+                                            <input type="hidden" name="member_id" value="{{ child_id }}"/>
+                                            {% include "components/forms/csrf.html.twig" %}
+                                        </form>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endif %}
                         {% elseif not has_instr and not ev.isRegistrationAllowedWithoutInstructor() %}
                             {# Pas d'instructeur et inscription bloquee par defaut — pas d'inscription possible #}
                             <span class="ui tiny orange label">
@@ -283,8 +471,14 @@
                                 {{ _T("Details", "courses") }}
                             </a>
                         {% elseif s.isFull() %}
-                            {# Session complète : liste d'attente pour le membre lui-même #}
-                            {% if browse_can_self_register[sid] %}
+                            {# Session complète : liste d'attente (membre lui-même + enfants éligibles), même UX que l'inscription #}
+                            {# Phase 68 : si le parent est deja inscrit (`already`), il n'apparait pas dans le dropdown waitlist #}
+                            {% set wl_self_count = (browse_can_self_register[sid] and not already) ? 1 : 0 %}
+                            {% set wl_children_count = (browse_eligible_children[sid] is defined) ? browse_eligible_children[sid]|length : 0 %}
+                            {% set wl_total_options = wl_self_count + wl_children_count %}
+
+                            {% if wl_total_options == 1 and browse_can_self_register[sid] %}
+                                {# Seule option : le membre lui-même #}
                                 <form action="{{ url_for("coursesDoWaitlist", {"id": sid}) }}" method="post" class="ui form courses-inline-form">
                                     <input type="hidden" name="redirect_to" value="my_registrations"/>
                                     <button type="submit" class="ui tiny labeled icon blue button">
@@ -293,25 +487,66 @@
                                     </button>
                                     {% include "components/forms/csrf.html.twig" %}
                                 </form>
-                            {% endif %}
-                            {# Liste d'attente enfants : via la fiche séance #}
-                            {% if browse_eligible_children[sid] is defined and browse_eligible_children[sid]|length > 0 %}
-                                <a href="{{ url_for("coursesSessionShow", {"id": sid}) }}" class="ui tiny labeled icon teal button">
+                            {% elseif wl_total_options == 1 %}
+                                {# Seule option : un seul enfant — POST direct, bouton porte son nom #}
+                                {% set only_wl_child_id = browse_eligible_children[sid]|keys|first %}
+                                {% set only_wl_child_info = browse_eligible_children[sid][only_wl_child_id] %}
+                                <form action="{{ url_for("coursesDoParentWaitlist", {"id": sid}) }}" method="post" class="ui form courses-inline-form">
+                                    <input type="hidden" name="redirect_to" value="my_registrations"/>
+                                    <input type="hidden" name="member_id" value="{{ only_wl_child_id }}"/>
+                                    <button type="submit" class="ui tiny labeled icon blue button">
+                                        <i class="clock icon" aria-hidden="true"></i>
+                                        {{ only_wl_child_info.nickname ? only_wl_child_info.nickname : only_wl_child_info.name }}
+                                    </button>
+                                    {% include "components/forms/csrf.html.twig" %}
+                                </form>
+                            {% elseif wl_total_options >= 2 %}
+                                {# Plusieurs options : un seul bouton dropdown qui liste les choix #}
+                                <div class="ui simple dropdown tiny labeled icon blue button">
                                     <i class="clock icon" aria-hidden="true"></i>
-                                    {{ _T("Details", "courses") }}
-                                </a>
+                                    <span class="text">{{ _T("Join waitlist", "courses") }}</span>
+                                    <i class="dropdown icon" aria-hidden="true"></i>
+                                    <div class="menu">
+                                        {% if wl_self_count == 1 %}
+                                            {% set self_nick_wl = (reg_members[login.id] is defined and reg_members[login.id].nickname) ? reg_members[login.id].nickname : '' %}
+                                            <a class="item courses-register-trigger" data-target="waitlist-self-{{ sid }}">
+                                                <i class="user icon" aria-hidden="true"></i>
+                                                {{ self_nick_wl ? self_nick_wl : _T("Myself", "courses") }}
+                                            </a>
+                                        {% endif %}
+                                        {% for child_id, child_info in browse_eligible_children[sid] %}
+                                            <a class="item courses-register-trigger" data-target="waitlist-child-{{ sid }}-{{ child_id }}">
+                                                <i class="user icon" aria-hidden="true"></i>
+                                                {{ child_info.nickname ? child_info.nickname : child_info.name }}
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {# Hidden forms triggered by dropdown items #}
+                                {% if wl_self_count == 1 %}
+                                    <form id="waitlist-self-{{ sid }}" action="{{ url_for("coursesDoWaitlist", {"id": sid}) }}" method="post" class="courses-hidden-form">
+                                        <input type="hidden" name="redirect_to" value="my_registrations"/>
+                                        {% include "components/forms/csrf.html.twig" %}
+                                    </form>
+                                {% endif %}
+                                {% for child_id, child_info in browse_eligible_children[sid] %}
+                                    <form id="waitlist-child-{{ sid }}-{{ child_id }}" action="{{ url_for("coursesDoParentWaitlist", {"id": sid}) }}" method="post" class="courses-hidden-form">
+                                        <input type="hidden" name="redirect_to" value="my_registrations"/>
+                                        <input type="hidden" name="member_id" value="{{ child_id }}"/>
+                                        {% include "components/forms/csrf.html.twig" %}
+                                    </form>
+                                {% endfor %}
                             {% endif %}
-                            {% if not browse_can_self_register[sid] and (browse_eligible_children[sid] is not defined or browse_eligible_children[sid]|length == 0) %}
-                                <a href="{{ url_for("coursesSessionShow", {"id": sid}) }}" class="ui tiny basic button">
-                                    {{ _T("Details", "courses") }}
-                                </a>
-                            {% endif %}
+                            <a href="{{ url_for("coursesSessionShow", {"id": sid}) }}" class="ui tiny basic button">
+                                {{ _T("Details", "courses") }}
+                            </a>
                         {% else %}
-                            {% set self_count = browse_can_self_register[sid] ? 1 : 0 %}
+                            {# Phase 68 : si le parent est deja inscrit (`already`), il n'apparait pas dans le dropdown register #}
+                            {% set self_count = (browse_can_self_register[sid] and not already) ? 1 : 0 %}
                             {% set children_count = (browse_eligible_children[sid] is defined) ? browse_eligible_children[sid]|length : 0 %}
                             {% set total_options = self_count + children_count %}
 
-                            {% if total_options == 1 and browse_can_self_register[sid] %}
+                            {% if total_options == 1 and self_count == 1 %}
                                 {# Seule option : le membre lui-meme — on affiche le nickname si dispo #}
                                 {% set self_nick = (reg_members[login.id] is defined and reg_members[login.id].nickname) ? reg_members[login.id].nickname : '' %}
                                 <form action="{{ url_for("coursesDoRegister", {"id": sid}) }}" method="post" class="ui form courses-inline-form">
@@ -342,7 +577,7 @@
                                     <span class="text">{{ _T("Register", "courses") }}</span>
                                     <i class="dropdown icon" aria-hidden="true"></i>
                                     <div class="menu">
-                                        {% if browse_can_self_register[sid] %}
+                                        {% if self_count == 1 %}
                                             {% set self_nick_drop = (reg_members[login.id] is defined and reg_members[login.id].nickname) ? reg_members[login.id].nickname : '' %}
                                             <a class="item courses-register-trigger" data-target="register-self-{{ sid }}">
                                                 <i class="user icon" aria-hidden="true"></i>
@@ -358,7 +593,7 @@
                                     </div>
                                 </div>
                                 {# Hidden forms triggered by dropdown items (HTML5 form= attr would also work, but JS submission keeps Fomantic dropdown semantics) #}
-                                {% if browse_can_self_register[sid] %}
+                                {% if self_count == 1 %}
                                     <form id="register-self-{{ sid }}" action="{{ url_for("coursesDoRegister", {"id": sid}) }}" method="post" class="courses-hidden-form">
                                         <input type="hidden" name="redirect_to" value="my_registrations"/>
                                         {% include "components/forms/csrf.html.twig" %}
@@ -616,6 +851,87 @@
             <div class="ui info message">
                 <i class="info circle icon" aria-hidden="true"></i>
                 {{ _T("No upcoming session", "courses") }}
+            </div>
+        {% endif %}
+
+        {# Phase 67: Séances où l'on est sur liste d'attente (parent + enfants), bloc dédié chronologique #}
+        {% if my_waitlist_entries|length > 0 %}
+            <h3 class="ui small dividing header courses-section-mt">
+                <i class="clock icon" aria-hidden="true"></i>
+                <div class="content">
+                    {{ _T("On the waitlist", "courses") }}
+                    <span class="ui blue circular label">{{ my_waitlist_entries|length }}</span>
+                </div>
+            </h3>
+            <div class="ui stackable three column grid courses-cards-grid">
+            {% for wl in my_waitlist_entries %}
+                {% set wsid = wl.getSessionId() %}
+                {% set ws   = sessions[wsid] %}
+                {% set wev  = events[ws.getEventId()] %}
+                {% set wmid = wl.getMemberId() %}
+                {% set is_self_wl = (wmid == current_member_id) %}
+                {% set wmname = (reg_members[wmid] is defined and reg_members[wmid].nickname) ? reg_members[wmid].nickname : ((reg_members[wmid] is defined) ? reg_members[wmid].name : '') %}
+                <div class="column">
+                    <div class="ui fluid card courses-card">
+                        <div class="content">
+                            <div class="right floated meta">
+                                <span class="ui blue label">
+                                    <i class="clock icon" aria-hidden="true"></i>
+                                    {{ _T("Waitlist", "courses") }} #{{ wl.getPosition() }}
+                                </span>
+                            </div>
+                            <div class="header">{{ wev.getName() }}</div>
+                            <div class="meta">
+                                <i class="calendar icon" aria-hidden="true"></i>
+                                <span class="courses-date-day">{{ ws.getSessionDate()|date("d") }}</span>
+                                <span class="courses-date-month">{{ ws.getMonthYear() }}</span>
+                                &nbsp;&middot;&nbsp;
+                                {{ ws.getFormattedStartTime() }} - {{ ws.getFormattedEndTime() }}
+                            </div>
+                            {% if wev.getLocation() %}
+                                <div class="meta">
+                                    <i class="map pin icon" aria-hidden="true"></i>
+                                    {{ wev.getLocation() }}
+                                </div>
+                            {% endif %}
+                            {% if not is_self_wl and wmname %}
+                                <div class="meta">
+                                    <i class="user icon" aria-hidden="true"></i>
+                                    {{ wmname }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="extra content">
+                            <div class="courses-actions">
+                                <a href="{{ url_for("coursesSessionShow", {"id": wsid}) }}" class="ui tiny button">
+                                    <i class="eye icon" aria-hidden="true"></i>
+                                    {{ _T("Details", "courses") }}
+                                </a>
+                                {% if is_self_wl %}
+                                    <form action="{{ url_for("coursesDoLeaveWaitlist", {"id": wsid}) }}" method="post" class="ui form courses-inline-form">
+                                        <input type="hidden" name="redirect_to" value="my_registrations"/>
+                                        <button type="submit" class="ui tiny labeled icon orange button fluid">
+                                            <i class="times icon" aria-hidden="true"></i>
+                                            {{ _T("Leave waitlist", "courses") }}
+                                        </button>
+                                        {% include "components/forms/csrf.html.twig" %}
+                                    </form>
+                                {% else %}
+                                    <form action="{{ url_for("coursesDoParentLeaveWaitlist", {"id": wsid}) }}" method="post" class="ui form courses-inline-form">
+                                        <input type="hidden" name="redirect_to" value="my_registrations"/>
+                                        <input type="hidden" name="member_id" value="{{ wmid }}"/>
+                                        <button type="submit" class="ui tiny labeled icon orange button fluid">
+                                            <i class="times icon" aria-hidden="true"></i>
+                                            {{ _T("Leave waitlist", "courses") }}
+                                        </button>
+                                        {% include "components/forms/csrf.html.twig" %}
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
             </div>
         {% endif %}
 

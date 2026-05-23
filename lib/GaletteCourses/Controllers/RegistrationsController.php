@@ -404,6 +404,7 @@ class RegistrationsController extends AbstractController
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
         }
 
+        $returnUrl = $this->resolveReturnUrl($request, $id);
         $member_id = (int)$this->login->id;
         $entry = Waitlist::findEntry($this->zdb, $id, $member_id);
 
@@ -411,7 +412,7 @@ class RegistrationsController extends AbstractController
             $this->flash->addMessage('error_detected', _T('You are not on the waitlist for this session.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         if ($entry->remove()) {
@@ -426,7 +427,76 @@ class RegistrationsController extends AbstractController
 
         return $response
             ->withStatus(302)
-            ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+            ->withHeader('Location', $returnUrl);
+    }
+
+    /**
+     * Remove a linked member (child) from a session waitlist. Mirrors doLeaveWaitlist
+     * but takes member_id from POST and verifies the parent-child relationship.
+     */
+    public function doParentLeaveWaitlist(Request $request, Response $response, int $id): Response
+    {
+        $session = new Session($this->zdb, $id);
+        if ($session->getId() === null) {
+            $this->flash->addMessage('error_detected', _T('Session not found.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
+        }
+
+        $returnUrl = $this->resolveReturnUrl($request, $id);
+
+        if ($this->login->isSuperAdmin() || !$this->login->isLogged()) {
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $returnUrl);
+        }
+
+        $parent_id = (int)$this->login->id;
+        $post = $request->getParsedBody();
+        $child_id = (int)($post['member_id'] ?? 0);
+        if ($child_id <= 0) {
+            $this->flash->addMessage('error_detected', _T('Select a linked member.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $returnUrl);
+        }
+
+        try {
+            if (!$this->isChildOf($parent_id, $child_id)) {
+                $this->flash->addMessage('error_detected', _T('You can only manage your own linked members.', 'courses'));
+                return $response
+                    ->withStatus(302)
+                    ->withHeader('Location', $returnUrl);
+            }
+        } catch (\Throwable $e) {
+            $this->flash->addMessage('error_detected', _T('An error occurred leaving the waitlist.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $returnUrl);
+        }
+
+        $entry = Waitlist::findEntry($this->zdb, $id, $child_id);
+        if ($entry === null) {
+            $this->flash->addMessage('error_detected', _T('This linked member is not on the waitlist for this session.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $returnUrl);
+        }
+
+        if ($entry->remove()) {
+            $this->history->add(
+                _T('[Courses] Linked member left waitlist', 'courses'),
+                sprintf('session #%d — member #%d (by parent #%d)', $id, $child_id, $parent_id)
+            );
+            $this->flash->addMessage('success_detected', _T('The linked member has been removed from the waitlist.', 'courses'));
+        } else {
+            $this->flash->addMessage('error_detected', _T('An error occurred leaving the waitlist.', 'courses'));
+        }
+
+        return $response
+            ->withStatus(302)
+            ->withHeader('Location', $returnUrl);
     }
 
     public function myRegistrations(Request $request, Response $response): Response
@@ -510,6 +580,43 @@ class RegistrationsController extends AbstractController
                 }
             }
         }
+
+        // Phase 67: load the family's own waitlist entries (parent + linked members).
+        // Sessions referenced by waitlist that aren't already loaded by registrations
+        // are loaded on demand into the existing $sessions / $events maps.
+        // Only upcoming + non-cancelled entries are displayed in the dedicated block.
+        $my_waitlist_entries = []; // ordered later by session_date/start_time
+        $my_waitlist_raw     = Waitlist::getForMembers($this->zdb, $member_ids);
+        foreach ($my_waitlist_raw as $wl) {
+            $wlSid = $wl->getSessionId();
+            if (!isset($sessions[$wlSid])) {
+                $s = new Session($this->zdb, $wlSid);
+                if ($s->getId() === null) {
+                    continue;
+                }
+                $sessions[$wlSid] = $s;
+                if (!isset($events[$s->getEventId()])) {
+                    $events[$s->getEventId()] = new Event($this->zdb, $s->getEventId());
+                }
+            }
+            $s = $sessions[$wlSid];
+            if ($s->getStatus() === Session::STATUS_CANCELLED) {
+                continue;
+            }
+            if ($s->getSessionDate() < date('Y-m-d')) {
+                continue;
+            }
+            $my_waitlist_entries[] = $wl;
+        }
+        // Chronological order: same key used for the registered upcoming list.
+        usort($my_waitlist_entries, function (Waitlist $a, Waitlist $b) use ($sessions): int {
+            $sa = $sessions[$a->getSessionId()];
+            $sb = $sessions[$b->getSessionId()];
+            return strcmp(
+                $sa->getSessionDate() . $sa->getStartTime(),
+                $sb->getSessionDate() . $sb->getStartTime()
+            );
+        });
 
         // Batch-load instructor names for registered sessions
         $mine_instructor_names = SessionInstructor::getInstructorNamesForSessions($this->zdb, array_keys($sessions));
@@ -818,6 +925,33 @@ class RegistrationsController extends AbstractController
             );
         });
 
+        // Phase 70: group multi-slot sessions (same event+date) so the template
+        // renders ONE card per (event, date) with a slot picker inside. The
+        // primary of each group (earliest start_time) drives the card render;
+        // non-primary siblings are flagged to skip.
+        // - $browse_group_siblings[primary_sid] = [Session, ...]  (>=2 entries)
+        // - $browse_skip[non_primary_sid] = true
+        $browse_group_siblings = [];
+        $browse_skip           = [];
+        $browse_groups_tmp     = []; // [date|eid => [Session, ...]]
+        foreach ($browse_all_sessions as $s) {
+            $key = $s->getSessionDate() . '|' . $s->getEventId();
+            $browse_groups_tmp[$key][] = $s;
+        }
+        foreach ($browse_groups_tmp as $sessionsInGroup) {
+            if (count($sessionsInGroup) <= 1) {
+                continue;
+            }
+            usort($sessionsInGroup, static function (Session $a, Session $b): int {
+                return strcmp($a->getStartTime(), $b->getStartTime());
+            });
+            $primary = $sessionsInGroup[0];
+            $browse_group_siblings[$primary->getId()] = $sessionsInGroup;
+            foreach (array_slice($sessionsInGroup, 1) as $sib) {
+                $browse_skip[$sib->getId()] = true;
+            }
+        }
+
         $this->view->render(
             $response,
             $this->getTemplate('pages/my_registrations'),
@@ -841,6 +975,8 @@ class RegistrationsController extends AbstractController
                 'browse_available_names'      => $browse_available_names,
                 'browse_cancelled_sessions'   => $browse_cancelled_sessions,
                 'browse_all_sessions'         => $browse_all_sessions,
+                'browse_group_siblings'       => $browse_group_siblings,
+                'browse_skip'                 => $browse_skip,
                 'member_is_up2date'       => $this->login->isUp2Date()
                                              || $this->login->isAdmin()
                                              || $this->login->isStaff()
@@ -849,6 +985,7 @@ class RegistrationsController extends AbstractController
                 'out_of_group_regs'       => $out_of_group_regs,
                 'my_conflicts'            => $my_conflicts,
                 'browse_conflicts'        => $browse_conflicts,
+                'my_waitlist_entries'     => $my_waitlist_entries,
             ]
         );
         return $response;
@@ -1207,6 +1344,165 @@ class RegistrationsController extends AbstractController
             $this->flash->addMessage('success_detected', _T('The linked member has been registered successfully.', 'courses'));
         } else {
             $this->flash->addMessage('error_detected', _T('An error occurred during registration.', 'courses'));
+        }
+
+        return $response
+            ->withStatus(302)
+            ->withHeader('Location', $returnUrl);
+    }
+
+    /**
+     * Add a linked member (child) to a session waitlist on behalf of the parent.
+     * Mirrors doParentRegister's validation chain but ends in a Waitlist::store()
+     * instead of a Registration. Used when a full session offers the parent a
+     * choice between self + children (dropdown in the browse / detail views).
+     */
+    public function doParentWaitlist(Request $request, Response $response, int $id): Response
+    {
+        $session = new Session($this->zdb, $id);
+        if ($session->getId() === null) {
+            $this->flash->addMessage('error_detected', _T('Session not found.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
+        }
+
+        $returnUrl = $this->resolveReturnUrl($request, $id);
+
+        if ($this->login->isSuperAdmin() || !$this->login->isLogged()) {
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $returnUrl);
+        }
+
+        $parent_id = (int)$this->login->id;
+
+        $err = $this->getMemberEligibilityError($parent_id);
+        if ($err !== null) {
+            $this->flash->addMessage('error_detected', $err);
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $returnUrl);
+        }
+
+        if (!$session->isOpen()) {
+            $this->flash->addMessage('error_detected', _T('This session is not open for registration.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $returnUrl);
+        }
+
+        if (
+            !$session->getEvent()->isRegistrationAllowedWithoutInstructor()
+            && !SessionInstructor::hasInstructor($this->zdb, $id)
+        ) {
+            $this->flash->addMessage('error_detected', _T('No instructor assigned to this session. Registration is not yet possible.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $returnUrl);
+        }
+
+        $post = $request->getParsedBody();
+        $child_id = (int)($post['member_id'] ?? 0);
+        if ($child_id <= 0) {
+            $this->flash->addMessage('error_detected', _T('Select a linked member to register.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $returnUrl);
+        }
+
+        // Verify parent-child relationship
+        try {
+            if (!$this->isChildOf($parent_id, $child_id)) {
+                $this->flash->addMessage('error_detected', _T('You can only register your own linked members.', 'courses'));
+                return $response
+                    ->withStatus(302)
+                    ->withHeader('Location', $returnUrl);
+            }
+        } catch (\Throwable $e) {
+            $this->flash->addMessage('error_detected', _T('An error occurred joining the waitlist.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $returnUrl);
+        }
+
+        // Child must be active + non-"non-member" + a jour (Phase 47.2)
+        $childDisplay = '';
+        try {
+            $childAdherent = new Adherent($this->zdb, $child_id);
+            $childDisplay = $this->formatMemberDisplayName(
+                (string)($childAdherent->sname ?? ''),
+                !empty($childAdherent->nickname) ? (string)$childAdherent->nickname : ''
+            );
+        } catch (\Throwable) {
+            // fall back to empty display name
+        }
+        $err = $this->getMemberEligibilityError($child_id, $childDisplay);
+        if ($err !== null) {
+            $this->flash->addMessage('error_detected', $err);
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $returnUrl);
+        }
+
+        // Child must belong to a required event group
+        $event = $session->getEvent();
+        $event->loadGroups();
+        $eventGroups = $event->getGroups();
+        if (!empty($eventGroups)) {
+            try {
+                $checkSelect = $this->zdb->select('groups_members');
+                $checkSelect->where(['id_adh' => $child_id]);
+                $checkSelect->where->in('id_group', $eventGroups);
+                $checkResults = $this->zdb->execute($checkSelect);
+                if ($checkResults->count() === 0) {
+                    $this->flash->addMessage('error_detected', _T('This linked member does not belong to a required group for this event.', 'courses'));
+                    return $response
+                        ->withStatus(302)
+                        ->withHeader('Location', $returnUrl);
+                }
+            } catch (\Throwable $e) {
+                Analog::log('Error checking group for child #' . $child_id . ': ' . $e->getMessage(), Analog::ERROR);
+            }
+        }
+
+        if (Registration::isRegistered($this->zdb, $id, $child_id)) {
+            $this->flash->addMessage('warning_detected', _T('This linked member is already registered for this session.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $returnUrl);
+        }
+
+        if (Waitlist::isOnWaitlist($this->zdb, $id, $child_id)) {
+            $this->flash->addMessage('warning_detected', _T('This linked member is already on the waitlist for this session.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $returnUrl);
+        }
+
+        // Schedule conflict: warn AND block (a later promotion would create the clash silently).
+        if (Registration::hasOverlappingSession($this->zdb, $child_id, $session->getSessionDate(), $session->getStartTime(), $session->getEndTime(), $id)) {
+            $this->flash->addMessage('error_detected', _T('This linked member is already registered for another session at the same time on this day. Registration is not allowed.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $returnUrl);
+        }
+
+        $waitlist = new Waitlist($this->zdb);
+        $waitlist->setSessionId($id);
+        $waitlist->setMemberId($child_id);
+
+        if ($waitlist->store()) {
+            $this->history->add(
+                _T('[Courses] Linked member joined waitlist', 'courses'),
+                sprintf('session #%d — member #%d (by parent #%d) — position %d', $id, $child_id, $parent_id, $waitlist->getPosition())
+            );
+            $this->flash->addMessage(
+                'success_detected',
+                sprintf(_T('The linked member has been added to the waitlist (position %d).', 'courses'), $waitlist->getPosition())
+            );
+        } else {
+            $this->flash->addMessage('error_detected', _T('An error occurred joining the waitlist.', 'courses'));
         }
 
         return $response
