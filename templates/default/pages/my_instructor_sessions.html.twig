@@ -22,12 +22,12 @@
    ========================================================= #}
 <div class="courses-sticky-top">
     <div class="ui top attached tabular menu" id="my-instructor-tabs">
-        <a class="item active" data-tab="browse">
+        <a class="item" data-tab="browse">
             <i class="search icon" aria-hidden="true"></i>
             <span class="courses-tab-text">{{ _T("Volunteer for a session", "courses") }}</span>
             <span id="instructor-browse-badge" class="ui teal circular label" style="margin-left:.4em;{% if volunteer_sessions|length == 0 %}display:none;{% endif %}">{{ volunteer_sessions|length }}</span>
         </a>
-        <a class="item" data-tab="mine">
+        <a class="item active" data-tab="mine">
             <i class="chalkboard teacher icon" aria-hidden="true"></i>
             <span class="courses-tab-text">{{ _T("My instructor sessions", "courses") }}</span>
             {% if upcoming|length > 0 %}
@@ -40,7 +40,7 @@
 {# =========================================================
    ONGLET 1 — Trouver une seance pour devenir moniteur
    ========================================================= #}
-<div class="ui bottom attached tab segment active" data-tab="browse" style="padding:1em 0; border:none; box-shadow:none;">
+<div class="ui bottom attached tab segment" data-tab="browse" style="padding:1em 0; border:none; box-shadow:none;">
 
     {% if not can_volunteer %}
         <div class="ui info message">
@@ -219,7 +219,7 @@
 {# =========================================================
    ONGLET 2 — Mes seances comme moniteur
    ========================================================= #}
-<div class="ui bottom attached tab segment" data-tab="mine" style="padding:1em 0; border:none; box-shadow:none;">
+<div class="ui bottom attached tab segment active" data-tab="mine" style="padding:1em 0; border:none; box-shadow:none;">
 
     {% if sessions|length == 0 %}
         <div class="ui placeholder segment">
@@ -441,8 +441,8 @@ $(function() {
         history.replaceState(null, '', window.location.pathname + window.location.search);
     }
 
-    var savedTab = hashTab || localStorage.getItem('my_instructor_tab') || 'browse';
-    if (savedTab !== 'browse') {
+    var savedTab = hashTab || localStorage.getItem('my_instructor_tab') || 'mine';
+    if (savedTab !== 'mine') {
         $('#my-instructor-tabs .item[data-tab="' + savedTab + '"]').trigger('click');
     }
     if (hashTab === 'mine') {

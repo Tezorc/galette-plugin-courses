@@ -654,6 +654,22 @@ Le developpement est organise en phases progressives.
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Phase 73 - Onglet "Mes inscriptions" / "Mes seances comme moniteur" par defaut
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : "mes inscriptions est l'onglet par defaut, idem pour les moniteurs".
+
+- **Avant** : a l'ouverture de `my_registrations.html.twig` et `my_instructor_sessions.html.twig`, l'onglet actif par defaut etait *Trouver une seance* / *Se proposer moniteur* (browse). Le membre devait cliquer pour voir ses propres inscriptions / affectations. Suboptimal : 80 % des visites repetees concernent la consultation de son agenda, pas la decouverte.
+
+- **Apres** : l'onglet par defaut devient `mine` (Mes inscriptions / Mes seances comme moniteur). Changements :
+  - `templates/default/pages/my_registrations.html.twig` : la classe `active` passe de `data-tab="browse"` a `data-tab="mine"` sur les 2 elements concernes (`<a class="item">` dans `#my-sessions-tabs` ET `<div class="ui bottom attached tab segment">`). Defaut JS : `'browse'` -> `'mine'`. Condition de delegation : `if (savedTab !== 'browse')` -> `if (savedTab !== 'mine')`. Suppression du `applyBrowseFilters()` initial dans la branche `else` (browse est masque, ses filtres tourneront lors du premier clic sur l'onglet).
+  - `templates/default/pages/my_instructor_sessions.html.twig` : meme inversion, defaut localStorage `'mine'`, garde `if (savedTab !== 'mine')`.
+  - localStorage continue d'enregistrer le dernier onglet clique : un utilisateur qui clique explicitement *Trouver une seance* y restera lors de ses prochaines visites (sa preference prevaut sur le defaut). Un nouveau visiteur sans localStorage tombe directement sur Mes inscriptions.
+  - Le `#tab=mine` injecte par le serveur apres `doRegister`/`doParentRegister`/`doWaitlist`/`doParentWaitlist`/`doVolunteerInstructor` (Phase 71) continue de fonctionner avec le pulse visuel et la priorite sur localStorage.
+
+- Aucune migration BDD ; aucune nouvelle chaine i18n. Tests 55/55 verts.
+
 ### Phase 72.1 - Onglets inactifs assombris pour une affordance de bouton
 
 **Statut :** TERMINEE

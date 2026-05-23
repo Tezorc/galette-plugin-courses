@@ -260,7 +260,7 @@ Apres desinscription, si l'adherent souhaite se reinscrire, il peut le faire tan
 
 ### 6. Consulter ses inscriptions (membre)
 
-La page **Mes inscriptions** (`/plugins/courses/my-registrations`) comporte deux onglets.
+La page **Mes inscriptions** (`/plugins/courses/my-registrations`) comporte deux onglets. **L'onglet "Mes inscriptions" est ouvert par defaut** (Phase 73) : a l'arrivee sur la page, le membre voit immediatement ses inscriptions a venir, et bascule sur "Trouver une seance" via le bouton d'onglet (la preference est memorisee en `localStorage` : un clic explicite sur "Trouver une seance" persiste pour les visites suivantes jusqu'au prochain clic sur "Mes inscriptions").
 
 **Avertissement eligibilite** : un bandeau orange est affiche en haut de la page si **le membre lui-meme ou l'un de ses enfants** n'est pas eligible aux inscriptions. Trois conditions sont verifiees pour chaque membre (Phase 47.2) :
 
@@ -860,10 +860,10 @@ Pour ajouter ou modifier des types, intervenir directement en base de donnees da
 | Mes seances comme moniteur | Membres affectes comme moniteur | Toutes les seances ou l'utilisateur est instructeur |
 | Mes notifications | Tous | Mes preferences de notifications email |
 
-La page **Mes inscriptions** comprend deux onglets :
+La page **Mes inscriptions** comprend deux onglets (l'onglet "Mes inscriptions" est actif par defaut a l'arrivee sur la page) :
 
-- **Trouver une seance** : catalogue des seances disponibles avec filtres (type, activite, date) et inscription directe, suivi d'une section rouge "Seances annulees" listant les creneaux futurs annules (informatif, sans inscription)
 - **Mes inscriptions** : seances a venir, annulees et passees
+- **Trouver une seance** : catalogue des seances disponibles avec filtres (type, activite, date) et inscription directe, suivi d'une section rouge "Seances annulees" listant les creneaux futurs annules (informatif, sans inscription)
 
 La page **Mes seances comme moniteur** est visible pour :
 
@@ -872,10 +872,10 @@ La page **Mes seances comme moniteur** est visible pour :
 
 Les admins et le staff ne voient pas l'entree par defaut : ils gerent les affectations de moniteurs depuis le menu *Gestion des inscriptions*.
 
-Elle presente deux onglets :
+Elle presente deux onglets (l'onglet "Mes seances comme moniteur" est actif par defaut a l'arrivee sur la page) :
 
-- **Trouver une seance** : catalogue des seances sans moniteur ou l'utilisateur peut se proposer (avec filtres Type / Activite / Date et boutons **"Filtrer"** + **"Effacer le filtre"**, identiques a "Mes inscriptions"), suivi d'une section rouge "Seances annulees" listant les creneaux futurs annules dans son perimetre (informatif, sans bouton "Se porter volontaire") — les seances ou l'utilisateur est deja moniteur ne sont pas reprises ici (elles figurent dans l'onglet "Mes seances comme moniteur")
 - **Mes seances comme moniteur** : seances groupees en quatre sections (*Prochaine seance*, *A venir*, *Annulees*, *Passees* repliable). Chaque carte affiche le nom de l'evenement, la date, le lieu, le ou les moniteurs, la jauge d'inscrits, et propose les boutons **Details**, **iCal** et — si l'utilisateur est responsable de groupe, staff ou admin — **Export CSV des inscrits**.
+- **Trouver une seance** : catalogue des seances sans moniteur ou l'utilisateur peut se proposer (avec filtres Type / Activite / Date et boutons **"Filtrer"** + **"Effacer le filtre"**, identiques a "Mes inscriptions"), suivi d'une section rouge "Seances annulees" listant les creneaux futurs annules dans son perimetre (informatif, sans bouton "Se porter volontaire") — les seances ou l'utilisateur est deja moniteur ne sont pas reprises ici (elles figurent dans l'onglet "Mes seances comme moniteur")
 
 ### Menu "Gestion des inscriptions" (moniteur, responsable de groupe, staff, admin)
 
