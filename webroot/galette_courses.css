@@ -41,6 +41,8 @@
     padding: 0 !important;
 }
 /* Chaque onglet : pleine moitie, bouton plein, libelle gros et clair */
+/* Phase 72.1 : inactif assombri (#d4d9e0) + bordure subtile pour ressembler
+   plus a un bouton cliquable (l'utilisateur doit comprendre que c'est cliquable). */
 #my-sessions-tabs .item,
 #my-instructor-tabs .item {
     flex: 1 1 50% !important;
@@ -49,13 +51,14 @@
     font-size: 1.15rem !important;
     font-weight: 600 !important;
     padding: 1em 1.2em !important;
-    color: rgba(0, 0, 0, .65) !important;
-    background: #f0f2f5 !important;
-    border: 2px solid transparent !important;
+    color: rgba(0, 0, 0, .75) !important;
+    background: #d4d9e0 !important;
+    border: 1px solid rgba(0, 0, 0, .15) !important;
     border-bottom: none !important;
     border-radius: 8px 8px 0 0 !important;
     transition: all .15s ease !important;
     margin-bottom: 0 !important;
+    box-shadow: inset 0 -2px 4px rgba(0, 0, 0, .04) !important;
 }
 #my-sessions-tabs .item .icon,
 #my-instructor-tabs .item .icon {

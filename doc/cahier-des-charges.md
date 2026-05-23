@@ -654,6 +654,25 @@ Le developpement est organise en phases progressives.
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Phase 72.1 - Onglets inactifs assombris pour une affordance de bouton
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : "pour les deux onglets, celui non actif un peu plus sombre pour que l'on comprenne que c'est bien un onglet".
+
+- **Avant** (Phase 71.2) : onglet inactif avec fond `#f0f2f5` (gris quasi-blanc) + texte `rgba(0,0,0,.65)`. Trop fade -> ressemblait davantage a un libelle qu'a un bouton cliquable.
+
+- **Apres** : onglet inactif assombri :
+  - Fond `#d4d9e0` (gris medium, clairement distinct du fond blanc du wrapper)
+  - Texte `rgba(0, 0, 0, .75)` (legerement plus opaque pour rester lisible sur ce fond)
+  - Bordure subtile `1px solid rgba(0, 0, 0, .15)` (haut + cotes, pas en bas qui se fond dans la bordure bleue du conteneur)
+  - Inset shadow `inset 0 -2px 4px rgba(0, 0, 0, .04)` (legere profondeur, l'onglet semble enfonce par rapport au fond)
+  - L'onglet actif reste inchange (fond bleu plein, texte blanc, translateY(-1px) + ombre exterieure) -> contraste actif/inactif encore plus fort
+
+- L'effet "appel a l'action" du hover (fond `#dbeafe` bleu clair) ressort encore davantage maintenant que la base inactive est nettement plus sombre que le fond bleu pale du hover.
+
+- Aucune migration BDD ; aucune nouvelle chaine i18n ; CSS-only. Tests 55/55 verts.
+
 ### Phase 72 - Liste inscrits + liste d'attente visibles aux membres (lecture seule)
 
 **Statut :** TERMINEE
