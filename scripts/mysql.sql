@@ -104,6 +104,7 @@ CREATE TABLE galette_courses_session_instructors (
     PRIMARY KEY (id_instructor),
     UNIQUE KEY uk_courses_si_session_member (session_id, member_id),
     KEY idx_courses_si_session (session_id),
+    KEY idx_courses_si_member (member_id),
     CONSTRAINT fk_courses_si_session FOREIGN KEY (session_id) REFERENCES galette_courses_sessions (id_session) ON DELETE CASCADE,
     CONSTRAINT fk_courses_si_member FOREIGN KEY (member_id) REFERENCES galette_adherents (id_adh),
     CONSTRAINT fk_courses_si_assigned_by FOREIGN KEY (assigned_by) REFERENCES galette_adherents (id_adh)
@@ -184,6 +185,7 @@ CREATE TABLE galette_courses_pending_notifications (
     PRIMARY KEY (id_pending),
     UNIQUE KEY uk_courses_pn_member_session_ref (member_id, session_id, ref),
     KEY idx_courses_pn_member (member_id),
+    KEY idx_courses_pn_ref (ref),
     CONSTRAINT fk_courses_pn_member FOREIGN KEY (member_id) REFERENCES galette_adherents (id_adh) ON DELETE CASCADE,
     CONSTRAINT fk_courses_pn_event FOREIGN KEY (event_id) REFERENCES galette_courses_events (id_event) ON DELETE CASCADE,
     CONSTRAINT fk_courses_pn_session FOREIGN KEY (session_id) REFERENCES galette_courses_sessions (id_session) ON DELETE CASCADE

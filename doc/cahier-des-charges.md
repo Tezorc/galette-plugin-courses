@@ -654,6 +654,42 @@ Le developpement est organise en phases progressives.
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Phase 74 - Audit performance et conformite standards
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : "check et optimise pour accelerer ; valide la conformite des standards et respects du CSS, PHP, SQL, HTML, JavaScript".
+
+#### Indexes DB manquants (impact eleve)
+
+- `galette_courses_session_instructors` n'avait pas d'index sur `member_id` seul. Le seul candidat etait l'UNIQUE composite `(session_id, member_id)`, inutilisable pour `WHERE member_id = ?` (left-most rule). Or les methodes `SessionInstructor::countSessionsForMember()` et `getSessionIdsForMember()` sont appelees a CHAQUE rendu de menu / dashboard membre par `PluginGaletteCourses::getMenusContents()` et `getMyDashboardsContents()` pour decider si l'entree "Mes seances comme moniteur" doit s'afficher. Sans index, full scan de la table a chaque page chargee par un utilisateur connecte.
+- `galette_courses_pending_notifications` n'avait pas d'index sur `ref` seul. Les sweeps cron `CourseNotification::sendDailyDigest()` et `sendWeeklyDigestMember()` font des `MAX(id_pending) WHERE ref = ?`, `SELECT ... WHERE ref IN (...)` et `DELETE WHERE id_pending <= ? AND ref = ?`. Sans index, full scan de la queue a chaque execution. Inacceptable des que la queue depasse quelques milliers de lignes.
+- Ajout des 2 indexes (`KEY idx_courses_si_member (member_id)` MySQL / `CREATE INDEX idx_courses_si_member ON ... (member_id)` pgsql ; idem pour `idx_courses_pn_ref`). Migrations dediees : `scripts/upgrade-perf-indexes.sql` (MySQL/MariaDB) + `scripts/upgrade-perf-indexes-pgsql.sql` (PostgreSQL). Schemas `mysql.sql` et `pgsql.sql` mis a jour de facon coherente.
+
+#### Batch N+1 dans `RegistrationsController::myRegistrations`
+
+Page hot membre (chargee a chaque visite). 3 anti-patterns N+1 identifies et corriges :
+
+- `Waitlist::isOnWaitlist($zdb, $sid, $member_id)` en boucle sur toutes les seances browse (1 query par seance). **Remplace** par un lookup dans `$my_waitlist_raw` (deja charge plus haut pour le bloc waitlist familial, contient parent + enfants). Filtrage `member_id === self` pour ne garder que les entrees du parent, materialisation dans une map `$browse_waitlist_self[sid] = true`. **0 query supplementaire** -- on reutilise un travail deja fait.
+- `groups_members` interrogee 1 fois PAR SEANCE pour les enfants. **Remplace** par UNE seule requete batch sur l'union de tous les groupes de tous les events restreints visibles dans browse. La map `$children_in_group[child_id][gid] = true` est consultee dans la boucle au lieu d'une requete par session.
+- `Registration::isRegistered($zdb, $sid, $childId)` dans la boucle interne (1 query par couple seance x enfant). **Remplace** par UNE requete `SELECT session_id, member_id FROM registrations WHERE session_id IN (...) AND member_id IN (children) AND status = registered`. La map `$children_already_registered[sid][child_id] = true` est consultee dans la boucle.
+
+Reduction pour un parent avec 2 enfants + 30 seances browse + 5 events restreints : avant ~120 queries (30 waitlist + 30 groups_members + 60 isRegistered), apres 3 queries (waitlist deja chargee, groups_members batch, registrations batch).
+
+#### Conformite standards
+
+- **PHP** : 29/29 fichiers ont `declare(strict_types=1)`, aucun `@` de suppression d'erreur, aucun `var_dump`/`die`/`print_r` oublie, aucune balise fermante `?>`. `php -l` propre sur l'ensemble du plugin. Confirmation de la Phase 56.
+- **SQL** : pas de `SELECT *` dans le code applicatif (tous les SELECT designent explicitement les colonnes via `$select->columns()`). Aucun query construit par concatenation de strings sans bindings (toutes les valeurs passent par Laminas DB qui parametre).
+- **HTML/Twig** : 0 occurrence de `|raw` dans les templates (heritage de la Phase 56). Auto-echappement Twig actif partout.
+- **JS** : 0 `document.write`, 0 `innerHTML +=`, 0 `eval`, 0 `new Function` dans les templates. Pas de surface XSS via JS dynamique.
+- **CSS** : 1 occurrence residuelle de `word-break: break-all` (ligne 738, sur `.courses-cron-note code`) remplacee par `overflow-wrap: anywhere` -- valeur standardisee CSS Text Module Level 3, equivalent fonctionnel. Pas de vendor prefixe deprecie (la Phase 56 avait deja retire `-webkit-overflow-scrolling`). `!important` reste a 337 occurrences -- inevitable pour battre les selecteurs Fomantic UI externes, pas optimisable sans casser l'isolation visuelle.
+
+#### Tradeoffs et limites
+
+- Migration manuelle requise : les installations existantes doivent executer `upgrade-perf-indexes.sql` (ou son pendant pgsql) pour beneficier des indexes. Aucun `ALTER TABLE` automatique ; l'installateur Galette ne propose pas de hook upgrade pour les plugins, on documente la manipulation comme pour les Phases 5 / 36 / 40 / 44 / 45.
+- Aucun changement structurel de schema -- les 2 indexes sont rolling-compatible avec les versions anterieures (les requetes existantes restent valides, l'optimiseur les utilise automatiquement). Pas de risque de downtime.
+- Aucun test unitaire ajoute -- les corrections perf preservent la semantique des methodes appelees (memes valeurs retournees, juste moins de requetes). Les 55 tests existants restent verts.
+
 ### Phase 73 - Onglet "Mes inscriptions" / "Mes seances comme moniteur" par defaut
 
 **Statut :** TERMINEE

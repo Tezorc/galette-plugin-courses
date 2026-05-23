@@ -738,13 +738,21 @@ class RegistrationsController extends AbstractController
             }
         }
 
-        // Batch-load instructor names and waitlist status for all browse sessions
+        // Batch-load instructor names and waitlist status for all browse sessions.
+        // Phase 74: waitlist lookup uses $my_waitlist_raw (already loaded for the
+        // family) filtered to the parent's member_id — no per-session query.
         $batch_instructor_names = SessionInstructor::getInstructorNamesForSessions($this->zdb, $browse_session_ids);
+        $browse_waitlist_self = [];
+        foreach ($my_waitlist_raw as $wl) {
+            if ($wl->getMemberId() === $member_id) {
+                $browse_waitlist_self[$wl->getSessionId()] = true;
+            }
+        }
         foreach ($available_sessions as $s) {
             $sid = $s->getId();
             $browse_instructor_names[$sid] = $batch_instructor_names[$sid] ?? '';
             $browse_has_instructor[$sid]   = isset($batch_instructor_names[$sid]);
-            $browse_on_waitlist[$sid]      = Waitlist::isOnWaitlist($this->zdb, $sid, $member_id);
+            $browse_on_waitlist[$sid]      = isset($browse_waitlist_self[$sid]);
         }
 
         // For each browse session: can the member self-register? which children are eligible?
@@ -762,40 +770,80 @@ class RegistrationsController extends AbstractController
             array_merge([$member_id], $children_ids)
         );
 
+        // Phase 74: pre-load event groups, child group memberships and child
+        // registrations in 3 batch queries (instead of N+1 per session).
+        // canRegisterSelf() below still triggers loadGroups() on each event,
+        // but the internal `groups_loaded` guard makes subsequent calls free.
+        $browse_event_groups = []; // [eid => [gid, ...]]
+        $all_event_group_ids = [];
+        foreach ($browse_events as $eid => $ev) {
+            $ev->loadGroups();
+            $g = $ev->getGroups();
+            if (!empty($g)) {
+                $browse_event_groups[$eid] = $g;
+                foreach ($g as $gid) {
+                    $all_event_group_ids[$gid] = true;
+                }
+            }
+        }
+        $children_in_group = []; // [child_id => [gid => true]]
+        if (!empty($children_ids) && !empty($all_event_group_ids)) {
+            try {
+                $chkSelect = $this->zdb->select('groups_members');
+                $chkSelect->columns(['id_adh', 'id_group']);
+                $chkSelect->where->in('id_adh', $children_ids);
+                $chkSelect->where->in('id_group', array_keys($all_event_group_ids));
+                foreach ($this->zdb->execute($chkSelect) as $r) {
+                    $children_in_group[(int)$r->id_adh][(int)$r->id_group] = true;
+                }
+            } catch (\Throwable $e) {
+                Analog::log('Error batch-loading children groups: ' . $e->getMessage(), Analog::ERROR);
+            }
+        }
+        $children_already_registered = []; // [sid => [child_id => true]]
+        if (!empty($children_ids) && !empty($browse_session_ids)) {
+            try {
+                $regSelect = $this->zdb->select(Registration::TABLE);
+                $regSelect->columns(['session_id', 'member_id']);
+                $regSelect->where->in('session_id', $browse_session_ids);
+                $regSelect->where->in('member_id', $children_ids);
+                $regSelect->where->equalTo('status', Registration::STATUS_REGISTERED);
+                foreach ($this->zdb->execute($regSelect) as $r) {
+                    $children_already_registered[(int)$r->session_id][(int)$r->member_id] = true;
+                }
+            } catch (\Throwable $e) {
+                Analog::log('Error batch-loading child registrations: ' . $e->getMessage(), Analog::ERROR);
+            }
+        }
+
         foreach ($available_sessions as $s) {
             $sid = $s->getId();
-            $ev  = $browse_events[$s->getEventId()];
+            $eid = $s->getEventId();
+            $ev  = $browse_events[$eid];
 
             $browse_can_self_register[$sid] = $ev->canRegisterSelf($this->login)
                 && isset($eligibility_set[$member_id]);
-            $eventGroups = $ev->getGroups(); // already loaded by canRegisterSelf()
+            $eventGroups = $browse_event_groups[$eid] ?? [];
 
             // Which children are eligible (in the required group, not already registered,
             // and passing the 3 eligibility conditions)?
-            // One batch query per session instead of one per child.
             $eligible = [];
             if (!empty($children_ids)) {
-                $childrenInGroup = [];
-                if (!empty($eventGroups)) {
-                    try {
-                        $chkSelect = $this->zdb->select('groups_members');
-                        $chkSelect->columns(['id_adh']);
-                        $chkSelect->where->in('id_adh', $children_ids);
-                        $chkSelect->where->in('id_group', $eventGroups);
-                        $chkSelect->quantifier('DISTINCT');
-                        foreach ($this->zdb->execute($chkSelect) as $r) {
-                            $childrenInGroup[(int)$r->id_adh] = true;
-                        }
-                    } catch (\Throwable $e) {
-                        Analog::log('Error checking children groups for session #' . $sid . ': ' . $e->getMessage(), Analog::ERROR);
-                    }
-                }
                 foreach ($children_ids as $childId) {
-                    if (Registration::isRegistered($this->zdb, $sid, $childId)) {
+                    if (isset($children_already_registered[$sid][$childId])) {
                         continue;
                     }
-                    if (!empty($eventGroups) && !isset($childrenInGroup[$childId])) {
-                        continue;
+                    if (!empty($eventGroups)) {
+                        $inGroup = false;
+                        foreach ($eventGroups as $gid) {
+                            if (isset($children_in_group[$childId][$gid])) {
+                                $inGroup = true;
+                                break;
+                            }
+                        }
+                        if (!$inGroup) {
+                            continue;
+                        }
                     }
                     if (!isset($eligibility_set[$childId])) {
                         continue;

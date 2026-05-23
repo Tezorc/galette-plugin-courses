@@ -735,7 +735,7 @@ tr.courses-pending { background-color: #fffde7 !important; }
 
     /* --- Cron --- */
     .courses-cron-input { font-size: .72em !important; }
-    .courses-cron-note code { word-break: break-all; font-size: .82em; }
+    .courses-cron-note code { overflow-wrap: anywhere; font-size: .82em; }
 
     /* --- Closure dates table : passage en card layout sur mobile ---
        Chaque ligne devient une carte ou les 5 champs (From / Until / Reason /

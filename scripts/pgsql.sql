@@ -102,6 +102,7 @@ CREATE TABLE galette_courses_session_instructors (
     CONSTRAINT fk_courses_si_assigned_by FOREIGN KEY (assigned_by) REFERENCES galette_adherents (id_adh)
 );
 CREATE INDEX idx_courses_si_session ON galette_courses_session_instructors (session_id);
+CREATE INDEX idx_courses_si_member ON galette_courses_session_instructors (member_id);
 
 CREATE TABLE galette_courses_registrations (
     id_registration serial PRIMARY KEY,
@@ -175,3 +176,4 @@ CREATE TABLE galette_courses_pending_notifications (
     CONSTRAINT fk_courses_pn_session FOREIGN KEY (session_id) REFERENCES galette_courses_sessions (id_session) ON DELETE CASCADE
 );
 CREATE INDEX idx_courses_pn_member ON galette_courses_pending_notifications (member_id);
+CREATE INDEX idx_courses_pn_ref ON galette_courses_pending_notifications (ref);
