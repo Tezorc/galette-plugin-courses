@@ -654,6 +654,24 @@ Le developpement est organise en phases progressives.
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Phase 71 - Onglets stickys + plus visuels + pulse "Mes inscriptions" apres inscription
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : (1) "pour mes seances et mes seances moniteurs lors du scroll, le haut avec les deux onglets devraient etre fige" ; (2) "mettre en evidence les deux onglets qui ne sont pas tres visuels ou comprehension lorsque l'on clique sur une seance pour inscription" ; (3) "peut-etre mettre un peu info comme quoi l'inscription est posee dans l'onglet inscription".
+
+- **Sticky tabs** : `#my-sessions-tabs` et `#my-instructor-tabs` recoivent `position: sticky !important; top: 0; z-index: 50; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.08); border-bottom: 1px solid rgba(34,36,38,.12)`. Le menu d'onglets reste colle en haut du viewport pendant le scroll, sur les 2 pages (Mes inscriptions + Mes seances moniteur).
+
+- **Onglets plus voyants** : (a) base `.item` agrandie a `font-size: 1.05rem; font-weight: 500; padding: .9em 1.3em`. (b) `.item:hover` -> couleur bleue `#1678c2` + fond bleute leger. (c) `.item.active` -> couleur `#1678c2`, fond `#f0f8fd`, bordure inferieure 3px solid `#2185d0`, `font-weight: 600`. (d) Le badge rond (compteur) de l'onglet actif passe en blanc-sur-bleu pour rester lisible sur le nouveau fond bleute.
+
+- **Pulse "Mes inscriptions" apres inscription** : nouveau parametre optionnel `?string $tabHint = null` sur `RegistrationsController::resolveReturnUrl(...)`. Quand `redirect_to=my_registrations` ET un hint est passe, l'URL de retour devient `coursesMyRegistrations#tab=<hint>`. Cote handlers, **uniquement** dans les branches `if (store) { ...success... }` de `doRegister`, `doParentRegister`, `doWaitlist`, `doParentWaitlist`, on `return` immediatement avec `$this->resolveReturnUrl($request, $id, 'mine')`. Les chemins d'erreur conservent `$returnUrl` standard pour ne pas forcer le changement d'onglet en cas d'echec.
+
+- **JS** (`my_registrations.html.twig` + `my_instructor_sessions.html.twig`) : sur chargement, regex `tab=([a-z]+)` sur `window.location.hash`. Si match -> stock dans `hashTab`, **`history.replaceState`** vide le fragment (un refresh ne re-pulsera pas), puis la priorite de selection d'onglet devient `hashTab || localStorage || 'browse'`. Si `hashTab === 'mine'` : ajout temporaire de la classe `.courses-tab-pulse` (3 cycles d'1.1s d'animation `@keyframes courses-tab-pulse` -> scale + box-shadow concentriques), retire automatiquement apres 4s via `setTimeout`. La page Mes seances moniteur recoit le meme traitement, alimente par `SessionsController::doVolunteerInstructor` qui ajoute `#tab=mine` a `coursesMyInstructorSessions` sur store reussi.
+
+- **Resultat UX** : l'utilisateur clique "S'inscrire" sur la grille "Trouver une seance" -> retour sur la meme page -> automatiquement bascule sur l'onglet "Mes inscriptions", lequel pulse 3-4 secondes en bleu pour attirer le regard sur la nouvelle ligne. Sans cliquer le moindre lien supplementaire, il voit "ou est passee l'inscription". Comportement symetrique pour le volontariat moniteur.
+
+- Aucune migration BDD ; aucune nouvelle chaine i18n. Tests 55/55 verts ; balances Twig stables (74/74 + 22/22 ; 29/29 + 6/6).
+
 ### Phase 70.1 - Fix dropdown multi-plages : enfants utilisables sur une plage ou le parent est deja inscrit/en attente
 
 **Statut :** TERMINEE

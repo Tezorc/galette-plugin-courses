@@ -430,9 +430,23 @@ $(function() {
         }
     });
 
-    var savedTab = localStorage.getItem('my_instructor_tab') || 'browse';
+    // Phase 71 : honor #tab=<name> from URL (set by server after a volunteer action),
+    // pulse the active tab visually, clear the fragment to avoid re-triggering on refresh.
+    var hashTab = null;
+    var m = (window.location.hash || '').match(/tab=([a-z]+)/);
+    if (m) {
+        hashTab = m[1];
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+
+    var savedTab = hashTab || localStorage.getItem('my_instructor_tab') || 'browse';
     if (savedTab !== 'browse') {
         $('#my-instructor-tabs .item[data-tab="' + savedTab + '"]').trigger('click');
+    }
+    if (hashTab === 'mine') {
+        var $pulseTarget = $('#my-instructor-tabs .item[data-tab="mine"]');
+        $pulseTarget.addClass('courses-tab-pulse');
+        setTimeout(function() { $pulseTarget.removeClass('courses-tab-pulse'); }, 4000);
     }
 
     $('#instr-go-browse-btn').on('click', function() {

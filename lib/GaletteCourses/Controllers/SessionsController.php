@@ -763,9 +763,18 @@ class SessionsController extends AbstractPluginController
                     $notification = new CourseNotification($this->zdb, $this->preferences, new PluginPreferences($this->zdb), new MemberPreferences($this->zdb), $this->history);
                     $notification->notifyInstructorAssigned($session, $event, (string)$instructorMember->sname);
                 }
-            } else {
-                $this->flash->addMessage('error_detected', _T('An error occurred.', 'courses'));
+
+                // Phase 71: append #tab=mine when returning to the My-instructor page,
+                // so the JS auto-switches and pulses the "Mes seances moniteur" tab
+                // to surface that the volunteered session is now listed there.
+                $successUrl = (is_array($post) && ($post['redirect_to'] ?? '') === 'my_instructor_sessions')
+                    ? $this->routeparser->urlFor('coursesMyInstructorSessions') . '#tab=mine'
+                    : $returnUrl;
+                return $response
+                    ->withStatus(302)
+                    ->withHeader('Location', $successUrl);
             }
+            $this->flash->addMessage('error_detected', _T('An error occurred.', 'courses'));
         } catch (\Throwable $e) {
             $this->flash->addMessage('error_detected', _T('An error occurred.', 'courses'));
         }

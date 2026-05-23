@@ -1121,13 +1121,29 @@ $(function() {
         $('.ui.progress:visible').progress();
     });
 
-    // Restore tab from localStorage
-    var savedTab = localStorage.getItem('my_sessions_tab') || 'browse';
+    // Phase 71 : after a successful register/waitlist action, the server appends
+    // `#tab=mine` to the redirect URL. We honor it, pulse the tab visually so
+    // the user sees the new registration was placed in "Mes inscriptions",
+    // and clear the fragment so a refresh doesn't keep auto-switching.
+    var hashTab = null;
+    var m = (window.location.hash || '').match(/tab=([a-z]+)/);
+    if (m) {
+        hashTab = m[1];
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+
+    // Restore tab from URL fragment (priority), else localStorage, else default.
+    var savedTab = hashTab || localStorage.getItem('my_sessions_tab') || 'browse';
     if (savedTab !== 'browse') {
         $('#my-sessions-tabs .item[data-tab="' + savedTab + '"]').trigger('click');
     } else {
         applyBrowseFilters();
         $('.ui.progress:visible').progress();
+    }
+    if (hashTab === 'mine') {
+        var $pulseTarget = $('#my-sessions-tabs .item[data-tab="mine"]');
+        $pulseTarget.addClass('courses-tab-pulse');
+        setTimeout(function() { $pulseTarget.removeClass('courses-tab-pulse'); }, 4000);
     }
 
     // "Trouver une séance" button from empty state

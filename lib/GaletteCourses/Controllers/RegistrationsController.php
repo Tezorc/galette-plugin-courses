@@ -67,11 +67,25 @@ class RegistrationsController extends AbstractController
      * tabs reflect the change). Everything else falls back to the session
      * detail page, as before.
      */
-    private function resolveReturnUrl(Request $request, int $sessionId): string
+    /**
+     * Resolve the post-action redirect URL.
+     *
+     * If the form was POSTed from the "Mes inscriptions" page (`redirect_to=my_registrations`),
+     * the user stays there. The optional $tabHint appends a URL fragment `#tab=<hint>`
+     * so the JS on that page can auto-switch to the right tab on arrival -- used by
+     * successful register/waitlist actions to surface the new registration in the
+     * "Mes inscriptions" tab (which would otherwise stay on the browse tab the
+     * user came from).
+     */
+    private function resolveReturnUrl(Request $request, int $sessionId, ?string $tabHint = null): string
     {
         $post = $request->getParsedBody();
         if (is_array($post) && ($post['redirect_to'] ?? '') === 'my_registrations') {
-            return $this->routeparser->urlFor('coursesMyRegistrations');
+            $url = $this->routeparser->urlFor('coursesMyRegistrations');
+            if ($tabHint !== null && $tabHint !== '') {
+                $url .= '#tab=' . $tabHint;
+            }
+            return $url;
         }
         return $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$sessionId]);
     }
@@ -166,9 +180,11 @@ class RegistrationsController extends AbstractController
                 sprintf('session #%d — member #%d', $id, $member_id)
             );
             $this->flash->addMessage('success_detected', _T('You have been registered successfully.', 'courses'));
-        } else {
-            $this->flash->addMessage('error_detected', _T('An error occurred during registration.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->resolveReturnUrl($request, $id, 'mine'));
         }
+        $this->flash->addMessage('error_detected', _T('An error occurred during registration.', 'courses'));
 
         return $response
             ->withStatus(302)
@@ -385,9 +401,11 @@ class RegistrationsController extends AbstractController
                 'success_detected',
                 sprintf(_T('You have been added to the waitlist (position %d).', 'courses'), $waitlist->getPosition())
             );
-        } else {
-            $this->flash->addMessage('error_detected', _T('An error occurred joining the waitlist.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->resolveReturnUrl($request, $id, 'mine'));
         }
+        $this->flash->addMessage('error_detected', _T('An error occurred joining the waitlist.', 'courses'));
 
         return $response
             ->withStatus(302)
@@ -1342,9 +1360,11 @@ class RegistrationsController extends AbstractController
                 sprintf('session #%d — member #%d (by parent #%d)', $id, $child_id, $parent_id)
             );
             $this->flash->addMessage('success_detected', _T('The linked member has been registered successfully.', 'courses'));
-        } else {
-            $this->flash->addMessage('error_detected', _T('An error occurred during registration.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->resolveReturnUrl($request, $id, 'mine'));
         }
+        $this->flash->addMessage('error_detected', _T('An error occurred during registration.', 'courses'));
 
         return $response
             ->withStatus(302)
@@ -1501,9 +1521,11 @@ class RegistrationsController extends AbstractController
                 'success_detected',
                 sprintf(_T('The linked member has been added to the waitlist (position %d).', 'courses'), $waitlist->getPosition())
             );
-        } else {
-            $this->flash->addMessage('error_detected', _T('An error occurred joining the waitlist.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->resolveReturnUrl($request, $id, 'mine'));
         }
+        $this->flash->addMessage('error_detected', _T('An error occurred joining the waitlist.', 'courses'));
 
         return $response
             ->withStatus(302)
