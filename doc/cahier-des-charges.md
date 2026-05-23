@@ -654,6 +654,26 @@ Le developpement est organise en phases progressives.
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Phase 71.2 - Refonte visuelle des onglets : gros boutons pleins haute lisibilite
+
+**Statut :** TERMINEE
+
+- Demande utilisateur (suite Phase 71.1) : "revoir la visibilite des deux onglets".
+
+- **Phase 71** avait deja agrandi le texte (1.05rem / 500) et coloré l'onglet actif (couleur bleue + fond bleute leger + bordure 3px). Mais le contraste actif/inactif restait subtil : sur certaines resolutions ou pour des utilisateurs peu habitues, l'onglet actif passait inapercu.
+
+- **Refonte** : passage au style "gros boutons pleins" avec contraste fort :
+  - **Conteneur** : `#my-sessions-tabs` / `#my-instructor-tabs` passent en `display:flex; gap:.4em`, separateur bleu sous-jacent `border-bottom: 3px solid #2185d0`. Plus de bordures inter-onglets (border:0).
+  - **Onglet inactif** : `flex:1 1 50%` (chaque onglet prend la moitie), `font-size:1.15rem; font-weight:600`, fond gris clair `#f0f2f5`, texte gris fonce `rgba(0,0,0,.65)`. Coins arrondis `border-radius: 8px 8px 0 0` (le bas est plat pour se fondre dans la bordure bleue). Icone agrandie a 1.2em.
+  - **Onglet actif** : fond **bleu plein** `#2185d0`, texte **blanc**, `font-weight:700`, leger soulevement `translateY(-1px)` + ombre exterieure `0 -2px 10px rgba(33,133,208,.30)`. Tres visible.
+  - **Hover** (onglet inactif) : fond bleu clair `#dbeafe`, texte bleu fonce.
+  - **Badge sur onglet actif** : couleurs inversees (fond blanc, texte bleu, contour bleu inset) pour rester lisible sur le fond bleu plein.
+  - **Mobile (≤600px)** : taille texte ramenee a 1rem, padding reduit, mais le contraste reste identique.
+
+- L'animation `.courses-tab-pulse` (Phase 71, declenchee apres inscription via `#tab=mine`) reste compatible : elle ajoute simplement un halo bleu autour de l'onglet existant.
+
+- Aucune migration BDD, aucune nouvelle chaine i18n, aucun nouveau Twig (CSS-only). Tests 55/55 verts.
+
 ### Phase 71.1 - Bandeau haut sticky etendu (bannieres + onglets en un seul ensemble)
 
 **Statut :** TERMINEE
