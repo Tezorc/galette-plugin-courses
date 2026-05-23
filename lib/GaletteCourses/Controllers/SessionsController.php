@@ -234,12 +234,12 @@ class SessionsController extends AbstractPluginController
         }
         $is_session_manager_load = $this->login->isAdmin() || $this->login->isStaff() || $is_instructor_for_load;
 
-        // Load waitlist info (entries visible to staff / group managers / session instructors)
+        // Phase 72: members can see the registered + waitlist lists on the fiche
+        // seance (read-only -- actions like cancel/export/mail stay manager-gated
+        // in the template). Charge waitlist_entries unconditionally so the right
+        // column "Waitlist" section renders for every logged-in user.
         $waitlist_count = Waitlist::getCount($this->zdb, $id);
-        $waitlist_entries = [];
-        if ($is_session_manager_load || $this->login->isGroupManager()) {
-            $waitlist_entries = Waitlist::getForSession($this->zdb, $id);
-        }
+        $waitlist_entries = Waitlist::getForSession($this->zdb, $id);
 
         // Batch-load display data (sname + nickname) for everyone shown in
         // the registered/waitlist/instructor blocks — one SELECT instead of

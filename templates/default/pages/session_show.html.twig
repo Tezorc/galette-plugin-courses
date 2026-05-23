@@ -698,10 +698,14 @@
                 </div>
             {% endif %}
 
-            {# --- Registered members list (session managers / group managers) --- #}
+            {# --- Registered members list ---
+                 Phase 72 : visible par tous les membres connectes (read-only).
+                 Les actions (mail, export, annulation, pointage) restent gatees
+                 sur is_session_manager / isGroupManager via les flags ci-dessous. #}
             {% set can_mark_attendance = (is_session_manager or login.isGroupManager()) and session.getSessionDate() <= "now"|date("Y-m-d") %}
             {% set can_cancel_registration = is_session_manager %}
-            {% if (is_session_manager or login.isGroupManager()) and registrations|length > 0 %}
+            {% set can_mail_session = is_session_manager or login.isGroupManager() %}
+            {% if registrations|length > 0 %}
                 <div class="ui segment">
                     <div class="courses-section-header">
                         <h3 class="ui header">
@@ -709,12 +713,14 @@
                             {{ _T("Registered members", "courses") }} ({{ registrations|length }})
                         </h3>
                         <div class="courses-section-actions">
-                            <a href="{{ url_for('coursesMailSession', {'id': session.getId()}) }}"
-                               class="ui tiny labeled icon button"
-                               title="{{ _T("Send email via Galette mailing", "courses") }}">
-                                <i class="envelope icon" aria-hidden="true"></i>
-                                {{ _T("Send email", "courses") }}
-                            </a>
+                            {% if can_mail_session %}
+                                <a href="{{ url_for('coursesMailSession', {'id': session.getId()}) }}"
+                                   class="ui tiny labeled icon button"
+                                   title="{{ _T("Send email via Galette mailing", "courses") }}">
+                                    <i class="envelope icon" aria-hidden="true"></i>
+                                    {{ _T("Send email", "courses") }}
+                                </a>
+                            {% endif %}
                             {% if login.isAdmin() or login.isStaff() %}
                                 <a href="{{ url_for('coursesSessionExportRegistrations', {'id': session.getId()}) }}"
                                    class="ui tiny labeled icon button" title="{{ _T("Export to CSV (Excel)", "courses") }}">
@@ -813,6 +819,7 @@
                             {% include 'components/forms/csrf.html.twig' %}
                         </form>
                     {% else %}
+                        {% set can_view_member_profile = is_session_manager or login.isGroupManager() %}
                         <div class="ui relaxed divided list">
                             {% for reg in registrations %}
                                 <div class="item">
@@ -831,9 +838,13 @@
                                     <div class="content">
                                         <div class="header">
                                             {% if members[reg.getMemberId()] is defined %}
-                                                <a href="{{ url_for("member", {"id": reg.getMemberId()}) }}">
+                                                {% if can_view_member_profile %}
+                                                    <a href="{{ url_for("member", {"id": reg.getMemberId()}) }}">
+                                                        {{ members[reg.getMemberId()] }}
+                                                    </a>
+                                                {% else %}
                                                     {{ members[reg.getMemberId()] }}
-                                                </a>
+                                                {% endif %}
                                             {% else %}
                                                 {{ _T("Unknown member", "courses") }}
                                             {% endif %}
@@ -887,9 +898,11 @@
 
         {# --- Right column: waitlist (if any) + info labels + iCal + description --- #}
         <div class="six wide column">
-            {# Waitlist (session managers / group managers) — affichee au-dessus
-               d'Information car contextuellement liee a la jauge / inscription. #}
-            {% if (is_session_manager or login.isGroupManager()) and waitlist_entries|length > 0 %}
+            {# Waitlist : Phase 72 visible par tous les membres connectes (read-only).
+               Lien vers la fiche adherent reserve aux managers (l'app Galette
+               restreindrait l'acces autrement) ; les membres voient juste le nom. #}
+            {% if waitlist_entries|length > 0 %}
+                {% set can_view_member_profile = is_session_manager or login.isGroupManager() %}
                 <div class="ui segment">
                     <h3 class="ui dividing header">
                         <i class="clock icon" aria-hidden="true"></i>
@@ -901,9 +914,13 @@
                                 <div class="content courses-waitlist-item">
                                     <span class="ui circular label courses-waitlist-pos">{{ loop.index }}</span>
                                     {% if members[entry.getMemberId()] is defined %}
-                                        <a href="{{ url_for("member", {"id": entry.getMemberId()}) }}">
+                                        {% if can_view_member_profile %}
+                                            <a href="{{ url_for("member", {"id": entry.getMemberId()}) }}">
+                                                {{ members[entry.getMemberId()] }}
+                                            </a>
+                                        {% else %}
                                             {{ members[entry.getMemberId()] }}
-                                        </a>
+                                        {% endif %}
                                     {% else %}
                                         {{ _T("Unknown member", "courses") }}
                                     {% endif %}

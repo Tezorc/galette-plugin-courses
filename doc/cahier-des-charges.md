@@ -654,6 +654,28 @@ Le developpement est organise en phases progressives.
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Phase 72 - Liste inscrits + liste d'attente visibles aux membres (lecture seule)
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : "les membres peuvent voir les autres personnes inscrite et en liste d'attente uniquement".
+
+- **Avant** : les sections "Registered members" et "Waitlist" sur la fiche seance etaient gatees sur `(is_session_manager or login.isGroupManager())` -> invisibles pour un membre simple. Un membre ne pouvait donc pas savoir qui d'autre etait inscrit a la meme seance qu'il envisage.
+
+- **Apres** : les deux listes deviennent visibles a TOUT membre connecte (la page elle-meme est deja gatee par `Event::canAccess`, Phase 19), en mode lecture seule. Les actions (mail Galette mailing, export CSV, annulation, pointage, walk-in) restent reservees aux managers / staff comme avant via leurs flags dedies (`can_mail_session`, `can_cancel_registration`, `can_mark_attendance`, `login.isAdmin() / isStaff()`).
+
+- **Modifications** :
+  - `SessionsController::show` : chargement de `waitlist_entries` desormais inconditionnel (auparavant gate sur `is_session_manager_load || isGroupManager`). `waitlist_count` etait deja inconditionnel.
+  - `session_show.html.twig` :
+    - Gate de la section "Registered members" passe de `(is_session_manager or login.isGroupManager()) and registrations|length > 0` a juste `registrations|length > 0`.
+    - Nouveau flag `can_mail_session = is_session_manager or login.isGroupManager()` qui conditionne le bouton "Send email" (auparavant inconditionnel dans le `<div class="courses-section-actions">`, et donc visible aux managers seulement de fait grace au gate global). Maintenant que le gate global est ouvert, le bouton mail doit etre gate explicitement.
+    - Gate de la section "Waitlist" passe de `(is_session_manager or login.isGroupManager()) and waitlist_entries|length > 0` a juste `waitlist_entries|length > 0`.
+    - Liens vers la fiche adherent (`url_for("member", ...)`) gates par un nouveau flag local `can_view_member_profile = is_session_manager or login.isGroupManager()`. Les membres simples voient juste le nom en texte, pas de lien (Galette refuserait la consultation autrement).
+  - Les "out-of-band" `<form>` d'annulation (Phase 38) restent gates sur `can_cancel_registration`, donc invisibles aux membres.
+  - La table de pointage reste gatee sur `can_mark_attendance` -> les membres voient la vue "liste simple" alternative (lecture seule, pas de dropdown attendance, pas de bouton enregistrer).
+
+- Aucune migration BDD ; aucune nouvelle chaine i18n (toutes les chaines visibles existaient deja). Tests 55/55 verts ; balances Twig stables (if=85/endif=85, for=21/endfor=21).
+
 ### Phase 71.3 - Libelles onglets explicites par contexte (membre vs moniteur)
 
 **Statut :** TERMINEE
