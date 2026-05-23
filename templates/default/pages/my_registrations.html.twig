@@ -2,29 +2,6 @@
 
 {% block content %}
 
-{# Phase 47.2 : avertissement eligibilite (cotisation / actif / statut "Non membre")
-   pour le parent et chacun des enfants. Les libelles sont pre-formates cote PHP. #}
-{% if ineligible_members|length > 0 %}
-    <div class="ui orange message">
-        <i class="exclamation triangle icon" aria-hidden="true"></i>
-        <p>{{ _T("Registration will not be possible for the following member(s) until the situation is fixed:", "courses") }}</p>
-        <ul>
-            {% for reason in ineligible_members %}
-                <li>{{ reason }}</li>
-            {% endfor %}
-        </ul>
-    </div>
-{% endif %}
-
-{# Avertissement changement de groupe : inscriptions futures sur un evenement
-   dont l'adherent ne fait plus partie du groupe requis #}
-{% if out_of_group_regs|length > 0 %}
-    <div class="ui orange message">
-        <i class="exclamation triangle icon" aria-hidden="true"></i>
-        {{ _Tn("%d registration is on an event you no longer have access to (group membership changed). You can unregister from the marked card below.", "%d registrations are on events you no longer have access to (group membership changed). You can unregister from the marked cards below.", out_of_group_regs|length, "courses")|format(out_of_group_regs|length) }}
-    </div>
-{% endif %}
-
 {# =========================================================
    Préparer les données
    ========================================================= #}
@@ -56,22 +33,46 @@
 {% endfor %}
 
 {# =========================================================
-   Onglets
+   Phase 71.1 : Bandeau haut sticky = bannieres eligibilite + onglets,
+   pour rester visible pendant le scroll comme un seul ensemble.
    ========================================================= #}
-<div class="ui top attached tabular menu" id="my-sessions-tabs">
-    <a class="item active" data-tab="browse">
-        <i class="search icon" aria-hidden="true"></i>
-        <span class="courses-tab-text">{{ _T("Find a session", "courses") }}</span>
-        <span id="browse-count-badge" class="ui teal circular label" style="margin-left:.4em;{% if browse_count == 0 %}display:none;{% endif %}">{{ browse_count }}</span>
-    </a>
-    <a class="item" data-tab="mine">
-        <i class="calendar check icon" aria-hidden="true"></i>
-        <span class="courses-tab-text">{{ _T("My registrations", "courses") }}</span>
-        {% set mine_badge = upcoming|length + my_waitlist_entries|length %}
-        {% if mine_badge > 0 %}
-            <span class="ui green circular label" style="margin-left:.4em">{{ mine_badge }}</span>
-        {% endif %}
-    </a>
+<div class="courses-sticky-top">
+    {# Phase 47.2 : avertissement eligibilite (cotisation / actif / statut "Non membre") #}
+    {% if ineligible_members|length > 0 %}
+        <div class="ui orange message courses-sticky-message">
+            <i class="exclamation triangle icon" aria-hidden="true"></i>
+            <p>{{ _T("Registration will not be possible for the following member(s) until the situation is fixed:", "courses") }}</p>
+            <ul>
+                {% for reason in ineligible_members %}
+                    <li>{{ reason }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    {# Avertissement changement de groupe : inscriptions sur un evenement dont l'adherent ne fait plus partie du groupe requis #}
+    {% if out_of_group_regs|length > 0 %}
+        <div class="ui orange message courses-sticky-message">
+            <i class="exclamation triangle icon" aria-hidden="true"></i>
+            {{ _Tn("%d registration is on an event you no longer have access to (group membership changed). You can unregister from the marked card below.", "%d registrations are on events you no longer have access to (group membership changed). You can unregister from the marked cards below.", out_of_group_regs|length, "courses")|format(out_of_group_regs|length) }}
+        </div>
+    {% endif %}
+
+    <div class="ui top attached tabular menu" id="my-sessions-tabs">
+        <a class="item active" data-tab="browse">
+            <i class="search icon" aria-hidden="true"></i>
+            <span class="courses-tab-text">{{ _T("Find a session", "courses") }}</span>
+            <span id="browse-count-badge" class="ui teal circular label" style="margin-left:.4em;{% if browse_count == 0 %}display:none;{% endif %}">{{ browse_count }}</span>
+        </a>
+        <a class="item" data-tab="mine">
+            <i class="calendar check icon" aria-hidden="true"></i>
+            <span class="courses-tab-text">{{ _T("My registrations", "courses") }}</span>
+            {% set mine_badge = upcoming|length + my_waitlist_entries|length %}
+            {% if mine_badge > 0 %}
+                <span class="ui green circular label" style="margin-left:.4em">{{ mine_badge }}</span>
+            {% endif %}
+        </a>
+    </div>
 </div>
 
 {# =========================================================

@@ -15,13 +15,22 @@
 .courses-card-out-of-group { background-color: #fff8e1 !important; border-left: 4px solid #f2711c !important; }
 
 /* ----- STICKY + EMPHASIS TABS "Mes inscriptions" / "Mes seances moniteur" (Phase 71) ----- */
-#my-sessions-tabs,
-#my-instructor-tabs {
+/* Phase 71.1 : sticky deplace sur le wrapper qui englobe bannieres + onglets,
+   pour figer la zone haute d'un seul tenant lors du scroll. */
+.courses-sticky-top {
     position: sticky !important;
     top: 0 !important;
     z-index: 50 !important;
     background: #fff !important;
     box-shadow: 0 2px 6px rgba(0, 0, 0, .08) !important;
+    padding-top: .25em !important;
+}
+.courses-sticky-top .courses-sticky-message {
+    margin-bottom: .35em !important;
+    margin-top: 0 !important;
+}
+#my-sessions-tabs,
+#my-instructor-tabs {
     border-bottom: 1px solid rgba(34, 36, 38, .12) !important;
 }
 #my-sessions-tabs .item,

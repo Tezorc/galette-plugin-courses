@@ -654,6 +654,21 @@ Le developpement est organise en phases progressives.
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Phase 71.1 - Bandeau haut sticky etendu (bannieres + onglets en un seul ensemble)
+
+**Statut :** TERMINEE
+
+- Demande utilisateur (suite Phase 71) : "je preferai figer toute la partie haute pour plus de coherence".
+
+- **Changement** : sur les 2 pages (`my_registrations.html.twig` + `my_instructor_sessions.html.twig`), introduction d'un wrapper `.courses-sticky-top` qui englobe :
+  - les bannieres d'avertissement (Phase 47.2 eligibilite + Phase 48 out-of-group), auparavant hors-bandeau au tout debut de `{% block content %}`,
+  - le menu d'onglets `#my-sessions-tabs` / `#my-instructor-tabs`.
+  L'ensemble se fige d'un bloc lors du scroll (au lieu du menu seul comme en Phase 71) -> les bannieres orange critiques restent visibles meme apres avoir scrolle dans la liste, ainsi que les onglets pour basculer entre browse et mine.
+
+- **CSS** : `position: sticky` deplace du selecteur `#my-sessions-tabs, #my-instructor-tabs` vers `.courses-sticky-top`. Le wrapper recoit `top:0, z-index:50, background:#fff, box-shadow:0 2px 6px rgba(0,0,0,.08), padding-top:.25em`. Les bannieres orange a l'interieur recoivent une classe `.courses-sticky-message` qui leur applique `margin-bottom:.35em` (plus serree que la marge par defaut Fomantic, pour que le bandeau ne soit pas trop encombrant). Le menu d'onglets conserve son `border-bottom` de separation, ses regles `.item`/`.item:hover`/`.item.active` inchangees (texte agrandi + bordure 3px + fond bleute).
+
+- Aucune migration BDD, aucune nouvelle chaine i18n. Tests 55/55 verts ; balances Twig stables (74/74 + 22/22 ; 29/29 + 6/6). Side-effect : l'instance `out_of_group_regs.length` etait inline dans le banner, deplacee dans le wrapper sans changement de logique.
+
 ### Phase 71 - Onglets stickys + plus visuels + pulse "Mes inscriptions" apres inscription
 
 **Statut :** TERMINEE
