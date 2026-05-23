@@ -154,6 +154,12 @@ msgstr "Aucune séance disponible pour laquelle vous porter volontaire comme mon
 msgid "Find a session"
 msgstr "Trouver une séance"
 
+msgid "Register for a next session"
+msgstr "M'inscrire à une prochaine séance"
+
+msgid "Volunteer for a session"
+msgstr "Se proposer moniteur"
+
 msgid "No upcoming session available."
 msgstr "Aucune séance à venir disponible."
 

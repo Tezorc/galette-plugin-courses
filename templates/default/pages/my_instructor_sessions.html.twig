@@ -24,7 +24,7 @@
     <div class="ui top attached tabular menu" id="my-instructor-tabs">
         <a class="item active" data-tab="browse">
             <i class="search icon" aria-hidden="true"></i>
-            <span class="courses-tab-text">{{ _T("Find a session", "courses") }}</span>
+            <span class="courses-tab-text">{{ _T("Volunteer for a session", "courses") }}</span>
             <span id="instructor-browse-badge" class="ui teal circular label" style="margin-left:.4em;{% if volunteer_sessions|length == 0 %}display:none;{% endif %}">{{ volunteer_sessions|length }}</span>
         </a>
         <a class="item" data-tab="mine">
@@ -229,7 +229,7 @@
             </div>
             {% if can_volunteer %}
                 <button class="ui small primary button" id="instr-go-browse-btn">
-                    {{ _T("Find a session", "courses") }}
+                    {{ _T("Volunteer for a session", "courses") }}
                 </button>
             {% endif %}
         </div>

@@ -61,7 +61,7 @@
     <div class="ui top attached tabular menu" id="my-sessions-tabs">
         <a class="item active" data-tab="browse">
             <i class="search icon" aria-hidden="true"></i>
-            <span class="courses-tab-text">{{ _T("Find a session", "courses") }}</span>
+            <span class="courses-tab-text">{{ _T("Register for a next session", "courses") }}</span>
             <span id="browse-count-badge" class="ui teal circular label" style="margin-left:.4em;{% if browse_count == 0 %}display:none;{% endif %}">{{ browse_count }}</span>
         </a>
         <a class="item" data-tab="mine">
@@ -635,7 +635,7 @@
                 {{ _T("You have no registrations yet.", "courses") }}
             </div>
             <button class="ui small primary button" id="go-browse-btn">
-                {{ _T("Find a session", "courses") }}
+                {{ _T("Register for a next session", "courses") }}
             </button>
         </div>
     {% else %}

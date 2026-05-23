@@ -654,6 +654,25 @@ Le developpement est organise en phases progressives.
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Phase 71.3 - Libelles onglets explicites par contexte (membre vs moniteur)
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : "ameliorer le texte : 'trouver une seance' par 'trouvez votre prochaine seance pour vous inscrire' mais en mieux".
+
+- **Probleme** : le libelle generique "Trouver une seance" etait utilise simultanement sur la page membre (`my_registrations.html.twig`) et la page moniteur (`my_instructor_sessions.html.twig`) avec la meme cle i18n `_T("Find a session", "courses")` -> impossible de differencier le contexte (s'inscrire vs se proposer moniteur). De plus, le verbe d'action manquait.
+
+- **Choix utilisateur** (via AskUserQuestion) :
+  - Page membre : "M'inscrire a une prochaine seance"
+  - Page moniteur : "Se proposer moniteur"
+
+- **Mise en oeuvre** : creation de 2 cles i18n distinctes pour separer les contextes :
+  - `_T("Register for a next session", "courses")` -> "M'inscrire à une prochaine séance"
+  - `_T("Volunteer for a session", "courses")` -> "Se proposer moniteur"
+  Remplacement des 4 occurrences (onglet + bouton CTA d'etat vide dans chaque template). L'ancienne cle `Find a session` reste dans le `.po` (pas de suppression au cas ou un autre composant l'utiliserait dans le futur, mais aucune reference ne reste dans le code du plugin).
+
+- Aucune migration BDD ; .mo recompile via msgfmt. Tests 55/55 verts.
+
 ### Phase 71.2 - Refonte visuelle des onglets : gros boutons pleins haute lisibilite
 
 **Statut :** TERMINEE
