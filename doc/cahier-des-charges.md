@@ -654,6 +654,40 @@ Le developpement est organise en phases progressives.
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Phase 78 - Plages horaires actives / inactives par evenement (saisonnier)
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : "si plusieurs plage horaire coche les horaires actifs notament pour les reccurences" + clarification "c'est principalement pour les seances recurrentes qui peuvent avoir des plages horaires suivant la saison ete hiver".
+
+#### Cas d'usage
+
+Un club peut entretenir un meme evenement recurrent (ex: "Entrainement adultes") qui change d'horaire entre l'ete (creneau 18:00-20:00 en exterieur) et l'hiver (creneau 09:00-11:00 en salle). Avant Phase 78, l'unique facon de gerer la bascule etait de **supprimer** la plage saisonniere obsolete et d'**ajouter** la nouvelle — perdant la trace historique et necessitant une re-saisie chaque saison. Phase 78 introduit un drapeau `is_active` par plage, qui permet de **conserver les 2 (ou plus) plages saisonnieres en base** et de **toggler** laquelle est generee a l'instant t.
+
+#### Architecture
+
+- **Schema BDD** : ajout d'une colonne `is_active TINYINT NOT NULL DEFAULT 1` (MySQL) / `smallint NOT NULL DEFAULT 1` (PostgreSQL) sur `galette_courses_slots`. Migrations : `scripts/upgrade-slot-active.sql` + `scripts/upgrade-slot-active-pgsql.sql`. Defaut = 1 -> aucun impact sur les installations existantes (toutes les plages preexistantes restent actives).
+- **Entite `Event`** :
+  - `loadSlots()` lit la colonne et expose un champ booleen `is_active` dans le tableau retourne par `getSlots()` (fallback `true` si la colonne est absente, pour les anciennes DB pas encore migrees).
+  - `storeSlots()` ecrit `1` si `!empty($slot['is_active'])`, `0` sinon — la colonne defaut a 1 cote BDD pour les rares insertions de slots sans le champ explicite.
+  - Nouveau helper `getActiveSlots()` : `array_filter` sur `$this->slots` ne gardant que les entrees actives. Utilise par tout le code de generation.
+- **Generation recurrente** : `RecurrenceHandler::generateSessions()` remplace `$event->getSlots()` par `$event->getActiveSlots()` (1 changement). Les plages inactives ne produisent jamais de seances.
+- **Auto-creation evenement ponctuel** : `EventsController::createSessionsForEvent` filtre les slots du POST sur `!empty($slot['is_active'])` avant la boucle d'insertion -> une plage decochee au moment de la creation d'un evenement ponctuel ne genere pas non plus.
+- **Backfill multi-slot** : `EventsController::doStore` filtre les slots passes a `backfillMissingSlots` sur active. Consequence : **re-cocher** une plage precedemment inactive declenche au prochain enregistrement (ou cron de generation) le backfill des dates futures manquantes — la bascule saisonniere est donc symetrique et automatique.
+- **Phase 41 (propagation horaires)** : pas modifiee. `propagateScheduleToSessions` continue de matcher les seances futures par `(start_time, end_time)` independamment du drapeau active — ce qui est correct, l'edition d'horaire d'une plage doit se repercuter qu'elle soit active ou non (cohesion temporelle).
+- **Formulaire `event_form.html.twig`** : la `.slot-row` passe de `two fields` a `three fields`. Premiere colonne = nouveau toggle Fomantic `<div class="ui toggle checkbox">` avec label `Active`, coche par defaut sur les slots existants (champ `is_active` exposee par `loadSlots()`) et sur les nouveaux slots ajoutes via JS. Note d'aide (`.tip`) ajoutee sous le label "Time slots" expliquant le cas saisonnier.
+- **CSS** : nouvelle classe `.courses-slot-active-field` (flex column, max-width 6em desktop pour ne pas voler de la place au time picker) ; media-query `≤767px` : `flex-wrap: wrap` sur `.slot-row.three.fields` + le toggle prend `flex: 1 0 100%` pour empiler proprement sur mobile.
+
+#### Tradeoff volontaire
+
+Decocher un slot **n'annule PAS** les seances deja generees dessus. Le toggle agit **uniquement sur la prochaine generation**. Justification : eviter une cascade d'annulations en masse + notifications membres a chaque bascule (risque de spam ; comportement surprenant pour un toggle qui se veut leger). Si le club veut nettoyer les seances obsoletes apres bascule, il les annule a la main (UI session_show > Annuler) ou via une operation BDD ponctuelle. Re-cocher est en revanche cascade vers le futur (backfill auto) — la dissymetrie est volontaire : creer des seances est inoffensif, annuler des seances l'est moins.
+
+#### Hors perimetre (laisses pour plus tard si besoin)
+
+- Pas de popup JS "X seances futures existent sur ce creneau, les annuler aussi ?" -- envisagee puis rejetee pour rester sur un toggle simple et previsible.
+- Pas de notification membre lors d'une bascule -- aucune communication automatique a la desactivation/reactivation d'un slot.
+- Pas d'historique d'activation par slot (qui a togglé quand) -- non demande, et `mailing_history` couvre les notifications cote membre.
+
 ### Phase 76 - Bouton "Contacter le moniteur" (ou l'organisateur) pour les inscrits
 
 **Statut :** TERMINEE

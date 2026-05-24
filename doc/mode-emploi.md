@@ -152,6 +152,7 @@ Pour qu'un adherent puisse s'inscrire a une seance :
 3. Section **Planification** :
    - **Date de debut** : date de la seance (uniquement a la creation, format `aaaa-mm-jj`)
    - **Creneaux horaires** : horaire debut / fin. Cliquer sur **"Ajouter un creneau"** pour ajouter des creneaux supplementaires
+   - **Actif** (Phase 78) : case a cocher devant chaque creneau. Decocher un creneau le conserve en base mais l'**exclut de la generation des seances recurrentes**. Utilisation type : planifier les creneaux ete + hiver sur le meme evenement et basculer la case actif/inactif au changement de saison. Les seances **deja generees** sur un creneau decoche ne sont **pas annulees** automatiquement (toggle = effet uniquement sur la prochaine generation) ; les annuler a la main si necessaire. Re-cocher = backfill automatique au prochain enregistrement / cron de generation.
 
 4. Cliquer sur **Enregistrer**
 

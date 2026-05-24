@@ -321,6 +321,12 @@ msgstr "Date de la première occurrence - définit le schéma de récurrence"
 msgid "Time slots"
 msgstr "Créneaux horaires"
 
+msgid "Active"
+msgstr "Actif"
+
+msgid "Uncheck a slot to keep it on file without generating new sessions (e.g. seasonal summer/winter schedule)."
+msgstr "Décocher une plage pour la conserver en mémoire sans générer de nouvelles séances (par ex. horaires saisonniers été/hiver)."
+
 msgid "Start time"
 msgstr "Heure de début"
 

@@ -212,6 +212,9 @@
 .courses-date-day,
 .courses-date-month { font-size: 1.8em; font-weight: bold; line-height: 1; }
 .courses-date-month { text-transform: uppercase; }
+/* Plage horaire atomique : "19:00 - 20:00" ne se coupe jamais ;
+   si la place manque, toute la plage bascule a la ligne suivante. */
+.courses-time-range { white-space: nowrap; }
 
 
 /* ----- TABLES ----- */
@@ -392,6 +395,14 @@ tr.courses-pending { background-color: #fffde7 !important; }
 .mailtpl-var-pill:hover { background: #2185d0; color: #fff; }
 .mailtpl-vars-hint      { font-size: .9em; color: #aaa; }
 .courses-help-text      { font-size: .9em; color: #888; margin-top: .25em; }
+/* Phase 78 : toggle "Actif" sur les plages horaires d'un evenement */
+.courses-slot-active-field { display: flex; flex-direction: column; }
+.courses-slot-active-field .ui.toggle.checkbox { margin-top: .35em; align-self: flex-start; }
+.slot-row .courses-slot-active-field { max-width: 6em; }
+@media only screen and (max-width: 767px) {
+    .slot-row.three.fields { flex-wrap: wrap; }
+    .slot-row .courses-slot-active-field { max-width: 100%; flex: 1 0 100%; margin-bottom: .35em; }
+}
 .mailtpl-textarea       { font-family: monospace !important; font-size: .9em !important; line-height: 1.6 !important; }
 .mailtpl-actions        { display: flex; align-items: center; gap: .8em; margin-top: 1em; flex-wrap: wrap; }
 .mailtpl-default-section { margin-top: 1.5em; border-top: 1px solid #e8e8e8; padding-top: 1em; }

@@ -18,7 +18,7 @@
                                 <strong class="courses-date-day">{{ session.getSessionDate()|date("d") }}</strong>
                                 <span class="courses-date-month">{{ session.getMonthYear() }}</span>
                                 &nbsp;&middot;&nbsp;
-                                {{ session.getFormattedStartTime() }} – {{ session.getFormattedEndTime() }}
+                                <span class="courses-time-range">{{ session.getFormattedStartTime() }} – {{ session.getFormattedEndTime() }}</span>
                                 {% if event.getLocation() %}
                                     <br class="courses-mobile-br">
                                     <i class="map pin icon" aria-hidden="true"></i>

@@ -189,7 +189,7 @@
                         {% for ms_slot in ms_slots %}
                             {% set ms_sid = ms_slot.getId() %}
                             <div class="courses-multislot-row">
-                                <strong>{{ ms_slot.getFormattedStartTime() }} - {{ ms_slot.getFormattedEndTime() }}</strong>
+                                <strong><span class="courses-time-range">{{ ms_slot.getFormattedStartTime() }} - {{ ms_slot.getFormattedEndTime() }}</span></strong>
                                 {% if ms_slot.getStatus() == 'cancelled' %}
                                     <span class="ui tiny red label">{{ _T("Cancelled", "courses") }}</span>
                                 {% elseif browse_on_waitlist[ms_sid] %}
@@ -236,7 +236,7 @@
                                             {% if ms_self_act or ms_children|length > 0 %}
                                                 <div class="header courses-multislot-menu-header">
                                                     <i class="clock icon" aria-hidden="true"></i>
-                                                    {{ ms_slot.getFormattedStartTime() }} - {{ ms_slot.getFormattedEndTime() }}
+                                                    <span class="courses-time-range">{{ ms_slot.getFormattedStartTime() }} - {{ ms_slot.getFormattedEndTime() }}</span>
                                                     {% if ms_slot.isFull() %}
                                                         <span class="ui mini orange label">{{ _T("Waitlist", "courses") }}</span>
                                                     {% endif %}
@@ -309,7 +309,7 @@
                             <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
                             <span class="courses-date-month">{{ s.getMonthYear() }}</span>
                             &nbsp;&middot;&nbsp;
-                            {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
+                            <span class="courses-time-range">{{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}</span>
                         </div>
                         {% if ev.getLocation() %}
                             <div class="meta">
@@ -385,7 +385,7 @@
                             <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
                             <span class="courses-date-month">{{ s.getMonthYear() }}</span>
                             &nbsp;&middot;&nbsp;
-                            {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
+                            <span class="courses-time-range">{{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}</span>
                         </div>
                         {% if ev.getLocation() %}
                             <div class="meta">
@@ -677,7 +677,7 @@
                                     <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
                                     <span class="courses-date-month">{{ s.getMonthYear() }}</span>
                                     &nbsp;&middot;&nbsp;
-                                    {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
+                                    <span class="courses-time-range">{{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}</span>
                                 </div>
                                 {% if ev.getLocation() %}
                                     <div class="meta">
@@ -776,7 +776,7 @@
                                     <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
                                     <span class="courses-date-month">{{ s.getMonthYear() }}</span>
                                     &nbsp;&middot;&nbsp;
-                                    {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
+                                    <span class="courses-time-range">{{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}</span>
                                 </div>
                                 {% if ev.getLocation() %}
                                     <div class="meta">
@@ -892,7 +892,7 @@
                                 <span class="courses-date-day">{{ ws.getSessionDate()|date("d") }}</span>
                                 <span class="courses-date-month">{{ ws.getMonthYear() }}</span>
                                 &nbsp;&middot;&nbsp;
-                                {{ ws.getFormattedStartTime() }} - {{ ws.getFormattedEndTime() }}
+                                <span class="courses-time-range">{{ ws.getFormattedStartTime() }} - {{ ws.getFormattedEndTime() }}</span>
                             </div>
                             {% if wev.getLocation() %}
                                 <div class="meta">
@@ -965,7 +965,7 @@
                                         <i class="calendar icon" aria-hidden="true"></i>
                                         {{ s.getFormattedDate() }}
                                         &nbsp;&middot;&nbsp;
-                                        {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
+                                        <span class="courses-time-range">{{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}</span>
                                     </div>
                                     {% if mine_instructor_names[s.getId()] is defined %}
                                         <div class="meta">

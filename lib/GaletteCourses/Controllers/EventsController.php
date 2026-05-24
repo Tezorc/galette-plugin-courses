@@ -316,6 +316,7 @@ class EventsController extends AbstractPluginController
                         $slots[] = [
                             'start_time' => $slot['start_time'],
                             'end_time' => $slot['end_time'],
+                            'is_active' => !empty($slot['is_active']),
                         ];
                     }
                 }
@@ -348,9 +349,16 @@ class EventsController extends AbstractPluginController
             // added a slot, and (2) migration of legacy multi-slot events.
             // Skipped at creation time to avoid double-counting with the
             // create-block below (createSessionsForEvent / generateSessions).
-            if ($id !== null && !empty($slots)) {
+            // Phase 78: only active slots are backfilled — re-activating a slot
+            // therefore fills its missing future dates ; deactivating leaves
+            // the already-generated sessions alone (no cascade by design).
+            $activeSlots = array_values(array_filter(
+                $slots,
+                static fn (array $s): bool => !empty($s['is_active'])
+            ));
+            if ($id !== null && !empty($activeSlots)) {
                 $handler = new RecurrenceHandler($this->zdb);
-                $backfilled = $handler->backfillMissingSlots($event, $slots);
+                $backfilled = $handler->backfillMissingSlots($event, $activeSlots);
                 if (!empty($backfilled)) {
                     $createdSessions = array_merge($createdSessions, $backfilled);
                 }
@@ -594,10 +602,13 @@ class EventsController extends AbstractPluginController
      */
     private function createSessionsForEvent(Event $event, array $post): array
     {
+        // Phase 78: skip deactivated slots so the user can pre-record seasonal
+        // schedules (summer/winter) without spawning sessions on the inactive
+        // side. Slot rows missing the is_active flag default to active.
         $slots = [];
         if (isset($post['slots']) && is_array($post['slots'])) {
             foreach ($post['slots'] as $slot) {
-                if (!empty($slot['start_time']) && !empty($slot['end_time'])) {
+                if (!empty($slot['start_time']) && !empty($slot['end_time']) && !empty($slot['is_active'])) {
                     $slots[] = [
                         'start_time' => $slot['start_time'],
                         'end_time'   => $slot['end_time'],

@@ -123,7 +123,7 @@
                                 <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
                                 <span class="courses-date-month">{{ s.getMonthYear() }}</span>
                                 &nbsp;&middot;&nbsp;
-                                {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
+                                <span class="courses-time-range">{{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}</span>
                             </div>
                             {% if ev.getLocation() %}
                                 <div class="meta">
@@ -177,7 +177,7 @@
                                 <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
                                 <span class="courses-date-month">{{ s.getMonthYear() }}</span>
                                 &nbsp;&middot;&nbsp;
-                                {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
+                                <span class="courses-time-range">{{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}</span>
                             </div>
                             {% if ev.getLocation() %}
                                 <div class="meta">
@@ -263,7 +263,7 @@
                                     <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
                                     <span class="courses-date-month">{{ s.getMonthYear() }}</span>
                                     &nbsp;&middot;&nbsp;
-                                    {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
+                                    <span class="courses-time-range">{{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}</span>
                                 </div>
                                 {% if ev.getLocation() %}
                                     <div class="meta">
@@ -313,7 +313,7 @@
                                     <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
                                     <span class="courses-date-month">{{ s.getMonthYear() }}</span>
                                     &nbsp;&middot;&nbsp;
-                                    {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
+                                    <span class="courses-time-range">{{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}</span>
                                 </div>
                                 {% if ev.getLocation() %}
                                     <div class="meta">
@@ -388,7 +388,7 @@
                                         <i class="calendar icon" aria-hidden="true"></i>
                                         {{ s.getFormattedDate() }}
                                         &nbsp;&middot;&nbsp;
-                                        {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
+                                        <span class="courses-time-range">{{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}</span>
                                     </div>
                                     <div class="meta">
                                         <i class="users icon" aria-hidden="true"></i>

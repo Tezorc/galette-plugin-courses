@@ -59,7 +59,11 @@ class RecurrenceHandler
         }
 
         $event->loadSlots();
-        $slots = $event->getSlots();
+        // Phase 78: only active slots feed the recurrence generator. The user
+        // can pre-record seasonal schedules (summer/winter) on the same event
+        // and flip them on/off without deleting rows. Already-generated future
+        // sessions on a now-deactivated slot stay intact (toggle = futur only).
+        $slots = $event->getActiveSlots();
         // Phase 69: an event can have multiple time slots. For each occurrence
         // date, one session is created per slot (so 2 slots -> 2 sessions per
         // date). Fallback when no slot defined keeps the single-session default.

@@ -168,6 +168,7 @@ class Event
                     'id' => (string)$r->id_slot,
                     'start_time' => (string)$r->start_time,
                     'end_time' => (string)$r->end_time,
+                    'is_active' => (int)($r->is_active ?? 1) === 1,
                 ];
             }
         } catch (Throwable $e) {
@@ -287,7 +288,7 @@ class Event
     /**
      * Store slots for this event
      *
-     * @param array<array<string, string>> $slots_data Array of ['start_time' => '...', 'end_time' => '...']
+     * @param array<array<string, string|bool|int>> $slots_data Array of ['start_time' => '...', 'end_time' => '...', 'is_active' => bool|int]
      */
     public function storeSlots(array $slots_data): bool
     {
@@ -307,6 +308,7 @@ class Event
                     'event_id' => $this->id,
                     'start_time' => $slot['start_time'],
                     'end_time' => $slot['end_time'],
+                    'is_active' => !empty($slot['is_active']) ? 1 : 0,
                 ]);
                 $this->zdb->execute($insert);
             }
@@ -774,11 +776,27 @@ class Event
     }
 
     /**
-     * @return array<array<string, string>>
+     * @return array<array<string, mixed>>
      */
     public function getSlots(): array
     {
         return $this->slots;
+    }
+
+    /**
+     * Returns only the slots flagged active (Phase 78). Slots loaded before
+     * the is_active column existed default to active via loadSlots(). Used by
+     * the RecurrenceHandler and session auto-creation so deactivated slots
+     * never produce new sessions while remaining editable in the form.
+     *
+     * @return array<array<string, mixed>>
+     */
+    public function getActiveSlots(): array
+    {
+        return array_values(array_filter(
+            $this->slots,
+            static fn (array $s): bool => !isset($s['is_active']) || (bool)$s['is_active']
+        ));
     }
 
     /**

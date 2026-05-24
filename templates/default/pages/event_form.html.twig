@@ -175,10 +175,18 @@
 
             <div id="slots-container">
                 <label>{{ _T("Time slots", "courses") }}</label>
+                <span class="tip">{{ _T("Uncheck a slot to keep it on file without generating new sessions (e.g. seasonal summer/winter schedule).", "courses") }}</span>
                 {% set existing_slots = event.getSlots() %}
                 {% if existing_slots|length > 0 %}
                     {% for slot in existing_slots %}
-                        <div class="two fields slot-row">
+                        <div class="three fields slot-row">
+                            <div class="field courses-slot-active-field">
+                                <label for="slot_active_{{ loop.index0 }}">{{ _T("Active", "courses") }}</label>
+                                <div class="ui toggle checkbox">
+                                    <input type="checkbox" name="slots[{{ loop.index0 }}][is_active]" id="slot_active_{{ loop.index0 }}" value="1"{% if slot.is_active is not defined or slot.is_active %} checked="checked"{% endif %}/>
+                                    <label></label>
+                                </div>
+                            </div>
                             <div class="field">
                                 <label>{{ _T("Start time", "courses") }}</label>
                                 <input type="time" name="slots[{{ loop.index0 }}][start_time]" value="{{ slot.start_time }}"/>
@@ -190,7 +198,14 @@
                         </div>
                     {% endfor %}
                 {% else %}
-                    <div class="two fields slot-row">
+                    <div class="three fields slot-row">
+                        <div class="field courses-slot-active-field">
+                            <label for="slot_active_0">{{ _T("Active", "courses") }}</label>
+                            <div class="ui toggle checkbox">
+                                <input type="checkbox" name="slots[0][is_active]" id="slot_active_0" value="1" checked="checked"/>
+                                <label></label>
+                            </div>
+                        </div>
                         <div class="field">
                             <label>{{ _T("Start time", "courses") }}</label>
                             <input type="time" name="slots[0][start_time]" value=""/>
@@ -224,11 +239,19 @@
         $(function() {
             var slotIndex = {{ (event.getSlots()|length > 0) ? event.getSlots()|length : 1 }};
             $('#add-slot').on('click', function() {
-                var html = '<div class="two fields slot-row">' +
+                var html = '<div class="three fields slot-row">' +
+                    '<div class="field courses-slot-active-field">' +
+                        '<label for="slot_active_' + slotIndex + '">{{ _T("Active", "courses") }}</label>' +
+                        '<div class="ui toggle checkbox">' +
+                            '<input type="checkbox" name="slots[' + slotIndex + '][is_active]" id="slot_active_' + slotIndex + '" value="1" checked="checked"/>' +
+                            '<label></label>' +
+                        '</div>' +
+                    '</div>' +
                     '<div class="field"><label>{{ _T("Start time", "courses") }}</label><input type="time" name="slots[' + slotIndex + '][start_time]" value=""/></div>' +
                     '<div class="field"><label>{{ _T("End time", "courses") }}</label><input type="time" name="slots[' + slotIndex + '][end_time]" value=""/></div>' +
                     '</div>';
                 $('#slots-container').append(html);
+                $('#slots-container .ui.toggle.checkbox').last().checkbox();
                 slotIndex++;
             });
 

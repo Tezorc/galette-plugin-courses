@@ -154,7 +154,7 @@
                         <span class="courses-date-day">{{ session.getSessionDate()|date("d") }}</span>
                         <span class="courses-date-month">{{ session.getMonthYear() }}</span>
                         &nbsp;&middot;&nbsp;
-                        {{ session.getFormattedStartTime() }} - {{ session.getFormattedEndTime() }}
+                        <span class="courses-time-range">{{ session.getFormattedStartTime() }} - {{ session.getFormattedEndTime() }}</span>
                     </div>
                     {% if event.getLocation() %}
                         <div class="meta">
