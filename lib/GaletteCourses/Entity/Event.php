@@ -795,7 +795,7 @@ class Event
     {
         return array_values(array_filter(
             $this->slots,
-            static fn (array $s): bool => !isset($s['is_active']) || (bool)$s['is_active']
+            static fn(array $s): bool => !isset($s['is_active']) || (bool)$s['is_active']
         ));
     }
 

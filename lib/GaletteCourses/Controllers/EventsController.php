@@ -354,7 +354,7 @@ class EventsController extends AbstractPluginController
             // the already-generated sessions alone (no cascade by design).
             $activeSlots = array_values(array_filter(
                 $slots,
-                static fn (array $s): bool => !empty($s['is_active'])
+                static fn(array $s): bool => !empty($s['is_active'])
             ));
             if ($id !== null && !empty($activeSlots)) {
                 $handler = new RecurrenceHandler($this->zdb);
@@ -481,8 +481,8 @@ class EventsController extends AbstractPluginController
      * are propagated; sessions tied to a removed slot keep their old time
      * (the staff can still edit individual sessions).
      *
-     * @param array<array<string, string>> $oldSlots Slots loaded before check()
-     * @param array<array<string, string>> $newSlots Slots posted by the form
+     * @param array<array<string, mixed>> $oldSlots Slots loaded before check()
+     * @param array<array<string, mixed>> $newSlots Slots posted by the form
      */
     private function propagateScheduleToSessions(Event $event, array $oldSlots, array $newSlots): void
     {

@@ -319,7 +319,7 @@ class RecurrenceHandler
      * For each existing future non-cancelled date, ensure one session exists
      * per slot. New sessions inherit max_capacity from the event.
      *
-     * @param array<int, array<string, string>> $slots
+     * @param array<int, array<string, mixed>> $slots
      * @return Session[] newly-created sessions
      */
     public function backfillMissingSlots(Event $event, array $slots): array
