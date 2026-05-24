@@ -1077,6 +1077,16 @@ class SessionsController extends AbstractPluginController
             return $response->withStatus(302)->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
         }
 
+        // Phase 77: capacity edits triggered from the waitlist panel make no
+        // sense on past sessions (the auto-promotion they enable is blocked).
+        if ($session->getSessionDate() < date('Y-m-d')) {
+            $this->flash->addMessage(
+                'error_detected',
+                _T('Capacity cannot be changed on past sessions.', 'courses')
+            );
+            return $response->withStatus(302)->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+        }
+
         $post = $request->getParsedBody();
         $rawCapacity = trim((string)($post['max_capacity'] ?? ''));
         $newCapacity = $rawCapacity === '' ? null : (int)$rawCapacity;
@@ -1161,6 +1171,15 @@ class SessionsController extends AbstractPluginController
             return $response->withStatus(302)->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
         }
 
+        // Phase 77: waitlist management is not possible on past sessions.
+        if ($session->getSessionDate() < date('Y-m-d')) {
+            $this->flash->addMessage(
+                'error_detected',
+                _T('Waitlist management is not available for past sessions.', 'courses')
+            );
+            return $response->withStatus(302)->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+        }
+
         $memberId = Waitlist::promoteFirst($this->zdb, $session);
         if ($memberId === null) {
             $this->flash->addMessage('warning_detected', _T('The waitlist is empty.', 'courses'));
@@ -1202,6 +1221,15 @@ class SessionsController extends AbstractPluginController
         if ($source->getId() === null) {
             $this->flash->addMessage('error_detected', _T('Session not found.', 'courses'));
             return $response->withStatus(302)->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
+        }
+
+        // Phase 77: waitlist management is not possible on past sessions.
+        if ($source->getSessionDate() < date('Y-m-d')) {
+            $this->flash->addMessage(
+                'error_detected',
+                _T('Waitlist management is not available for past sessions.', 'courses')
+            );
+            return $response->withStatus(302)->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
         }
 
         $waitlist = Waitlist::getForSession($this->zdb, $id);
@@ -1615,6 +1643,130 @@ class SessionsController extends AbstractPluginController
     /**
      * Prepare Galette mailing with registered + waitlist members, then redirect to mailing page.
      */
+    /**
+     * Phase 76: a registered (or waitlisted) member contacts the instructors of
+     * a session -- or the organizer when the event opted out of instructors via
+     * Phase 75. Recipients are pre-loaded into the session and the user is
+     * redirected to Galette's standard mailing UI (subject/body compose).
+     *
+     * ACL: the member must be on the session themselves OR be the parent of a
+     * registered/waitlisted child. Admin/staff/group managers bypass.
+     */
+    public function mailInstructors(Request $request, Response $response, int $id): Response
+    {
+        $session = new Session($this->zdb, $id);
+        if ($session->getId() === null) {
+            $this->flash->addMessage('error_detected', _T('Session not found.', 'courses'));
+            return $response->withStatus(302)
+                ->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
+        }
+
+        $memberId   = (int)$this->login->id;
+        $redirectTo = $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]);
+
+        if ($memberId <= 0) {
+            return $response->withStatus(302)->withHeader('Location', $redirectTo);
+        }
+
+        // ACL: admin/staff/groupmanager bypass; otherwise the user (or one of
+        // their children) must be registered or on the waitlist.
+        $isPrivileged = $this->login->isAdmin() || $this->login->isStaff() || $this->login->isGroupManager();
+        if (!$isPrivileged) {
+            $candidateIds = [$memberId];
+            try {
+                $parent = new \Galette\Entity\Adherent($this->zdb, $memberId, ['children' => true]);
+                foreach ($parent->children as $child) {
+                    $cid = is_object($child) ? (int)$child->id : (int)$child;
+                    if ($cid > 0) {
+                        $candidateIds[] = $cid;
+                    }
+                }
+            } catch (\Throwable $e) {
+                // children load failed -- continue with self only
+            }
+
+            $hasAccess = false;
+            try {
+                $sel = $this->zdb->select(Registration::TABLE);
+                $sel->columns(['id_registration']);
+                $sel->where(['session_id' => $id]);
+                $sel->where->in('member_id', $candidateIds);
+                $sel->where->notEqualTo('status', Registration::STATUS_CANCELLED);
+                $sel->limit(1);
+                $rs = $this->zdb->execute($sel);
+                $hasAccess = $rs->count() > 0;
+
+                if (!$hasAccess) {
+                    $selWl = $this->zdb->select(Waitlist::TABLE);
+                    $selWl->columns(['id_waitlist']);
+                    $selWl->where(['session_id' => $id]);
+                    $selWl->where->in('member_id', $candidateIds);
+                    $selWl->limit(1);
+                    $rsWl = $this->zdb->execute($selWl);
+                    $hasAccess = $rsWl->count() > 0;
+                }
+            } catch (\Throwable $e) {
+                $hasAccess = false;
+            }
+
+            if (!$hasAccess) {
+                $this->flash->addMessage(
+                    'error_detected',
+                    _T('You must be registered or on the waitlist to contact the instructors.', 'courses')
+                );
+                return $response->withStatus(302)->withHeader('Location', $redirectTo);
+            }
+        }
+
+        // Recipients: instructors of the session, or the event creator
+        // (organizer) when the event was flagged "no instructor needed".
+        $recipientIds = [];
+        $event = $session->getEvent();
+
+        if ($event->isInstructorNotNeeded()) {
+            $creatorId = $event->getCreatorId();
+            if ($creatorId > 0) {
+                $recipientIds[] = $creatorId;
+            }
+        } else {
+            foreach (SessionInstructor::getForSession($this->zdb, $id) as $instr) {
+                $mid = (int)$instr->getMemberId();
+                if ($mid > 0) {
+                    $recipientIds[] = $mid;
+                }
+            }
+        }
+
+        if (empty($recipientIds)) {
+            $this->flash->addMessage(
+                'warning_detected',
+                _T('No instructor or organizer is reachable for this session yet.', 'courses')
+            );
+            return $response->withStatus(302)->withHeader('Location', $redirectTo);
+        }
+
+        $recipients = [];
+        foreach (array_unique($recipientIds) as $rid) {
+            $adh = new \Galette\Entity\Adherent($this->zdb, $rid);
+            if (!empty($adh->email)) {
+                $recipients[$rid] = $adh;
+            }
+        }
+
+        if (empty($recipients)) {
+            $this->flash->addMessage(
+                'warning_detected',
+                _T('No instructor or organizer has a reachable email for this session.', 'courses')
+            );
+            return $response->withStatus(302)->withHeader('Location', $redirectTo);
+        }
+
+        $this->session->mailing = new \Galette\Core\Mailing($this->preferences, $recipients);
+
+        return $response->withStatus(302)
+            ->withHeader('Location', $this->routeparser->urlFor('mailing'));
+    }
+
     public function mailSession(Request $request, Response $response, int $id): Response
     {
         $deny = $this->denyUnlessStaffOrGroupManager(

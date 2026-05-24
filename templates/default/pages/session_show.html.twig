@@ -122,6 +122,13 @@
                         </div>
                     </div>
                     <div class="courses-help-text">{{ _T("This event does not need an instructor — the organizer is your point of contact.", "courses") }}</div>
+                    {% if login.isLogged() and not login.isSuperAdmin() and (is_registered or is_on_waitlist or children_registered|length > 0) and organizer_name %}
+                        <div class="ui divider"></div>
+                        <a href="{{ url_for("coursesMailInstructors", {"id": session.getId()}) }}" class="ui small labeled icon teal button">
+                            <i class="envelope icon" aria-hidden="true"></i>
+                            {{ _T("Contact organizer", "courses") }}
+                        </a>
+                    {% endif %}
                 </div>
             {% else %}
                 <div class="ui segment">
@@ -200,6 +207,15 @@
                             </button>
                             {% include 'components/forms/csrf.html.twig' %}
                         </form>
+                    {% endif %}
+
+                    {# Phase 76: registered/waitlisted member contacts the instructors via Galette mailing #}
+                    {% if login.isLogged() and not login.isSuperAdmin() and (is_registered or is_on_waitlist or children_registered|length > 0) and instructors|length > 0 %}
+                        <div class="ui divider"></div>
+                        <a href="{{ url_for("coursesMailInstructors", {"id": session.getId()}) }}" class="ui small labeled icon teal button">
+                            <i class="envelope icon" aria-hidden="true"></i>
+                            {{ _T("Contact instructor", "courses") }}
+                        </a>
                     {% endif %}
                 </div>
             {% endif %}
@@ -598,7 +614,8 @@
             {% endif %}
 
             {# Waitlist management panel (session managers only, open session with waitlist) #}
-            {% if is_session_manager and session.getStatus() == 'open' and waitlist_count > 0 %}
+            {# Phase 77: hidden for past sessions -- managing the waitlist on a past session makes no sense. #}
+            {% if is_session_manager and session.getStatus() == 'open' and waitlist_count > 0 and session.getSessionDate() >= "now"|date("Y-m-d") %}
                 <div class="ui yellow segment courses-section-mt">
                     <h4 class="ui header">
                         <i class="list ol icon" aria-hidden="true"></i>

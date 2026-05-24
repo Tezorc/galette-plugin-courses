@@ -654,6 +654,34 @@ Le developpement est organise en phases progressives.
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Phase 76 - Bouton "Contacter le moniteur" (ou l'organisateur) pour les inscrits
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : "donne la possibilite a un membre inscrit d'envoyer un courriel aux moniteurs de la seance ou organisateur via galette".
+
+#### Cas d'usage
+
+Un inscrit (ou un parent d'enfant inscrit) doit pouvoir poser une question rapide a son moniteur (changement d'horaire, demande sur le materiel, absence prevue, etc.) sans devoir chercher son email a la main dans l'annuaire. Avant Phase 76, seuls les staff/responsables de groupe disposaient du bouton `Mail this session` (Phase 14, envoie un mailing a TOUS les inscrits) -- aucune voie inverse cote membre.
+
+#### Architecture
+
+- **Route** : `GET /session/{id}/mail-instructors` -> `coursesMailInstructors` -> `SessionsController::mailInstructors(int $id)`. ACL Galette = `member` (le filet de securite reel est porte par le handler, comme Phase 43 / 46 / 49).
+- **ACL serveur stricte** : admin/staff/groupmanager bypass (cas pratique : un staff peut vouloir contacter un moniteur depuis n'importe quelle seance). Les membres reguliers passent 2 verifications successives -- SELECT LIMIT 1 sur `registrations` (`status != cancelled AND member_id IN (self + children)`) puis, en cas d'echec, SELECT LIMIT 1 sur `waitlist` (`member_id IN (self + children)`). Si les 2 echouent, flash erreur `You must be registered or on the waitlist to contact the instructors.` + redirect. La regle "parent d'enfant inscrit" couvre le cas usuel des inscriptions enfant (le parent gere les communications).
+- **Destinataires** : la regle suit le toggle Phase 75. Si `event.isInstructorNotNeeded() == true` -> recipients = `[creator_id]` uniquement (l'organisateur, deja affiche dans la section Organizer). Sinon -> recipients = tous les `SessionInstructor::getForSession()`. Chaque destinataire est instancie en `Adherent` pour valider la presence d'un email ; les comptes sans email sont silencieusement filtres.
+- **Pas d'expediteur direct** : le handler ne fait que **pre-charger** les destinataires dans `$_SESSION->mailing` (objet `\Galette\Core\Mailing`) puis redirige vers la route Galette `mailing`. C'est la page de mailing standard de Galette qui prend la main pour le compose (Sujet / Corps), la prevue, et l'envoi. Le membre voit l'UI familiere de Galette. **Tradeoff accepte** : la page mailing Galette expose les destinataires (nom + email) avant envoi -- un membre verra les emails des moniteurs. Le compromis est volontaire : c'est la contrepartie de la reutilisation du moteur Galette sans re-implementation. Pour un mode totalement opaque (le membre ne voit jamais les emails), il faudrait construire un mini-formulaire inline + appel direct a `\Galette\Core\Mailing::send()`, jugee non prioritaire ici.
+- **UI session_show.html.twig** : 2 boutons distincts, un dans chaque branche du `if event.isInstructorNotNeeded()` ajoute en Phase 75.
+  - Branche Organizer : `Contact organizer` (link Fomantic `ui small labeled icon teal`, icone `envelope`) visible si `organizer_name` existe ET membre inscrit / waitlist / parent d'enfant inscrit.
+  - Branche Instructors : `Contact instructor` avec memes conditions de visibilite + `instructors|length > 0` (sinon il n'y a personne a contacter).
+  - Le bouton n'apparait pas pour les staff/groupmanager non inscrits eux-memes -- ils gerent les seances et n'ont pas besoin de l'option dans ce contexte (mais s'ils tapent l'URL, l'ACL bypass les laisse passer).
+- **i18n** : 5 nouvelles chaines ajoutees au `.po` FR + `.mo` recompile (`Contact instructor`, `Contact organizer`, message d'erreur ACL, 2 warnings "aucun destinataire joignable").
+
+#### Hors perimetre (compromis volontaires)
+
+- Pas de logging history : l'envoi reel est trace par Galette (table `mailing_history` standard). Le pre-load des destinataires n'est pas logge -- evenement transitoire, sans valeur d'audit.
+- Pas de notification au moniteur "untel a tente de vous contacter" : on s'appuie sur la livraison reelle du mailing. Si l'envoi echoue (config SMTP), Galette flash l'erreur via son propre canal.
+- Pas de check eligibilite (Phase 47.2) sur le membre expediteur : un membre dont la cotisation est expiree peut contacter son moniteur (cas pratique : il a une question sur la regularisation). L'eligibilite ne s'applique qu'a l'inscription, pas a la communication.
+
 ### Phase 75 - Toggle "pas de moniteur necessaire" (organisateur en contact)
 
 **Statut :** TERMINEE

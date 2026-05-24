@@ -217,10 +217,14 @@
 
             {# Past sessions collapsible #}
             {% if sessions_past|length > 0 %}
-                <div class="courses-past-toggle courses-section-mt">
-                    <i class="dropdown icon" aria-hidden="true"></i>
-                    {{ _T("Past sessions", "courses") }} ({{ sessions_past|length }})
-                </div>
+                <h3 class="ui small dividing header courses-past-toggle courses-section-mt">
+                    <i class="history icon" aria-hidden="true"></i>
+                    <div class="content">
+                        {{ _T("Past sessions", "courses") }}
+                        <span class="ui grey circular label">{{ sessions_past|length }}</span>
+                    </div>
+                    <i class="dropdown icon courses-past-chevron" aria-hidden="true"></i>
+                </h3>
                 <div class="courses-past-content">
                     <div class="ui stackable three column grid courses-cards-grid">
                         {% for session in sessions_past %}
@@ -273,10 +277,13 @@
                     {% endif %}
                 {% endfor %}
                 {% if has_past %}
-                    <div class="courses-past-toggle courses-group-mt">
-                        <i class="dropdown icon" aria-hidden="true"></i>
-                        {{ _T("Past sessions", "courses") }}
-                    </div>
+                    <h3 class="ui small dividing header courses-past-toggle courses-group-mt">
+                        <i class="history icon" aria-hidden="true"></i>
+                        <div class="content">
+                            {{ _T("Past sessions", "courses") }}
+                        </div>
+                        <i class="dropdown icon courses-past-chevron" aria-hidden="true"></i>
+                    </h3>
                     <div class="courses-past-content">
                         <div class="ui stackable three column grid courses-cards-grid">
                             {% for session in sessions_past %}
@@ -370,7 +377,7 @@
             $('.courses-past-content').hide();
             $('.courses-past-toggle').on('click', function() {
                 $(this).next('.courses-past-content').slideToggle(200);
-                $(this).find('.dropdown.icon').toggleClass('rotated');
+                $(this).find('.courses-past-chevron').toggleClass('rotated');
             });
 
             // Date pickers (HTML5 natif) avec auto-submit

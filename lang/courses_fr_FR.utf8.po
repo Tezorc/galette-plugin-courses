@@ -1801,6 +1801,31 @@ msgstr "Cet événement ne nécessite pas de moniteur — l'organisateur est vot
 msgid "This event does not need an instructor."
 msgstr "Cet événement ne nécessite pas de moniteur."
 
+# --- Phase 76 : Bouton "Contacter le moniteur / l'organisateur" pour les inscrits ---
+
+msgid "Contact instructor"
+msgstr "Contacter le moniteur"
+
+msgid "Contact organizer"
+msgstr "Contacter l'organisateur"
+
+msgid "You must be registered or on the waitlist to contact the instructors."
+msgstr "Vous devez être inscrit ou sur la liste d'attente pour contacter les moniteurs."
+
+msgid "No instructor or organizer is reachable for this session yet."
+msgstr "Aucun moniteur ni organisateur n'est joignable pour cette séance."
+
+msgid "No instructor or organizer has a reachable email for this session."
+msgstr "Aucun moniteur ni organisateur n'a d'adresse électronique exploitable pour cette séance."
+
+# --- Phase 77 : Gestion liste d'attente bloquee sur seances passees ---
+
+msgid "Waitlist management is not available for past sessions."
+msgstr "La gestion de la liste d'attente n'est pas disponible pour les séances passées."
+
+msgid "Capacity cannot be changed on past sessions."
+msgstr "La capacité ne peut pas être modifiée sur une séance passée."
+
 msgid "Session open for registration (no instructor yet)"
 msgstr "Séance ouverte aux inscriptions (sans moniteur pour le moment)"
 

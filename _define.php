@@ -90,6 +90,7 @@ $this->register(
         'coursesDoSessionForWaitlist'   => 'member',
         'coursesSessionExportRegistrations' => 'groupmanager',
         'coursesMailSession'                => 'groupmanager',
+        'coursesMailInstructors'            => 'member',
         'coursesStats'                  => 'staff',
         'coursesPreferences'            => 'staff',
         'coursesDoPreferences'          => 'staff',

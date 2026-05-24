@@ -289,6 +289,13 @@ $app->get(
     [SessionsController::class, 'mailSession']
 )->setName('coursesMailSession')->add($authenticate);
 
+// Phase 76: a registered (or waitlisted) member contacts the session's
+// instructors -- or the organizer when the event opted out of instructors.
+$app->get(
+    '/session/{id:[0-9]+}/mail-instructors',
+    [SessionsController::class, 'mailInstructors']
+)->setName('coursesMailInstructors')->add($authenticate);
+
 $app->get(
     '/my-registrations/ical',
     [ICalController::class, 'myRegistrationsIcal']

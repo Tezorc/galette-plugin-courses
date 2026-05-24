@@ -276,7 +276,11 @@ tr.courses-pending { background-color: #fffde7 !important; }
 .courses-group-header:first-child { margin-top: .5em !important; }
 .courses-group-header .circular.label { margin-right: .4em; vertical-align: middle; }
 .courses-past-accordion .title { color: #888 !important; }
-.courses-past-toggle { cursor: pointer; color: #888; user-select: none; }
+.courses-past-toggle { cursor: pointer; user-select: none; }
+h3.courses-past-toggle { display: flex; align-items: center; }
+h3.courses-past-toggle > .content { flex: 1 1 auto; }
+h3.courses-past-toggle .courses-past-chevron { margin-left: auto; transition: transform .2s ease; font-size: .85em; }
+h3.courses-past-toggle .courses-past-chevron.rotated { transform: rotate(180deg); }
 
 /* ----- STATISTICS ----- */
 .courses-stats .statistic .value { font-size: 3rem !important; }

@@ -237,9 +237,12 @@
 
         {# Phase 65 : flux unique des seances a venir (actives + annulees), par date #}
         {% if upcoming|length > 0 %}
-            <h3 class="ui header courses-section-mt-sm">
-                <i class="clock icon" aria-hidden="true"></i>
-                {{ _T("Upcoming", "courses") }}
+            <h3 class="ui small dividing header courses-section-mt">
+                <i class="calendar alternate icon" aria-hidden="true"></i>
+                <div class="content">
+                    {{ _T("Upcoming", "courses") }}
+                    <span class="ui teal circular label">{{ upcoming|length }}</span>
+                </div>
             </h3>
             <div class="ui stackable three column grid courses-cards-grid">
                 {% for sid in upcoming %}
@@ -363,10 +366,14 @@
 
         {# --- Passees (repliable) --- #}
         {% if past|length > 0 %}
-            <div class="courses-past-toggle courses-section-mt">
-                <i class="dropdown icon" aria-hidden="true"></i>
-                {{ _T("Past sessions", "courses") }} ({{ past|length }})
-            </div>
+            <h3 class="ui small dividing header courses-past-toggle courses-section-mt">
+                <i class="history icon" aria-hidden="true"></i>
+                <div class="content">
+                    {{ _T("Past sessions", "courses") }}
+                    <span class="ui grey circular label">{{ past|length }}</span>
+                </div>
+                <i class="dropdown icon courses-past-chevron" aria-hidden="true"></i>
+            </h3>
             <div class="courses-past-content">
                 <div class="ui stackable three column grid courses-cards-grid">
                     {% for sid in past|reverse %}
@@ -459,7 +466,7 @@ $(function() {
     $('.courses-past-content').hide();
     $('.courses-past-toggle').on('click', function() {
         $(this).next('.courses-past-content').slideToggle(200);
-        $(this).find('.dropdown.icon').toggleClass('rotated');
+        $(this).find('.courses-past-chevron').toggleClass('rotated');
     });
 
     // ----- Browse filters (client-side, plain HTML <select>s) -----
