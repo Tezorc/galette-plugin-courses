@@ -147,7 +147,7 @@
     </p>
 
     <div class="ui fluid action input">
-        <input type="text" id="cron-url" readonly
+        <input type="text" id="cron-url" name="cron-url" readonly
             value="{{ url_for('coursesCronGenerateSessions')|replace({'http:': '', 'https:': ''}) ~ '?token=' ~ cron_token }}"
             class="courses-cron-input"
         />

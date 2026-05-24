@@ -61,7 +61,7 @@
                 <div class="three fields" style="margin-bottom:.5em;">
                     <div class="field">
                         <label for="instr_browse_type_filter">{{ _T("Type", "courses") }}</label>
-                        <select id="instr_browse_type_filter" class="courses-native-select">
+                        <select id="instr_browse_type_filter" name="instr_browse_type_filter" class="courses-native-select">
                             <option value="">{{ _T("All types", "courses") }}</option>
                             {% for type in volunteer_event_types %}
                                 <option value="{{ type.getId() }}">{{ type.getLabel() }}</option>
@@ -70,7 +70,7 @@
                     </div>
                     <div class="field">
                         <label for="instr_browse_name_filter">{{ _T("Activity", "courses") }}</label>
-                        <select id="instr_browse_name_filter" class="courses-native-select">
+                        <select id="instr_browse_name_filter" name="instr_browse_name_filter" class="courses-native-select">
                             <option value="">{{ _T("All activities", "courses") }}</option>
                             {% for item in volunteer_available_names %}
                                 <option value="{{ item.name }}" data-type-id="{{ item.type_id }}">{{ item.name }}</option>
@@ -79,7 +79,7 @@
                     </div>
                     <div class="field">
                         <label for="instr_browse_date_from">{{ _T("From", "courses") }}</label>
-                        <input type="date" id="instr_browse_date_from" value="{{ "now"|date("Y-m-d") }}"/>
+                        <input type="date" id="instr_browse_date_from" name="instr_browse_date_from" value="{{ "now"|date("Y-m-d") }}"/>
                     </div>
                 </div>
                 <div class="courses-filter-actions">
@@ -464,52 +464,42 @@ $(function() {
 
     // ----- Browse filters (client-side, plain HTML <select>s) -----
     var $today = $('#instr_browse_date_from').val();
+    // Phase 74.1: cache cards/badges outside the filter function (cf. my_registrations).
+    var instrBrowseGridNodes  = document.querySelectorAll('#instr-browse-cards-grid .courses-browse-card-col');
+    var $instrBrowseNoResults = $('#instr-browse-no-results');
+    var $instrBrowseBadge     = $('#instructor-browse-badge');
+    var instrBrowseHasGrid    = document.getElementById('instr-browse-cards-grid') !== null;
 
     function applyInstrBrowseFilters() {
-        var fType = $('#instr_browse_type_filter').val() || '';
-        var fName = $('#instr_browse_name_filter').val() || '';
+        var fType = ($('#instr_browse_type_filter').val() || '').toString();
+        var fName = ($('#instr_browse_name_filter').val() || '').trim().toLowerCase();
         var fDate = $('#instr_browse_date_from').val() || '';
 
-        // Shared per-card show/hide test — returns the number of visible cards.
-        function filterGrid($cards) {
-            var shown = 0;
-            $cards.each(function() {
-                var $col = $(this);
-                var cType = ($col.attr('data-type-id') || '').toString();
-                var cName = ($col.attr('data-event-name') || '').toString();
-                var cDate = $col.attr('data-date') || '';
+        var visible = 0;
+        var actionable = 0;
+        for (var i = 0, len = instrBrowseGridNodes.length; i < len; i++) {
+            var col = instrBrowseGridNodes[i];
+            var cType = col.getAttribute('data-type-id') || '';
+            var cName = (col.getAttribute('data-event-name') || '').trim().toLowerCase();
+            var cDate = col.getAttribute('data-date') || '';
 
-                var show = true;
-                if (fType && cType !== fType.toString())                                show = false;
-                if (fName && cName.trim().toLowerCase() !== fName.trim().toLowerCase()) show = false;
-                if (fDate && cDate < fDate)                                             show = false;
+            var show = !((fType && cType !== fType)
+                || (fName && cName !== fName)
+                || (fDate && cDate < fDate));
 
-                // Inline `!important` is the only thing that beats Fomantic
-                // UI's `.ui.grid > .column { display: ... !important }` rule
-                // (more specific than any of our classes).
-                if (show) {
-                    $col[0].style.removeProperty('display');
-                } else {
-                    $col[0].style.setProperty('display', 'none', 'important');
-                }
-                if (show) shown++;
-            });
-            return shown;
+            if (show) {
+                col.style.removeProperty('display');
+                visible++;
+                if (!col.hasAttribute('data-cancelled')) actionable++;
+            } else {
+                col.style.setProperty('display', 'none', 'important');
+            }
         }
 
-        // Phase 65: volunteer + cancelled cards share one grid, filtered together.
-        var visible = filterGrid($('#instr-browse-cards-grid .courses-browse-card-col'));
-
-        var hasGrid = $('#instr-browse-cards-grid').length > 0;
-        $('#instr-browse-no-results').toggle(visible === 0 && hasGrid);
-        // Badge counts only volunteerable (non-cancelled) sessions still visible.
-        var $badge = $('#instructor-browse-badge');
-        if ($badge.length) {
-            var actionable = $('#instr-browse-cards-grid .courses-browse-card-col:not([data-cancelled])').filter(function() {
-                return this.style.getPropertyValue('display') !== 'none';
-            }).length;
-            $badge.text(actionable);
-            $badge.toggle(actionable > 0);
+        $instrBrowseNoResults.toggle(visible === 0 && instrBrowseHasGrid);
+        if ($instrBrowseBadge.length) {
+            $instrBrowseBadge.text(actionable);
+            $instrBrowseBadge.toggle(actionable > 0);
         }
     }
 

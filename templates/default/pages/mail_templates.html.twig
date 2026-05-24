@@ -12,7 +12,7 @@
     <div class="ui form mailtpl-select-row">
         <div class="field">
             <label for="mailtpl-select">{{ _T("Email type", "courses") }}</label>
-            <select id="mailtpl-select" class="ui dropdown">
+            <select id="mailtpl-select" name="mailtpl-select" class="ui dropdown">
                 {% for ref in refs %}
                     <option value="{{ ref }}"{% if loop.first %} selected{% endif %}>
                         {{ templates[ref].getLabel() }}{% if templates[ref].isCustomized() %} ✎{% endif %}
