@@ -654,6 +654,42 @@ Le developpement est organise en phases progressives.
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Phase 75 - Toggle "pas de moniteur necessaire" (organisateur en contact)
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : "lors de la creation donne la possibilite que des moniteurs puissent s'inscrire (etat actuel) et aussi donne le choix qu'il n'y ait pas de moniteur, ca precisera le nom de l'organisateur ;)".
+
+#### Cas d'usage
+
+Phase 40 a introduit le toggle `allow_registration_without_instructor` qui ouvre les inscriptions meme sans moniteur affecte, mais conserve l'attente (les responsables sont invites a se porter volontaire, les membres recoivent un mail si un moniteur arrive). **Phase 75** ajoute un cas distinct : l'evenement qui n'a pas vocation a avoir de moniteur (reunion de bureau, AG, evenement convivial, sortie informelle). Le createur de l'evenement (l'organisateur) est affiche comme point de contact unique.
+
+Les deux toggles cohabitent et peuvent etre coches independamment, mais en pratique l'utilisateur en choisit un selon l'intention :
+
+| Toggle             | Inscription bloquee tant qu'aucun moniteur ? | UI volontariat / affectation | Bandeau "Awaiting instructor" | Notifications moniteur                                                                    |
+| ------------------ | -------------------------------------------- | ---------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------- |
+| Aucun (defaut)     | OUI                                          | Visible                      | OUI                           | Empilees dans digest manager                                                              |
+| `allow_reg...`     | NON                                          | Visible                      | NON                           | Empilees + REF_SESSION_OPEN aux membres                                                   |
+| `no_instructor...` | NON                                          | Masquees                     | NON                           | **Aucune notification moniteur**, `REF_NEW_SESSIONS_MANAGER` ET `REF_SESSION_OPEN` skipes |
+
+#### Architecture
+
+- **Schema BDD** : nouvelle colonne `no_instructor_needed TINYINT NOT NULL DEFAULT 0` sur `galette_courses_events`. Migrations dediees `scripts/upgrade-no-instructor-needed.sql` (MySQL) + `scripts/upgrade-no-instructor-needed-pgsql.sql`. Compatible 100% rolling : default 0 = comportement Phase 40 inchange pour tous les evenements existants.
+- **Entity** : `Event` recoit propriete `private bool $no_instructor_needed = false`, load/store/getter symetriques a `allow_registration_without_instructor`. Nouveau helper `isInstructorOptional()` (= `allow_registration_without_instructor || no_instructor_needed`) qui factorise la regle "est-ce que l'inscription est permise sans moniteur" partout ou elle est consultee.
+- **Form** : `event_form.html.twig` ajoute une 2eme case toggle Fomantic sous l'existante, avec help-text qui explique le cas d'usage et l'effet UI (masquage des boutons volontariat/affectation).
+- **Garde inscriptions** : les 5 checks de `RegistrationsController` (`doRegister`, `doWaitlist`, `doParentRegister`, `doProxyRegister`, ...) ont leur condition 3-clauses (`!allow_reg && !no_needed && !hasInstructor`) refactoree en `!isInstructorOptional() && !hasInstructor()` -- plus lisible et un seul point de verite.
+- **Gardes moniteur cote serveur** : `SessionsController::doVolunteerInstructor` et `doAssignInstructor` rejettent strictement avec un flash `error_detected = "This event does not need an instructor."` quand le flag est leve. Pas de bypass possible (meme un staff ne peut pas affecter un moniteur sur un evenement opt-out -- semantique forte).
+- **Notifications** : garde precoce dans `CourseNotification::notifyNewSessions()` -- si `event.isInstructorNotNeeded()`, on `return` immediatement avant tout INSERT en queue. Ni le digest manager (`REF_NEW_SESSIONS_MANAGER`) ni le mail/digest membre (`REF_SESSION_OPEN`) ne sont declenches. Coherent avec l'intention : l'evenement n'a pas de moniteur a chercher, personne n'a besoin d'etre invite a se porter volontaire ni informe qu'une seance est "ouverte sans moniteur".
+- **Template `session_show.html.twig`** : la section `Instructors` est wrappee dans `{% if event.isInstructorNotNeeded() %}{...section Organizer...}{% else %}{...section Instructors existante...}{% endif %}`. La section Organizer affiche le nom du createur (charge en amont via `SessionsController::show` -> `batchLoadMemberDisplay([creatorId])`, expose dans la variable template `organizer_name`) avec icone `user circle`, libelle "Organizer", et une note help-text "This event does not need an instructor -- the organizer is your point of contact."
+- **Listings affectes** : `event_show.html.twig`, `sessions_list.html.twig`, `my_registrations.html.twig`, `session_show.html.twig` -- toutes les conditions qui testaient `isRegistrationAllowedWithoutInstructor()` sont migrees vers `isInstructorOptional()`. Effet : le badge orange "Awaiting instructor" disparait pour les evenements opt-out, et les boutons d'inscription deviennent visibles sans attendre une affectation.
+- **i18n** : 5 nouvelles chaines ajoutees au `.po` FR (label toggle, help-text, "Organizer", note help-text section organisateur, message d'erreur cote serveur). `.mo` a recompiler via msgfmt/Poedit (msgfmt indisponible sous Windows).
+
+#### Hors perimetre (compromis volontaires)
+
+- Pas d'affichage du nom de l'organisateur sur les cartes browse de `my_registrations.html.twig` -- l'info est visible des qu'on clique sur la fiche seance, le browse reste epure. Une mise en place complete demanderait un `batch_load` supplementaire des createurs d'evenements browse, jugee non prioritaire.
+- Pas de migration des evenements existants : un evenement deja cree garde son etat (les 2 toggles a 0). C'est volontaire -- le mode "pas de moniteur" est un changement intentionnel a poser par l'auteur, pas une regle inferee automatiquement.
+- Si l'utilisateur coche les 2 toggles a la fois (`allow_registration_without_instructor=1` ET `no_instructor_needed=1`), le second l'emporte de facto (les gardes serveur sur volontariat/affectation bloquent, les notifications sont skipees, l'UI montre la section Organizer). Pas d'erreur de validation -- les 2 cases sont autorisees ensemble pour ne pas geler l'utilisateur qui hesite. Pas de migration auto pour "nettoyer" cette combinaison sur les evenements anciens.
+
 ### Phase 74 - Audit performance et conformite standards
 
 **Statut :** TERMINEE

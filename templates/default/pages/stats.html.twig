@@ -303,7 +303,6 @@
                 <thead>
                     <tr>
                         <th>{{ _T("Instructor", "courses") }}</th>
-                        <th>{{ _T("Nickname", "courses") }}</th>
                         <th class="collapsing center aligned">{{ _T("Sessions run", "courses") }}</th>
                         <th class="collapsing center aligned">{{ _T("Active months", "courses") }}</th>
                         <th>{{ _T("Events", "courses") }}</th>
@@ -313,10 +312,6 @@
                     {% for i in stats.instructor_activity %}
                     <tr>
                         <td data-label="{{ _T("Instructor", "courses") }}"><a href="{{ url_for("member", {"id": i.member_id}) }}">{{ i.member_name }}</a></td>
-                        <td data-label="{{ _T("Nickname", "courses") }}">
-                            {% if i.nickname %}<i class="tag icon" aria-hidden="true"></i> {{ i.nickname }}
-                            {% else %}<span class="ui grey text">—</span>{% endif %}
-                        </td>
                         <td data-label="{{ _T("Sessions run", "courses") }}" class="center aligned"><span class="ui small teal label">{{ i.session_count }}</span></td>
                         <td data-label="{{ _T("Active months", "courses") }}" class="center aligned">
                             <span class="ui small {% if i.active_months >= 6 %}green{% elseif i.active_months >= 3 %}yellow{% else %}grey{% endif %} label">{{ i.active_months }}</span>
@@ -424,7 +419,7 @@ $(function() {
     $('#export-instructors-csv-btn').on('click', function() {
         exportTableCsv(
             'instructor-activity-table',
-            ['{{ _T("Instructor", "courses") }}','{{ _T("Nickname", "courses") }}','{{ _T("Sessions run", "courses") }}','{{ _T("Active months", "courses") }}','{{ _T("Events", "courses") }}'],
+            ['{{ _T("Instructor", "courses") }}','{{ _T("Sessions run", "courses") }}','{{ _T("Active months", "courses") }}','{{ _T("Events", "courses") }}'],
             'moniteurs-{{ stats_from }}-{{ stats_to }}.csv'
         );
     });

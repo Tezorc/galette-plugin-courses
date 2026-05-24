@@ -216,7 +216,7 @@
                             {% set ms_has_items = false %}
                             {% for ms_slot in ms_slots %}
                                 {% set ms_sid = ms_slot.getId() %}
-                                {% set ms_slot_open = ms_slot.getStatus() != 'cancelled' and (browse_has_instructor[ms_sid] or ev.isRegistrationAllowedWithoutInstructor()) %}
+                                {% set ms_slot_open = ms_slot.getStatus() != 'cancelled' and (browse_has_instructor[ms_sid] or ev.isInstructorOptional()) %}
                                 {% set ms_self_act = ms_slot_open and browse_can_self_register[ms_sid] and not browse_on_waitlist[ms_sid] and ms_sid not in registered_session_ids %}
                                 {% set ms_kids_act = ms_slot_open and (browse_eligible_children[ms_sid] is defined and browse_eligible_children[ms_sid]|length > 0) %}
                                 {% if ms_self_act or ms_kids_act %}{% set ms_has_items = true %}{% endif %}
@@ -230,7 +230,7 @@
                                     <div class="menu">
                                         {% for ms_slot in ms_slots %}
                                             {% set ms_sid = ms_slot.getId() %}
-                                            {% set ms_slot_open = ms_slot.getStatus() != 'cancelled' and (browse_has_instructor[ms_sid] or ev.isRegistrationAllowedWithoutInstructor()) %}
+                                            {% set ms_slot_open = ms_slot.getStatus() != 'cancelled' and (browse_has_instructor[ms_sid] or ev.isInstructorOptional()) %}
                                             {% set ms_self_act = ms_slot_open and browse_can_self_register[ms_sid] and not browse_on_waitlist[ms_sid] and ms_sid not in registered_session_ids %}
                                             {% set ms_children = ms_slot_open and browse_eligible_children[ms_sid] is defined ? browse_eligible_children[ms_sid] : {} %}
                                             {% if ms_self_act or ms_children|length > 0 %}
@@ -261,7 +261,7 @@
                                 {# Hidden forms : 1 par (slot, membre, action). Memes gardes que le menu. #}
                                 {% for ms_slot in ms_slots %}
                                     {% set ms_sid = ms_slot.getId() %}
-                                    {% set ms_slot_open = ms_slot.getStatus() != 'cancelled' and (browse_has_instructor[ms_sid] or ev.isRegistrationAllowedWithoutInstructor()) %}
+                                    {% set ms_slot_open = ms_slot.getStatus() != 'cancelled' and (browse_has_instructor[ms_sid] or ev.isInstructorOptional()) %}
                                     {% if ms_slot_open %}
                                         {% set ms_self_url = ms_slot.isFull() ? url_for("coursesDoWaitlist", {"id": ms_sid}) : url_for("coursesDoRegister", {"id": ms_sid}) %}
                                         {% set ms_child_url = ms_slot.isFull() ? url_for("coursesDoParentWaitlist", {"id": ms_sid}) : url_for("coursesDoParentRegister", {"id": ms_sid}) %}
@@ -360,7 +360,7 @@
                                     <i class="clock icon" aria-hidden="true"></i>
                                     {{ _T("Waitlist", "courses") }}
                                 </span>
-                            {% elseif not has_instr and not ev.isRegistrationAllowedWithoutInstructor() %}
+                            {% elseif not has_instr and not ev.isInstructorOptional() %}
                                 <span class="ui orange label">
                                     <i class="clock icon" aria-hidden="true"></i>
                                     {{ _T("Awaiting instructor", "courses") }}
@@ -419,7 +419,7 @@
                                 <i class="eye icon" aria-hidden="true"></i>
                                 {{ _T("Details", "courses") }}
                             </a>
-                            {% if children_have_action and (has_instr or ev.isRegistrationAllowedWithoutInstructor()) and member_is_up2date %}
+                            {% if children_have_action and (has_instr or ev.isInstructorOptional()) and member_is_up2date %}
                                 {% set onwl_action_url = s.isFull() ? url_for("coursesDoParentWaitlist", {"id": sid}) : url_for("coursesDoParentRegister", {"id": sid}) %}
                                 {% set onwl_btn_class = s.isFull() ? 'ui tiny labeled icon blue button' : 'ui tiny labeled icon teal button' %}
                                 {% set onwl_icon      = s.isFull() ? 'clock' : 'user plus' %}
@@ -460,7 +460,7 @@
                                     {% endfor %}
                                 {% endif %}
                             {% endif %}
-                        {% elseif not has_instr and not ev.isRegistrationAllowedWithoutInstructor() %}
+                        {% elseif not has_instr and not ev.isInstructorOptional() %}
                             {# Pas d'instructeur et inscription bloquee par defaut — pas d'inscription possible #}
                             <span class="ui tiny orange label">
                                 <i class="exclamation triangle icon" aria-hidden="true"></i>

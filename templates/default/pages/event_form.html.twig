@@ -82,6 +82,15 @@
                 <div class="courses-help-text">{{ _T("If unchecked, members cannot register on a session until an instructor has volunteered.", "courses") }}</div>
             </div>
 
+            <div class="field">
+                <div class="ui toggle checkbox">
+                    <input type="hidden" name="no_instructor_needed" value="0"/>
+                    <input type="checkbox" name="no_instructor_needed" id="no_instructor_needed" value="1"{% if event.isInstructorNotNeeded() %} checked{% endif %}/>
+                    <label for="no_instructor_needed">{{ _T("No instructor needed (organizer is the contact)", "courses") }}</label>
+                </div>
+                <div class="courses-help-text">{{ _T("Check this for events that do not require an instructor (e.g. meetings, social events). The event creator is displayed as the organizer; volunteer and assignment buttons are hidden.", "courses") }}</div>
+            </div>
+
             <div class="two fields">
                 <div class="field">
                     <div class="ui toggle checkbox">

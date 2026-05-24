@@ -122,6 +122,13 @@ class CourseNotification
      */
     public function notifyNewSessions(Event $event, array $sessions): void
     {
+        // Phase 75: events flagged "no instructor needed" never trigger manager
+        // invitations nor "session open without instructor" alerts — by design
+        // they don't need an instructor and the organizer is the contact.
+        if ($event->isInstructorNotNeeded()) {
+            return;
+        }
+
         // Defensive filter: only OPEN sessions are actionable. Sessions created
         // already cancelled (e.g. on a club closure date — see RecurrenceHandler)
         // must not enqueue manager invitations nor trigger member "session open"

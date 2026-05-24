@@ -285,6 +285,18 @@ class SessionsController extends AbstractPluginController
         $is_instructor = $is_instructor_for_load;
         $is_session_manager = $is_session_manager_load;
 
+        // Phase 75: when the event declares "no instructor needed", we display
+        // the organizer (= event creator) as the point of contact instead of
+        // the instructors section. Load the creator's display name once.
+        $organizer_name = '';
+        if ($event->isInstructorNotNeeded()) {
+            $creatorId = $event->getCreatorId();
+            if ($creatorId > 0) {
+                $organizerDisplay = $this->batchLoadMemberDisplay([$creatorId]);
+                $organizer_name = $organizerDisplay[$creatorId]['sname'] ?? '';
+            }
+        }
+
         // For session managers (staff or session instructors): load eligible
         // instructors (group managers of the event's groups) so they can
         // assign/replace co-instructors.
@@ -521,6 +533,7 @@ class SessionsController extends AbstractPluginController
                 'current_member_nickname'  => isset($currentAdherent) && !empty($currentAdherent->nickname) ? (string)$currentAdherent->nickname : '',
                 'walkin_eligible_members' => $walkin_eligible_members,
                 'restricted_group_names' => $restricted_group_names,
+                'organizer_name' => $organizer_name,
             ]
         );
         return $response;
@@ -550,6 +563,17 @@ class SessionsController extends AbstractPluginController
             $this->flash->addMessage(
                 'error_detected',
                 _T('This session has been cancelled.', 'courses')
+            );
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+        }
+
+        // Phase 75: this event declared "no instructor needed" — block assignment.
+        if ($session->getEvent()->isInstructorNotNeeded()) {
+            $this->flash->addMessage(
+                'error_detected',
+                _T('This event does not need an instructor.', 'courses')
             );
             return $response
                 ->withStatus(302)
@@ -694,6 +718,17 @@ class SessionsController extends AbstractPluginController
             $this->flash->addMessage(
                 'error_detected',
                 _T('This session has been cancelled.', 'courses')
+            );
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $returnUrl);
+        }
+
+        // Phase 75: this event declared "no instructor needed" — block volunteering.
+        if ($session->getEvent()->isInstructorNotNeeded()) {
+            $this->flash->addMessage(
+                'error_detected',
+                _T('This event does not need an instructor.', 'courses')
             );
             return $response
                 ->withStatus(302)

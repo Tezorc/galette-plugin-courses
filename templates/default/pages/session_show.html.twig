@@ -106,88 +106,106 @@
                 {% endif %}
             </div>
 
-            {# Instructors section #}
-            <div class="ui segment">
-                <h3 class="ui header">
-                    <i class="chalkboard teacher icon" aria-hidden="true"></i>
-                    {{ _T("Instructors", "courses") }}
-                </h3>
-
-                {% if instructors|length > 0 %}
-                    <div class="ui relaxed divided list">
-                        {% for instr in instructors %}
-                            <div class="item">
-                                <div class="content courses-member-inline">
-                                    <i class="user circle icon" aria-hidden="true"></i>
-                                    {% if instructor_members[instr.getMemberId()] is defined %}
-                                        {{ instructor_members[instr.getMemberId()] }}
-                                    {% else %}
-                                        {{ _T("Unknown member", "courses") }}
-                                    {% endif %}
-                                    {% if is_session_manager and session.getSessionDate() >= "now"|date("Y-m-d") %}
-                                        <form action="{{ url_for("coursesDoRemoveInstructor", {"id": session.getId()}) }}" method="post" class="ui form courses-remove-form">
-                                            <input type="hidden" name="member_id" value="{{ instr.getMemberId() }}">
-                                            <button type="submit" class="ui mini red icon button" title="{{ _T("Remove instructor", "courses") }}">
-                                                <i class="times icon" aria-hidden="true"></i>
-                                            </button>
-                                            {% include 'components/forms/csrf.html.twig' %}
-                                        </form>
-                                    {% endif %}
-                                </div>
+            {# Instructors section — replaced by Organizer block when the event opted out #}
+            {% if event.isInstructorNotNeeded() %}
+                <div class="ui segment">
+                    <h3 class="ui header">
+                        <i class="user circle icon" aria-hidden="true"></i>
+                        {{ _T("Organizer", "courses") }}
+                    </h3>
+                    <div class="ui relaxed list">
+                        <div class="item">
+                            <div class="content courses-member-inline">
+                                <i class="user icon" aria-hidden="true"></i>
+                                {% if organizer_name %}{{ organizer_name }}{% else %}{{ _T("Unknown member", "courses") }}{% endif %}
                             </div>
-                        {% endfor %}
+                        </div>
                     </div>
-                {% else %}
-                    {% if event.isRegistrationAllowedWithoutInstructor() %}
-                        <div class="ui blue message">
-                            <i class="info circle icon" aria-hidden="true"></i>
-                            {{ _T("No instructor has volunteered yet — registration is open anyway. You will be notified when an instructor takes over.", "courses") }}
+                    <div class="courses-help-text">{{ _T("This event does not need an instructor — the organizer is your point of contact.", "courses") }}</div>
+                </div>
+            {% else %}
+                <div class="ui segment">
+                    <h3 class="ui header">
+                        <i class="chalkboard teacher icon" aria-hidden="true"></i>
+                        {{ _T("Instructors", "courses") }}
+                    </h3>
+
+                    {% if instructors|length > 0 %}
+                        <div class="ui relaxed divided list">
+                            {% for instr in instructors %}
+                                <div class="item">
+                                    <div class="content courses-member-inline">
+                                        <i class="user circle icon" aria-hidden="true"></i>
+                                        {% if instructor_members[instr.getMemberId()] is defined %}
+                                            {{ instructor_members[instr.getMemberId()] }}
+                                        {% else %}
+                                            {{ _T("Unknown member", "courses") }}
+                                        {% endif %}
+                                        {% if is_session_manager and session.getSessionDate() >= "now"|date("Y-m-d") %}
+                                            <form action="{{ url_for("coursesDoRemoveInstructor", {"id": session.getId()}) }}" method="post" class="ui form courses-remove-form">
+                                                <input type="hidden" name="member_id" value="{{ instr.getMemberId() }}">
+                                                <button type="submit" class="ui mini red icon button" title="{{ _T("Remove instructor", "courses") }}">
+                                                    <i class="times icon" aria-hidden="true"></i>
+                                                </button>
+                                                {% include 'components/forms/csrf.html.twig' %}
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
                         </div>
                     {% else %}
-                        <div class="ui orange message">
-                            <i class="exclamation triangle icon" aria-hidden="true"></i>
-                            {{ _T("No instructor assigned to this session. Registration is not yet possible.", "courses") }}
-                        </div>
-                    {% endif %}
-                {% endif %}
-
-                {# Session manager (staff or session instructor): assign another instructor #}
-                {% if is_session_manager and eligible_instructors|length > 0 and session.getStatus() != 'cancelled' and session.getSessionDate() >= "now"|date("Y-m-d") %}
-                    <div class="ui divider"></div>
-                    <form action="{{ url_for("coursesDoAssignInstructor", {"id": session.getId()}) }}" method="post" class="ui form">
-                        <div class="inline fields">
-                            <div class="field">
-                                <select name="member_id" class="ui search dropdown">
-                                    <option value="">{{ _T("Assign instructor", "courses") }}</option>
-                                    {% for mid, mname in eligible_instructors %}
-                                        <option value="{{ mid }}">{{ mname }}</option>
-                                    {% endfor %}
-                                </select>
+                        {% if event.isRegistrationAllowedWithoutInstructor() %}
+                            <div class="ui blue message">
+                                <i class="info circle icon" aria-hidden="true"></i>
+                                {{ _T("No instructor has volunteered yet — registration is open anyway. You will be notified when an instructor takes over.", "courses") }}
                             </div>
-                            <button type="submit" class="ui small primary button">
-                                <i class="plus icon" aria-hidden="true"></i>
-                                {{ _T("Assign instructor", "courses") }}
-                            </button>
-                        </div>
-                        {% include 'components/forms/csrf.html.twig' %}
-                    </form>
-                {% endif %}
+                        {% else %}
+                            <div class="ui orange message">
+                                <i class="exclamation triangle icon" aria-hidden="true"></i>
+                                {{ _T("No instructor assigned to this session. Registration is not yet possible.", "courses") }}
+                            </div>
+                        {% endif %}
+                    {% endif %}
 
-                {# Group manager: volunteer as instructor #}
-                {% if login.isGroupManager() and not login.isAdmin() and not login.isStaff() and not is_instructor and session.getStatus() != 'cancelled' and session.getSessionDate() >= "now"|date("Y-m-d") %}
-                    <div class="ui divider"></div>
-                    <form action="{{ url_for("coursesDoVolunteerInstructor", {"id": session.getId()}) }}" method="post" class="ui form">
-                        <button type="submit" class="ui small labeled icon teal button">
-                            <i class="hand paper icon" aria-hidden="true"></i>
-                            {{ _T("Volunteer as instructor", "courses") }}
-                        </button>
-                        {% include 'components/forms/csrf.html.twig' %}
-                    </form>
-                {% endif %}
-            </div>
+                    {# Session manager (staff or session instructor): assign another instructor #}
+                    {% if is_session_manager and eligible_instructors|length > 0 and session.getStatus() != 'cancelled' and session.getSessionDate() >= "now"|date("Y-m-d") %}
+                        <div class="ui divider"></div>
+                        <form action="{{ url_for("coursesDoAssignInstructor", {"id": session.getId()}) }}" method="post" class="ui form">
+                            <div class="inline fields">
+                                <div class="field">
+                                    <select name="member_id" class="ui search dropdown">
+                                        <option value="">{{ _T("Assign instructor", "courses") }}</option>
+                                        {% for mid, mname in eligible_instructors %}
+                                            <option value="{{ mid }}">{{ mname }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <button type="submit" class="ui small primary button">
+                                    <i class="plus icon" aria-hidden="true"></i>
+                                    {{ _T("Assign instructor", "courses") }}
+                                </button>
+                            </div>
+                            {% include 'components/forms/csrf.html.twig' %}
+                        </form>
+                    {% endif %}
+
+                    {# Group manager: volunteer as instructor #}
+                    {% if login.isGroupManager() and not login.isAdmin() and not login.isStaff() and not is_instructor and session.getStatus() != 'cancelled' and session.getSessionDate() >= "now"|date("Y-m-d") %}
+                        <div class="ui divider"></div>
+                        <form action="{{ url_for("coursesDoVolunteerInstructor", {"id": session.getId()}) }}" method="post" class="ui form">
+                            <button type="submit" class="ui small labeled icon teal button">
+                                <i class="hand paper icon" aria-hidden="true"></i>
+                                {{ _T("Volunteer as instructor", "courses") }}
+                            </button>
+                            {% include 'components/forms/csrf.html.twig' %}
+                        </form>
+                    {% endif %}
+                </div>
+            {% endif %}
 
             {# Action buttons #}
-            {% if login.isLogged() and not login.isSuperAdmin() and (has_instructor or event.isRegistrationAllowedWithoutInstructor()) and (is_registered or is_on_waitlist or session.isOpen()) %}
+            {% if login.isLogged() and not login.isSuperAdmin() and (has_instructor or event.isInstructorOptional()) and (is_registered or is_on_waitlist or session.isOpen()) %}
                 <div class="ui center aligned segment courses-actions">
                     {% if not login.isUp2Date() and not login.isAdmin() and not login.isStaff() and not login.isGroupManager() %}
                         <div class="ui orange message">
@@ -547,7 +565,7 @@
 
                     {% if session.getStatus() == 'open' and is_future %}
                         {# Register a member #}
-                        {% if (has_instructor or event.isRegistrationAllowedWithoutInstructor()) and (is_session_manager or login.isGroupManager()) %}
+                        {% if (has_instructor or event.isInstructorOptional()) and (is_session_manager or login.isGroupManager()) %}
                             <div class="courses-inline-form">
                                 <a href="{{ url_for("coursesProxyRegisterForm", {"id": session.getId()}) }}" class="ui small labeled icon teal button">
                                     <i class="user plus icon" aria-hidden="true"></i>
@@ -948,7 +966,7 @@
                         <div class="content">
                             <div class="header">{{ _T("Status", "courses") }}</div>
                             {% if session.getStatus() == 'open' %}
-                                {% if not has_instructor and not event.isRegistrationAllowedWithoutInstructor() %}
+                                {% if not has_instructor and not event.isInstructorOptional() %}
                                     <span class="ui orange label">
                                         <i class="clock icon" aria-hidden="true"></i>
                                         {{ _T("Awaiting instructor", "courses") }}

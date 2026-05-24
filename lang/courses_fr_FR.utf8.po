@@ -1784,6 +1784,23 @@ msgstr "Autoriser les inscriptions aux séances sans moniteur affecté"
 msgid "If unchecked, members cannot register on a session until an instructor has volunteered."
 msgstr "Si décoché, les membres ne peuvent pas s'inscrire à une séance tant qu'aucun moniteur ne s'est porté volontaire."
 
+# --- Phase 75 : Toggle "Pas de moniteur necessaire (organisateur en contact)" ---
+
+msgid "No instructor needed (organizer is the contact)"
+msgstr "Pas de moniteur nécessaire (organisateur en contact)"
+
+msgid "Check this for events that do not require an instructor (e.g. meetings, social events). The event creator is displayed as the organizer; volunteer and assignment buttons are hidden."
+msgstr "Cochez cette case pour les événements qui ne nécessitent pas de moniteur (par exemple réunions, événements conviviaux). Le créateur de l'événement est affiché comme organisateur ; les boutons de volontariat et d'affectation sont masqués."
+
+msgid "Organizer"
+msgstr "Organisateur"
+
+msgid "This event does not need an instructor — the organizer is your point of contact."
+msgstr "Cet événement ne nécessite pas de moniteur — l'organisateur est votre interlocuteur."
+
+msgid "This event does not need an instructor."
+msgstr "Cet événement ne nécessite pas de moniteur."
+
 msgid "Session open for registration (no instructor yet)"
 msgstr "Séance ouverte aux inscriptions (sans moniteur pour le moment)"
 

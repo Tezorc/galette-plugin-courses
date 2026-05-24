@@ -405,6 +405,7 @@ class EventsController extends AbstractPluginController
                 $id !== null
                 && !$oldAllowNoInstructor
                 && $event->isRegistrationAllowedWithoutInstructor()
+                && !$event->isInstructorNotNeeded()
                 && $event->getStatus() === Event::STATUS_VALIDATED
             ) {
                 $createdIds = array_map(static fn(Session $s) => $s->getId(), $createdSessions);

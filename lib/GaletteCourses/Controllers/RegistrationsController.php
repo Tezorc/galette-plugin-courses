@@ -126,7 +126,7 @@ class RegistrationsController extends AbstractController
 
         // Block registration when no instructor is assigned, unless the event explicitly allows it.
         if (
-            !$session->getEvent()->isRegistrationAllowedWithoutInstructor()
+            !$session->getEvent()->isInstructorOptional()
             && !SessionInstructor::hasInstructor($this->zdb, $id)
         ) {
             $this->flash->addMessage('error_detected', _T('No instructor assigned to this session. Registration is not yet possible.', 'courses'));
@@ -345,7 +345,7 @@ class RegistrationsController extends AbstractController
 
         // Block registration when no instructor is assigned, unless the event explicitly allows it.
         if (
-            !$session->getEvent()->isRegistrationAllowedWithoutInstructor()
+            !$session->getEvent()->isInstructorOptional()
             && !SessionInstructor::hasInstructor($this->zdb, $id)
         ) {
             $this->flash->addMessage('error_detected', _T('No instructor assigned to this session. Registration is not yet possible.', 'courses'));
@@ -1302,7 +1302,7 @@ class RegistrationsController extends AbstractController
         }
 
         if (
-            !$session->getEvent()->isRegistrationAllowedWithoutInstructor()
+            !$session->getEvent()->isInstructorOptional()
             && !SessionInstructor::hasInstructor($this->zdb, $id)
         ) {
             $this->flash->addMessage('error_detected', _T('No instructor assigned to this session. Registration is not yet possible.', 'courses'));
@@ -1461,7 +1461,7 @@ class RegistrationsController extends AbstractController
         }
 
         if (
-            !$session->getEvent()->isRegistrationAllowedWithoutInstructor()
+            !$session->getEvent()->isInstructorOptional()
             && !SessionInstructor::hasInstructor($this->zdb, $id)
         ) {
             $this->flash->addMessage('error_detected', _T('No instructor assigned to this session. Registration is not yet possible.', 'courses'));
@@ -1608,7 +1608,7 @@ class RegistrationsController extends AbstractController
         }
 
         if (
-            !$session->getEvent()->isRegistrationAllowedWithoutInstructor()
+            !$session->getEvent()->isInstructorOptional()
             && !SessionInstructor::hasInstructor($this->zdb, $id)
         ) {
             $this->flash->addMessage('error_detected', _T('No instructor assigned to this session. Registration is not yet possible.', 'courses'));
