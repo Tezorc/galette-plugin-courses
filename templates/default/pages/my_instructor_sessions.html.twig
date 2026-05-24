@@ -426,59 +426,15 @@
 $(function() {
     $('.ui.progress').progress();
 
-    // ----- Tabs -----
-    $('#my-instructor-tabs .item').on('click', function() {
-        var tab = $(this).data('tab');
-        $('#my-instructor-tabs .item').removeClass('active');
-        $(this).addClass('active');
-        $('.ui.bottom.attached.tab').removeClass('active');
-        $('.ui.bottom.attached.tab[data-tab="' + tab + '"]').addClass('active');
-        localStorage.setItem('my_instructor_tab', tab);
-        if (tab === 'browse') {
-            applyInstrBrowseFilters();
-            $('.ui.progress:visible').progress();
-        }
-    });
-
-    // Phase 71 : honor #tab=<name> from URL (set by server after a volunteer action),
-    // pulse the active tab visually, clear the fragment to avoid re-triggering on refresh.
-    var hashTab = null;
-    var m = (window.location.hash || '').match(/tab=([a-z]+)/);
-    if (m) {
-        hashTab = m[1];
-        history.replaceState(null, '', window.location.pathname + window.location.search);
-    }
-
-    var savedTab = hashTab || localStorage.getItem('my_instructor_tab') || 'mine';
-    if (savedTab !== 'mine') {
-        $('#my-instructor-tabs .item[data-tab="' + savedTab + '"]').trigger('click');
-    }
-    if (hashTab === 'mine') {
-        var $pulseTarget = $('#my-instructor-tabs .item[data-tab="mine"]');
-        $pulseTarget.addClass('courses-tab-pulse');
-        setTimeout(function() { $pulseTarget.removeClass('courses-tab-pulse'); }, 4000);
-    }
-
-    $('#instr-go-browse-btn').on('click', function() {
-        $('#my-instructor-tabs .item[data-tab="browse"]').trigger('click');
-    });
-
-    // ----- Sections repliables (Upcoming, Past sessions) -----
-    // Convention : chevron avec .rotated = section ouverte. On masque
-    // initialement les contenus dont le chevron n'a pas .rotated.
-    $('.courses-fold-toggle').each(function() {
-        if (!$(this).find('.courses-fold-chevron').hasClass('rotated')) {
-            $(this).next('.courses-fold-content').hide();
-        }
-    });
-    $('.courses-fold-toggle').on('click', function() {
-        $(this).next('.courses-fold-content').slideToggle(200);
-        $(this).find('.courses-fold-chevron').toggleClass('rotated');
-    });
-
     // ----- Browse filters (client-side, plain HTML <select>s) -----
+    // IMPORTANT : ces caches doivent etre initialises AVANT le handler d'onglets
+    // ci-dessous, car le `.trigger('click')` de restauration de l'onglet sauvegarde
+    // (cf. plus bas) appelle synchroniquement `applyInstrBrowseFilters()`. Si on
+    // les declarait apres, `instrBrowseGridNodes` serait `undefined` (var hoisting
+    // sans assignation) et l'iteration lancerait un TypeError qui interromprait
+    // tout le bloc JS — les handlers `change`/`click` des filtres ne seraient
+    // alors jamais attaches.
     var $today = $('#instr_browse_date_from').val();
-    // Phase 74.1: cache cards/badges outside the filter function (cf. my_registrations).
     var instrBrowseGridNodes  = document.querySelectorAll('#instr-browse-cards-grid .courses-browse-card-col');
     var $instrBrowseNoResults = $('#instr-browse-no-results');
     var $instrBrowseBadge     = $('#instructor-browse-badge');
@@ -553,9 +509,55 @@ $(function() {
         applyInstrBrowseFilters();
     });
 
-    if (savedTab === 'browse') {
-        applyInstrBrowseFilters();
+    // ----- Tabs -----
+    $('#my-instructor-tabs .item').on('click', function() {
+        var tab = $(this).data('tab');
+        $('#my-instructor-tabs .item').removeClass('active');
+        $(this).addClass('active');
+        $('.ui.bottom.attached.tab').removeClass('active');
+        $('.ui.bottom.attached.tab[data-tab="' + tab + '"]').addClass('active');
+        localStorage.setItem('my_instructor_tab', tab);
+        if (tab === 'browse') {
+            applyInstrBrowseFilters();
+            $('.ui.progress:visible').progress();
+        }
+    });
+
+    // Phase 71 : honor #tab=<name> from URL (set by server after a volunteer action),
+    // pulse the active tab visually, clear the fragment to avoid re-triggering on refresh.
+    var hashTab = null;
+    var m = (window.location.hash || '').match(/tab=([a-z]+)/);
+    if (m) {
+        hashTab = m[1];
+        history.replaceState(null, '', window.location.pathname + window.location.search);
     }
+
+    var savedTab = hashTab || localStorage.getItem('my_instructor_tab') || 'mine';
+    if (savedTab !== 'mine') {
+        $('#my-instructor-tabs .item[data-tab="' + savedTab + '"]').trigger('click');
+    }
+    if (hashTab === 'mine') {
+        var $pulseTarget = $('#my-instructor-tabs .item[data-tab="mine"]');
+        $pulseTarget.addClass('courses-tab-pulse');
+        setTimeout(function() { $pulseTarget.removeClass('courses-tab-pulse'); }, 4000);
+    }
+
+    $('#instr-go-browse-btn').on('click', function() {
+        $('#my-instructor-tabs .item[data-tab="browse"]').trigger('click');
+    });
+
+    // ----- Sections repliables (Upcoming, Past sessions) -----
+    // Convention : chevron avec .rotated = section ouverte. On masque
+    // initialement les contenus dont le chevron n'a pas .rotated.
+    $('.courses-fold-toggle').each(function() {
+        if (!$(this).find('.courses-fold-chevron').hasClass('rotated')) {
+            $(this).next('.courses-fold-content').hide();
+        }
+    });
+    $('.courses-fold-toggle').on('click', function() {
+        $(this).next('.courses-fold-content').slideToggle(200);
+        $(this).find('.courses-fold-chevron').toggleClass('rotated');
+    });
 });
 </script>
 {% endblock %}

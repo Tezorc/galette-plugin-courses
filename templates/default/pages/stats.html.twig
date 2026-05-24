@@ -158,10 +158,37 @@
     {# ===== MEMBRES ACTIFS SUR UNE PÉRIODE ===== #}
     <div class="ui segment courses-segment-gap courses-period-active">
 
-        <div class="ui small header courses-segment-hdr">
+        <div class="ui small header courses-segment-hdr courses-fold-toggle">
             <i class="blue user check icon" aria-hidden="true"></i>
-            {{ _T("Active members by period", "courses") }}
+            <div class="content">
+                {{ _T("Active members by period", "courses") }}
+                {% if stats.active_members|length > 0 %}
+                    <span class="ui blue circular label">{{ stats.active_members|length }}</span>
+                {% endif %}
+            </div>
+            <i class="dropdown icon courses-fold-chevron" aria-hidden="true"></i>
         </div>
+
+        {# Taux de participation sur la période (Phase 62) — HORS du fold pour
+           rester visible meme quand la section est repliee. #}
+        {% if stats.total_adherents > 0 %}
+            <div class="courses-participation-summary">
+                <div class="courses-participation-rate">
+                    {{ stats.participation_rate|number_format(1, ',', ' ') }}&nbsp;%
+                </div>
+                <div class="courses-participation-detail">
+                    <div class="courses-participation-label">{{ _T("Participation rate", "courses") }}</div>
+                    <div class="ui tiny progress {% if stats.participation_rate >= 75 %}green{% elseif stats.participation_rate >= 40 %}teal{% elseif stats.participation_rate >= 20 %}yellow{% else %}red{% endif %}" data-percent="{{ stats.participation_rate }}">
+                        <div class="bar" style="width:{{ stats.participation_rate }}%"></div>
+                    </div>
+                    <div class="courses-participation-sub">
+                        {{ stats.active_members|length }} / {{ stats.total_adherents }} {{ _T("active adherents participated over the period", "courses") }}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="courses-fold-content">
 
         {# Filtre + raccourcis #}
         <form action="{{ url_for('coursesStats') }}" method="get" class="ui form" id="stats-period-form">
@@ -192,24 +219,6 @@
                 </div>
             </div>
         </form>
-
-        {# Taux de participation sur la période (Phase 62) #}
-        {% if stats.total_adherents > 0 %}
-            <div class="courses-participation-summary">
-                <div class="courses-participation-rate">
-                    {{ stats.participation_rate|number_format(1, ',', ' ') }}&nbsp;%
-                </div>
-                <div class="courses-participation-detail">
-                    <div class="courses-participation-label">{{ _T("Participation rate", "courses") }}</div>
-                    <div class="ui tiny progress {% if stats.participation_rate >= 75 %}green{% elseif stats.participation_rate >= 40 %}teal{% elseif stats.participation_rate >= 20 %}yellow{% else %}red{% endif %}" data-percent="{{ stats.participation_rate }}">
-                        <div class="bar" style="width:{{ stats.participation_rate }}%"></div>
-                    </div>
-                    <div class="courses-participation-sub">
-                        {{ stats.active_members|length }} / {{ stats.total_adherents }} {{ _T("active adherents participated over the period", "courses") }}
-                    </div>
-                </div>
-            </div>
-        {% endif %}
 
         {# Résultats #}
         <div>
@@ -274,18 +283,26 @@
         {% endif %}
         </div>
 
+        </div>{# end .courses-fold-content #}
+
     </div>
 
     {# ===== MONITEURS ACTIFS SUR LA PÉRIODE ===== #}
     <div class="ui segment courses-segment-gap courses-period-instructors">
 
-        <div class="ui small header courses-segment-hdr">
+        <div class="ui small header courses-segment-hdr courses-fold-toggle">
             <i class="teal chalkboard teacher icon" aria-hidden="true"></i>
-            {{ _T("Instructor attendance by period", "courses") }}
-            <span class="sub header">{{ _T("Instructors running sessions, with regularity over the year", "courses") }}</span>
+            <div class="content">
+                {{ _T("Instructor attendance by period", "courses") }}
+                {% if stats.instructor_activity|length > 0 %}
+                    <span class="ui teal circular label">{{ stats.instructor_activity|length }}</span>
+                {% endif %}
+                <div class="sub header">{{ _T("Instructors running sessions, with regularity over the year", "courses") }}</div>
+            </div>
+            <i class="dropdown icon courses-fold-chevron" aria-hidden="true"></i>
         </div>
 
-        <div>
+        <div class="courses-fold-content">
         {% if stats.instructor_activity|length > 0 %}
             <div class="courses-results-header">
                 <span>
@@ -328,20 +345,26 @@
                 {{ _T("No instructor ran a session during this period.", "courses") }}
             </div>
         {% endif %}
-        </div>
+        </div>{# end .courses-fold-content #}
 
     </div>
 
     {# ===== MEMBRES INACTIFS SUR LA MÊME PÉRIODE ===== #}
     <div class="ui segment courses-segment-gap courses-period-inactive">
 
-        <div class="ui small header courses-segment-hdr">
+        <div class="ui small header courses-segment-hdr courses-fold-toggle">
             <i class="red user times icon" aria-hidden="true"></i>
-            {{ _T("Inactive members by period", "courses") }}
-            <span class="sub header">{{ _T("Active members with no participation", "courses") }}</span>
+            <div class="content">
+                {{ _T("Inactive members by period", "courses") }}
+                {% if stats.inactive_members|length > 0 %}
+                    <span class="ui red circular label">{{ stats.inactive_members|length }}</span>
+                {% endif %}
+                <div class="sub header">{{ _T("Active members with no participation", "courses") }}</div>
+            </div>
+            <i class="dropdown icon courses-fold-chevron" aria-hidden="true"></i>
         </div>
 
-        <div>
+        <div class="courses-fold-content">
         {% if stats.inactive_members|length > 0 %}
             <div class="courses-results-header">
                 <span>
@@ -381,7 +404,7 @@
                 {{ _T("All active members participated during this period.", "courses") }}
             </div>
         {% endif %}
-        </div>
+        </div>{# end .courses-fold-content #}
 
     </div>
 
@@ -390,6 +413,23 @@
 {% block javascripts %}
 <script>
 $(function() {
+    // Sections repliables (membres actifs, moniteurs, membres inactifs).
+    // Convention : chevron sans .rotated = section fermee. Les 3 sont fermees
+    // par defaut pour aerer la page (les tableaux peuvent etre longs).
+    // NB : .nextAll().first() au lieu de .next() — pour la section "Membres
+    // actifs", le bloc "Taux de participation" est insere entre le toggle et
+    // le fold-content (pour rester visible quand replie), donc le fold-content
+    // n'est pas le frere immediat.
+    $('.courses-fold-toggle').each(function() {
+        if (!$(this).find('.courses-fold-chevron').hasClass('rotated')) {
+            $(this).nextAll('.courses-fold-content').first().hide();
+        }
+    });
+    $('.courses-fold-toggle').on('click', function() {
+        $(this).nextAll('.courses-fold-content').first().slideToggle(200);
+        $(this).find('.courses-fold-chevron').toggleClass('rotated');
+    });
+
     $('.period-shortcut').on('click', function() {
         $('#stats_from').val($(this).data('from'));
         $('#stats_to').val($(this).data('to'));
