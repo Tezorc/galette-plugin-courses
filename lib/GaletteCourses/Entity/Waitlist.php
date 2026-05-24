@@ -268,11 +268,6 @@ class Waitlist
     }
 
     /**
-     * Get all waitlist entries for a session, ordered by position
-     *
-     * @return self[]
-     */
-    /**
      * Load all waitlist entries for a set of members (parent + children),
      * used by the "My registrations" page to display a dedicated block.
      * No ordering by date here: the controller joins to sessions to sort.
@@ -304,6 +299,11 @@ class Waitlist
         }
     }
 
+    /**
+     * Get all waitlist entries for a session, ordered by position.
+     *
+     * @return self[]
+     */
     public static function getForSession(Db $zdb, int $sessionId): array
     {
         try {
