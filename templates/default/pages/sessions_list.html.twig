@@ -217,15 +217,15 @@
 
             {# Past sessions collapsible #}
             {% if sessions_past|length > 0 %}
-                <h3 class="ui small dividing header courses-past-toggle courses-section-mt">
+                <h3 class="ui small dividing header courses-fold-toggle courses-section-mt">
                     <i class="history icon" aria-hidden="true"></i>
                     <div class="content">
                         {{ _T("Past sessions", "courses") }}
                         <span class="ui grey circular label">{{ sessions_past|length }}</span>
                     </div>
-                    <i class="dropdown icon courses-past-chevron" aria-hidden="true"></i>
+                    <i class="dropdown icon courses-fold-chevron" aria-hidden="true"></i>
                 </h3>
-                <div class="courses-past-content">
+                <div class="courses-fold-content">
                     <div class="ui stackable three column grid courses-cards-grid">
                         {% for session in sessions_past %}
                             {% set event = session.getEvent() %}
@@ -277,14 +277,14 @@
                     {% endif %}
                 {% endfor %}
                 {% if has_past %}
-                    <h3 class="ui small dividing header courses-past-toggle courses-group-mt">
+                    <h3 class="ui small dividing header courses-fold-toggle courses-group-mt">
                         <i class="history icon" aria-hidden="true"></i>
                         <div class="content">
                             {{ _T("Past sessions", "courses") }}
                         </div>
-                        <i class="dropdown icon courses-past-chevron" aria-hidden="true"></i>
+                        <i class="dropdown icon courses-fold-chevron" aria-hidden="true"></i>
                     </h3>
-                    <div class="courses-past-content">
+                    <div class="courses-fold-content">
                         <div class="ui stackable three column grid courses-cards-grid">
                             {% for session in sessions_past %}
                                 {% if ('e' ~ session.getEvent().getId()) == eid %}
@@ -373,11 +373,16 @@
                 }
             });
 
-            // Past sessions collapsible toggles
-            $('.courses-past-content').hide();
-            $('.courses-past-toggle').on('click', function() {
-                $(this).next('.courses-past-content').slideToggle(200);
-                $(this).find('.courses-past-chevron').toggleClass('rotated');
+            // Sections repliables : chevron avec .rotated = ouvert ;
+            // sinon le contenu adjacent est masque au chargement.
+            $('.courses-fold-toggle').each(function() {
+                if (!$(this).find('.courses-fold-chevron').hasClass('rotated')) {
+                    $(this).next('.courses-fold-content').hide();
+                }
+            });
+            $('.courses-fold-toggle').on('click', function() {
+                $(this).next('.courses-fold-content').slideToggle(200);
+                $(this).find('.courses-fold-chevron').toggleClass('rotated');
             });
 
             // Date pickers (HTML5 natif) avec auto-submit

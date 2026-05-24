@@ -486,9 +486,9 @@
                     {% if show_extra_children_action %}
                         <div class="ui divider"></div>
                         {% set xa_action_url = (show_extra_children_action == 'waitlist') ? url_for("coursesDoParentWaitlist", {"id": session.getId()}) : url_for("coursesDoParentRegister", {"id": session.getId()}) %}
-                        {% set xa_btn_class  = (show_extra_children_action == 'waitlist') ? 'ui small labeled icon blue button' : 'ui small labeled icon green button' %}
-                        {% set xa_icon       = (show_extra_children_action == 'waitlist') ? 'clock' : 'user plus' %}
-                        {% set xa_label      = (show_extra_children_action == 'waitlist') ? _T("Join waitlist", "courses") : _T("Register a linked member", "courses") %}
+                        {% set xa_btn_class = (show_extra_children_action == 'waitlist') ? 'ui small labeled icon blue button' : 'ui small labeled icon green button' %}
+                        {% set xa_icon = (show_extra_children_action == 'waitlist') ? 'clock' : 'user plus' %}
+                        {% set xa_label = (show_extra_children_action == 'waitlist') ? _T("Join waitlist", "courses") : _T("Register a linked member", "courses") %}
                         {% set xa_form_prefix = (show_extra_children_action == 'waitlist') ? 'wl-extra-child' : 'reg-extra-child' %}
                         {% if extra_unregistered_children|length == 1 %}
                             {% set only_xa_child_id = extra_unregistered_children|keys|first %}

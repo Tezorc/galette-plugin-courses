@@ -422,9 +422,9 @@
                             {% if children_have_action and (has_instr or ev.isInstructorOptional()) and member_is_up2date %}
                                 {% set onwl_action_url = s.isFull() ? url_for("coursesDoParentWaitlist", {"id": sid}) : url_for("coursesDoParentRegister", {"id": sid}) %}
                                 {% set onwl_btn_class = s.isFull() ? 'ui tiny labeled icon blue button' : 'ui tiny labeled icon teal button' %}
-                                {% set onwl_icon      = s.isFull() ? 'clock' : 'user plus' %}
-                                {% set onwl_label     = s.isFull() ? _T("Join waitlist", "courses") : _T("Register", "courses") %}
-                                {% set onwl_prefix    = s.isFull() ? 'wl-onwl-child' : 'reg-onwl-child' %}
+                                {% set onwl_icon = s.isFull() ? 'clock' : 'user plus' %}
+                                {% set onwl_label = s.isFull() ? _T("Join waitlist", "courses") : _T("Register", "courses") %}
+                                {% set onwl_prefix = s.isFull() ? 'wl-onwl-child' : 'reg-onwl-child' %}
                                 {% if browse_eligible_children[sid]|length == 1 %}
                                     {% set onwl_only_child_id = browse_eligible_children[sid]|keys|first %}
                                     {% set onwl_only_child = browse_eligible_children[sid][onwl_only_child_id] %}
@@ -650,14 +650,15 @@
 
         {# Phase 65 : flux unique des seances a venir (actives + annulees), par date #}
         {% if upcoming|length > 0 %}
-            <h3 class="ui small dividing header courses-section-mt">
+            <h3 class="ui small dividing header courses-fold-toggle courses-section-mt">
                 <i class="calendar alternate icon" aria-hidden="true"></i>
                 <div class="content">
                     {{ _T("Upcoming", "courses") }}
                     <span class="ui teal circular label">{{ upcoming|length }}</span>
                 </div>
+                <i class="dropdown icon courses-fold-chevron rotated" aria-hidden="true"></i>
             </h3>
-            <div class="ui stackable three column grid courses-cards-grid">
+            <div class="ui stackable three column grid courses-cards-grid courses-fold-content">
                 {% for reg in upcoming %}
                     {% set s = sessions[reg.getSessionId()] %}
                     {% set ev = events[s.getEventId()] %}
@@ -860,18 +861,19 @@
 
         {# Phase 67: Séances où l'on est sur liste d'attente (parent + enfants), bloc dédié chronologique #}
         {% if my_waitlist_entries|length > 0 %}
-            <h3 class="ui small dividing header courses-section-mt">
+            <h3 class="ui small dividing header courses-fold-toggle courses-section-mt">
                 <i class="clock icon" aria-hidden="true"></i>
                 <div class="content">
                     {{ _T("On the waitlist", "courses") }}
                     <span class="ui blue circular label">{{ my_waitlist_entries|length }}</span>
                 </div>
+                <i class="dropdown icon courses-fold-chevron rotated" aria-hidden="true"></i>
             </h3>
-            <div class="ui stackable three column grid courses-cards-grid">
+            <div class="ui stackable three column grid courses-cards-grid courses-fold-content">
             {% for wl in my_waitlist_entries %}
                 {% set wsid = wl.getSessionId() %}
-                {% set ws   = sessions[wsid] %}
-                {% set wev  = events[ws.getEventId()] %}
+                {% set ws = sessions[wsid] %}
+                {% set wev = events[ws.getEventId()] %}
                 {% set wmid = wl.getMemberId() %}
                 {% set is_self_wl = (wmid == current_member_id) %}
                 {% set wmname = (reg_members[wmid] is defined and reg_members[wmid].nickname) ? reg_members[wmid].nickname : ((reg_members[wmid] is defined) ? reg_members[wmid].name : '') %}
@@ -941,15 +943,15 @@
 
         {# Séances passées (repliable) #}
         {% if past|length > 0 %}
-            <h3 class="ui small dividing header courses-past-toggle courses-section-mt">
+            <h3 class="ui small dividing header courses-fold-toggle courses-section-mt">
                 <i class="history icon" aria-hidden="true"></i>
                 <div class="content">
                     {{ _T("Past sessions", "courses") }}
                     <span class="ui grey circular label">{{ past|length }}</span>
                 </div>
-                <i class="dropdown icon courses-past-chevron" aria-hidden="true"></i>
+                <i class="dropdown icon courses-fold-chevron" aria-hidden="true"></i>
             </h3>
-            <div class="courses-past-content">
+            <div class="courses-fold-content">
                 <div class="ui stackable three column grid courses-cards-grid">
                     {% for reg in past|reverse %}
                         {% set s = sessions[reg.getSessionId()] %}
@@ -1153,11 +1155,17 @@ $(function() {
         $('#my-sessions-tabs .item[data-tab="browse"]').trigger('click');
     });
 
-    // Séances passées repliables
-    $('.courses-past-content').hide();
-    $('.courses-past-toggle').on('click', function() {
-        $(this).next('.courses-past-content').slideToggle(200);
-        $(this).find('.courses-past-chevron').toggleClass('rotated');
+    // Sections repliables (Upcoming, Waitlist, Past sessions, ...).
+    // Convention : chevron avec .rotated = section ouverte. On masque
+    // initialement les contenus dont le chevron n'a pas .rotated.
+    $('.courses-fold-toggle').each(function() {
+        if (!$(this).find('.courses-fold-chevron').hasClass('rotated')) {
+            $(this).next('.courses-fold-content').hide();
+        }
+    });
+    $('.courses-fold-toggle').on('click', function() {
+        $(this).next('.courses-fold-content').slideToggle(200);
+        $(this).find('.courses-fold-chevron').toggleClass('rotated');
     });
 });
 </script>

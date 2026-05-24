@@ -193,13 +193,19 @@
 .courses-child-unregister-form { margin-top: .5em; }
 .courses-label-offset  { margin-left: .3em; }
 
-/* ----- TEXT ----- */
+/* ----- TEXT -----
+   Shared muted/secondary text base (font-size: .9em + dim grey).
+   Per-class lines below only carry the extras unique to each. */
 .courses-legend-text,
-.courses-events-cell   { font-size: .9em; color: #555; }
-.courses-stat-sub      { font-size: .9em; color: #555; margin-top: .2em; }
-.courses-fill-pct      { white-space: nowrap; min-width: 3em; text-align: right; font-size: .9em; color: #555; }
-.courses-activity-date { font-size: .9em; color: #666; }
-.courses-filter-label  { font-size: .9em; margin: 0 !important; white-space: nowrap; }
+.courses-events-cell,
+.courses-stat-sub,
+.courses-fill-pct,
+.courses-activity-date,
+.courses-filter-label  { font-size: .9em; color: #555; }
+.courses-stat-sub      { margin-top: .2em; }
+.courses-fill-pct      { white-space: nowrap; min-width: 3em; text-align: right; }
+.courses-activity-date { color: #666; }
+.courses-filter-label  { margin: 0 !important; white-space: nowrap; }
 .courses-empty-state   { color: #aaa; }
 
 /* ----- DATE DISPLAY ----- */
@@ -276,11 +282,13 @@ tr.courses-pending { background-color: #fffde7 !important; }
 .courses-group-header:first-child { margin-top: .5em !important; }
 .courses-group-header .circular.label { margin-right: .4em; vertical-align: middle; }
 .courses-past-accordion .title { color: #888 !important; }
-.courses-past-toggle { cursor: pointer; user-select: none; }
-h3.courses-past-toggle { display: flex; align-items: center; }
-h3.courses-past-toggle > .content { flex: 1 1 auto; }
-h3.courses-past-toggle .courses-past-chevron { margin-left: auto; transition: transform .2s ease; font-size: .85em; }
-h3.courses-past-toggle .courses-past-chevron.rotated { transform: rotate(180deg); }
+/* Generic collapsible section header (history "past sessions" and any
+   foldable section like "Upcoming" / "On the waitlist"). The chevron's
+   `.rotated` class is the source of truth for expanded state. */
+.courses-fold-toggle { cursor: pointer; user-select: none; display: flex; align-items: center; }
+.courses-fold-toggle > .content { flex: 1 1 auto; }
+.courses-fold-toggle .courses-fold-chevron { margin-left: auto; transition: transform .2s ease; font-size: .85em; }
+.courses-fold-toggle .courses-fold-chevron.rotated { transform: rotate(180deg); }
 
 /* ----- STATISTICS ----- */
 .courses-stats .statistic .value { font-size: 3rem !important; }
@@ -971,6 +979,76 @@ h3.courses-past-toggle .courses-past-chevron.rotated { transform: rotate(180deg)
     }
     /* Tooltip popup is replaced by the inline label on mobile */
     .courses-events-card-table .courses-event-action .ui.special.popup { display: none !important; }
+
+    /* --- Filter form action buttons (browse tabs) --- */
+    .courses-filter-actions .button { flex: 1 1 auto; }
+
+    /* --- Stats page polish ---
+       Bigger charts (axis labels legible), tighter summary cards,
+       first cell of each stats table becomes a header strip, "Events"
+       cell wraps as a block under its label, "Quick select:" label on
+       its own line. */
+    .courses-chart-container { min-height: 240px; }
+
+    .courses-stats-cards.cards .courses-stat-content {
+        padding: .85em .4em !important;
+    }
+    .courses-stats-cards.cards .courses-stat-content > i.icon {
+        font-size: 1.6em !important;
+        margin: 0 0 .15em !important;
+    }
+    .courses-stats-cards.cards .courses-stat-num {
+        font-size: 1.7rem !important;
+        margin: 0 0 .1em !important;
+        line-height: 1.1 !important;
+    }
+    .courses-stats-cards.cards .courses-stat-sub {
+        font-size: .78em !important;
+        line-height: 1.15 !important;
+        color: #555;
+    }
+
+    #fill-rate-table tbody td:first-child,
+    #recent-activity-table tbody td:first-child,
+    #active-members-table tbody td:first-child,
+    #inactive-members-table tbody td:first-child {
+        font-weight: 600;
+        font-size: 1em;
+        background: #f7f8f9 !important;
+        justify-content: flex-start !important;
+        padding: .65em .9em !important;
+        color: #2d2d2d;
+    }
+    #fill-rate-table tbody td:first-child::before,
+    #recent-activity-table tbody td:first-child::before,
+    #active-members-table tbody td:first-child::before,
+    #inactive-members-table tbody td:first-child::before {
+        display: none !important;
+        content: none !important;
+    }
+
+    #fill-rate-table tbody td,
+    #recent-activity-table tbody td,
+    #active-members-table tbody td,
+    #inactive-members-table tbody td {
+        padding: .5em .9em !important;
+        min-height: 38px !important;
+    }
+
+    #active-members-table tbody td.courses-events-cell {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: .25em !important;
+        font-size: .88em;
+        color: #555;
+    }
+
+    .courses-filter-shortcuts > .ui.small.grey.text {
+        flex: 1 0 100% !important;
+        margin: 0 0 .15em !important;
+        font-size: .85em;
+        color: #888;
+    }
 }
 
 /* =========================================================
@@ -1035,81 +1113,4 @@ h3.courses-past-toggle .courses-past-chevron.rotated { transform: rotate(180deg)
     flex-wrap: wrap;
     gap: .5em;
     align-items: center;
-}
-@media only screen and (max-width: 767px) {
-    .courses-filter-actions .button { flex: 1 1 auto; }
-}
-
-/* =========================================================
-   STATS PAGE — mobile polish (≤ 767px)
-   Make the stats page easier to read on smartphones:
-   - bigger charts so axis labels are legible
-   - tighter summary cards (less vertical bulk)
-   - tables: first cell (Event / Member name) becomes a header strip
-     instead of a label/value row, so each card has a clear title
-   - "Events" cell wraps as a block-level paragraph below its label
-   - period shortcuts: "Quick select:" label on its own line
-   ========================================================= */
-@media only screen and (max-width: 767px) {
-    .courses-chart-container { min-height: 240px !important; }
-
-    .courses-stats-cards.cards .courses-stat-content {
-        padding: .85em .4em !important;
-    }
-    .courses-stats-cards.cards .courses-stat-content > i.icon {
-        font-size: 1.6em !important;
-        margin: 0 0 .15em !important;
-    }
-    .courses-stats-cards.cards .courses-stat-num {
-        font-size: 1.7rem !important;
-        margin: 0 0 .1em !important;
-        line-height: 1.1 !important;
-    }
-    .courses-stats-cards.cards .courses-stat-sub {
-        font-size: .78em !important;
-        line-height: 1.15 !important;
-        color: #555;
-    }
-
-    #fill-rate-table tbody td:first-child,
-    #recent-activity-table tbody td:first-child,
-    #active-members-table tbody td:first-child,
-    #inactive-members-table tbody td:first-child {
-        font-weight: 600;
-        font-size: 1em;
-        background: #f7f8f9 !important;
-        justify-content: flex-start !important;
-        padding: .65em .9em !important;
-        color: #2d2d2d;
-    }
-    #fill-rate-table tbody td:first-child::before,
-    #recent-activity-table tbody td:first-child::before,
-    #active-members-table tbody td:first-child::before,
-    #inactive-members-table tbody td:first-child::before {
-        display: none !important;
-        content: none !important;
-    }
-
-    #fill-rate-table tbody td,
-    #recent-activity-table tbody td,
-    #active-members-table tbody td,
-    #inactive-members-table tbody td {
-        padding: .5em .9em !important;
-        min-height: 38px !important;
-    }
-
-    #active-members-table tbody td.courses-events-cell {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: .25em !important;
-        font-size: .88em;
-        color: #555;
-    }
-
-    .courses-filter-shortcuts > .ui.small.grey.text {
-        flex: 1 0 100% !important;
-        margin: 0 0 .15em !important;
-        font-size: .85em;
-        color: #888;
-    }
 }

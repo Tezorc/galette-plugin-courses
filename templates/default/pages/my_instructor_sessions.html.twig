@@ -237,14 +237,15 @@
 
         {# Phase 65 : flux unique des seances a venir (actives + annulees), par date #}
         {% if upcoming|length > 0 %}
-            <h3 class="ui small dividing header courses-section-mt">
+            <h3 class="ui small dividing header courses-fold-toggle courses-section-mt">
                 <i class="calendar alternate icon" aria-hidden="true"></i>
                 <div class="content">
                     {{ _T("Upcoming", "courses") }}
                     <span class="ui teal circular label">{{ upcoming|length }}</span>
                 </div>
+                <i class="dropdown icon courses-fold-chevron rotated" aria-hidden="true"></i>
             </h3>
-            <div class="ui stackable three column grid courses-cards-grid">
+            <div class="ui stackable three column grid courses-cards-grid courses-fold-content">
                 {% for sid in upcoming %}
                     {% set s = sessions[sid] %}
                     {% set ev = events[s.getEventId()] %}
@@ -366,15 +367,15 @@
 
         {# --- Passees (repliable) --- #}
         {% if past|length > 0 %}
-            <h3 class="ui small dividing header courses-past-toggle courses-section-mt">
+            <h3 class="ui small dividing header courses-fold-toggle courses-section-mt">
                 <i class="history icon" aria-hidden="true"></i>
                 <div class="content">
                     {{ _T("Past sessions", "courses") }}
                     <span class="ui grey circular label">{{ past|length }}</span>
                 </div>
-                <i class="dropdown icon courses-past-chevron" aria-hidden="true"></i>
+                <i class="dropdown icon courses-fold-chevron" aria-hidden="true"></i>
             </h3>
-            <div class="courses-past-content">
+            <div class="courses-fold-content">
                 <div class="ui stackable three column grid courses-cards-grid">
                     {% for sid in past|reverse %}
                         {% set s = sessions[sid] %}
@@ -462,11 +463,17 @@ $(function() {
         $('#my-instructor-tabs .item[data-tab="browse"]').trigger('click');
     });
 
-    // ----- Past sessions collapsible -----
-    $('.courses-past-content').hide();
-    $('.courses-past-toggle').on('click', function() {
-        $(this).next('.courses-past-content').slideToggle(200);
-        $(this).find('.courses-past-chevron').toggleClass('rotated');
+    // ----- Sections repliables (Upcoming, Past sessions) -----
+    // Convention : chevron avec .rotated = section ouverte. On masque
+    // initialement les contenus dont le chevron n'a pas .rotated.
+    $('.courses-fold-toggle').each(function() {
+        if (!$(this).find('.courses-fold-chevron').hasClass('rotated')) {
+            $(this).next('.courses-fold-content').hide();
+        }
+    });
+    $('.courses-fold-toggle').on('click', function() {
+        $(this).next('.courses-fold-content').slideToggle(200);
+        $(this).find('.courses-fold-chevron').toggleClass('rotated');
     });
 
     // ----- Browse filters (client-side, plain HTML <select>s) -----
