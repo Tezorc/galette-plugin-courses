@@ -50,9 +50,10 @@
         </div>
     {% endif %}
 
-    {# Avertissement changement de groupe : inscriptions sur un evenement dont l'adherent ne fait plus partie du groupe requis #}
+    {# Avertissement changement de groupe : inscriptions sur un evenement dont l'adherent ne fait plus partie du groupe requis.
+       Concerne uniquement les inscriptions existantes -> ne s'affiche que sur l'onglet "Mes inscriptions" (toggle JS). #}
     {% if out_of_group_regs|length > 0 %}
-        <div class="ui orange message courses-sticky-message">
+        <div id="out-of-group-warning" class="ui orange message courses-sticky-message">
             <i class="exclamation triangle icon" aria-hidden="true"></i>
             {{ _Tn("%d registration is on an event you no longer have access to (group membership changed). You can unregister from the marked card below.", "%d registrations are on events you no longer have access to (group membership changed). You can unregister from the marked cards below.", out_of_group_regs|length, "courses")|format(out_of_group_regs|length) }}
         </div>
@@ -1112,6 +1113,17 @@ $(function() {
     });
 
     // Tabs
+    function syncOutOfGroupWarning(tab) {
+        var el = document.getElementById('out-of-group-warning');
+        if (!el) { return; }
+        // L'avertissement concerne uniquement les inscriptions existantes :
+        // visible sur "mine" seulement.
+        if (tab === 'mine') {
+            el.style.removeProperty('display');
+        } else {
+            el.style.setProperty('display', 'none', 'important');
+        }
+    }
     $('#my-sessions-tabs .item').on('click', function() {
         var tab = $(this).data('tab');
         $('#my-sessions-tabs .item').removeClass('active');
@@ -1119,6 +1131,7 @@ $(function() {
         $('.ui.bottom.attached.tab').removeClass('active');
         $('.ui.bottom.attached.tab[data-tab="' + tab + '"]').addClass('active');
         localStorage.setItem('my_sessions_tab', tab);
+        syncOutOfGroupWarning(tab);
         if (tab === 'browse') {
             applyBrowseFilters();
         }
