@@ -166,6 +166,8 @@
                     <span class="ui blue circular label">{{ stats.active_members|length }}</span>
                 {% endif %}
             </div>
+            {# Tableau replie par defaut. Le bandeau de filtres reste visible
+               independamment du fold (cf. plus bas). #}
             <i class="dropdown icon courses-fold-chevron" aria-hidden="true"></i>
         </div>
 
@@ -188,9 +190,9 @@
             </div>
         {% endif %}
 
-        <div class="courses-fold-content">
-
-        {# Filtre + raccourcis #}
+        {# Filtre + raccourcis — HORS du fold pour rester accessibles meme quand
+           le tableau de resultats est replie (l'utilisateur doit pouvoir changer
+           la periode sans avoir a deplier d'abord). #}
         <form action="{{ url_for('coursesStats') }}" method="get" class="ui form" id="stats-period-form">
             <div class="ui secondary segment">
                 <div class="fields courses-filter-row">
@@ -219,6 +221,8 @@
                 </div>
             </div>
         </form>
+
+        <div class="courses-fold-content">
 
         {# Résultats #}
         <div>
