@@ -168,8 +168,8 @@
 
             <div class="field">
                 <label for="session_date">{{ _T("Start date", "courses") }}</label>
-                <input type="date" name="session_date" id="session_date"/>
-                <span class="tip" id="date-tip-single">{{ _T("Date of the session (only at creation)", "courses") }}</span>
+                <input type="date" name="session_date" id="session_date" value="{{ event.getStatus() != 'validated' ? event.getInitialSessionDate() : '' }}"/>
+                <span class="tip" id="date-tip-single">{{ _T("Date of the session — sessions are created when the event is validated.", "courses") }}</span>
                 <span class="tip" id="date-tip-recurring" style="display:none">{{ _T("First occurrence date - defines the recurrence pattern", "courses") }}</span>
             </div>
 

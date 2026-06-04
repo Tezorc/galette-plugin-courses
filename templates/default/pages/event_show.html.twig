@@ -118,6 +118,15 @@
 
         {# --- Tab: Sessions --- #}
         <div class="ui bottom attached tab segment" data-tab="sessions">
+            {% if event.getStatus() in ['draft', 'pending'] %}
+                <div class="ui info message">
+                    <i class="info circle icon" aria-hidden="true"></i>
+                    {{ _T("Sessions will be created when the event is validated.", "courses") }}
+                    {% if event.getInitialSessionDate() %}
+                        {{ _T("Scheduled start date:", "courses") }} <strong>{{ event.getInitialSessionDate()|date("d/m/Y") }}</strong>
+                    {% endif %}
+                </div>
+            {% endif %}
             {% if sessions|length > 0 %}
                 <div class="ui stackable three column grid courses-cards-grid">
                     {% for session in sessions %}

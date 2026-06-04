@@ -654,6 +654,44 @@ Le developpement est organise en phases progressives.
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Phase 79 - Creation des seances differee a la validation de l'evenement
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : "lors de la creation d'un evenement ne pas creer de seances (visibles par les admin et peut-etre moniteurs) avant la validation de l'evenement".
+
+#### Probleme
+
+Avant Phase 79, les seances d'un evenement etaient instanciees en base des l'appel a `EventsController::doStore` (ponctuel via `createSessionsForEvent`, recurrent via `RecurrenceHandler::generateSessions`). Un evenement laisse en **Brouillon** ou **En attente** par un responsable/moniteur generait donc des lignes dans `galette_courses_sessions` qui :
+
+- restaient invisibles pour les membres reguliers (filtre `e.status = VALIDATED` deja en place dans `Repository\Sessions::buildWhereClause`) ;
+- mais **apparaissaient pour le staff/admin** dans la liste `/sessions` (aucun filtre sur le statut de l'evenement parent pour ces roles) ;
+- polluaient les vues "Mes seances comme moniteur" si un volontaire s'etait deja positionne ;
+- devaient etre nettoyees en cascade si l'evenement etait finalement rejete (CASCADE FK couvrait ce cas mais l'utilisateur n'avait aucune visibilite).
+
+#### Architecture
+
+- **Schema BDD** : nouvelle colonne `initial_session_date DATE NULL` sur `galette_courses_events` (defaut NULL pour ne casser aucun evenement existant). Migrations `scripts/upgrade-defer-sessions.sql` (MySQL) + `scripts/upgrade-defer-sessions-pgsql.sql` (PostgreSQL).
+- **Entite `Event`** : propriete `?string $initial_session_date`, getter `getInitialSessionDate()`, setter `setInitialSessionDate()`, capture dans `check()` depuis `$post['session_date']`, lecture dans `loadFromRS()`, persistance dans `store()` (insert + update). La date saisie au formulaire est donc memorisee sur l'evenement avant meme qu'aucune seance n'existe.
+- **`EventsController::doStore`** : tout le bloc qui touchait aux seances (`propagateCapacityToSessions`, `propagateScheduleToSessions`, `propagateDayOfWeekToSessions`, `backfillMissingSlots`, materialization, `notifyNewSessions`, toggle `allow_no_instructor`) est desormais gate derriere `$event->getStatus() === Event::STATUS_VALIDATED`. Si l'evenement est en `DRAFT`/`PENDING`, le store se contente de sauver l'evenement, les plages et les groupes — et l'`initial_session_date` qui les accompagne.
+- **`EventsController::doValidate`** : apres `$event->validate()`, on lit `$event->getInitialSessionDate()` et on materialise les seances via la nouvelle methode `materializeSessions($event, $date)` (dispatcher recurrent / ponctuel). Le bloc historique `loadOpenFutureSessionsWithoutInstructor` + `notifyNewSessions` est conserve : il invite les responsables de groupe a se positionner sur les seances qui viennent d'etre creees **et** sur les eventuelles seances historiques pre-existantes (events crees avant cette migration, ou seances ajoutees manuellement).
+- **Helper `materializeSessions`** : encapsule la dispatch ponctuel/recurrent et le flash "%d sessions ont ete generees". Appele depuis `doValidate` (workflow normal) **et** depuis `doStore` quand staff/admin cree directement un evenement en `STATUS_VALIDATED` (ou re-genere la recurrence apres edition d'un evenement deja valide). Le cas "edition d'un evenement ponctuel deja valide" est explicitement exclu de l'appel pour ne pas dupliquer la session initiale.
+- **`createSessionsForEvent`** : signature simplifiee `(Event $event, string $sessionDate)` ; lit directement `$event->getActiveSlots()` au lieu du POST (Phase 78). Plus de couplage au tableau `$post`.
+- **Template `event_form.html.twig`** : le champ `session_date` est pre-rempli avec `event.getInitialSessionDate()` tant que l'evenement n'est pas valide (afin que la date soit reaffichee si on edite un brouillon) ; il reste vide en edition d'evenement valide (la date sert alors a generer de nouvelles occurrences recurrentes, pas a re-creer la seance originale). Tooltip corrige : "Date of the session — sessions are created when the event is validated."
+- **Template `event_show.html.twig`** : l'onglet "Sessions" affiche un message info en haut quand `event.getStatus() in ['draft', 'pending']` : "Sessions will be created when the event is validated." suivi de la date prevue si renseignee.
+
+#### Effets de bord (acceptes)
+
+- Si la `initial_session_date` n'est pas saisie au formulaire, l'evenement est validable mais aucune seance ne sera generee a la validation. Au prochain `doStore` (edition) la date pourra etre ajoutee, mais pour un evenement ponctuel deja valide, `materializeSessions` ne sera pas rappelee (le cas edit ponctuel est volontairement exclu pour ne pas dupliquer). Pour un evenement recurrent, l'edition declenchera `materializeSessions` via la branche recurring.
+- Pour les evenements pre-existant cette migration (deja en base avec `initial_session_date = NULL`), `doValidate` skip la generation et se contente du `notifyNewSessions` sur les seances historiques existantes — pas de doublons.
+- Si la date prevue est dans le passe au moment de la validation, on genere quand meme : `RecurrenceHandler` skipe naturellement les dates passees ; le cas ponctuel cree une seance datee dans le passe (legitime pour une validation retroactive d'un evenement deja deroule).
+
+#### Hors perimetre
+
+- Pas de raccourci "valider directement a la creation" pour le staff/admin (deja possible via le selecteur de statut du formulaire — comportement Phase 46 inchange).
+- Pas de blocage de la submit/validate quand `initial_session_date` est NULL — le staff peut valider un evenement "vide" et le completer ensuite.
+- Pas de nettoyage automatique des seances orphelines des anciens events DRAFT (s'il en restait apres deploiement) — elles seront soit deja en place, soit validees au prochain workflow.
+
 ### Phase 78 - Plages horaires actives / inactives par evenement (saisonnier)
 
 **Statut :** TERMINEE

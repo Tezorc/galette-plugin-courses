@@ -193,6 +193,14 @@ Seuls les evenements au statut **Valide** sont visibles par les adherents.
 
 Les responsables de groupe ne peuvent creer des evenements qu'au statut **Brouillon**. Pour publier un evenement, ils doivent utiliser le bouton **"Soumettre pour validation"** (voir section Workflow de validation). Le staff et les administrateurs ont acces a tous les statuts dans le formulaire.
 
+**Creation differee des seances** : tant que l'evenement n'a pas atteint le statut **Valide**, aucune seance n'est creee en base. La date de debut saisie au formulaire est memorisee sur l'evenement et utilisee a la validation pour generer la (ou les) seance(s) ponctuelle(s) ou la serie recurrente. Concretement :
+
+- En statut **Brouillon** ou **En attente**, la page de detail de l'evenement affiche le message "Sessions will be created when the event is validated." avec la date prevue.
+- Les listes de seances (cote membre, moniteur, responsable, staff, admin) ne montrent jamais les seances d'un evenement non valide — il n'y en a pas.
+- Au moment du clic sur **Valider**, les seances sont creees instantanement et les invitations moniteur sont envoyees comme pour tout evenement nouvellement valide.
+- Si un evenement est rejete (retour en **Brouillon**), aucune seance n'a a etre supprimee puisqu'aucune n'avait ete creee.
+- Pour le staff/admin qui cree directement un evenement au statut **Valide** depuis le formulaire, les seances sont creees immediatement comme avant — la creation differee ne concerne que le workflow Brouillon -> En attente -> Valide.
+
 ### 2. Gerer les evenements
 
 - Menu **Gestion des inscriptions > Evenements** : liste de tous les evenements accessibles

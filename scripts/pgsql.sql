@@ -44,6 +44,7 @@ CREATE TABLE galette_courses_events (
     is_restricted boolean NOT NULL DEFAULT false,
     allow_registration_without_instructor boolean NOT NULL DEFAULT false,
     no_instructor_needed boolean NOT NULL DEFAULT false,
+    initial_session_date date DEFAULT NULL,
     status varchar(20) NOT NULL DEFAULT 'draft',
     register_deadline_days integer DEFAULT NULL,
     creator_id integer DEFAULT NULL,

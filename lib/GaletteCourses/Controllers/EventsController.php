@@ -330,107 +330,104 @@ class EventsController extends AbstractPluginController
                 $event->storeGroups([]);
             }
 
-            // Propagate edits onto existing future sessions (Phase 41).
-            if ($id !== null) {
-                $this->propagateCapacityToSessions($event);
-                $this->propagateScheduleToSessions($event, $oldSlots, $slots);
-                if ($event->isRecurring() && !empty($post['session_date'])) {
-                    $this->propagateDayOfWeekToSessions($event, (string)$post['session_date']);
+            // Sessions are materialized at validation time (see doValidate). While
+            // the event is in DRAFT/PENDING, the form values (initial date, slots,
+            // recurrence) are stored on the event itself but the sessions table is
+            // left untouched — this is what keeps non-validated events out of the
+            // staff/instructor session listings. Any session propagation, backfill,
+            // session creation and member notification therefore only kicks in
+            // once the event is VALIDATED (edit path), since at that point real
+            // sessions exist and may need to be kept in sync with the form.
+            if ($event->getStatus() === Event::STATUS_VALIDATED) {
+                // Propagate edits onto existing future sessions (Phase 41).
+                if ($id !== null) {
+                    $this->propagateCapacityToSessions($event);
+                    $this->propagateScheduleToSessions($event, $oldSlots, $slots);
+                    if ($event->isRecurring() && !empty($post['session_date'])) {
+                        $this->propagateDayOfWeekToSessions($event, (string)$post['session_date']);
+                    }
                 }
-            }
 
-            // Collect sessions auto-created during this save so we can
-            // notify group managers in a single batch below.
-            $createdSessions = [];
+                // Collect sessions auto-created during this save so we can
+                // notify group managers in a single batch below.
+                $createdSessions = [];
 
-            // Phase 69: backfill missing slot-sessions on existing future dates.
-            // Idempotent — single-slot events with all slots present trigger no
-            // inserts. Covers (1) edit of an existing event where the user
-            // added a slot, and (2) migration of legacy multi-slot events.
-            // Skipped at creation time to avoid double-counting with the
-            // create-block below (createSessionsForEvent / generateSessions).
-            // Phase 78: only active slots are backfilled — re-activating a slot
-            // therefore fills its missing future dates ; deactivating leaves
-            // the already-generated sessions alone (no cascade by design).
-            $activeSlots = array_values(array_filter(
-                $slots,
-                static fn(array $s): bool => !empty($s['is_active'])
-            ));
-            if ($id !== null && !empty($activeSlots)) {
-                $handler = new RecurrenceHandler($this->zdb);
-                $backfilled = $handler->backfillMissingSlots($event, $activeSlots);
-                if (!empty($backfilled)) {
-                    $createdSessions = array_merge($createdSessions, $backfilled);
+                // Phase 69: backfill missing slot-sessions on existing future dates.
+                // Idempotent — single-slot events with all slots present trigger no
+                // inserts. Covers (1) edit of an existing event where the user
+                // added a slot, and (2) migration of legacy multi-slot events.
+                // Phase 78: only active slots are backfilled — re-activating a slot
+                // therefore fills its missing future dates ; deactivating leaves
+                // the already-generated sessions alone (no cascade by design).
+                $activeSlots = array_values(array_filter(
+                    $slots,
+                    static fn(array $s): bool => !empty($s['is_active'])
+                ));
+                if ($id !== null && !empty($activeSlots)) {
+                    $handler = new RecurrenceHandler($this->zdb);
+                    $backfilled = $handler->backfillMissingSlots($event, $activeSlots);
+                    if (!empty($backfilled)) {
+                        $createdSessions = array_merge($createdSessions, $backfilled);
+                    }
                 }
-            }
 
-            // For non-recurring event: auto-create one session per defined slot
-            // on the chosen date (Phase 69 — multi-slot support). Skipped on
-            // edit since backfill above already covers the existing date.
-            if (!$event->isRecurring() && !empty($post['session_date']) && $id === null) {
-                $created = $this->createSessionsForEvent($event, $post);
-                if (!empty($created)) {
-                    $createdSessions = array_merge($createdSessions, $created);
+                // Materialize sessions when the event reaches VALIDATED at
+                // store time. Two code paths converge here:
+                //   - Creation by staff/admin who picked status=VALIDATED in
+                //     the form directly (no submit/validate roundtrip).
+                //   - Edit of an already-validated recurring event where the
+                //     user wants to seed new occurrences from a new start date
+                //     (RecurrenceHandler is idempotent, no duplicates).
+                // The one-shot edit case is skipped on purpose so the original
+                // session is not duplicated. For the regular DRAFT -> PENDING
+                // -> VALIDATED workflow, doValidate calls materializeSessions.
+                if (!empty($post['session_date']) && ($id === null || $event->isRecurring())) {
+                    $created = $this->materializeSessions($event, (string)$post['session_date']);
+                    if (!empty($created)) {
+                        $createdSessions = array_merge($createdSessions, $created);
+                    }
                 }
-            }
 
-            // For recurring event: generate sessions from start date
-            if ($event->isRecurring() && !empty($post['session_date'])) {
-                $handler = new RecurrenceHandler($this->zdb);
-                $created = $handler->generateSessions($event, $post['session_date']);
-                if (count($created) > 0) {
-                    $createdSessions = array_merge($createdSessions, $created);
-                    $this->flash->addMessage(
-                        'success_detected',
-                        sprintf(_T('%d sessions have been generated.', 'courses'), count($created))
-                    );
-                }
-            }
-
-            // Notify group managers ONLY about session creation (not event
-            // creation/validation). Per user requirement: aucun courriel
-            // a la creation/validation de l'evenement, uniquement quand des
-            // seances (recurrentes ou non) sont effectivement creees.
-            $notification = null;
-            if (!empty($createdSessions) && $event->getStatus() === Event::STATUS_VALIDATED) {
-                $notification = new CourseNotification(
-                    $this->zdb,
-                    $this->preferences,
-                    new PluginPreferences($this->zdb),
-                    new MemberPreferences($this->zdb),
-                    $this->history
-                );
-                $notification->notifyNewSessions($event, $createdSessions);
-            }
-
-            // Phase 41: when the "allow registration without instructor" toggle
-            // just flipped from off to on, the existing future sessions without
-            // an instructor become registrable — notify eligible members now,
-            // mirroring what notifyNewSessions does for newly-created sessions.
-            // Sessions just created above are excluded: notifyNewSessions
-            // already invokes notifySessionOpenWithoutInstructor for them.
-            if (
-                $id !== null
-                && !$oldAllowNoInstructor
-                && $event->isRegistrationAllowedWithoutInstructor()
-                && !$event->isInstructorNotNeeded()
-                && $event->getStatus() === Event::STATUS_VALIDATED
-            ) {
-                $createdIds = array_map(static fn(Session $s) => $s->getId(), $createdSessions);
-                $futureNoInstr = array_filter(
-                    $this->loadOpenFutureSessionsWithoutInstructor($event),
-                    static fn(Session $s) => !in_array($s->getId(), $createdIds, true)
-                );
-                if (!empty($futureNoInstr)) {
-                    $notification ??= new CourseNotification(
+                $notification = null;
+                if (!empty($createdSessions)) {
+                    $notification = new CourseNotification(
                         $this->zdb,
                         $this->preferences,
                         new PluginPreferences($this->zdb),
                         new MemberPreferences($this->zdb),
                         $this->history
                     );
-                    foreach ($futureNoInstr as $s) {
-                        $notification->notifySessionOpenWithoutInstructor($s, $event);
+                    $notification->notifyNewSessions($event, $createdSessions);
+                }
+
+                // Phase 41: when the "allow registration without instructor" toggle
+                // just flipped from off to on, the existing future sessions without
+                // an instructor become registrable — notify eligible members now,
+                // mirroring what notifyNewSessions does for newly-created sessions.
+                // Sessions just created above are excluded: notifyNewSessions
+                // already invokes notifySessionOpenWithoutInstructor for them.
+                if (
+                    $id !== null
+                    && !$oldAllowNoInstructor
+                    && $event->isRegistrationAllowedWithoutInstructor()
+                    && !$event->isInstructorNotNeeded()
+                ) {
+                    $createdIds = array_map(static fn(Session $s) => $s->getId(), $createdSessions);
+                    $futureNoInstr = array_filter(
+                        $this->loadOpenFutureSessionsWithoutInstructor($event),
+                        static fn(Session $s) => !in_array($s->getId(), $createdIds, true)
+                    );
+                    if (!empty($futureNoInstr)) {
+                        $notification ??= new CourseNotification(
+                            $this->zdb,
+                            $this->preferences,
+                            new PluginPreferences($this->zdb),
+                            new MemberPreferences($this->zdb),
+                            $this->history
+                        );
+                        foreach ($futureNoInstr as $s) {
+                            $notification->notifySessionOpenWithoutInstructor($s, $event);
+                        }
                     }
                 }
             }
@@ -592,33 +589,45 @@ class EventsController extends AbstractPluginController
     }
 
     /**
-     * Auto-create one session per defined time slot for a non-recurring event
-     * on the chosen date. Phase 69: multi-slot events generate multiple sessions
-     * (e.g. 2 slots -> 2 sessions on the same date with their own capacity).
-     * Returns the list of created Session objects.
+     * Dispatcher used at validation time (or at direct create-as-VALIDATED) to
+     * spawn the sessions an event needs: a single per-slot session for one-shot
+     * events, or the full recurrence series for recurring events. Idempotent
+     * for the recurring case (RecurrenceHandler skips existing dates) — the
+     * caller is responsible for skipping the one-shot edit case to avoid
+     * duplicating the original session.
      *
-     * @param array<string, mixed> $post
      * @return Session[]
      */
-    private function createSessionsForEvent(Event $event, array $post): array
+    private function materializeSessions(Event $event, string $sessionDate): array
     {
-        // Phase 78: skip deactivated slots so the user can pre-record seasonal
-        // schedules (summer/winter) without spawning sessions on the inactive
-        // side. Slot rows missing the is_active flag default to active.
-        $slots = [];
-        if (isset($post['slots']) && is_array($post['slots'])) {
-            foreach ($post['slots'] as $slot) {
-                if (!empty($slot['start_time']) && !empty($slot['end_time']) && !empty($slot['is_active'])) {
-                    $slots[] = [
-                        'start_time' => $slot['start_time'],
-                        'end_time'   => $slot['end_time'],
-                    ];
-                }
+        if ($event->isRecurring()) {
+            $handler = new RecurrenceHandler($this->zdb);
+            $created = $handler->generateSessions($event, $sessionDate);
+            if (count($created) > 0) {
+                $this->flash->addMessage(
+                    'success_detected',
+                    sprintf(_T('%d sessions have been generated.', 'courses'), count($created))
+                );
             }
+            return $created;
         }
+        return $this->createSessionsForEvent($event, $sessionDate);
+    }
+
+    /**
+     * Auto-create one session per active time slot of a non-recurring event
+     * on the given date. Called at validation time (Option B: sessions are
+     * deferred until the event is validated). Phase 78: deactivated slots are
+     * skipped so that seasonal schedules don't spawn sessions on the off
+     * side; falls back to a 09:00-10:00 default if no active slot is defined.
+     *
+     * @return Session[]
+     */
+    private function createSessionsForEvent(Event $event, string $sessionDate): array
+    {
+        $event->loadSlots();
+        $slots = $event->getActiveSlots();
         if (empty($slots)) {
-            // Fallback: keep the legacy single-session default to avoid silently
-            // failing when an event is saved without slots.
             $slots = [['start_time' => '09:00', 'end_time' => '10:00']];
         }
 
@@ -626,7 +635,7 @@ class EventsController extends AbstractPluginController
         foreach ($slots as $slot) {
             $session = new Session($this->zdb);
             $session->setEventId($event->getId());
-            $session->setSessionDate($post['session_date']);
+            $session->setSessionDate($sessionDate);
             $session->setStartTime($slot['start_time']);
             $session->setEndTime($slot['end_time']);
             $session->setMaxCapacity($event->getMaxCapacity());
@@ -731,13 +740,22 @@ class EventsController extends AbstractPluginController
             // notifyValidation : informe le createur (pas les moniteurs/membres).
             $notification->notifyValidation($event);
 
-            // Lors de la validation, l'evenement etait probablement en
-            // brouillon avec deja une ou plusieurs seances futures creees
-            // (workflow standard : responsable cree -> soumet -> staff valide).
-            // Ces seances n'avaient pas encore declenche de notification
-            // car la regle exige status=VALIDATED. Maintenant que c'est le
-            // cas, on invite les responsables de groupe a se porter volontaire
-            // sur les seances qui n'ont pas encore de moniteur.
+            // Option B (sessions deferred until validation): materialize the
+            // sessions now using the date captured on the event at draft time.
+            // For events pre-existing this change, initial_session_date may be
+            // NULL — in that case we skip generation and rely on the historical
+            // sessions that were already created in the draft workflow.
+            $sessionDate = $event->getInitialSessionDate();
+            if ($sessionDate !== null && $sessionDate !== '') {
+                $this->materializeSessions($event, $sessionDate);
+            }
+
+            // Invite group managers to volunteer on every open future session
+            // that does not yet have an instructor. Covers both the sessions
+            // just created above AND any pre-existing legacy sessions that
+            // survived from the old draft-time creation flow. notifyNewSessions
+            // is internally deduplicated by (member, session), so this is safe
+            // to call unconditionally.
             $sessionsWithoutInstructor = $this->loadOpenFutureSessionsWithoutInstructor($event);
             if (!empty($sessionsWithoutInstructor)) {
                 $notification->notifyNewSessions($event, $sessionsWithoutInstructor);
