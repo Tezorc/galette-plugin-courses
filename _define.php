@@ -30,10 +30,10 @@ $this->register(
     name: 'Galette Courses',
     desc: 'Courses and events management',
     author: 'ccag42 Team',
-    version: '0.1.0',
-    compver: '1.2.0',
+    version: '0.2.0-dev',
+    compver: '1.3.0',
     route: 'courses',
-    date: '2026-02-24',
+    date: '2026-06-07',
     acls: [
         // Event authorship: routes are 'member' but each handler enforces
         // denyUnlessCanAuthorEvents() (admin/staff/group manager/instructor on

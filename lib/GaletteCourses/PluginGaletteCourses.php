@@ -24,15 +24,21 @@ declare(strict_types=1);
 namespace GaletteCourses;
 
 use Galette\Core\GalettePlugin;
+use Galette\Core\Plugins\MenuProviderInterface;
+use Galette\Core\Plugins\DashboardProviderInterface;
+use Galette\Core\Plugins\MemberActionProviderInterface;
 use Galette\Entity\Adherent;
 use GaletteCourses\Entity\SessionInstructor;
 
 /**
  * @author Team CCAG <contact@ccag42.org>
  */
-class PluginGaletteCourses extends GalettePlugin
+class PluginGaletteCourses extends GalettePlugin implements
+    MenuProviderInterface,
+    DashboardProviderInterface,
+    MemberActionProviderInterface
 {
-    public static function getMenusContents(): array
+    public function getMenus(): array
     {
         global $login, $zdb;
 
@@ -157,12 +163,12 @@ class PluginGaletteCourses extends GalettePlugin
         return $menus;
     }
 
-    public static function getPublicMenusItemsList(): array
+    public function getPublicMenus(): array
     {
         return [];
     }
 
-    public static function getDashboardsContents(): array
+    public function getDashboards(): array
     {
         global $login;
 
@@ -181,7 +187,7 @@ class PluginGaletteCourses extends GalettePlugin
         return $dashboards;
     }
 
-    public static function getMyDashboardsContents(): array
+    public function getMyDashboards(): array
     {
         global $login, $zdb;
 
@@ -232,17 +238,17 @@ class PluginGaletteCourses extends GalettePlugin
         return $tiles;
     }
 
-    public static function getListActionsContents(Adherent $member): array
+    public function getListActions(Adherent $member): array
     {
         return [];
     }
 
-    public static function getDetailedActionsContents(Adherent $member): array
+    public function getDetailedActions(Adherent $member): array
     {
         return [];
     }
 
-    public static function getBatchActionsContents(): array
+    public function getBatchActions(): array
     {
         return [];
     }

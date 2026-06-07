@@ -2538,15 +2538,21 @@ La barre laterale contient **deux groupes de menus** distincts :
 
 ### 6.1 Compatibilite
 
-- Galette >= 1.2.0
-- PHP >= 8.1 (compatible 8.1, 8.2, 8.3, 8.4)
+- Galette >= 1.3.0 (`compver: '1.3.0'`). Branche de developpement `dev-galette-1.3`, version plugin `0.2.0-dev`.
+  Galette 1.3.0 desactive (`DISABLED_COMPAT`) tout plugin dont `compver` est inferieur a `GALETTE_COMPAT_VERSION` (1.3.0) : le bump de `compver` est donc obligatoire pour que le plugin se charge.
+  Cette branche n'est plus compatible avec Galette < 1.2.2 (migration vers les interfaces de plugin introduites en 1.2.2, cf. 6.2). La branche `main` reste sur la cible 1.2.0.
+- PHP >= 8.2 (compatible 8.2, 8.3, 8.4, 8.5)
 - MySQL / MariaDB
 - Fomantic UI (integre a Galette)
 
 ### 6.2 Standards Galette
 
 - Namespace : `GaletteCourses`
-- Classe plugin : `PluginGaletteCourses` extends `GalettePlugin`
+- Classe plugin : `PluginGaletteCourses` extends `GalettePlugin` et implemente les interfaces de provider Galette 1.3 :
+  `MenuProviderInterface` (`getMenus()`, `getPublicMenus()`), `DashboardProviderInterface` (`getDashboards()`, `getMyDashboards()`),
+  `MemberActionProviderInterface` (`getListActions()`, `getDetailedActions()`, `getBatchActions()`). `InstallableInterface::isInstalled()`
+  est fourni par la classe de base. Les anciennes methodes **statiques** `get*Contents()` (deprecated depuis Galette 1.2.2) ont ete remplacees
+  par ces methodes d'instance ; le plugin ne declenche donc plus d'avertissement de depreciation.
 - Controlleurs : extends `AbstractPluginController` ou `AbstractController` + `PluginControllerTrait`
 - Entites : pattern `load()` / `loadFromRS()` / `store()` / `remove()`
 - Filtres : extends `Galette\Core\Pagination`

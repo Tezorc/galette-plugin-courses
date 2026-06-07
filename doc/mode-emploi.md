@@ -41,7 +41,7 @@ Pour un evenement ponctuel, une seance unique est creee automatiquement a la cre
 
 ### Prerequis
 
-- Galette >= 1.2.0
+- Galette >= 1.3.0 (branche `dev-galette-1.3`, version plugin `0.2.0-dev`). La branche `main` reste compatible Galette 1.2.0.
 - PHP >= 8.2 (compatible 8.2, 8.3, 8.4, 8.5)
 - MySQL / MariaDB
 
