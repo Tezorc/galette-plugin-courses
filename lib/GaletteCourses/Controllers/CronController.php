@@ -69,6 +69,54 @@ class CronController extends AbstractController
     }
 
     /**
+     * Best-effort load of this plugin's 'courses' translation domain for the
+     * active language.
+     *
+     * Cron endpoints are hit unattended (curl, no cookie/session), a context
+     * where Galette may not have loaded plugin translations. That left
+     * runtime-translated email parts (notably the unsubscribe footer built
+     * with _T(..., 'courses')) in English while the DB-stored template body
+     * was localized.
+     *
+     * Delegates to Galette's own Plugins::loadModuleL10N() so the correct
+     * loaders are used (including the $lang-style local_lang.php), whatever
+     * the Galette version. Wrapped so any failure can never break the cron.
+     */
+    private function loadPluginL10n(): void
+    {
+        try {
+            global $plugins, $i18n;
+            if (
+                !isset($plugins)
+                || !method_exists($plugins, 'getModules')
+                || !method_exists($plugins, 'loadModuleL10N')
+            ) {
+                return;
+            }
+            $lang = (isset($i18n) && method_exists($i18n, 'getLongID'))
+                ? (string)$i18n->getLongID()
+                : '';
+            if ($lang === '') {
+                $lang = (string)($this->preferences->pref_lang ?? '');
+            }
+            if ($lang === '') {
+                return;
+            }
+            foreach ($plugins->getModules() as $mid => $module) {
+                if (is_array($module) && ($module['route'] ?? null) === 'courses') {
+                    $plugins->loadModuleL10N((string)$mid, $lang);
+                    break;
+                }
+            }
+        } catch (\Throwable $e) {
+            Analog::log(
+                'Courses cron: could not load plugin translations: ' . $e->getMessage(),
+                Analog::WARNING
+            );
+        }
+    }
+
+    /**
      * Auto-generate sessions for all validated recurring events.
      * Called via cron: GET /plugins/courses/cron/generate-sessions?token=XXX
      */
@@ -79,6 +127,8 @@ class CronController extends AbstractController
         if (($denied = $this->verifyCronToken($request, $response, $pluginPrefs)) !== null) {
             return $denied;
         }
+
+        $this->loadPluginL10n();
 
         // Load all validated recurring events
         try {
@@ -189,6 +239,8 @@ class CronController extends AbstractController
             return $denied;
         }
 
+        $this->loadPluginL10n();
+
         $notification = new CourseNotification(
             $this->zdb,
             $this->preferences,
@@ -253,6 +305,8 @@ class CronController extends AbstractController
             $response->getBody()->write($body);
             return $response->withHeader('Content-Type', 'text/plain');
         }
+
+        $this->loadPluginL10n();
 
         $notification = new CourseNotification(
             $this->zdb,
