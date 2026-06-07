@@ -188,12 +188,12 @@
                                 </div>
                             </div>
                             <div class="field">
-                                <label>{{ _T("Start time", "courses") }}</label>
-                                <input type="time" name="slots[{{ loop.index0 }}][start_time]" value="{{ slot.start_time }}"/>
+                                <label for="slot_start_{{ loop.index0 }}">{{ _T("Start time", "courses") }}</label>
+                                <input type="time" id="slot_start_{{ loop.index0 }}" name="slots[{{ loop.index0 }}][start_time]" value="{{ slot.start_time }}"/>
                             </div>
                             <div class="field">
-                                <label>{{ _T("End time", "courses") }}</label>
-                                <input type="time" name="slots[{{ loop.index0 }}][end_time]" value="{{ slot.end_time }}"/>
+                                <label for="slot_end_{{ loop.index0 }}">{{ _T("End time", "courses") }}</label>
+                                <input type="time" id="slot_end_{{ loop.index0 }}" name="slots[{{ loop.index0 }}][end_time]" value="{{ slot.end_time }}"/>
                             </div>
                         </div>
                     {% endfor %}
@@ -207,12 +207,12 @@
                             </div>
                         </div>
                         <div class="field">
-                            <label>{{ _T("Start time", "courses") }}</label>
-                            <input type="time" name="slots[0][start_time]" value=""/>
+                            <label for="slot_start_0">{{ _T("Start time", "courses") }}</label>
+                            <input type="time" id="slot_start_0" name="slots[0][start_time]" value=""/>
                         </div>
                         <div class="field">
-                            <label>{{ _T("End time", "courses") }}</label>
-                            <input type="time" name="slots[0][end_time]" value=""/>
+                            <label for="slot_end_0">{{ _T("End time", "courses") }}</label>
+                            <input type="time" id="slot_end_0" name="slots[0][end_time]" value=""/>
                         </div>
                     </div>
                 {% endif %}
@@ -247,8 +247,8 @@
                             '<label></label>' +
                         '</div>' +
                     '</div>' +
-                    '<div class="field"><label>{{ _T("Start time", "courses") }}</label><input type="time" name="slots[' + slotIndex + '][start_time]" value=""/></div>' +
-                    '<div class="field"><label>{{ _T("End time", "courses") }}</label><input type="time" name="slots[' + slotIndex + '][end_time]" value=""/></div>' +
+                    '<div class="field"><label for="slot_start_' + slotIndex + '">{{ _T("Start time", "courses") }}</label><input type="time" id="slot_start_' + slotIndex + '" name="slots[' + slotIndex + '][start_time]" value=""/></div>' +
+                    '<div class="field"><label for="slot_end_' + slotIndex + '">{{ _T("End time", "courses") }}</label><input type="time" id="slot_end_' + slotIndex + '" name="slots[' + slotIndex + '][end_time]" value=""/></div>' +
                     '</div>';
                 $('#slots-container').append(html);
                 $('#slots-container .ui.toggle.checkbox').last().checkbox();

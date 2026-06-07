@@ -83,12 +83,12 @@
             <table class="ui celled compact table" id="closure-table">
                 <thead>
                     <tr>
-                        <th>{{ _T('From', 'courses') }}</th>
-                        <th>{{ _T('Until', 'courses') }}</th>
-                        <th>{{ _T('Reason', 'courses') }}</th>
-                        <th class="collapsing center aligned">{{ _T('Duration', 'courses') }}</th>
-                        <th class="collapsing center aligned">{{ _T('Status', 'courses') }}</th>
-                        <th class="collapsing"></th>
+                        <th scope="col">{{ _T('From', 'courses') }}</th>
+                        <th scope="col">{{ _T('Until', 'courses') }}</th>
+                        <th scope="col">{{ _T('Reason', 'courses') }}</th>
+                        <th scope="col" class="collapsing center aligned">{{ _T('Duration', 'courses') }}</th>
+                        <th scope="col" class="collapsing center aligned">{{ _T('Status', 'courses') }}</th>
+                        <th scope="col" class="collapsing"><span class="courses-visually-hidden">{{ _T('Actions', 'courses') }}</span></th>
                     </tr>
                 </thead>
                 <tbody id="closure-rows">
@@ -102,13 +102,13 @@
                     </tr>
                     {% for range in closure_dates %}
                     <tr class="closure-row">
-                        <td data-label="{{ _T('From', 'courses') }}"><input type="date" name="closure_from[]" value="{{ range.from }}" class="closure-from-input"/></td>
-                        <td data-label="{{ _T('Until', 'courses') }}"><input type="date" name="closure_to[]" value="{{ range.to }}" class="closure-to-input"/></td>
-                        <td data-label="{{ _T('Reason', 'courses') }}"><input type="text" name="closure_label[]" value="{{ range.label|default('') }}" class="closure-label-input" maxlength="120" placeholder="{{ _T('e.g. Annual closure, Competition, AGM', 'courses') }}"/></td>
+                        <td data-label="{{ _T('From', 'courses') }}"><input type="date" name="closure_from[]" value="{{ range.from }}" class="closure-from-input" aria-label="{{ _T('Closure start date', 'courses') }}"/></td>
+                        <td data-label="{{ _T('Until', 'courses') }}"><input type="date" name="closure_to[]" value="{{ range.to }}" class="closure-to-input" aria-label="{{ _T('Closure end date', 'courses') }}"/></td>
+                        <td data-label="{{ _T('Reason', 'courses') }}"><input type="text" name="closure_label[]" value="{{ range.label|default('') }}" class="closure-label-input" maxlength="120" placeholder="{{ _T('e.g. Annual closure, Competition, AGM', 'courses') }}" aria-label="{{ _T('Closure reason', 'courses') }}"/></td>
                         <td data-label="{{ _T('Duration', 'courses') }}" class="collapsing center aligned closure-duration"></td>
                         <td data-label="{{ _T('Status', 'courses') }}" class="collapsing center aligned closure-status"></td>
                         <td class="collapsing closure-actions">
-                            <button type="button" class="ui tiny red icon button remove-closure-row">
+                            <button type="button" class="ui tiny red icon button remove-closure-row" aria-label="{{ _T('Remove this closure period', 'courses') }}" title="{{ _T('Remove this closure period', 'courses') }}">
                                 <i class="trash icon" aria-hidden="true"></i>
                             </button>
                         </td>
@@ -267,14 +267,18 @@ $(function() {
         var lblReason   = '{{ _T("Reason", "courses")|e('js') }}';
         var lblDuration = '{{ _T("Duration", "courses")|e('js') }}';
         var lblStatus   = '{{ _T("Status", "courses")|e('js') }}';
+        var ariaFrom    = '{{ _T("Closure start date", "courses")|e('js') }}';
+        var ariaUntil   = '{{ _T("Closure end date", "courses")|e('js') }}';
+        var ariaReason  = '{{ _T("Closure reason", "courses")|e('js') }}';
+        var ariaRemove  = '{{ _T("Remove this closure period", "courses")|e('js') }}';
         return $('<tr class="closure-row">' +
-            '<td data-label="' + lblFrom + '"><input type="date" name="closure_from[]" class="closure-from-input"/></td>' +
-            '<td data-label="' + lblUntil + '"><input type="date" name="closure_to[]" class="closure-to-input"/></td>' +
-            '<td data-label="' + lblReason + '"><input type="text" name="closure_label[]" class="closure-label-input" maxlength="120" placeholder="' + labelPlaceholder + '"/></td>' +
+            '<td data-label="' + lblFrom + '"><input type="date" name="closure_from[]" class="closure-from-input" aria-label="' + ariaFrom + '"/></td>' +
+            '<td data-label="' + lblUntil + '"><input type="date" name="closure_to[]" class="closure-to-input" aria-label="' + ariaUntil + '"/></td>' +
+            '<td data-label="' + lblReason + '"><input type="text" name="closure_label[]" class="closure-label-input" maxlength="120" placeholder="' + labelPlaceholder + '" aria-label="' + ariaReason + '"/></td>' +
             '<td data-label="' + lblDuration + '" class="collapsing center aligned closure-duration">–</td>' +
             '<td data-label="' + lblStatus + '" class="collapsing center aligned closure-status"></td>' +
             '<td class="collapsing closure-actions">' +
-                '<button type="button" class="ui tiny red icon button remove-closure-row">' +
+                '<button type="button" class="ui tiny red icon button remove-closure-row" aria-label="' + ariaRemove + '" title="' + ariaRemove + '">' +
                     '<i class="trash icon" aria-hidden="true"></i>' +
                 '</button>' +
             '</td>' +

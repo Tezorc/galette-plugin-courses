@@ -181,7 +181,7 @@
                         <form action="{{ url_for("coursesDoAssignInstructor", {"id": session.getId()}) }}" method="post" class="ui form">
                             <div class="inline fields">
                                 <div class="field">
-                                    <select name="member_id" class="ui search dropdown">
+                                    <select name="member_id" class="ui search dropdown" aria-label="{{ _T("Assign instructor", "courses") }}">
                                         <option value="">{{ _T("Assign instructor", "courses") }}</option>
                                         {% for mid, mname in eligible_instructors %}
                                             <option value="{{ mid }}">{{ mname }}</option>
@@ -635,8 +635,8 @@
                             <form action="{{ url_for("coursesDoSessionCapacity", {"id": session.getId()}) }}" method="post" class="ui form">
                                 <div class="inline fields">
                                     <div class="field">
-                                        <label>{{ _T("New max capacity", "courses") }}</label>
-                                        <input type="number" name="max_capacity"
+                                        <label for="new_max_capacity">{{ _T("New max capacity", "courses") }}</label>
+                                        <input type="number" id="new_max_capacity" name="max_capacity"
                                             min="{{ session.getCurrentRegistrations() > 0 ? session.getCurrentRegistrations() : 1 }}"
                                             value="{{ session.getMaxCapacity() }}" class="courses-input-narrow">
                                     </div>
@@ -677,8 +677,8 @@
                             <form action="{{ url_for("coursesDoSessionForWaitlist", {"id": session.getId()}) }}" method="post" class="ui form">
                                 <div class="inline fields">
                                     <div class="required field">
-                                        <label>{{ _T("Date of new session", "courses") }}</label>
-                                        <input type="date" name="new_date" required class="courses-input-medium">
+                                        <label for="waitlist_new_date">{{ _T("Date of new session", "courses") }}</label>
+                                        <input type="date" id="waitlist_new_date" name="new_date" required class="courses-input-medium">
                                     </div>
                                     <div class="field">
                                         <button type="submit" class="ui small teal labeled icon button">
@@ -706,8 +706,8 @@
                     <div class="content">
                         <form action="{{ url_for("coursesDoSessionCancel", {"id": session.getId()}) }}" method="post" class="ui form" id="cancel-session-form">
                             <div class="required field">
-                                <label>{{ _T("Reason", "courses") }}</label>
-                                <select name="cancellation_reason" class="ui dropdown" required>
+                                <label for="cancellation_reason">{{ _T("Reason", "courses") }}</label>
+                                <select id="cancellation_reason" name="cancellation_reason" class="ui dropdown" required>
                                     <option value="">{{ _T("Select a reason", "courses") }}</option>
                                     <option value="competition">{{ _T("Competition", "courses") }}</option>
                                     <option value="instructor_absent">{{ _T("Instructor absent", "courses") }}</option>
@@ -786,11 +786,11 @@
                             <table class="ui compact table courses-attendance-list">
                                 <thead>
                                     <tr>
-                                        <th>{{ _T("Member", "courses") }}</th>
-                                        <th>{{ _T("Nickname", "courses") }}</th>
-                                        <th>{{ _T("Registration date", "courses") }}</th>
-                                        <th>{{ _T("Attendance", "courses") }}</th>
-                                        {% if can_cancel_registration %}<th></th>{% endif %}
+                                        <th scope="col">{{ _T("Member", "courses") }}</th>
+                                        <th scope="col">{{ _T("Nickname", "courses") }}</th>
+                                        <th scope="col">{{ _T("Registration date", "courses") }}</th>
+                                        <th scope="col">{{ _T("Attendance", "courses") }}</th>
+                                        {% if can_cancel_registration %}<th scope="col"><span class="courses-visually-hidden">{{ _T("Actions", "courses") }}</span></th>{% endif %}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -820,7 +820,7 @@
                                             </td>
                                             <td data-label="{{ _T("Registration date", "courses") }}" class="courses-attlist-date">{{ reg.getRegistrationDate()|date("d/m/Y") }}</td>
                                             <td data-label="{{ _T("Attendance", "courses") }}" class="courses-attendance-cell">
-                                                <select name="attendance[{{ reg.getId() }}]" class="ui compact dropdown">
+                                                <select name="attendance[{{ reg.getId() }}]" class="ui compact dropdown" aria-label="{{ _T("Attendance", "courses") }}">
                                                     <option value="registered"{% if reg.getStatus() == 'registered' %} selected{% endif %}>{{ _T("Registered", "courses") }}</option>
                                                     <option value="attended"{% if reg.getStatus() == 'attended' %} selected{% endif %}>{{ _T("Attended", "courses") }}</option>
                                                     <option value="absent"{% if reg.getStatus() == 'absent' %} selected{% endif %}>{{ _T("Absent", "courses") }}</option>
@@ -911,7 +911,7 @@
                     <form action="{{ url_for("coursesDoWalkIn", {"id": session.getId()}) }}" method="post" class="ui form">
                         <div class="inline fields">
                             <div class="field">
-                                <select name="member_id" class="ui search dropdown">
+                                <select name="member_id" class="ui search dropdown" aria-label="{{ _T("Select a member", "courses") }}">
                                     <option value="">{{ _T("Select a member", "courses") }}</option>
                                     {% for mid, member in walkin_eligible_members %}
                                         <option value="{{ mid }}">

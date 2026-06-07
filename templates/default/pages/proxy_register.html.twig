@@ -18,8 +18,8 @@
         {% if eligible_members|length > 0 %}
             <form action="{{ url_for("coursesDoProxyRegister", {"id": session.getId()}) }}" method="post" class="ui form">
                 <div class="field">
-                    <label>{{ _T("Select a member to register", "courses") }}</label>
-                    <select name="member_id" class="ui search dropdown" required>
+                    <label for="proxy_member_id">{{ _T("Select a member to register", "courses") }}</label>
+                    <select id="proxy_member_id" name="member_id" class="ui search dropdown" required>
                         <option value="">{{ _T("Select a member to register", "courses") }}</option>
                         {% for mid, member in eligible_members %}
                             <option value="{{ mid }}">
