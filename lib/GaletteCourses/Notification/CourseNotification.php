@@ -880,10 +880,10 @@ class CourseNotification
         $recipients = $this->expandRecipientsToFamily($recipients);
 
         $reasonBlock  = $reason !== null
-            ? "\n\n" . _T('Reason: ', 'courses') . $session->getCancellationReasonLabel()
+            ? "\n\n" . $this->tr('Reason: ') . $session->getCancellationReasonLabel()
             : '';
         $commentBlock = !empty($comment)
-            ? "\n" . _T('Comment: ', 'courses') . $comment
+            ? "\n" . $this->tr('Comment: ') . $comment
             : '';
 
         [$subject, $message] = $this->renderTemplate(MailTemplate::REF_WAITLIST_CANCELLATION, [
@@ -915,10 +915,10 @@ class CourseNotification
         $recipients = $this->expandRecipientsToFamily($recipients);
 
         $reasonBlock  = $reason !== null
-            ? "\n\n" . _T('Reason: ', 'courses') . $session->getCancellationReasonLabel()
+            ? "\n\n" . $this->tr('Reason: ') . $session->getCancellationReasonLabel()
             : '';
         $commentBlock = !empty($comment)
-            ? "\n" . _T('Comment: ', 'courses') . $comment
+            ? "\n" . $this->tr('Comment: ') . $comment
             : '';
 
         [$subject, $message] = $this->renderTemplate(MailTemplate::REF_CANCELLATION, [
@@ -972,6 +972,63 @@ class CourseNotification
      * Build unsubscribe footer for a given member.
      * Returns an empty string if MemberPreferences is not available or member_id is 0.
      */
+    /**
+     * Whether this plugin's 'courses' translation domain has already been
+     * registered on the global Translator during this request.
+     */
+    private static bool $coursesL10nLoaded = false;
+
+    /**
+     * Register this plugin's 'courses' translation domain on the global
+     * Translator, mirroring Galette\Core\Plugins::loadModuleL10N().
+     *
+     * In ordinary web requests Galette loads plugin translations for the
+     * active language, but cron/CLI contexts (digest emails) may run without
+     * them. That left runtime-translated strings — e.g. the unsubscribe
+     * footer — in English while the DB-stored template body was localized.
+     * Idempotent: safe to call repeatedly.
+     */
+    private function ensureCoursesL10nLoaded(): void
+    {
+        global $translator;
+        if (self::$coursesL10nLoaded || !isset($translator)) {
+            return;
+        }
+        $langDir = dirname(__DIR__, 3) . '/lang/';
+        $translator->addTranslationFilePattern(
+            'gettext',
+            $langDir,
+            '/%s/LC_MESSAGES/courses.mo',
+            'courses'
+        );
+        $translator->addTranslationFilePattern(
+            'phparray',
+            $langDir,
+            'courses_%s_local_lang.php',
+            'courses'
+        );
+        self::$coursesL10nLoaded = true;
+    }
+
+    /**
+     * Translate a 'courses' string for member-facing email content, in the
+     * site's configured language (pref_lang) so it matches the DB-stored
+     * template body. Reliable even from cron/CLI where the active request
+     * locale and the plugin text domain may not be set up. Falls back to
+     * _T() (and ultimately the original string) when no translator/locale
+     * is available.
+     */
+    private function tr(string $string): string
+    {
+        global $translator;
+        $this->ensureCoursesL10nLoaded();
+        $lang = (string)($this->preferences->pref_lang ?? '');
+        if (isset($translator) && $lang !== '') {
+            return $translator->translate($string, 'courses', $lang);
+        }
+        return _T($string, 'courses');
+    }
+
     private function buildUnsubscribeFooter(int $memberId): string
     {
         if ($memberId <= 0 || $this->memberPreferences === null) {
@@ -991,8 +1048,8 @@ class CourseNotification
         }
         $unsubscribeUrl = $baseUrl . '/plugins/courses/unsubscribe/' . $token;
         return "\n\n---\n"
-            . _T('You receive this email because you are a member.', 'courses') . "\n"
-            . _T('Unsubscribe from notifications:', 'courses') . "\n"
+            . $this->tr('You receive this email because you are a member.') . "\n"
+            . $this->tr('Unsubscribe from notifications:') . "\n"
             . $unsubscribeUrl;
     }
 
