@@ -69,6 +69,42 @@ class CronController extends AbstractController
     }
 
     /**
+     * Best-effort: register this plugin's gettext (.mo) translations for the
+     * 'courses' domain.
+     *
+     * Cron endpoints are hit unattended (curl, no cookie), a context where
+     * Galette does not load plugin translations — which left the email
+     * unsubscribe footer (_T(..., 'courses')) in English while the DB-stored
+     * template body was in French.
+     *
+     * Only the gettext .mo loader is registered here — deliberately NOT the
+     * phparray local_lang loader, which expects a `return [...]` file whereas
+     * Galette's local_lang uses `$lang[...]=...` (loading it via the standard
+     * Laminas loader would throw). The footer strings live in the .mo, and
+     * are not overridden in local_lang, so the .mo alone is sufficient.
+     * Fully wrapped: a failure can never break the cron.
+     */
+    private function loadCoursesGettext(): void
+    {
+        try {
+            global $translator;
+            if (isset($translator) && method_exists($translator, 'addTranslationFilePattern')) {
+                $translator->addTranslationFilePattern(
+                    'gettext',
+                    dirname(__DIR__, 3) . '/lang/',
+                    '/%s/LC_MESSAGES/courses.mo',
+                    'courses'
+                );
+            }
+        } catch (\Throwable $e) {
+            Analog::log(
+                'Courses cron: could not register translations: ' . $e->getMessage(),
+                Analog::WARNING
+            );
+        }
+    }
+
+    /**
      * Auto-generate sessions for all validated recurring events.
      * Called via cron: GET /plugins/courses/cron/generate-sessions?token=XXX
      */
@@ -79,6 +115,8 @@ class CronController extends AbstractController
         if (($denied = $this->verifyCronToken($request, $response, $pluginPrefs)) !== null) {
             return $denied;
         }
+
+        $this->loadCoursesGettext();
 
         // Load all validated recurring events
         try {
@@ -189,6 +227,8 @@ class CronController extends AbstractController
             return $denied;
         }
 
+        $this->loadCoursesGettext();
+
         $notification = new CourseNotification(
             $this->zdb,
             $this->preferences,
@@ -253,6 +293,8 @@ class CronController extends AbstractController
             $response->getBody()->write($body);
             return $response->withHeader('Content-Type', 'text/plain');
         }
+
+        $this->loadCoursesGettext();
 
         $notification = new CourseNotification(
             $this->zdb,
