@@ -2087,3 +2087,15 @@ msgstr "Mois actifs"
 msgid "No instructor ran a session during this period."
 msgstr "Aucun moniteur n'a assuré de séance sur cette période."
 
+msgid "Closure start date"
+msgstr "Date de début de fermeture"
+
+msgid "Closure end date"
+msgstr "Date de fin de fermeture"
+
+msgid "Closure reason"
+msgstr "Motif de la fermeture"
+
+msgid "Remove this closure period"
+msgstr "Supprimer cette période de fermeture"
+
