@@ -39,7 +39,7 @@ Plugin Galette pour la gestion de cours, entrainements et evenements sportifs av
 - Controlleurs : extends `AbstractPluginController` (CRUD) ou `AbstractController` + `PluginControllerTrait`
 - Filtres : extends `Galette\Core\Pagination` (voir `MembersList` comme reference)
 - Templates : extends `page.html.twig`, utiliser Fomantic UI, inclure `components/forms/csrf.html.twig`
-- Routes : definies dans `_routes.php`, toutes avec `->add($authenticate)`
+- Routes : definies dans `_routes.php`, protegees avec `->add(Authenticate::class)` (Galette >= 1.3 ; le coeur ne fournit plus la variable `$authenticate`, utiliser le middleware `Galette\Middleware\Authenticate`)
 
 ### Fichiers de reference Galette core
 

@@ -25,6 +25,7 @@
 
 declare(strict_types=1);
 
+use Galette\Middleware\Authenticate;
 use GaletteCourses\Controllers\EventsController;
 use GaletteCourses\Controllers\SessionsController;
 use GaletteCourses\Controllers\RegistrationsController;
@@ -37,291 +38,291 @@ use GaletteCourses\Controllers\UnsubscribeController;
 $app->get(
     '/events[/{option}/{value}]',
     [EventsController::class, 'list']
-)->setName('coursesEvents')->add($authenticate);
+)->setName('coursesEvents')->add(Authenticate::class);
 
 $app->post(
     '/events/filter',
     [EventsController::class, 'filter']
-)->setName('coursesEventsFilter')->add($authenticate);
+)->setName('coursesEventsFilter')->add(Authenticate::class);
 
 $app->get(
     '/event/add',
     [EventsController::class, 'add']
-)->setName('coursesEventAdd')->add($authenticate);
+)->setName('coursesEventAdd')->add(Authenticate::class);
 
 $app->post(
     '/event/add',
     [EventsController::class, 'doAdd']
-)->setName('coursesDoEventAdd')->add($authenticate);
+)->setName('coursesDoEventAdd')->add(Authenticate::class);
 
 $app->get(
     '/event/{id:[0-9]+}',
     [EventsController::class, 'show']
-)->setName('coursesEventShow')->add($authenticate);
+)->setName('coursesEventShow')->add(Authenticate::class);
 
 $app->get(
     '/event/{id:[0-9]+}/edit',
     [EventsController::class, 'edit']
-)->setName('coursesEventEdit')->add($authenticate);
+)->setName('coursesEventEdit')->add(Authenticate::class);
 
 $app->post(
     '/event/{id:[0-9]+}/edit',
     [EventsController::class, 'doEdit']
-)->setName('coursesDoEventEdit')->add($authenticate);
+)->setName('coursesDoEventEdit')->add(Authenticate::class);
 
 $app->post(
     '/event/{id:[0-9]+}/submit',
     [EventsController::class, 'doSubmit']
-)->setName('coursesDoEventSubmit')->add($authenticate);
+)->setName('coursesDoEventSubmit')->add(Authenticate::class);
 
 $app->post(
     '/event/{id:[0-9]+}/validate',
     [EventsController::class, 'doValidate']
-)->setName('coursesDoEventValidate')->add($authenticate);
+)->setName('coursesDoEventValidate')->add(Authenticate::class);
 
 $app->post(
     '/event/{id:[0-9]+}/reject',
     [EventsController::class, 'doReject']
-)->setName('coursesDoEventReject')->add($authenticate);
+)->setName('coursesDoEventReject')->add(Authenticate::class);
 
 $app->post(
     '/event/{id:[0-9]+}/generate-sessions',
     [EventsController::class, 'doGenerateSessions']
-)->setName('coursesDoGenerateSessions')->add($authenticate);
+)->setName('coursesDoGenerateSessions')->add(Authenticate::class);
 
 $app->get(
     '/event/{id:[0-9]+}/remove',
     [EventsController::class, 'confirmDelete']
-)->setName('coursesEventRemove')->add($authenticate);
+)->setName('coursesEventRemove')->add(Authenticate::class);
 
 $app->post(
     '/event/remove',
     [EventsController::class, 'delete']
-)->setName('coursesDoEventRemove')->add($authenticate);
+)->setName('coursesDoEventRemove')->add(Authenticate::class);
 
 // Sessions
 $app->get(
     '/sessions[/{option}/{value}]',
     [SessionsController::class, 'list']
-)->setName('coursesSessions')->add($authenticate);
+)->setName('coursesSessions')->add(Authenticate::class);
 
 $app->post(
     '/sessions/filter',
     [SessionsController::class, 'filter']
-)->setName('coursesSessionsFilter')->add($authenticate);
+)->setName('coursesSessionsFilter')->add(Authenticate::class);
 
 $app->get(
     '/session/{id:[0-9]+}',
     [SessionsController::class, 'show']
-)->setName('coursesSessionShow')->add($authenticate);
+)->setName('coursesSessionShow')->add(Authenticate::class);
 
 $app->get(
     '/session/{id:[0-9]+}/edit',
     [SessionsController::class, 'edit']
-)->setName('coursesSessionEdit')->add($authenticate);
+)->setName('coursesSessionEdit')->add(Authenticate::class);
 
 $app->post(
     '/session/{id:[0-9]+}/edit',
     [SessionsController::class, 'doEdit']
-)->setName('coursesDoSessionEdit')->add($authenticate);
+)->setName('coursesDoSessionEdit')->add(Authenticate::class);
 
 // Session instructors
 $app->post(
     '/session/{id:[0-9]+}/assign-instructor',
     [SessionsController::class, 'doAssignInstructor']
-)->setName('coursesDoAssignInstructor')->add($authenticate);
+)->setName('coursesDoAssignInstructor')->add(Authenticate::class);
 
 $app->post(
     '/session/{id:[0-9]+}/remove-instructor',
     [SessionsController::class, 'doRemoveInstructor']
-)->setName('coursesDoRemoveInstructor')->add($authenticate);
+)->setName('coursesDoRemoveInstructor')->add(Authenticate::class);
 
 $app->post(
     '/session/{id:[0-9]+}/volunteer-instructor',
     [SessionsController::class, 'doVolunteerInstructor']
-)->setName('coursesDoVolunteerInstructor')->add($authenticate);
+)->setName('coursesDoVolunteerInstructor')->add(Authenticate::class);
 
 // Session cancellation
 $app->post(
     '/session/{id:[0-9]+}/cancel',
     [SessionsController::class, 'doCancel']
-)->setName('coursesDoSessionCancel')->add($authenticate);
+)->setName('coursesDoSessionCancel')->add(Authenticate::class);
 
 // Session close
 $app->post(
     '/session/{id:[0-9]+}/close',
     [SessionsController::class, 'doClose']
-)->setName('coursesDoSessionClose')->add($authenticate);
+)->setName('coursesDoSessionClose')->add(Authenticate::class);
 
 // Session reopen (closed → open)
 $app->post(
     '/session/{id:[0-9]+}/reopen',
     [SessionsController::class, 'doReopen']
-)->setName('coursesDoSessionReopen')->add($authenticate);
+)->setName('coursesDoSessionReopen')->add(Authenticate::class);
 
 // Session reactivation
 $app->post(
     '/session/{id:[0-9]+}/reactivate',
     [SessionsController::class, 'doReactivate']
-)->setName('coursesDoSessionReactivate')->add($authenticate);
+)->setName('coursesDoSessionReactivate')->add(Authenticate::class);
 
 // Session capacity edit (with waitlist auto-promotion)
 $app->post(
     '/session/{id:[0-9]+}/capacity',
     [SessionsController::class, 'doEditCapacity']
-)->setName('coursesDoSessionCapacity')->add($authenticate);
+)->setName('coursesDoSessionCapacity')->add(Authenticate::class);
 
 // Session waitlist: promote next in line
 $app->post(
     '/session/{id:[0-9]+}/promote-waitlist',
     [SessionsController::class, 'doPromoteWaitlist']
-)->setName('coursesDoPromoteWaitlist')->add($authenticate);
+)->setName('coursesDoPromoteWaitlist')->add(Authenticate::class);
 
 // Session waitlist: create a new session for people on waitlist
 $app->post(
     '/session/{id:[0-9]+}/session-for-waitlist',
     [SessionsController::class, 'doSessionForWaitlist']
-)->setName('coursesDoSessionForWaitlist')->add($authenticate);
+)->setName('coursesDoSessionForWaitlist')->add(Authenticate::class);
 
 // Registrations
 $app->post(
     '/session/{id:[0-9]+}/register',
     [RegistrationsController::class, 'doRegister']
-)->setName('coursesDoRegister')->add($authenticate);
+)->setName('coursesDoRegister')->add(Authenticate::class);
 
 $app->post(
     '/session/{id:[0-9]+}/unregister',
     [RegistrationsController::class, 'doUnregister']
-)->setName('coursesDoUnregister')->add($authenticate);
+)->setName('coursesDoUnregister')->add(Authenticate::class);
 
 $app->post(
     '/session/{id:[0-9]+}/waitlist',
     [RegistrationsController::class, 'doWaitlist']
-)->setName('coursesDoWaitlist')->add($authenticate);
+)->setName('coursesDoWaitlist')->add(Authenticate::class);
 
 $app->post(
     '/session/{id:[0-9]+}/parent-waitlist',
     [RegistrationsController::class, 'doParentWaitlist']
-)->setName('coursesDoParentWaitlist')->add($authenticate);
+)->setName('coursesDoParentWaitlist')->add(Authenticate::class);
 
 $app->post(
     '/session/{id:[0-9]+}/leave-waitlist',
     [RegistrationsController::class, 'doLeaveWaitlist']
-)->setName('coursesDoLeaveWaitlist')->add($authenticate);
+)->setName('coursesDoLeaveWaitlist')->add(Authenticate::class);
 
 $app->post(
     '/session/{id:[0-9]+}/parent-leave-waitlist',
     [RegistrationsController::class, 'doParentLeaveWaitlist']
-)->setName('coursesDoParentLeaveWaitlist')->add($authenticate);
+)->setName('coursesDoParentLeaveWaitlist')->add(Authenticate::class);
 
 // Attendance marking
 $app->post(
     '/session/{id:[0-9]+}/mark-attendance',
     [RegistrationsController::class, 'doMarkAttendance']
-)->setName('coursesDoMarkAttendance')->add($authenticate);
+)->setName('coursesDoMarkAttendance')->add(Authenticate::class);
 
 $app->post(
     '/session/{id:[0-9]+}/walk-in',
     [RegistrationsController::class, 'doWalkIn']
-)->setName('coursesDoWalkIn')->add($authenticate);
+)->setName('coursesDoWalkIn')->add(Authenticate::class);
 
 // Proxy registration
 $app->get(
     '/session/{id:[0-9]+}/proxy-register',
     [RegistrationsController::class, 'proxyRegisterForm']
-)->setName('coursesProxyRegisterForm')->add($authenticate);
+)->setName('coursesProxyRegisterForm')->add(Authenticate::class);
 
 $app->post(
     '/session/{id:[0-9]+}/proxy-register',
     [RegistrationsController::class, 'doProxyRegister']
-)->setName('coursesDoProxyRegister')->add($authenticate);
+)->setName('coursesDoProxyRegister')->add(Authenticate::class);
 
 $app->post(
     '/session/{id:[0-9]+}/proxy-unregister',
     [RegistrationsController::class, 'doProxyUnregister']
-)->setName('coursesDoProxyUnregister')->add($authenticate);
+)->setName('coursesDoProxyUnregister')->add(Authenticate::class);
 
 // Parent registration (inscrire ses enfants)
 $app->post(
     '/session/{id:[0-9]+}/parent-register',
     [RegistrationsController::class, 'doParentRegister']
-)->setName('coursesDoParentRegister')->add($authenticate);
+)->setName('coursesDoParentRegister')->add(Authenticate::class);
 
 $app->post(
     '/session/{id:[0-9]+}/parent-unregister',
     [RegistrationsController::class, 'doParentUnregister']
-)->setName('coursesDoParentUnregister')->add($authenticate);
+)->setName('coursesDoParentUnregister')->add(Authenticate::class);
 
 $app->get(
     '/my-registrations',
     [RegistrationsController::class, 'myRegistrations']
-)->setName('coursesMyRegistrations')->add($authenticate);
+)->setName('coursesMyRegistrations')->add(Authenticate::class);
 
 $app->get(
     '/my-instructor-sessions',
     [SessionsController::class, 'myInstructorSessions']
-)->setName('coursesMyInstructorSessions')->add($authenticate);
+)->setName('coursesMyInstructorSessions')->add(Authenticate::class);
 
 $app->get(
     '/registrations[/{option}/{value}]',
     [RegistrationsController::class, 'list']
-)->setName('coursesRegistrations')->add($authenticate);
+)->setName('coursesRegistrations')->add(Authenticate::class);
 
 $app->post(
     '/registrations/filter',
     [RegistrationsController::class, 'filter']
-)->setName('coursesRegistrationsFilter')->add($authenticate);
+)->setName('coursesRegistrationsFilter')->add(Authenticate::class);
 
 // iCal exports
 $app->get(
     '/session/{id:[0-9]+}/ical',
     [ICalController::class, 'sessionIcal']
-)->setName('coursesSessionIcal')->add($authenticate);
+)->setName('coursesSessionIcal')->add(Authenticate::class);
 
 // CSV export of registrations + waitlist
 $app->get(
     '/session/{id:[0-9]+}/export-registrations',
     [SessionsController::class, 'exportRegistrations']
-)->setName('coursesSessionExportRegistrations')->add($authenticate);
+)->setName('coursesSessionExportRegistrations')->add(Authenticate::class);
 
 $app->get(
     '/session/{id:[0-9]+}/mail',
     [SessionsController::class, 'mailSession']
-)->setName('coursesMailSession')->add($authenticate);
+)->setName('coursesMailSession')->add(Authenticate::class);
 
 // Phase 76: a registered (or waitlisted) member contacts the session's
 // instructors -- or the organizer when the event opted out of instructors.
 $app->get(
     '/session/{id:[0-9]+}/mail-instructors',
     [SessionsController::class, 'mailInstructors']
-)->setName('coursesMailInstructors')->add($authenticate);
+)->setName('coursesMailInstructors')->add(Authenticate::class);
 
 $app->get(
     '/my-registrations/ical',
     [ICalController::class, 'myRegistrationsIcal']
-)->setName('coursesMyRegistrationsIcal')->add($authenticate);
+)->setName('coursesMyRegistrationsIcal')->add(Authenticate::class);
 
 // Statistics
 $app->get(
     '/stats',
     [StatsController::class, 'show']
-)->setName('coursesStats')->add($authenticate);
+)->setName('coursesStats')->add(Authenticate::class);
 
 // Plugin Preferences (admin only)
 $app->get(
     '/preferences',
     [GaletteCourses\Controllers\PreferencesController::class, 'show']
-)->setName('coursesPreferences')->add($authenticate);
+)->setName('coursesPreferences')->add(Authenticate::class);
 
 $app->post(
     '/preferences',
     [GaletteCourses\Controllers\PreferencesController::class, 'doSave']
-)->setName('coursesDoPreferences')->add($authenticate);
+)->setName('coursesDoPreferences')->add(Authenticate::class);
 
 $app->post(
     '/preferences/regenerate-cron-token',
     [GaletteCourses\Controllers\PreferencesController::class, 'doRegenerateCronToken']
-)->setName('coursesDoRegenerateCronToken')->add($authenticate);
+)->setName('coursesDoRegenerateCronToken')->add(Authenticate::class);
 
 // Cron: auto-generate sessions (no auth, token-protected)
 $app->get(
@@ -349,28 +350,28 @@ $app->get(
 $app->get(
     '/admin/mail-templates',
     [MailTemplatesController::class, 'show']
-)->setName('coursesMailTemplates')->add($authenticate);
+)->setName('coursesMailTemplates')->add(Authenticate::class);
 
 $app->post(
     '/admin/mail-templates',
     [MailTemplatesController::class, 'doSave']
-)->setName('coursesDoMailTemplates')->add($authenticate);
+)->setName('coursesDoMailTemplates')->add(Authenticate::class);
 
 $app->post(
     '/admin/mail-templates/{ref}/reset',
     [MailTemplatesController::class, 'doReset']
-)->setName('coursesDoMailTemplateReset')->add($authenticate);
+)->setName('coursesDoMailTemplateReset')->add(Authenticate::class);
 
 // Member notification preferences
 $app->get(
     '/my-preferences',
     [GaletteCourses\Controllers\MemberPreferencesController::class, 'show']
-)->setName('coursesMemberPreferences')->add($authenticate);
+)->setName('coursesMemberPreferences')->add(Authenticate::class);
 
 $app->post(
     '/my-preferences',
     [GaletteCourses\Controllers\MemberPreferencesController::class, 'doSave']
-)->setName('coursesDoMemberPreferences')->add($authenticate);
+)->setName('coursesDoMemberPreferences')->add(Authenticate::class);
 
 // One-click unsubscribe (no auth required — token acts as credential)
 $app->get(
