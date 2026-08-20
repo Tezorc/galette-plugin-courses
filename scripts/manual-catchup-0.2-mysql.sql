@@ -184,5 +184,15 @@ PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 -- ---------------------------------------------------------------------------
 -- 10. Aligner la version de suivi, si la ligne existe deja.
 --     Si elle est absente, Galette l'inserera lui-meme au prochain chargement.
+--     L'existence de `galette_plugins` est testee au prealable : cette table du
+--     coeur est toujours presente sur une installation Galette reelle, mais le
+--     script doit rester executable sur une base partielle (banc de test,
+--     restauration incomplete) sans sortir en erreur sur sa derniere instruction.
 -- ---------------------------------------------------------------------------
-UPDATE galette_plugins SET version = 0.2 WHERE plugin_id = 'courses';
+SET @sql = IF(
+    (SELECT COUNT(*) FROM information_schema.TABLES
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = 'galette_plugins') = 1,
+    'UPDATE galette_plugins SET version = 0.2 WHERE plugin_id = ''courses''',
+    'DO 0');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;

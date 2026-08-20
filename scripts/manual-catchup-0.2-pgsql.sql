@@ -120,5 +120,15 @@ CREATE INDEX IF NOT EXISTS idx_courses_pn_ref
 
 -- ---------------------------------------------------------------------------
 -- 10. Aligner la version de suivi, si la ligne existe deja.
+--     Si elle est absente, Galette l'inserera lui-meme au prochain chargement.
+--     L'existence de `galette_plugins` est testee au prealable : cette table du
+--     coeur est toujours presente sur une installation Galette reelle, mais le
+--     script doit rester executable sur une base partielle sans sortir en erreur.
 -- ---------------------------------------------------------------------------
-UPDATE galette_plugins SET version = 0.2 WHERE plugin_id = 'courses';
+DO $$
+BEGIN
+    IF to_regclass('galette_plugins') IS NOT NULL THEN
+        UPDATE galette_plugins SET version = 0.2 WHERE plugin_id = 'courses';
+    END IF;
+END
+$$;
