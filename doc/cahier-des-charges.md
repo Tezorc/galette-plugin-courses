@@ -2541,6 +2541,9 @@ La barre laterale contient **deux groupes de menus** distincts :
 - Galette >= 1.3.0 (`compver: '1.3.0'`). Branche de developpement `dev-galette-1.3`, version plugin `0.2.0-dev`.
   Galette 1.3.0 desactive (`DISABLED_COMPAT`) tout plugin dont `compver` est inferieur a `GALETTE_COMPAT_VERSION` (1.3.0) : le bump de `compver` est donc obligatoire pour que le plugin se charge.
   Cette branche n'est plus compatible avec Galette < 1.2.2 (migration vers les interfaces de plugin introduites en 1.2.2, cf. 6.2). La branche `main` reste sur la cible 1.2.0.
+- Version de schema : `dbver: 0.2` dans `_define.php`. Obligatoire en 1.3 — un plugin qui possede un dossier `scripts/` mais ne declare pas de `dbver` est desactive par le coeur (`DISABLED_DBVERSION`, `Plugins::postRegistrationChecks()`).
+  Galette suit cette version dans sa table `galette_plugins` et joue automatiquement les scripts nommes `scripts/upgrade-to-<version>-<db_type>.sql` (convention imposee par `Install::getUpdateScripts()` ; les anciens `upgrade-*.sql` du plugin ne la respectaient pas et devaient etre appliques a la main).
+  **Limite connue** : une installation qui possede les tables du plugin mais aucune ligne dans `galette_plugins` — cas de toutes celles anterieures a l'introduction de `dbver` — est estampillee a la version courante par `Plugins::autoMigratePluginVersion()` sans qu'aucune migration ne soit executee. Le schema reste alors en retard tout en etant declare a jour : lecture normale, mais 500 (`Unknown column ...`) a la premiere ecriture, et plus aucune mise a jour proposee. Ces installations doivent appliquer une fois `scripts/manual-catchup-0.2-<db_type>.sql`, idempotent (voir la procedure dans le mode d'emploi).
 - PHP >= 8.2 (compatible 8.2, 8.3, 8.4, 8.5)
 - MySQL / MariaDB
 - Fomantic UI (integre a Galette)

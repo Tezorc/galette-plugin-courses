@@ -62,21 +62,10 @@ galette-plugin-courses/
   _routes.php                      # Routes Slim (60 routes)
   scripts/mysql.sql                # Schema BDD MySQL/MariaDB (12 tables)
   scripts/pgsql.sql                # Schema BDD PostgreSQL (12 tables, equivalent au mysql)
-  scripts/upgrade-unsubscribe.sql  # Migration MySQL : ajout unsubscribe_token (Phase 5)
-  scripts/upgrade-unsubscribe-pgsql.sql # Migration pgsql : ajout unsubscribe_token (Phase 5)
-  scripts/upgrade-digest.sql       # Migration MySQL : queue pending_notifications (Phase 36)
-  scripts/upgrade-digest-pgsql.sql # Migration pgsql : queue pending_notifications (Phase 36)
-  scripts/upgrade-allow-no-instructor.sql       # Migration MySQL : colonne allow_registration_without_instructor (Phase 40)
-  scripts/upgrade-allow-no-instructor-pgsql.sql # Migration pgsql : idem (Phase 40)
-  scripts/upgrade-no-instructor-needed.sql       # Migration MySQL : colonne no_instructor_needed (Phase 75)
-  scripts/upgrade-no-instructor-needed-pgsql.sql # Migration pgsql : idem (Phase 75)
-  scripts/upgrade-register-deadline.sql       # Migration MySQL : rename unregister_deadline_days -> register_deadline_days (Phase 45)
-  scripts/upgrade-register-deadline-pgsql.sql # Migration pgsql : idem (Phase 45)
-  scripts/upgrade-cancel-reasons-i18n.sql # Migration MySQL/pgsql : cles de cancellation_reason en EN (Phase 16)
-  scripts/upgrade-perf-indexes.sql       # Migration MySQL : indexes hot path (Phase 74)
-  scripts/upgrade-perf-indexes-pgsql.sql # Migration pgsql : idem (Phase 74)
-  scripts/upgrade-defer-sessions.sql       # Migration MySQL : colonne initial_session_date (creation des seances differee a la validation)
-  scripts/upgrade-defer-sessions-pgsql.sql # Migration pgsql : idem
+  scripts/upgrade-to-0.2-mysql.sql # Migration MySQL vers dbver 0.2 (jouee par Galette)
+  scripts/upgrade-to-0.2-pgsql.sql # Migration pgsql vers dbver 0.2 (jouee par Galette)
+  scripts/manual-catchup-0.2-mysql.sql # Rattrapage manuel idempotent MySQL (installs sans ligne galette_plugins)
+  scripts/manual-catchup-0.2-pgsql.sql # Rattrapage manuel idempotent pgsql (idem)
   lang/courses_fr_FR.utf8.po       # Traductions FR generiques (source PO)
   lang/fr_FR.utf8/LC_MESSAGES/courses.mo # Traductions FR generiques (compilees)
   lang/courses_fr_FR.utf8_local_lang.php # Surcharges locales propres au club (URL, signature, terminologie) — Phase 60
@@ -150,7 +139,10 @@ galette-plugin-courses/
 
 ## Points d'attention
 
-- Le superadmin n'a pas de fiche adherent : `$login->id` retourne `0` (pas `null`) — toujours verifier `> 0` avant toute operation DB utilisant cet id comme `member_id` ou `creator_id` (FK vers adherents)
+- Migrations de schema : Galette n'execute QUE les scripts nommes `scripts/upgrade-to-<version>-<db_type>.sql` (ou `.php`), cf. `Install::getUpdateScripts()`. Tout autre nom est ignore — c'est pourquoi les anciens `upgrade-*.sql` du plugin devaient etre appliques a la main. `executeSql()` fait un `str_replace('galette_', PREFIX_DB)` **textuel** sur tout le fichier (chaines quotees comprises, donc les tests sur `information_schema` fonctionnent), puis decoupe sur `;` : **pas de `DELIMITER` ni de procedure stockee** dans ces scripts. Une installation neuve n'execute que `mysql.sql` / `pgsql.sql`, jamais les `upgrade-to-*`.
+- **Piege `dbver` sur les installations existantes** : sans `dbver` dans `_define.php`, Galette 1.3 desactive le plugin (`DISABLED_DBVERSION`, `Plugins.php`) — il est donc obligatoire. Mais si le plugin a ses tables et **aucune ligne dans `galette_plugins`** (cas de toute installation anterieure a l'introduction de `dbver`), `Plugins::autoMigratePluginVersion()` inscrit la version courante **sans jouer la moindre migration**. La base est alors declaree a jour avec un schema qui ne l'est pas : les pages en lecture repondent normalement, et la premiere ecriture echoue en 500 (`Unknown column ...`). Comme la version enregistree est deja la bonne, `upgrade-to-0.2-*.sql` ne sera jamais joue. D'ou `manual-catchup-0.2-*.sql`, idempotent, a appliquer une fois a la main sur ces installations.
+- Ne pas durcir `PluginGaletteCourses::isInstalled()` pour tester la presence d'une colonne recente : renvoyer `false` envoie le coeur dans la branche de reinstallation, donc dans les 12 `DROP TABLE IF EXISTS` de `mysql.sql`. Le coeur porte d'ailleurs un `FIXME` explicite a cet endroit (`Plugins.php` : *creation script may remove existing tables!*).
+- Le superadmin n'a pas de fiche adherent : `$login->id` retourne `0` (pas `null`) — toujours verifier `> 0` avant toute operation DB utilisant cet id comme `member_id` ou `creator_id` (FK vers adherents). Corollaire : les setters d'entite recevant cet id doivent accepter `?int` (cf. `Event::setCreatorId()`, qui normalise `null` vers la sentinelle interne `0`)
 - `$login->isUp2Date()` depend de `date_echeance` dans la table adherents (pas `date_fin_cotis`)
 - Pour les membres reguliers, utiliser `Adherent::getGroups()` pour verifier l'appartenance a un groupe (pas `$login->getManagedGroups()` qui ne concerne que les responsables)
 - La re-inscription apres annulation fait un UPDATE (pas un INSERT) a cause de la contrainte unique `(session_id, member_id)`

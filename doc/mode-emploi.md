@@ -45,7 +45,7 @@ Pour un evenement ponctuel, une seance unique est creee automatiquement a la cre
 - PHP >= 8.2 (compatible 8.2, 8.3, 8.4, 8.5)
 - MySQL / MariaDB
 
-### Procedure
+### Procedure (nouvelle installation)
 
 1. Copier le dossier `galette-plugin-courses` dans `galette/plugins/`
 2. Appliquer le schema SQL principal :
@@ -54,14 +54,49 @@ Pour un evenement ponctuel, une seance unique est creee automatiquement a la cre
    mysql -u galette -p galette < galette/plugins/galette-plugin-courses/scripts/mysql.sql
    ```
 
-3. Appliquer la migration pour le systeme de desinscription email :
+   (ou `scripts/pgsql.sql` sous PostgreSQL). Ce fichier cree l'integralite du
+   schema a jour : aucune migration supplementaire n'est a appliquer.
 
-   ```bash
-   mysql -u galette -p galette < galette/plugins/galette-plugin-courses/scripts/upgrade-unsubscribe.sql
-   ```
+3. Se connecter a Galette en tant qu'administrateur
+4. Verifier que les menus **Mes inscriptions** et **Gestion des inscriptions** apparaissent dans la barre laterale
 
-4. Se connecter a Galette en tant qu'administrateur
-5. Verifier que les menus **Mes inscriptions** et **Gestion des inscriptions** apparaissent dans la barre laterale
+### Mise a jour d'une installation existante
+
+Le plugin declare desormais une version de schema (`dbver`) que Galette suit dans
+sa table `galette_plugins`. Deux cas se presentent.
+
+**Cas 1 — l'installation a deja une ligne de version.** Galette detecte l'ecart
+et joue tout seul `scripts/upgrade-to-0.2-mysql.sql` (ou `-pgsql`) lors de la mise
+a jour. Il n'y a rien a faire a la main.
+
+**Cas 2 — l'installation est anterieure a l'introduction de `dbver`** (pas de
+ligne dans `galette_plugins`). C'est le cas de toutes les installations mises a
+jour depuis une version anterieure du plugin. Galette inscrit alors la version
+courante **sans jouer aucune migration** : la base est declaree a jour alors que
+son schema ne l'est pas. Les pages s'affichent normalement, mais la premiere
+creation d'evenement echoue avec une erreur du type
+`Unknown column 'allow_registration_without_instructor'`.
+
+Dans ce cas, appliquer une fois le script de rattrapage :
+
+```bash
+mysql -u galette -p galette < galette/plugins/galette-plugin-courses/scripts/manual-catchup-0.2-mysql.sql
+```
+
+Sous PostgreSQL :
+
+```bash
+psql -U galette -d galette -f galette/plugins/galette-plugin-courses/scripts/manual-catchup-0.2-pgsql.sql
+```
+
+Ce script est **idempotent** : il verifie chaque colonne, table et index avant
+d'agir, et peut donc etre lance sans risque, y compris sur une base deja a jour
+ou en cas de doute sur les migrations deja appliquees. Il ne supprime rien.
+Faire malgre tout une sauvegarde au prealable.
+
+> **Prefixe de tables** : les scripts de rattrapage utilisent le prefixe
+> `galette_`. Si l'installation en utilise un autre (`PREFIX_DB`), remplacer
+> `galette_` par ce prefixe dans le fichier avant de l'executer.
 
 ### Tables creees
 
