@@ -630,9 +630,18 @@ class Event
         }
     }
 
-    public function setCreatorId(int $id): void
+    /**
+     * Set creator id
+     *
+     * Accepts null for the superadmin, who has no member record: the entity
+     * stores 0 as its "no creator" sentinel, and store() turns it back into a
+     * NULL so the foreign key on adherents is not violated.
+     *
+     * @param ?int $id Member id, or null when there is no creator
+     */
+    public function setCreatorId(?int $id): void
     {
-        $this->creator_id = $id;
+        $this->creator_id = $id ?? 0;
     }
 
     public function getId(): ?int
