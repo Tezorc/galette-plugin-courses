@@ -154,7 +154,6 @@
                                                 <button type="submit" class="ui mini red icon button" title="{{ _T("Remove instructor", "courses") }}">
                                                     <i class="times icon" aria-hidden="true"></i>
                                                 </button>
-                                                {% include 'components/forms/csrf.html.twig' %}
                                             </form>
                                         {% endif %}
                                     </div>
@@ -193,7 +192,6 @@
                                     {{ _T("Assign instructor", "courses") }}
                                 </button>
                             </div>
-                            {% include 'components/forms/csrf.html.twig' %}
                         </form>
                     {% endif %}
 
@@ -205,7 +203,6 @@
                                 <i class="hand paper icon" aria-hidden="true"></i>
                                 {{ _T("Volunteer as instructor", "courses") }}
                             </button>
-                            {% include 'components/forms/csrf.html.twig' %}
                         </form>
                     {% endif %}
 
@@ -264,7 +261,6 @@
                                         <i class="times icon" aria-hidden="true"></i>
                                         {{ _T("Confirm", "courses") }}
                                     </button>
-                                    {% include 'components/forms/csrf.html.twig' %}
                                 </form>
                             </div>
                         </div>
@@ -287,7 +283,6 @@
                                         <i class="user plus icon" aria-hidden="true"></i>
                                         {{ only_child.nickname ? only_child.nickname : only_child.name }}
                                     </button>
-                                    {% include 'components/forms/csrf.html.twig' %}
                                 </form>
                             {% else %}
                                 <div class="ui simple dropdown small labeled icon green button">
@@ -306,7 +301,6 @@
                                 {% for child_id, child in unregistered_children %}
                                     <form id="reg-child-add-{{ session.getId() }}-{{ child_id }}" action="{{ url_for("coursesDoParentRegister", {"id": session.getId()}) }}" method="post" class="courses-hidden-form">
                                         <input type="hidden" name="member_id" value="{{ child_id }}"/>
-                                        {% include 'components/forms/csrf.html.twig' %}
                                     </form>
                                 {% endfor %}
                             {% endif %}
@@ -321,7 +315,6 @@
                                 <i class="times icon" aria-hidden="true"></i>
                                 {{ _T("Leave waitlist", "courses") }}
                             </button>
-                            {% include 'components/forms/csrf.html.twig' %}
                         </form>
                     {% elseif session.isOpen() and not session.isFull() %}
                         {% set unregistered_children_available = [] %}
@@ -340,7 +333,6 @@
                                     <i class="user plus icon" aria-hidden="true"></i>
                                     {{ current_member_nickname ? current_member_nickname : _T("Register", "courses") }}
                                 </button>
-                                {% include 'components/forms/csrf.html.twig' %}
                             </form>
                         {% elseif total_options == 1 %}
                             {# Seule option : un seul enfant — POST direct, bouton porte son nom #}
@@ -352,7 +344,6 @@
                                     <i class="user plus icon" aria-hidden="true"></i>
                                     {{ only_child.nickname ? only_child.nickname : only_child.name }}
                                 </button>
-                                {% include 'components/forms/csrf.html.twig' %}
                             </form>
                         {% elseif total_options >= 2 %}
                             {# Plusieurs options : un seul bouton dropdown qui liste les choix #}
@@ -377,13 +368,11 @@
                             </div>
                             {% if parent_eligible %}
                                 <form id="reg-self-detail-{{ session.getId() }}" action="{{ url_for("coursesDoRegister", {"id": session.getId()}) }}" method="post" class="courses-hidden-form">
-                                    {% include 'components/forms/csrf.html.twig' %}
                                 </form>
                             {% endif %}
                             {% for child_id, child in unregistered_children_available %}
                                 <form id="reg-child-new-{{ session.getId() }}-{{ child_id }}" action="{{ url_for("coursesDoParentRegister", {"id": session.getId()}) }}" method="post" class="courses-hidden-form">
                                     <input type="hidden" name="member_id" value="{{ child_id }}"/>
-                                    {% include 'components/forms/csrf.html.twig' %}
                                 </form>
                             {% endfor %}
                         {% endif %}
@@ -418,7 +407,6 @@
                                     <i class="clock icon" aria-hidden="true"></i>
                                     {{ _T("Join waitlist", "courses") }}
                                 </button>
-                                {% include 'components/forms/csrf.html.twig' %}
                             </form>
                         {% elseif wl_total_options == 1 %}
                             {# Seule option : un seul enfant — POST direct, bouton porte son nom #}
@@ -430,7 +418,6 @@
                                     <i class="clock icon" aria-hidden="true"></i>
                                     {{ only_wl_child.nickname ? only_wl_child.nickname : only_wl_child.name }}
                                 </button>
-                                {% include 'components/forms/csrf.html.twig' %}
                             </form>
                         {% elseif wl_total_options >= 2 %}
                             {# Plusieurs options : un seul bouton dropdown qui liste les choix #}
@@ -455,13 +442,11 @@
                             </div>
                             {% if parent_eligible %}
                                 <form id="wl-self-detail-{{ session.getId() }}" action="{{ url_for("coursesDoWaitlist", {"id": session.getId()}) }}" method="post" class="courses-hidden-form">
-                                    {% include 'components/forms/csrf.html.twig' %}
                                 </form>
                             {% endif %}
                             {% for child_id, child in wl_children_available %}
                                 <form id="wl-child-detail-{{ session.getId() }}-{{ child_id }}" action="{{ url_for("coursesDoParentWaitlist", {"id": session.getId()}) }}" method="post" class="courses-hidden-form">
                                     <input type="hidden" name="member_id" value="{{ child_id }}"/>
-                                    {% include 'components/forms/csrf.html.twig' %}
                                 </form>
                             {% endfor %}
                         {% endif %}
@@ -499,7 +484,6 @@
                                     <i class="{{ xa_icon }} icon" aria-hidden="true"></i>
                                     {{ only_xa_child.nickname ? only_xa_child.nickname : only_xa_child.name }}
                                 </button>
-                                {% include 'components/forms/csrf.html.twig' %}
                             </form>
                         {% else %}
                             <div class="ui simple dropdown {{ xa_btn_class }}">
@@ -518,7 +502,6 @@
                             {% for child_id, child in extra_unregistered_children %}
                                 <form id="{{ xa_form_prefix }}-{{ session.getId() }}-{{ child_id }}" action="{{ xa_action_url }}" method="post" class="courses-hidden-form">
                                     <input type="hidden" name="member_id" value="{{ child_id }}"/>
-                                    {% include 'components/forms/csrf.html.twig' %}
                                 </form>
                             {% endfor %}
                         {% endif %}
@@ -543,7 +526,6 @@
                                             </span>
                                         {% endif %}
                                     </div>
-                                    {% include 'components/forms/csrf.html.twig' %}
                                 </form>
                             {% endif %}
                         {% endfor %}
@@ -564,7 +546,6 @@
                                 <i class="redo icon" aria-hidden="true"></i>
                                 {{ _T("Reactivate session", "courses") }}
                             </button>
-                            {% include 'components/forms/csrf.html.twig' %}
                         </form>
                     {% endif %}
 
@@ -575,7 +556,6 @@
                                 <i class="lock open icon" aria-hidden="true"></i>
                                 {{ _T("Reopen session", "courses") }}
                             </button>
-                            {% include 'components/forms/csrf.html.twig' %}
                         </form>
                     {% endif %}
 
@@ -597,7 +577,6 @@
                                     <i class="lock icon" aria-hidden="true"></i>
                                     {{ _T("Close session", "courses") }}
                                 </button>
-                                {% include 'components/forms/csrf.html.twig' %}
                             </form>
 
                             {# Cancel session #}
@@ -647,7 +626,6 @@
                                         </button>
                                     </div>
                                 </div>
-                                {% include 'components/forms/csrf.html.twig' %}
                             </form>
                         </div>
 
@@ -663,7 +641,6 @@
                                     <i class="arrow up icon" aria-hidden="true"></i>
                                     {{ _T("Promote next", "courses") }}
                                 </button>
-                                {% include 'components/forms/csrf.html.twig' %}
                             </form>
                         </div>
 
@@ -687,7 +664,6 @@
                                         </button>
                                     </div>
                                 </div>
-                                {% include 'components/forms/csrf.html.twig' %}
                             </form>
                         </div>
                     </div>
@@ -720,7 +696,6 @@
                                 <label>{{ _T("Comment", "courses") }}</label>
                                 <textarea name="cancellation_comment" rows="3" placeholder="{{ _T("Optional comment...", "courses") }}"></textarea>
                             </div>
-                            {% include 'components/forms/csrf.html.twig' %}
                         </form>
                     </div>
                     <div class="actions">
@@ -776,7 +751,6 @@
                                   method="post"
                                   class="courses-hidden-form">
                                 <input type="hidden" name="member_id" value="{{ reg.getMemberId() }}">
-                                {% include 'components/forms/csrf.html.twig' %}
                             </form>
                         {% endfor %}
                     {% endif %}
@@ -851,7 +825,6 @@
                                     {{ _T("Save attendance", "courses") }}
                                 </button>
                             </div>
-                            {% include 'components/forms/csrf.html.twig' %}
                         </form>
                     {% else %}
                         {% set can_view_member_profile = is_session_manager or login.isGroupManager() %}
@@ -925,7 +898,6 @@
                                 {{ _T("Add", "courses") }}
                             </button>
                         </div>
-                        {% include 'components/forms/csrf.html.twig' %}
                     </form>
                 </div>
             {% endif %}

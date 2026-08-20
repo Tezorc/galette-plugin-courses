@@ -38,7 +38,7 @@ Plugin Galette pour la gestion de cours, entrainements et evenements sportifs av
 - Entites : suivre le pattern de `Galette\Entity\Document` (TABLE, PK, load, loadFromRS, store, remove)
 - Controlleurs : extends `AbstractPluginController` (CRUD) ou `AbstractController` + `PluginControllerTrait`
 - Filtres : extends `Galette\Core\Pagination` (voir `MembersList` comme reference)
-- Templates : extends `page.html.twig`, utiliser Fomantic UI, inclure `components/forms/csrf.html.twig`
+- Templates : extends `page.html.twig`, utiliser Fomantic UI. **Ne jamais inclure `components/forms/csrf.html.twig`** : ce partial a ete supprime du coeur en Galette 1.3 (l'inclure provoque une `Twig\Error\LoaderError` et une 500 sur toute page contenant un formulaire). La 1.3 remplace les jetons par formulaire par une protection basee sur les en-tetes (`Galette\Middleware\Csrf` verifie `Sec-Fetch-Site`, avec repli sur `Origin`) : aucun champ cache n'est requis dans les formulaires.
 - Routes : definies dans `_routes.php`, protegees avec `->add(Authenticate::class)` (Galette >= 1.3 ; le coeur ne fournit plus la variable `$authenticate`, utiliser le middleware `Galette\Middleware\Authenticate`)
 
 ### Fichiers de reference Galette core

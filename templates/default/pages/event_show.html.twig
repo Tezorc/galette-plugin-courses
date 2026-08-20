@@ -213,7 +213,6 @@
                         <i class="sync icon" aria-hidden="true"></i>
                         {{ _T("Generate sessions", "courses") }}
                     </button>
-                    {% include 'components/forms/csrf.html.twig' %}
                 </form>
             {% endif %}
 
@@ -223,7 +222,6 @@
                         <i class="paper plane icon" aria-hidden="true"></i>
                         {{ _T("Submit for validation", "courses") }}
                     </button>
-                    {% include 'components/forms/csrf.html.twig' %}
                 </form>
             {% endif %}
 
@@ -233,14 +231,12 @@
                         <i class="check circle icon" aria-hidden="true"></i>
                         {{ _T("Validate", "courses") }}
                     </button>
-                    {% include 'components/forms/csrf.html.twig' %}
                 </form>
                 <form action="{{ url_for("coursesDoEventReject", {"id": event.getId()}) }}" method="post" class="ui form courses-inline-form">
                     <button type="submit" class="ui small labeled icon red button">
                         <i class="times circle icon" aria-hidden="true"></i>
                         {{ _T("Reject", "courses") }}
                     </button>
-                    {% include 'components/forms/csrf.html.twig' %}
                 </form>
             {% endif %}
         </div>

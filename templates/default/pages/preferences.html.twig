@@ -131,7 +131,6 @@
         </button>
     </div>
 
-    {% include 'components/forms/csrf.html.twig' %}
 
 </form>
 
@@ -167,7 +166,6 @@
 
     <div class="courses-cron-regenerate">
         <form action="{{ url_for('coursesDoRegenerateCronToken') }}" method="post" id="regenerate-token-form">
-            {% include 'components/forms/csrf.html.twig' %}
             <button type="submit" class="ui tiny orange labeled icon button" id="regenerate-token-btn"
                 data-confirm="{{ _T('Regenerate the cron token? Any existing cron job configuration will need to be updated with the new URL.', 'courses') }}">
                 <i class="redo icon" aria-hidden="true"></i>

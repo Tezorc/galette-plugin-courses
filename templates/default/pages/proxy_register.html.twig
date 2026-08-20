@@ -35,7 +35,6 @@
                 <a href="{{ url_for("coursesSessionShow", {"id": session.getId()}) }}" class="ui button">
                     {{ _T("Cancel", "courses") }}
                 </a>
-                {% include 'components/forms/csrf.html.twig' %}
             </form>
         {% else %}
             <div class="ui info message">

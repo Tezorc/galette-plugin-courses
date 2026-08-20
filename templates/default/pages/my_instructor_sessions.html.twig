@@ -201,7 +201,6 @@
                                     <i class="hand paper icon" aria-hidden="true"></i>
                                     {{ _T("Volunteer as instructor", "courses") }}
                                 </button>
-                                {% include "components/forms/csrf.html.twig" %}
                             </form>
                             <a href="{{ url_for("coursesSessionShow", {"id": sid}) }}" class="ui tiny basic button">
                                 {{ _T("Details", "courses") }}

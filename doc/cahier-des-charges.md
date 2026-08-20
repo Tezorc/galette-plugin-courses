@@ -253,7 +253,7 @@ Le developpement est organise en phases progressives.
 - Methodes : `getClosureDates()`, `setClosureDates()`, `isClosureDate(string $date)`, `getClosureForDate(string $date)` (Phase 44, retourne le range complet avec label), `getCronToken()`
 - `RecurrenceHandler` prend un `?PluginPreferences $pluginPrefs = null` : depuis la **Phase 44**, les seances tombant sur une date de fermeture ne sont plus sautees mais creees en `STATUS_CANCELLED` avec `cancellation_reason='club_closure'` et le label en commentaire (cf. section Phase 44)
 - Interface : toggle notifications, tableau de plages de fermeture avec pickers calendrier (ajout/suppression dynamique), affichage URL cron avec bouton copier
-- Protection CSRF : tous les formulaires POST des preferences (plugin et membre) incluent le token CSRF Galette (`components/forms/csrf.html.twig`)
+- Protection CSRF : assuree par le middleware du coeur `Galette\Middleware\Csrf` (Galette 1.3), base sur les en-tetes `Sec-Fetch-Site` / `Origin`. Aucun token n'est a inclure dans les formulaires : le partial `components/forms/csrf.html.twig` a ete supprime du coeur en 1.3
 
 #### F10.3b - Preferences de notifications adherent (opt-out)
 
@@ -2557,8 +2557,8 @@ La barre laterale contient **deux groupes de menus** distincts :
 - Entites : pattern `load()` / `loadFromRS()` / `store()` / `remove()`
 - Filtres : extends `Galette\Core\Pagination`
 - Templates : Twig, extends `page.html.twig`
-- Routes : Slim 4 avec middleware `$authenticate`
-- CSRF : `components/forms/csrf.html.twig` dans chaque formulaire
+- Routes : Slim 4 avec middleware `Galette\Middleware\Authenticate` (`->add(Authenticate::class)`) ; la variable `$authenticate` n'est plus fournie par le coeur depuis la 1.3
+- CSRF : rien a inclure dans les formulaires. Le coeur 1.3 protege via `Galette\Middleware\Csrf` (en-tetes `Sec-Fetch-Site` / `Origin`) ; le partial `components/forms/csrf.html.twig` n'existe plus
 - Flash messages : `$this->flash->addMessage('success_detected'|'error_detected'|'warning_detected', ...)`
 
 ### 6.3 Securite
