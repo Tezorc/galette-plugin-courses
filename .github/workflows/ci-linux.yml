@@ -89,9 +89,10 @@ jobs:
           restore-keys: ${{ runner.os }}-composer-
 
       # Sur `develop`, composer.json vit a la racine du depot du coeur, plus
-      # dans galette/. Le vendor/ atterrit donc dans galette-core/vendor, d'ou
-      # les `../../../vendor/bin/` (et non `../../`) depuis le repertoire du
-      # plugin, situe en galette-core/galette/plugins/plugin-courses.
+      # dans galette/ : d'ou `cd galette-core` et non `cd galette-core/galette`.
+      # Le vendor/ reste en revanche dans galette/vendor (config.vendor-dir du
+      # composer.json du coeur), donc les `../../vendor/bin/` depuis le
+      # repertoire du plugin restent corrects.
       - name: Install dependencies
         run: |
           cd galette-core
@@ -100,28 +101,28 @@ jobs:
       - name: CS
         run: |
           cd galette-core/galette/plugins/plugin-courses
-          ../../../vendor/bin/phpcs lib/ ./*.php
+          ../../vendor/bin/phpcs lib/ ./*.php
 
       - name: CS Fixer
         if: matrix.php-is-min
         run: |
           cd galette-core/galette/plugins/plugin-courses
-          ../../../vendor/bin/php-cs-fixer check --show-progress=dots --verbose --diff
+          ../../vendor/bin/php-cs-fixer check --show-progress=dots --verbose --diff
 
       - name: Twig CS
         run: |
           cd galette-core/galette/plugins/plugin-courses
-          ../../../vendor/bin/twigcs templates/default --severity error --display blocking
+          ../../vendor/bin/twigcs templates/default --severity error --display blocking
 
       - name: PHPStan checks
         run: |
           cd galette-core/galette/plugins/plugin-courses
-          ../../../vendor/bin/phpstan analyze --ansi --memory-limit=2G --no-interaction --no-progress
+          ../../vendor/bin/phpstan analyze --ansi --memory-limit=2G --no-interaction --no-progress
 
       - name: Headers checks
         run: |
           cd galette-core/galette/plugins/plugin-courses
-          ../../../vendor/bin/docheader --docheader=.docheader check lib ./*.php
+          ../../vendor/bin/docheader --docheader=.docheader check lib ./*.php
 
 
   unit-tests:

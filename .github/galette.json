@@ -3,7 +3,7 @@
     "GithuAction versions setup for Galette."
   ],
   "_versions": {
-    "php_min": "8.2",
+    "php_min": "8.3",
     "php_max": "8.5",
     "pgsql_min": "13",
     "pgsql_max": "17",
