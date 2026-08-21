@@ -119,10 +119,21 @@ jobs:
           cd galette-core/galette/plugins/plugin-courses
           ../../vendor/bin/phpstan analyze --ansi --memory-limit=2G --no-interaction --no-progress
 
+      # Le coeur a retire malukenho/docheader de son require-dev ; il verifie
+      # desormais ses en-tetes avec sa propre commande console. Le gabarit
+      # `.licence-header` suit le format de celui du coeur : texte nu, sans
+      # delimiteurs de commentaire ni prefixe " * " (la commande les ajoute).
+      # `--directory` couvre lib/, tests/ et les *.php racine ; vendor/ et les
+      # fichiers caches sont exclus par la commande elle-meme.
       - name: Headers checks
         run: |
-          cd galette-core/galette/plugins/plugin-courses
-          ../../vendor/bin/docheader --docheader=.docheader check lib ./*.php
+          cd galette-core
+          ./bin/console galette:headers:check \
+            --directory=galette/plugins/plugin-courses \
+            --header-file=galette/plugins/plugin-courses/.licence-header \
+            --owner="The Galette Team && The CCAG42 Team" \
+            --project-url="https://github.com/Tezorc/galette-plugin-courses" \
+            --start-year=2026
 
 
   unit-tests:

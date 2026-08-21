@@ -589,6 +589,8 @@ Le developpement est organise en phases progressives.
 - `.gitignore` complete : `/vendor/`, `/composer.lock`, `/.phpunit.cache/`, `/.phpunit.result.cache`.
 - Lancement : `composer install` puis `composer test` (ou `vendor/bin/phpunit`).
 
+- **Verification des en-tetes de licence** : le coeur a retire `malukenho/docheader` de son `require-dev` ; Galette verifie desormais ses en-tetes avec sa propre commande, `bin/console galette:headers:check`. Le plugin la reutilise via `--directory` et `--header-file`. Le gabarit est `.licence-header` (l'ancien `.docheader` est supprime) : il contient le **texte nu** de l'en-tete, sans les delimiteurs `/**` / `*/` ni le prefixe ` * ` — la commande les ajoute elle-meme, et un gabarit qui les inclut produit un en-tete doublement commente. Marqueurs disponibles : `%START_YEAR%`, `%END_YEAR%`, `%OWNER%`, `%PROJECT%`, `%URL%`. Le plugin passe `--owner`, `--project-url` et `--start-year=2026` ; il n'utilise pas `%PROJECT%`, la casse du nom differant d'une ligne a l'autre (« Galette Courses plugin » puis « Galette Courses Plugin »). `--end-year` vaut l'annee courante par defaut : au changement d'annee, passer `bin/console galette:headers:check --fix` pour mettre a jour les 43 en-têtes.
+
 #### F20.2 - Stubs Galette/Analog (test-only)
 
 - `tests/stubs/Galette/Core/Db.php`, `Login.php` et `Preferences.php`, `tests/stubs/Analog/Analog.php`, `tests/stubs/Laminas/Db/Sql/Expression.php` : doublures minimales auto-chargees uniquement en dev (`autoload-dev` PSR-4, prefixes `Galette\`, `Analog\`, `Laminas\`).
