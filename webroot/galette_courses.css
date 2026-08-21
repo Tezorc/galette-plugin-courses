@@ -583,10 +583,12 @@ tr.courses-pending { background-color: #fffde7 !important; }
     }
     /* Reduit le padding horizontal du segment racine pour gagner ~12px
        de chaque cote — les blocs internes (tabs + tab content + actions)
-       arrivent ainsi a la meme largeur que les boutons d'action. */
+       arrivent ainsi a la meme largeur que les boutons d'action.
+       Le padding est declare ici et nulle part ailleurs dans ce bloc media :
+       une seconde regle `.ui.segment { padding: .9em }` plus bas ecrasait
+       silencieusement le .85em lateral via le raccourci. */
     .ui.segment {
-        padding-left: .85em !important;
-        padding-right: .85em !important;
+        padding: .9em .85em !important;
     }
     /* H2 trop volumineux dans le segment : reduit a une taille lisible */
     .ui.segment > h2.ui.header { font-size: 1.25em !important; line-height: 1.3 !important; }
@@ -816,7 +818,7 @@ tr.courses-pending { background-color: #fffde7 !important; }
     #closure-table tbody:has(tr.closure-row) tr#closure-empty-row { display: none !important; }
 
     /* --- Segments --- */
-    .ui.segment { padding: .9em !important; }
+    /* Le padding de .ui.segment est declare plus haut dans ce meme bloc media. */
     .ui.basic.right.aligned.segment { text-align: center !important; }
 
     /* --- Session header compact --- */

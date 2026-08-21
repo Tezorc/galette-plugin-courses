@@ -304,6 +304,7 @@ Le developpement est organise en phases progressives.
 - Boutons de desinscription pleine largeur sur mobile
 - Tablette (<=1024px) : statistiques en grille 2x2, hauteur graphique reduite, colonne fermeture masquee
 - CSS global pour la barre de progression de remplissage (`.courses-fill-row`) visible sur tous les ecrans
+- **Padding du segment racine sur mobile (`<=767px`)** : declare une seule fois, `padding: .9em .85em !important`. Le `.85em` lateral est deliberé (les blocs internes — tabs, contenu d'onglet, actions — arrivent ainsi a la meme largeur que les boutons d'action). Une seconde regle `.ui.segment { padding: .9em }` situee plus bas dans le meme bloc media ecrasait silencieusement ce `.85em` via le raccourci : elle a ete supprimee. Ne pas reintroduire de raccourci `padding` sur `.ui.segment` dans ce bloc. La regle `<=480px` (`padding: .7em .75em`) est une surcharge voulue, dans un bloc media distinct.
 
 #### F9.2 - Suppression des styles inline
 
