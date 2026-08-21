@@ -13,7 +13,7 @@ return (new PhpCsFixer\Config())
     ->setRules([
         '@PSR12' => true,
         '@PER-CS' => true,
-        '@PHP8x2Migration' => true,
+        '@PHP8x3Migration' => true,
         'trailing_comma_in_multiline' => false,
         'cast_spaces' => ['space' => 'none'],
         'single_line_empty_body' => false,
