@@ -56,13 +56,18 @@ jobs:
           tools: composer
           coverage: ${{ matrix.coverage }}
 
+      # Le plugin cible Galette 1.3, qui se prepare sur `develop` : c'est la
+      # seule branche du coeur qui expose `dbver` dans Plugins::register() et
+      # les Plugins\*ProviderInterface. `master` est une lignee divergente
+      # (API plugin statique + methodes *Contents(), pas de dbver) contre
+      # laquelle le plugin ne peut pas se charger.
       - name: Checkout Galette core
         uses: actions/checkout@v6
         with:
           repository: galette/galette
           path: galette-core
           fetch-depth: 1
-          ref: master
+          ref: develop
 
       - name: Checkout plugin
         uses: actions/checkout@v6
@@ -169,11 +174,12 @@ jobs:
           echo "npm $(npm --version)"
           docker exec ${{ job.services.db.id }} bash -c "if [[ -n \$(command -v psql) ]]; then psql --version; else if [[ -n \$(command -v mysql) ]]; then mysql --version; else mariadb --version; fi fi"
 
+      # Voir le commentaire du job `lint` : le plugin cible `develop`, pas `master`.
       - name: Build Galette
         uses: galette/.github/actions/build-galette@main
         with:
           php-version: ${{ matrix.php-version }}
-          galette-ref: master
+          galette-ref: develop
 
       - name: Checkout plugin
         uses: actions/checkout@v6
