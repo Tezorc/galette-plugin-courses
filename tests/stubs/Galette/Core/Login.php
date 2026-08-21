@@ -21,14 +21,15 @@
 
 declare(strict_types=1);
 
+namespace Galette\Core;
+
 /**
  * Test-only stub for Galette\Core\Login.
  * `id` is declared as a public property so tests can assign it directly
  * on a PHPUnit double; the real Galette Login uses a magic accessor.
+ *
+ * @author Team CCAG <contact@ccag42.org>
  */
-
-namespace Galette\Core;
-
 class Login
 {
     public mixed $id = 0;

@@ -20,7 +20,8 @@
         "psr-4": {
             "GaletteCourses\\Tests\\": "tests/",
             "Galette\\": "tests/stubs/Galette/",
-            "Analog\\": "tests/stubs/Analog/"
+            "Analog\\": "tests/stubs/Analog/",
+            "Laminas\\": "tests/stubs/Laminas/"
         }
     },
     "scripts": {

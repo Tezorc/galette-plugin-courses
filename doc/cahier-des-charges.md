@@ -579,7 +579,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 20 - Mise en place de l'infrastructure de tests
 
-**Statut :** EN COURS - 35 tests verts (ACL + securite token + templates email)
+**Statut :** EN COURS - 71 tests verts (ACL + securite token + templates email + seances + digest hebdo membre)
 
 #### F20.1 - Outillage PHPUnit
 
@@ -590,9 +590,11 @@ Le developpement est organise en phases progressives.
 
 #### F20.2 - Stubs Galette/Analog (test-only)
 
-- `tests/stubs/Galette/Core/Db.php` et `Login.php`, `tests/stubs/Analog/Analog.php` : doublures minimales auto-chargees uniquement en dev (`autoload-dev` PSR-4).
-- Ces stubs declarent juste assez de surface (methodes, propriete `Login::id` publique) pour que `PHPUnit::createMock()` genere une doublure utilisable sans depence sur le core Galette ni sur Laminas DB.
+- `tests/stubs/Galette/Core/Db.php`, `Login.php` et `Preferences.php`, `tests/stubs/Analog/Analog.php`, `tests/stubs/Laminas/Db/Sql/Expression.php` : doublures minimales auto-chargees uniquement en dev (`autoload-dev` PSR-4, prefixes `Galette\`, `Analog\`, `Laminas\`).
+- Ces stubs declarent juste assez de surface (methodes, propriete `Login::id` publique, proprietes `pref_*` publiques) pour que `PHPUnit::createMock()` genere une doublure utilisable sans depence sur le core Galette ni sur Laminas DB. `Laminas\Db\Sql\Expression` existe uniquement parce que le plugin instancie des fragments SQL bruts (`MAX(id_pending)`) que PHP doit pouvoir resoudre a l'execution des tests.
 - Aucun risque en production : `composer install --no-dev` ne charge pas ces classes ; en runtime, le vrai core Galette est utilise.
+- Les constructeurs de requetes du stub `Db` (`select`, `insert`, `update`, `delete`, `execute`) sont typees `: mixed` et non avec les vrais types Laminas : les tests les remplacent par des classes anonymes n'exposant que la surface utilisee par le code teste, qu'un type plus etroit rejetterait.
+- `tests/` n'est pas dans le perimetre `phpcs` de la CI (qui ne verifie que `lib/` et `./*.php`), mais le repertoire y est neanmoins conforme : docblock de classe avec `@author` sur chaque classe de test et chaque stub. A maintenir lors de l'ajout de nouveaux fichiers de test.
 
 #### F20.3 - Bootstrap de tests (`tests/bootstrap.php`)
 
@@ -622,6 +624,28 @@ Le developpement est organise en phases progressives.
 - Phase 15 verrouillee (data-provider, 6 cas) : `event_description` est expose dans `getAvailableVars` pour `publication_manager`, `new_sessions_manager`, `instructor_assigned`, `waitlist_promotion`, `cancellation`, `waitlist_cancellation`.
 - Sanity : chaque variable annoncee dans `getAvailableVars` apparait dans le `getDefaultBody` correspondant (cas `instructor_assigned` comme tracer).
 
+#### F20.7 - Tests digest hebdomadaire membre / regroupement parent-enfants (`tests/Unit/Notification/WeeklyDigestMemberTest.php`, 16 cas)
+
+Couvre la logique Phase 59 de `CourseNotification::sendWeeklyDigestMember()`, c'est-a-dire la decision *qui recoit quelles lignes* — la partie invisible depuis le SQL.
+
+Seams de test : `loadPendingWeeklyDigestRows`, `loadFamilyHeadCandidates`, `renderTemplate` et `sendMail` sont passees de `private` a `protected` pour que PHPUnit puisse les doubler (`onlyMethods`). Les deux requetes que `sendWeeklyDigestMember()` emet elle-meme (snapshot `MAX(id_pending)` et purge) restent reelles, servies par un mock `Db`.
+
+Regroupement familial (7 cas) :
+
+- enfant partageant l'adresse du parent -> un seul mail, adresse au parent (chef de foyer) ;
+- enfant avec adresse distincte -> deux mails (foyer consolide + copie propre a l'enfant) ;
+- fratrie sur la meme adresse -> un mail listant les seances des deux enfants ;
+- meme seance pour deux enfants -> la ligne n'apparait qu'une fois (buckets clefs par `session_id`) ;
+- membre sans `parent_id` -> il est son propre chef de foyer ;
+- parent injoignable (desinscrit / inactif / sans email, donc filtre par `loadFamilyHeadCandidates`) -> repli sur l'enfant, jamais de silence ;
+- comparaison d'adresses insensible a la casse **des deux cotes** (chef de foyer et enfant), l'adresse d'envoi conservant l'orthographe stockee.
+
+File d'attente et rapport (5 cas) : file vide -> aucun DELETE ; rangees perimees -> purge quand meme (sinon la queue enfle indefiniment) ; purge apres envoi reussi (jamais deux envois) ; echec d'envoi compte en `errors` et non en `recipients`, avec purge quand meme ; kill-switch `isNotificationsEnabled()` -> aucun acces BDD.
+
+Rendu (4 cas) : usage de `REF_WEEKLY_DIGEST_MEMBER` avec la seule variable `events_block` ; `renderEventsBlock` regroupe les seances sous un titre d'evenement unique, separe les evenements distincts par une ligne vide, et termine toujours par exactement un saut de ligne.
+
+Ces tests ont ete valides par mutation : casser le dedup par `session_id`, la branche "enfant avec adresse propre" ou la normalisation de casse fait echouer le cas correspondant.
+
 #### F20.6 - A faire (suite, hors scope du mini)
 
 - `Event::canManage` / `canSubmit` / `canValidate` / `canReject` (~6 cas, mocks).
@@ -630,7 +654,9 @@ Le developpement est organise en phases progressives.
 - Promotion FIFO de la liste d'attente (`Registration::cancel` + `Waitlist::promoteNext`) — necessite probablement des tests d'integration MySQL (FK CASCADE et UNIQUE rendent les mocks peu representatifs).
 - CI GitHub Actions pour relancer la suite a chaque push.
 
-**Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
+**Bilan : 71 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
+
+> Note Windows : `php-cs-fixer` signale les 37 fichiers PHP du depot en local a cause du checkout CRLF (`core.autocrlf=true`, pas de `.gitattributes`) alors que les blobs sont stockes en LF. La CI Linux ne voit rien. Ne pas lancer `php-cs-fixer fix` depuis Windows : il reecrirait tous les fichiers. De meme, `phpstan` / `phpcs` / `twigcs` / `docheader` ne tournent qu'avec le plugin place dans un checkout du coeur Galette (`galette/plugins/...`), leurs binaires vivant dans le `vendor/` du coeur.
 
 ### Phase 58 - Polish smartphone du tableau des periodes de fermeture (preferences)
 

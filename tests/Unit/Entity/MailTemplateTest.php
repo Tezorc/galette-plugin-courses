@@ -34,6 +34,8 @@ use PHPUnit\Framework\TestCase;
  * and getAvailableVars() is the documented promise to admins customizing templates
  * via the UI: the UI lists these vars; the body must keep working when they are
  * filled in. Phase 15 added `event_description` to 7 templates — locked here.
+ *
+ * @author Team CCAG <contact@ccag42.org>
  */
 final class MailTemplateTest extends TestCase
 {

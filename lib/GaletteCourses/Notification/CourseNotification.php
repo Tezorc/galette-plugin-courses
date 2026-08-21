@@ -599,6 +599,8 @@ class CourseNotification
     /**
      * Load actionable rows for the weekly member digest.
      *
+     * Protected (not private) so unit tests can substitute the DB round-trip.
+     *
      * @param string[] $refs
      * @return list<array{
      *   member_id:int, session_id:int, event_id:int, event_name:string,
@@ -606,7 +608,7 @@ class CourseNotification
      *   email:string, name:string, parent_id:int
      * }>
      */
-    private function loadPendingWeeklyDigestRows(int $maxId, array $refs): array
+    protected function loadPendingWeeklyDigestRows(int $maxId, array $refs): array
     {
         $rows = [];
         try {
@@ -676,10 +678,12 @@ class CourseNotification
     /**
      * Load parents that can receive a household-head mail (active + opt-in + email).
      *
+     * Protected (not private) so unit tests can substitute the DB round-trip.
+     *
      * @param int[] $parentIds
      * @return array<int, array{email:string, name:string, member_id:int}>
      */
-    private function loadFamilyHeadCandidates(array $parentIds): array
+    protected function loadFamilyHeadCandidates(array $parentIds): array
     {
         if (empty($parentIds)) {
             return [];
@@ -940,10 +944,12 @@ class CourseNotification
     /**
      * Load a MailTemplate from DB (or default) and substitute variables.
      *
+     * Protected (not private) so unit tests can substitute the DB round-trip.
+     *
      * @param array<string, string> $vars
      * @return array{0: string, 1: string} [subject, body]
      */
-    private function renderTemplate(string $ref, array $vars): array
+    protected function renderTemplate(string $ref, array $vars): array
     {
         $tpl = new MailTemplate($this->zdb);
         $tpl->load($ref);
@@ -1382,9 +1388,11 @@ class CourseNotification
      * Send one email per recipient, each with a personalised unsubscribe footer.
      * Recipients format: [email => ['name' => string, 'member_id' => int]]
      *
+     * Protected (not private) so unit tests can capture what would be sent.
+     *
      * @param array<string, array{name: string, member_id: int}> $recipients
      */
-    private function sendMail(array $recipients, string $subject, string $message): bool
+    protected function sendMail(array $recipients, string $subject, string $message): bool
     {
         if (empty($recipients)) {
             return false;
