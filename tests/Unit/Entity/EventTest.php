@@ -365,4 +365,58 @@ final class EventTest extends TestCase
         }
     }
 
+
+    /**
+     * The form posts a day and a month, never a year: composeSeasonBound()
+     * assembles what actually lands in the DATE column, under a sentinel year.
+     */
+    public function testComposeSeasonBoundPadsAndPinsTheSentinelYear(): void
+    {
+        self::assertSame('2000-04-01', Event::composeSeasonBound('1', '4'));
+        self::assertSame('2000-10-01', Event::composeSeasonBound('01', '10'));
+        self::assertSame('2000-12-31', Event::composeSeasonBound(31, 12));
+    }
+
+    public function testComposeSeasonBoundReturnsNullWhenAHalfIsMissing(): void
+    {
+        self::assertNull(Event::composeSeasonBound('', '10'));
+        self::assertNull(Event::composeSeasonBound('12', ''));
+        self::assertNull(Event::composeSeasonBound(null, null));
+    }
+
+    /**
+     * 29 February must stay expressible — a bound carries no year — while days
+     * that exist in no calendar are refused.
+     */
+    public function testSeasonBoundValidityFollowsTheCalendar(): void
+    {
+        self::assertTrue(Event::isValidSeasonBound('29', '02'));
+        self::assertTrue(Event::isValidSeasonBound('30', '04'));
+        self::assertTrue(Event::isValidSeasonBound('31', '12'));
+
+        self::assertFalse(Event::isValidSeasonBound('30', '02'));
+        self::assertFalse(Event::isValidSeasonBound('31', '04'));
+        self::assertFalse(Event::isValidSeasonBound('00', '01'));
+        self::assertFalse(Event::isValidSeasonBound('01', '13'));
+    }
+
+    /**
+     * The sentinel year written by the form must round-trip through the rule
+     * that reads it back — the point being that it is never itself compared.
+     */
+    public function testComposedBoundIsUnderstoodBySlotAppliesOn(): void
+    {
+        $slot = [
+            'start_time'  => '17:00',
+            'end_time'    => '18:30',
+            'is_active'   => true,
+            'season_from' => Event::composeSeasonBound('1', '10'),
+            'season_to'   => Event::composeSeasonBound('31', '3'),
+        ];
+
+        self::assertTrue(Event::slotAppliesOn($slot, '2029-12-25'));
+        self::assertTrue(Event::slotAppliesOn($slot, '2030-03-31'));
+        self::assertFalse(Event::slotAppliesOn($slot, '2030-04-01'));
+    }
+
 }

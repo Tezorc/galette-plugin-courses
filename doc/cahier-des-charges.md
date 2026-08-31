@@ -711,8 +711,10 @@ Deux mecanismes cumulatifs sur chaque creneau, evalues dans cet ordre :
    creneaux existants, d'ou l'absence de changement de comportement a la
    migration.
 
-**Seuls le jour et le mois sont interpretes ; l'annee est ignoree.** La saison
-est donc recurrente : saisie une fois, la bascule se rejoue chaque annee. Deux
+**La saison se saisit en jour + mois, sans annee.** Elle est donc recurrente :
+saisie une fois, la bascule se rejoue chaque annee. Le formulaire ne propose
+volontairement aucune annee — en demander une alors qu'elle n'est jamais lue
+laisserait croire que la saison ne vaut que pour l'annee saisie. Deux
 consequences directes :
 
 - une saison peut **enjamber le 31 decembre** (hiver : 01/10 -> 31/03). Ce n'est
@@ -732,9 +734,10 @@ d'hiver de cohabiter sur le meme evenement.
   `upgrade-to-0.3-mysql.sql` / `upgrade-to-0.3-pgsql.sql` avec `dbver: 0.3`
   dans `_define.php` (sur la ligne `main`, compatible Galette 1.2, les memes
   ALTER sont livres en `upgrade-slot-season*.sql` a appliquer a la main). Le
-  type `DATE` est conserve malgre l'annee ignoree : il garde un selecteur de
-  date classique dans le formulaire et laisse la porte ouverte a une saison
-  datee si le besoin apparaissait.
+  type `DATE` est conserve bien qu'aucune annee ne soit saisie : les bornes sont
+  stockees sous l'annee sentinelle `Event::SEASON_YEAR` = **2000**, choisie
+  bissextile pour que le 29 fevrier reste stockable. Cette annee n'est jamais
+  relue — tout passe par `monthDay()`.
 
 - `Entity/Event.php` :
   - `slotAppliesOn(array $slot, string $date)` : **statique et pure**, c'est la
@@ -766,17 +769,31 @@ d'hiver de cohabiter sur le meme evenement.
   appel du realignement avant le backfill, et deux messages flash (succes :
   nombre de seances replacees ; alerte : dates laissees en l'etat).
 
-- Formulaire : deux champs date par creneau, dans un bloc `.courses-slot-block`
-  regroupant la ligne horaire et la ligne de saison (3 endroits a maintenir :
-  boucle des creneaux existants, ligne vide, gabarit JS d'ajout).
+- Formulaire : deux listes (jour, mois) par borne, dans un bloc
+  `.courses-slot-block` regroupant la ligne horaire et la ligne de saison
+  (3 endroits a maintenir : boucle des creneaux existants, ligne vide, gabarit
+  JS d'ajout — ce dernier reconstruit les listes en JS a partir des libelles de
+  mois passes en `json_encode`, pour rester traduit). `loadSlots()` expose
+  `season_*_day` / `season_*_month` deja decoupes, via `seasonPart()`, pour la
+  reselection a l'edition.
 
-- Tests : 8 cas unitaires sur `slotAppliesOn` (absence de saison, creneau
+- `composeSeasonBound()` assemble ce qui part en base a partir du couple poste,
+  `isValidSeasonBound()` refuse les jours qui n'existent pas dans le mois choisi
+  (31/04, 30/02) tout en acceptant le 29/02. `check()` refuse aussi une borne a
+  moitie renseignee. Rien ne verifie que le debut precede la fin : c'est
+  precisement la saison d'hiver.
+
+- Tests : 12 cas unitaires — 8 sur `slotAppliesOn` (absence de saison, creneau
   inactif en saison, bornes incluses verifiees sur trois annees differentes,
   saison a cheval sur la fin d'annee, saisons ouvertes d'un cote, borne au
-  29 fevrier en annee non bissextile, chaines vides postees par un champ date
-  vierge, paire ete/hiver sans recouvrement d'une annee sur l'autre).
+  29 fevrier en annee non bissextile, valeurs vides postees par une liste laissee
+  au tiret, paire ete/hiver sans recouvrement d'une annee sur l'autre) et 4 sur
+  la saisie jour/mois (composition et remplissage a deux chiffres, borne a
+  moitie renseignee, validite calendaire, aller-retour formulaire -> base ->
+  formulaire).
 
-- 5 nouvelles chaines i18n (`.po` + `.mo` recompile).
+- 24 chaines i18n au total pour cette evolution, dont les 12 noms de mois
+  (`.po` + `.mo` recompile).
 
 ### Evolution - Fenetre glissante de 12 mois et ordre chronologique des seances
 

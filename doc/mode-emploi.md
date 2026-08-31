@@ -188,18 +188,20 @@ Pour qu'un adherent puisse s'inscrire a une seance :
    - **Date de debut** : date de la seance (uniquement a la creation, format `aaaa-mm-jj`)
    - **Creneaux horaires** : horaire debut / fin. Cliquer sur **"Ajouter un creneau"** pour ajouter des creneaux supplementaires
    - **Actif** (Phase 78) : case a cocher devant chaque creneau. Decocher un creneau le conserve en base mais l'**exclut de la generation des seances recurrentes**. Utilisation type : planifier les creneaux ete + hiver sur le meme evenement et basculer la case actif/inactif au changement de saison. Les seances **deja generees** sur un creneau decoche ne sont **pas annulees** automatiquement (toggle = effet uniquement sur la prochaine generation) ; les annuler a la main si necessaire. Re-cocher = backfill automatique au prochain enregistrement / cron de generation.
-   - **En saison a partir du / En saison jusqu'au** : periode saisonniere facultative de chaque creneau. Laissees vides, le creneau s'applique toute l'annee (comportement d'origine). Renseignees, le creneau ne genere de seance que pour les dates comprises dans sa saison, **bornes incluses**.
+   - **En saison a partir du / En saison jusqu'au** : periode saisonniere facultative de chaque creneau, saisie sous forme de deux listes **jour** et **mois**. Laissees vides (le tiret en tete de liste), le creneau s'applique toute l'annee (comportement d'origine). Renseignees, le creneau ne genere de seance que pour les dates comprises dans sa saison, **bornes incluses**.
 
-     **Seuls le jour et le mois comptent : l'annee saisie est ignoree.** La saison se repete donc d'elle-meme chaque annee — a saisir une seule fois, sans rien a ressaisir en janvier. Le selecteur de date reste un selecteur classique par commodite ; peu importe l'annee que vous y choisissez.
+     **Aucune annee n'est demandee, et c'est voulu** : la saison se repete d'elle-meme chaque annee, il n'y a rien a ressaisir en janvier.
 
-     Une saison peut **enjamber la fin d'annee** : du 1er octobre au 31 mars est une saison valide, et non une erreur de saisie.
+     Une saison peut **enjamber la fin d'annee** : du 1er octobre au 31 mars est une saison valide, et non une erreur de saisie. Le 29 fevrier est acceptable comme borne, puisqu'aucune annee n'entre en jeu.
 
      Exemple, pour un cours du mercredi :
 
      | Creneau | En saison a partir du | En saison jusqu'au |
      |---|---|---|
-     | 18:00 - 19:30 (ete) | 1er avril | 30 septembre |
-     | 17:00 - 18:30 (hiver) | 1er octobre | 31 mars |
+     | 18:00 - 19:30 (ete) | 1 avril | 30 septembre |
+     | 17:00 - 18:30 (hiver) | 1 octobre | 31 mars |
+
+     Une borne a moitie renseignee (un jour sans mois, ou l'inverse) est refusee a l'enregistrement, tout comme un jour qui n'existe pas dans le mois choisi (31 avril, 30 fevrier).
 
      Les deux mecanismes se combinent : la case **Actif** reste l'interrupteur maitre, un creneau decoche ne genere rien meme si sa saison couvre la date.
 
