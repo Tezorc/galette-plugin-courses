@@ -40,6 +40,12 @@ use Throwable;
  */
 class Sessions
 {
+    /**
+     * Rolling display window, in months. Sessions older than this are never
+     * listed, neither in the sessions list nor in an event's session tab.
+     */
+    public const DISPLAY_WINDOW_MONTHS = 12;
+
     private int $count = 0;
 
     /**
@@ -118,9 +124,10 @@ class Sessions
     public function getForEvent(int $eventId): array
     {
         try {
-            $select = $this->zdb->select(Session::TABLE);
+            $select = $this->zdb->select(Session::TABLE, 's');
             $select->where(['event_id' => $eventId]);
-            $select->order('session_date ASC, start_time ASC');
+            $select->where->greaterThanOrEqualTo('s.session_date', $this->windowFloor());
+            $select->order($this->chronologicalOrder());
 
             $results = $this->zdb->execute($select);
             $sessions = [];
@@ -271,6 +278,11 @@ class Sessions
             }
         }
 
+        // Rolling display window. Applied before the user filters so date_from
+        // can only narrow it further: a date_from older than the floor is
+        // effectively clamped, never honoured.
+        $select->where->greaterThanOrEqualTo('s.session_date', $this->windowFloor());
+
         // Apply filters
         if ($this->filters->event_filter !== null) {
             $select->where->equalTo('s.event_id', $this->filters->event_filter);
@@ -413,15 +425,64 @@ class Sessions
         }
     }
 
-    private function buildOrderClause(): string
+    /**
+     * Oldest session date still displayed: today minus the display window.
+     */
+    private function windowFloor(): string
     {
-        $order = match ((int)$this->filters->orderby) {
-            SessionsList::ORDERBY_DATE => 's.session_date',
-            SessionsList::ORDERBY_EVENT => 'e.name',
-            default => 's.session_date',
-        };
+        return date('Y-m-d', strtotime('-' . self::DISPLAY_WINDOW_MONTHS . ' months'));
+    }
 
-        return $order . ' ' . $this->filters->getDirection();
+    /**
+     * ORDER BY parts placing upcoming sessions first, nearest first (which is
+     * what one registers on), followed by past sessions from the most recent
+     * to the oldest.
+     *
+     * Expressed as CASE over the date itself rather than date arithmetic, so
+     * the very same SQL runs on MySQL and on PostgreSQL. Past rows get a NULL
+     * second key: they are already separated from upcoming ones by the first
+     * key, so the third key is what actually orders them. Same pattern for
+     * start_time, which breaks ties inside a given day.
+     *
+     * Expression objects are mandatory here: a plain string handed to
+     * `Select::order()` is treated as a column identifier and would be quoted.
+     * The injected date comes from `date()`, never from user input.
+     *
+     * @return array<int, Expression>
+     */
+    private function chronologicalOrder(string $alias = 's'): array
+    {
+        $today = date('Y-m-d');
+        $upcoming = sprintf("%s.session_date >= '%s'", $alias, $today);
+
+        return [
+            new Expression(sprintf('CASE WHEN %s THEN 0 ELSE 1 END ASC', $upcoming)),
+            new Expression(sprintf('CASE WHEN %s THEN %s.session_date END ASC', $upcoming, $alias)),
+            new Expression(sprintf('%s.session_date DESC', $alias)),
+            new Expression(sprintf('CASE WHEN %s THEN %s.start_time END ASC', $upcoming, $alias)),
+            new Expression(sprintf('%s.start_time DESC', $alias)),
+        ];
+    }
+
+    /**
+     * The date ordering is fixed (upcoming first, then the past backwards), so
+     * ORDERBY_DATE ignores the pagination direction: there is no sort control
+     * on this list, and the two-way ordering cannot be expressed as a single
+     * ASC/DESC. Sorting by event name keeps the direction and falls back on
+     * the chronological order inside a same name.
+     *
+     * @return array<int, string|Expression>
+     */
+    private function buildOrderClause(): array
+    {
+        if ((int)$this->filters->orderby === SessionsList::ORDERBY_EVENT) {
+            return array_merge(
+                ['e.name ' . $this->filters->getDirection()],
+                $this->chronologicalOrder()
+            );
+        }
+
+        return $this->chronologicalOrder();
     }
 
     public function getCount(): int

@@ -61,9 +61,10 @@ class SessionsController extends AbstractPluginController
         if (isset($this->session->$filter_name)) {
             $filters = $this->session->$filter_name;
         } else {
-            // First visit: default to today onwards
+            // First visit: no date filter. The repository already restricts the
+            // list to a rolling window of the last 12 months, upcoming sessions
+            // first — a date_from would only hide the past half of it.
             $filters = new SessionsList();
-            $filters->date_from = date('Y-m-d');
         }
 
         if ($option !== null) {

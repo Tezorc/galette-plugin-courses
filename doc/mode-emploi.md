@@ -253,8 +253,20 @@ Quand vous modifiez un evenement existant, les changements sont automatiquement 
 
 ### 3. Consulter les seances
 
-- Menu **Mes inscriptions > Seances** : liste des seances a venir
-- Par defaut, seules les seances **futures** sont affichees
+- Menu **Mes inscriptions > Seances** : liste des seances
+- **Fenetre d'affichage : 12 mois glissants.** La liste montre les seances a
+  venir et celles des 12 derniers mois ; au-dela, les seances plus anciennes ne
+  sont plus affichees. Le plancher se decale chaque jour (aujourd'hui moins 12
+  mois) et s'applique aussi a l'onglet **Seances** de la fiche d'un evenement.
+- **Ordre d'affichage** : les seances **a venir d'abord**, de la plus proche a
+  la plus lointaine (c'est sur celles-la qu'on s'inscrit), puis les seances
+  **passees**, de la plus recente a la plus ancienne. Les seances du jour sont
+  comptees comme a venir et ouvrent la liste.
+- Les champs de filtre **Du / Au** restent disponibles pour restreindre encore
+  la periode, mais ils ne permettent pas de remonter avant le plancher des 12
+  mois. Si vous aviez deja utilise la liste avant cette evolution, le champ
+  **Du** peut etre reste positionne sur une date : le vider pour retrouver la
+  fenetre complete.
 - **Filtre "Mes cours uniquement"** : pour les membres reguliers et responsables de groupe, un toggle est disponible dans la zone de filtres. Lorsqu'il est active (par defaut), seules les seances des evenements associes aux groupes du membre sont affichees (ainsi que les evenements sans restriction de groupe). Desactiver le toggle pour voir toutes les seances accessibles. Ce filtre est ignore pour le staff et les administrateurs qui voient toujours tout.
 - **Filtres cascade Type / Nom** : deux listes deroulantes permettent de filtrer par type d'evenement puis par nom d'evenement. Changer le type recharge automatiquement la liste des noms disponibles.
 - Les seances sont presentees sous forme de **cards visuelles** (grille responsive a 3 colonnes) :
