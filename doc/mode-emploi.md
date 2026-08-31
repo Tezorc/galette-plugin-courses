@@ -207,6 +207,8 @@ Pour qu'un adherent puisse s'inscrire a une seance :
 
      Les deux mecanismes se combinent : la case **Actif** reste l'interrupteur maitre, un creneau decoche ne genere rien meme si sa saison couvre la date.
 
+     La **fiche de l'evenement** recapitule les creneaux sans avoir a ouvrir le formulaire : horaires, saison au format `01/04`, mention *Toute l'annee* pour un creneau sans saison, et badge *Inactif* pour un creneau decoche.
+
    - **Seances deja programmees lors d'un changement de saison** : les seances sont generees d'avance (4 semaines par defaut), donc certaines peuvent porter l'ancien horaire au moment ou vous posez les periodes. A l'enregistrement, celles qui n'ont **ni inscrit ni moniteur** sont automatiquement replacees sur l'horaire desormais applicable, et un message indique combien l'ont ete. Celles qui ont deja des inscrits ou un moniteur sont **laissees telles quelles** — changer leur horaire sous les pieds des personnes engagees n'est pas une decision automatique — et un second message liste leurs dates pour que vous les ajustiez une par une si necessaire.
 
 4. Cliquer sur **Enregistrer**
