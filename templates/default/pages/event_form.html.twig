@@ -176,7 +176,7 @@
             <div id="slots-container">
                 <label>{{ _T("Time slots", "courses") }}</label>
                 <span class="tip">{{ _T("Uncheck a slot to keep it on file without generating new sessions (e.g. seasonal summer/winter schedule).", "courses") }}</span>
-                <span class="tip">{{ _T("Validity dates are optional: leave them empty for a slot that always applies. Fill them in to alternate seasonal schedules — each date generates the slot whose window covers it.", "courses") }}</span>
+                <span class="tip">{{ _T("The season is optional: leave both dates empty for a slot that applies all year round. Only the day and month are used — the year is ignored, so the changeover repeats every year. A season may run across the end of the year (1 October to 31 March, for instance).", "courses") }}</span>
                 {% set existing_slots = event.getSlots() %}
                 {% if existing_slots|length > 0 %}
                     {% for slot in existing_slots %}
@@ -200,12 +200,12 @@
                             </div>
                             <div class="two fields courses-slot-season">
                                 <div class="field">
-                                    <label for="slot_from_{{ loop.index0 }}">{{ _T("Valid from", "courses") }}</label>
-                                    <input type="date" id="slot_from_{{ loop.index0 }}" name="slots[{{ loop.index0 }}][valid_from]" value="{{ slot.valid_from }}"/>
+                                    <label for="slot_from_{{ loop.index0 }}">{{ _T("In season from (day/month)", "courses") }}</label>
+                                    <input type="date" id="slot_from_{{ loop.index0 }}" name="slots[{{ loop.index0 }}][season_from]" value="{{ slot.season_from }}"/>
                                 </div>
                                 <div class="field">
-                                    <label for="slot_to_{{ loop.index0 }}">{{ _T("Valid until", "courses") }}</label>
-                                    <input type="date" id="slot_to_{{ loop.index0 }}" name="slots[{{ loop.index0 }}][valid_to]" value="{{ slot.valid_to }}"/>
+                                    <label for="slot_to_{{ loop.index0 }}">{{ _T("In season until (day/month)", "courses") }}</label>
+                                    <input type="date" id="slot_to_{{ loop.index0 }}" name="slots[{{ loop.index0 }}][season_to]" value="{{ slot.season_to }}"/>
                                 </div>
                             </div>
                         </div>
@@ -231,12 +231,12 @@
                         </div>
                         <div class="two fields courses-slot-season">
                             <div class="field">
-                                <label for="slot_from_0">{{ _T("Valid from", "courses") }}</label>
-                                <input type="date" id="slot_from_0" name="slots[0][valid_from]" value=""/>
+                                <label for="slot_from_0">{{ _T("In season from (day/month)", "courses") }}</label>
+                                <input type="date" id="slot_from_0" name="slots[0][season_from]" value=""/>
                             </div>
                             <div class="field">
-                                <label for="slot_to_0">{{ _T("Valid until", "courses") }}</label>
-                                <input type="date" id="slot_to_0" name="slots[0][valid_to]" value=""/>
+                                <label for="slot_to_0">{{ _T("In season until (day/month)", "courses") }}</label>
+                                <input type="date" id="slot_to_0" name="slots[0][season_to]" value=""/>
                             </div>
                         </div>
                     </div>
@@ -277,8 +277,8 @@
                         '<div class="field"><label for="slot_end_' + slotIndex + '">{{ _T("End time", "courses") }}</label><input type="time" id="slot_end_' + slotIndex + '" name="slots[' + slotIndex + '][end_time]" value=""/></div>' +
                     '</div>' +
                     '<div class="two fields courses-slot-season">' +
-                        '<div class="field"><label for="slot_from_' + slotIndex + '">{{ _T("Valid from", "courses") }}</label><input type="date" id="slot_from_' + slotIndex + '" name="slots[' + slotIndex + '][valid_from]" value=""/></div>' +
-                        '<div class="field"><label for="slot_to_' + slotIndex + '">{{ _T("Valid until", "courses") }}</label><input type="date" id="slot_to_' + slotIndex + '" name="slots[' + slotIndex + '][valid_to]" value=""/></div>' +
+                        '<div class="field"><label for="slot_from_' + slotIndex + '">{{ _T("In season from (day/month)", "courses") }}</label><input type="date" id="slot_from_' + slotIndex + '" name="slots[' + slotIndex + '][season_from]" value=""/></div>' +
+                        '<div class="field"><label for="slot_to_' + slotIndex + '">{{ _T("In season until (day/month)", "courses") }}</label><input type="date" id="slot_to_' + slotIndex + '" name="slots[' + slotIndex + '][season_to]" value=""/></div>' +
                     '</div>' +
                     '</div>';
                 $('#slots-container').append(html);

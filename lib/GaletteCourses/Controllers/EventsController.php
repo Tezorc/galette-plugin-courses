@@ -317,8 +317,8 @@ class EventsController extends AbstractPluginController
                             'start_time' => $slot['start_time'],
                             'end_time' => $slot['end_time'],
                             'is_active' => !empty($slot['is_active']),
-                            'valid_from' => !empty($slot['valid_from']) ? $slot['valid_from'] : null,
-                            'valid_to' => !empty($slot['valid_to']) ? $slot['valid_to'] : null,
+                            'season_from' => !empty($slot['season_from']) ? $slot['season_from'] : null,
+                            'season_to' => !empty($slot['season_to']) ? $slot['season_to'] : null,
                         ];
                     }
                 }

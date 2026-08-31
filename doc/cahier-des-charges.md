@@ -654,36 +654,52 @@ Le developpement est organise en phases progressives.
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
-### Evolution - Horaires saisonniers : plage de validite par creneau
+### Evolution - Horaires saisonniers : saison recurrente par creneau
 
 **Statut :** TERMINEE
 
-- Demande utilisateur : pour un evenement ayant deux horaires possibles selon la
-  saison, conserver la possibilite d'activer/desactiver un creneau **ou** de le
-  faire s'activer tout seul entre une date de debut et une date de fin.
+- Demande utilisateur : pour un evenement ayant deux horaires selon la saison,
+  conserver la possibilite d'activer/desactiver un creneau **ou** de le faire
+  s'activer tout seul entre une date de debut et une date de fin — sans tenir
+  compte de l'annee, pour que la bascule se refasse automatiquement chaque
+  annee.
 
 #### Regle retenue
 
 Deux mecanismes cumulatifs sur chaque creneau, evalues dans cet ordre :
 
 1. `is_active` (Phase 78), l'interrupteur manuel maitre : decoche, le creneau
-   est conserve en base et ne genere rien, quelle que soit sa periode.
-2. La fenetre de validite `valid_from` / `valid_to`, toutes deux nullables et
+   est conserve en base et ne genere rien, quelle que soit sa saison.
+2. La saison `season_from` / `season_to`, toutes deux nullables et
    independantes (`NULL` = pas de borne de ce cote). Bornes **incluses**. Un
-   creneau sans fenetre s'applique a toutes les dates : c'est l'etat de tous les
+   creneau sans saison s'applique a toutes les dates : c'est l'etat de tous les
    creneaux existants, d'ou l'absence de changement de comportement a la
    migration.
 
+**Seuls le jour et le mois sont interpretes ; l'annee est ignoree.** La saison
+est donc recurrente : saisie une fois, la bascule se rejoue chaque annee. Deux
+consequences directes :
+
+- une saison peut **enjamber le 31 decembre** (hiver : 01/10 -> 31/03). Ce n'est
+  pas une saisie invalide mais la branche de test inversee — d'ou l'absence de
+  toute validation "fin avant debut" ;
+- le 29 fevrier ne demande aucun traitement particulier, puisque rien n'est
+  jamais construit comme une date reelle.
+
 Le generateur ne filtre plus les creneaux une fois pour toutes mais **pour
 chaque date d'occurrence**, ce qui permet a un creneau d'ete et un creneau
-d'hiver de cohabiter sur le meme evenement, avec bascule automatique au jour
-choisi.
+d'hiver de cohabiter sur le meme evenement.
 
 #### Mise en oeuvre
 
-- Schema : colonnes `valid_from DATE NULL` / `valid_to DATE NULL` sur
+- Schema : colonnes `season_from DATE NULL` / `season_to DATE NULL` sur
   `galette_courses_slots` (`mysql.sql`, `pgsql.sql`), migrations
-  `upgrade-slot-season.sql` et `upgrade-slot-season-pgsql.sql`.
+  `upgrade-to-0.3-mysql.sql` / `upgrade-to-0.3-pgsql.sql` avec `dbver: 0.3`
+  dans `_define.php` (sur la ligne `main`, compatible Galette 1.2, les memes
+  ALTER sont livres en `upgrade-slot-season*.sql` a appliquer a la main). Le
+  type `DATE` est conserve malgre l'annee ignoree : il garde un selecteur de
+  date classique dans le formulaire et laisse la porte ouverte a une saison
+  datee si le besoin apparaissait.
 
 - `Entity/Event.php` :
   - `slotAppliesOn(array $slot, string $date)` : **statique et pure**, c'est la
@@ -691,40 +707,41 @@ choisi.
     postes par le formulaire. Ce dernier point est structurant : `storeSlots()`
     supprime puis reinsere les lignes a chaque enregistrement, donc les
     `id_slot` ne sont pas stables et ne peuvent pas servir a retrouver un
-    creneau. Les dates sont comparees comme chaines `yyyy-mm-dd` (zero-padde,
-    donc l'ordre lexicographique est l'ordre chronologique, sans fuseau).
+    creneau.
+  - `monthDay()` reduit une valeur `yyyy-mm-dd` (ou deja `mm-dd`) a sa partie
+    jour/mois. La comparaison porte sur ces chaines zero-paddees : elle compare
+    des positions dans l'annee, sans arithmetique de dates ni fuseau. Une date
+    illisible fait generer la seance plutot que la sauter en silence.
   - `getSlotsForDate()` en complement de `getActiveSlots()`.
-  - `check()` refuse une fenetre inversee plutot que de la normaliser : deviner
-    laquelle des deux dates l'utilisateur voulait serait pire, et une fenetre
-    inversee desactive silencieusement le creneau pour toutes les dates.
 
 - `Recurrence/RecurrenceHandler.php` : `slotsForDate()` applique le filtre par
   date dans `generateSessions()` **et** dans `backfillMissingSlots()` — sans
   cela le backfill ajouterait le creneau d'hiver sur des dates d'ete.
 
 - `realignSeasonalSessions()` : les seances sont generees `advance_weeks` a
-  l'avance (4 par defaut), donc poser une periode laisse derriere elle des
+  l'avance (4 par defaut), donc poser une saison laisse derriere elle des
   seances a l'ancien horaire, que le backfill doublerait. Cette passe s'execute
   **avant** le backfill et replace ces seances, en se limitant a celles qui
   n'ont **ni inscription active ni moniteur** ; les autres sont laissees en
   l'etat et leurs dates sont remontees a l'utilisateur en message d'alerte. Une
-  date ou plusieurs creneaux s'appliquent n'est pas arbitree automatiquement.
+  date ou plusieurs creneaux s'appliquent n'est pas arbitree automatiquement,
+  pas plus qu'une seance dont l'horaire cible est deja occupe.
 
 - `Controllers/EventsController.php` : lecture des deux dates dans le POST,
   appel du realignement avant le backfill, et deux messages flash (succes :
   nombre de seances replacees ; alerte : dates laissees en l'etat).
 
 - Formulaire : deux champs date par creneau, dans un bloc `.courses-slot-block`
-  regroupant la ligne horaire et la ligne de validite (3 endroits a maintenir :
+  regroupant la ligne horaire et la ligne de saison (3 endroits a maintenir :
   boucle des creneaux existants, ligne vide, gabarit JS d'ajout).
 
-- Tests : 6 cas unitaires sur `slotAppliesOn` (absence de fenetre, creneau
-  inactif dans sa fenetre, bornes incluses, fenetres ouvertes d'un cote, chaines
-  vides postees par un champ date vierge, paire ete/hiver sans recouvrement).
+- Tests : 8 cas unitaires sur `slotAppliesOn` (absence de saison, creneau
+  inactif en saison, bornes incluses verifiees sur trois annees differentes,
+  saison a cheval sur la fin d'annee, saisons ouvertes d'un cote, borne au
+  29 fevrier en annee non bissextile, chaines vides postees par un champ date
+  vierge, paire ete/hiver sans recouvrement d'une annee sur l'autre).
 
-- 6 nouvelles chaines i18n (`.po` + `.mo` recompile). Sur `dev-galette-1.3`, la
-  migration doit en plus passer par le mecanisme `dbver` de Galette, sans quoi
-  elle ne serait jamais jouee.
+- 5 nouvelles chaines i18n (`.po` + `.mo` recompile).
 
 ### Evolution - Fenetre glissante de 12 mois et ordre chronologique des seances
 

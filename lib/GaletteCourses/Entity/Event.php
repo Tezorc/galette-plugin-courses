@@ -171,8 +171,8 @@ class Event
                     'start_time' => (string)$r->start_time,
                     'end_time' => (string)$r->end_time,
                     'is_active' => (int)($r->is_active ?? 1) === 1,
-                    'valid_from' => !empty($r->valid_from) ? (string)$r->valid_from : null,
-                    'valid_to' => !empty($r->valid_to) ? (string)$r->valid_to : null,
+                    'season_from' => !empty($r->season_from) ? (string)$r->season_from : null,
+                    'season_to' => !empty($r->season_to) ? (string)$r->season_to : null,
                 ];
             }
         } catch (Throwable $e) {
@@ -240,24 +240,6 @@ class Event
             $this->status = $post['status'];
         }
 
-        // Seasonal slots: an inverted validity window would silently disable
-        // the slot for every date, so it is rejected rather than normalised -
-        // guessing which of the two dates the user meant would be worse.
-        if (isset($post['slots']) && is_array($post['slots'])) {
-            foreach ($post['slots'] as $slot) {
-                if (!is_array($slot) || empty($slot['valid_from']) || empty($slot['valid_to'])) {
-                    continue;
-                }
-                if ((string)$slot['valid_from'] > (string)$slot['valid_to']) {
-                    $this->errors[] = _T(
-                        'A time slot end of validity cannot come before its start of validity.',
-                        'courses'
-                    );
-                    break;
-                }
-            }
-        }
-
         return $this->errors;
     }
 
@@ -315,7 +297,7 @@ class Event
     /**
      * Store slots for this event
      *
-     * @param array<array<string, string|bool|int|null>> $slots_data Array of ['start_time' => '...', 'end_time' => '...', 'is_active' => bool|int, 'valid_from' => 'yyyy-mm-dd'|null, 'valid_to' => 'yyyy-mm-dd'|null]
+     * @param array<array<string, string|bool|int|null>> $slots_data Array of ['start_time' => '...', 'end_time' => '...', 'is_active' => bool|int, 'season_from' => 'yyyy-mm-dd'|null, 'season_to' => 'yyyy-mm-dd'|null]
      */
     public function storeSlots(array $slots_data): bool
     {
@@ -336,8 +318,8 @@ class Event
                     'start_time' => $slot['start_time'],
                     'end_time' => $slot['end_time'],
                     'is_active' => !empty($slot['is_active']) ? 1 : 0,
-                    'valid_from' => !empty($slot['valid_from']) ? $slot['valid_from'] : null,
-                    'valid_to' => !empty($slot['valid_to']) ? $slot['valid_to'] : null,
+                    'season_from' => !empty($slot['season_from']) ? $slot['season_from'] : null,
+                    'season_to' => !empty($slot['season_to']) ? $slot['season_to'] : null,
                 ]);
                 $this->zdb->execute($insert);
             }
@@ -843,19 +825,22 @@ class Event
      *
      * Two independent gates, both of which must pass:
      *  - `is_active`, the manual master switch (Phase 78): an unchecked slot is
-     *    kept on file but never generates anything, whatever its window says;
-     *  - the validity window `valid_from` / `valid_to`, either or both of which
-     *    may be null, meaning "no bound on that side". A slot with no window at
-     *    all applies to every date — which is what every pre-existing slot
-     *    looks like, hence no behaviour change on upgrade.
+     *    kept on file but never generates anything, whatever its season says;
+     *  - the season `season_from` / `season_to`, either or both of which may be
+     *    null, meaning "no bound on that side". A slot with no season at all
+     *    applies to every date - which is what every pre-existing slot looks
+     *    like, hence no behaviour change on upgrade.
+     *
+     * **Only the day and month are read; the year is ignored.** A season is
+     * therefore recurring: set it once and the changeover happens again every
+     * year, with nothing to re-enter. This is also why a season may run
+     * backwards - 1 October to 31 March is the winter one - and why that case
+     * is not an input error but the wrap-around branch below.
      *
      * Static and pure so the very same rule serves the entity, the recurrence
      * handler and the raw arrays posted by the event form (slot rows are
      * deleted and re-inserted on save, so their ids are not stable and cannot
      * be used to look the slot up again).
-     *
-     * Dates are compared as `yyyy-mm-dd` strings: zero-padded, so a plain
-     * string comparison is a chronological one, and no timezone is involved.
      *
      * @param array<string, mixed> $slot
      * @param string               $date Occurrence date, yyyy-mm-dd
@@ -866,23 +851,55 @@ class Event
             return false;
         }
 
-        $from = !empty($slot['valid_from']) ? (string)$slot['valid_from'] : null;
-        $to   = !empty($slot['valid_to']) ? (string)$slot['valid_to'] : null;
-
-        if ($from !== null && $date < $from) {
-            return false;
-        }
-        if ($to !== null && $date > $to) {
-            return false;
+        $from = self::monthDay($slot['season_from'] ?? null);
+        $to   = self::monthDay($slot['season_to'] ?? null);
+        if ($from === null && $to === null) {
+            return true;
         }
 
-        return true;
+        $day = self::monthDay($date);
+        if ($day === null) {
+            // Unreadable date: generate rather than silently skip an occurrence.
+            return true;
+        }
+
+        if ($from !== null && $to !== null) {
+            return ($from <= $to)
+                ? ($day >= $from && $day <= $to)          // 01-04 -> 30-09, summer
+                : ($day >= $from || $day <= $to);         // 01-10 -> 31-03, winter
+        }
+
+        return $from !== null ? ($day >= $from) : ($day <= $to);
     }
 
     /**
-     * Slots generating a session on the given date: active ones whose validity
-     * window covers it. Seasonal schedules (summer/winter) live as two slots on
-     * the same event, each with its own window.
+     * Day-and-month part of a date, as `mm-dd`.
+     *
+     * Accepts what the form posts (`yyyy-mm-dd`, year dropped here) as well as
+     * an already-trimmed `mm-dd`. Comparing these zero-padded strings compares
+     * positions in the year, with no date arithmetic and no timezone involved -
+     * and 29 February needs no special case, since nothing is ever constructed
+     * as a real date.
+     */
+    private static function monthDay(mixed $value): ?string
+    {
+        $raw = trim((string)($value ?? ''));
+        if ($raw === '') {
+            return null;
+        }
+        if (preg_match('/^\d{4}-(\d{2}-\d{2})$/', $raw, $m) === 1) {
+            return $m[1];
+        }
+        if (preg_match('/^\d{2}-\d{2}$/', $raw) === 1) {
+            return $raw;
+        }
+        return null;
+    }
+
+    /**
+     * Slots generating a session on the given date: active ones whose season
+     * covers it. Seasonal schedules (summer/winter) live as two slots on the
+     * same event, each with its own season.
      *
      * @param string $date Occurrence date, yyyy-mm-dd
      * @return array<array<string, mixed>>

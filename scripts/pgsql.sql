@@ -72,8 +72,8 @@ CREATE TABLE galette_courses_slots (
     start_time time NOT NULL,
     end_time time NOT NULL,
     is_active smallint NOT NULL DEFAULT 1,
-    valid_from date DEFAULT NULL,
-    valid_to date DEFAULT NULL,
+    season_from date DEFAULT NULL,
+    season_to date DEFAULT NULL,
     CONSTRAINT fk_courses_slots_event FOREIGN KEY (event_id) REFERENCES galette_courses_events (id_event) ON DELETE CASCADE
 );
 CREATE INDEX idx_courses_slots_event ON galette_courses_slots (event_id);
