@@ -198,8 +198,10 @@ Pour qu'un adherent puisse s'inscrire a une seance :
 
      | Creneau | En saison a partir du | En saison jusqu'au |
      |---|---|---|
-     | 18:00 - 19:30 (ete) | 1 avril | 30 septembre |
-     | 17:00 - 18:30 (hiver) | 1 octobre | 31 mars |
+     | 18:00 - 19:30 (ete) | 01 / 04 | 30 / 09 |
+     | 17:00 - 18:30 (hiver) | 01 / 10 | 31 / 03 |
+
+     Jour et mois sont proposes **en chiffres**, comme les autres champs de dates du plugin.
 
      Une borne a moitie renseignee (un jour sans mois, ou l'inverse) est refusee a l'enregistrement, tout comme un jour qui n'existe pas dans le mois choisi (31 avril, 30 fevrier).
 
