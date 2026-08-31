@@ -176,7 +176,19 @@
             <div id="slots-container">
                 <label>{{ _T("Time slots", "courses") }}</label>
                 <span class="tip">{{ _T("Uncheck a slot to keep it on file without generating new sessions (e.g. seasonal summer/winter schedule).", "courses") }}</span>
-                <span class="tip">{{ _T("The season is optional: leave both dates empty for a slot that applies all year round. Only the day and month are used — the year is ignored, so the changeover repeats every year. A season may run across the end of the year (1 October to 31 March, for instance).", "courses") }}</span>
+                <span class="tip">{{ _T("The season is optional: leave the lists empty for a slot that applies all year round. A season is given as a day and a month only, with no year, so the changeover repeats every year. A season may run across the end of the year (1 October to 31 March, for instance).", "courses") }}</span>
+                {% set month_labels = [_T("January", "courses"),
+                    _T("February", "courses"),
+                    _T("March", "courses"),
+                    _T("April", "courses"),
+                    _T("May", "courses"),
+                    _T("June", "courses"),
+                    _T("July", "courses"),
+                    _T("August", "courses"),
+                    _T("September", "courses"),
+                    _T("October", "courses"),
+                    _T("November", "courses"),
+                    _T("December", "courses")] %}
                 {% set existing_slots = event.getSlots() %}
                 {% if existing_slots|length > 0 %}
                     {% for slot in existing_slots %}
@@ -200,12 +212,30 @@
                             </div>
                             <div class="two fields courses-slot-season">
                                 <div class="field">
-                                    <label for="slot_from_{{ loop.index0 }}">{{ _T("In season from (day/month)", "courses") }}</label>
-                                    <input type="date" id="slot_from_{{ loop.index0 }}" name="slots[{{ loop.index0 }}][season_from]" value="{{ slot.season_from }}"/>
+                                    <label for="slot_from_day_{{ loop.index0 }}">{{ _T("In season from (day/month)", "courses") }}</label>
+                                    <div class="courses-season-pair">
+                                        <select id="slot_from_day_{{ loop.index0 }}" name="slots[{{ loop.index0 }}][season_from_day]" aria-label="{{ _T("Season start day", "courses") }}">
+                                            <option value="">&mdash;</option>
+                                            {% for d in 1..31 %}<option value="{{ "%02d"|format(d) }}"{% if slot.season_from_day is defined and slot.season_from_day == "%02d"|format(d) %} selected="selected"{% endif %}>{{ d }}</option>{% endfor %}
+                                        </select>
+                                        <select id="slot_from_month_{{ loop.index0 }}" name="slots[{{ loop.index0 }}][season_from_month]" aria-label="{{ _T("Season start month", "courses") }}">
+                                            <option value="">&mdash;</option>
+                                            {% for m in 1..12 %}<option value="{{ "%02d"|format(m) }}"{% if slot.season_from_month is defined and slot.season_from_month == "%02d"|format(m) %} selected="selected"{% endif %}>{{ month_labels[m - 1] }}</option>{% endfor %}
+                                        </select>
+                                    </div>
                                 </div>
                                 <div class="field">
-                                    <label for="slot_to_{{ loop.index0 }}">{{ _T("In season until (day/month)", "courses") }}</label>
-                                    <input type="date" id="slot_to_{{ loop.index0 }}" name="slots[{{ loop.index0 }}][season_to]" value="{{ slot.season_to }}"/>
+                                    <label for="slot_to_day_{{ loop.index0 }}">{{ _T("In season until (day/month)", "courses") }}</label>
+                                    <div class="courses-season-pair">
+                                        <select id="slot_to_day_{{ loop.index0 }}" name="slots[{{ loop.index0 }}][season_to_day]" aria-label="{{ _T("Season end day", "courses") }}">
+                                            <option value="">&mdash;</option>
+                                            {% for d in 1..31 %}<option value="{{ "%02d"|format(d) }}"{% if slot.season_to_day is defined and slot.season_to_day == "%02d"|format(d) %} selected="selected"{% endif %}>{{ d }}</option>{% endfor %}
+                                        </select>
+                                        <select id="slot_to_month_{{ loop.index0 }}" name="slots[{{ loop.index0 }}][season_to_month]" aria-label="{{ _T("Season end month", "courses") }}">
+                                            <option value="">&mdash;</option>
+                                            {% for m in 1..12 %}<option value="{{ "%02d"|format(m) }}"{% if slot.season_to_month is defined and slot.season_to_month == "%02d"|format(m) %} selected="selected"{% endif %}>{{ month_labels[m - 1] }}</option>{% endfor %}
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -231,12 +261,30 @@
                         </div>
                         <div class="two fields courses-slot-season">
                             <div class="field">
-                                <label for="slot_from_0">{{ _T("In season from (day/month)", "courses") }}</label>
-                                <input type="date" id="slot_from_0" name="slots[0][season_from]" value=""/>
+                                <label for="slot_from_day_0">{{ _T("In season from (day/month)", "courses") }}</label>
+                                <div class="courses-season-pair">
+                                    <select id="slot_from_day_0" name="slots[0][season_from_day]" aria-label="{{ _T("Season start day", "courses") }}">
+                                        <option value="">&mdash;</option>
+                                        {% for d in 1..31 %}<option value="{{ "%02d"|format(d) }}">{{ d }}</option>{% endfor %}
+                                    </select>
+                                    <select id="slot_from_month_0" name="slots[0][season_from_month]" aria-label="{{ _T("Season start month", "courses") }}">
+                                        <option value="">&mdash;</option>
+                                        {% for m in 1..12 %}<option value="{{ "%02d"|format(m) }}">{{ month_labels[m - 1] }}</option>{% endfor %}
+                                    </select>
+                                </div>
                             </div>
                             <div class="field">
-                                <label for="slot_to_0">{{ _T("In season until (day/month)", "courses") }}</label>
-                                <input type="date" id="slot_to_0" name="slots[0][season_to]" value=""/>
+                                <label for="slot_to_day_0">{{ _T("In season until (day/month)", "courses") }}</label>
+                                <div class="courses-season-pair">
+                                    <select id="slot_to_day_0" name="slots[0][season_to_day]" aria-label="{{ _T("Season end day", "courses") }}">
+                                        <option value="">&mdash;</option>
+                                        {% for d in 1..31 %}<option value="{{ "%02d"|format(d) }}">{{ d }}</option>{% endfor %}
+                                    </select>
+                                    <select id="slot_to_month_0" name="slots[0][season_to_month]" aria-label="{{ _T("Season end month", "courses") }}">
+                                        <option value="">&mdash;</option>
+                                        {% for m in 1..12 %}<option value="{{ "%02d"|format(m) }}">{{ month_labels[m - 1] }}</option>{% endfor %}
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -263,6 +311,33 @@
     <script>
         $(function() {
             var slotIndex = {{ (event.getSlots()|length > 0) ? event.getSlots()|length : 1 }};
+
+            // Libelles des mois rendus cote serveur : les listes ajoutees
+            // dynamiquement doivent etre traduites comme celles du gabarit Twig.
+            var monthLabels = {{ month_labels|json_encode|raw }};
+
+            function seasonOptions(count, labels) {
+                var html = '<option value="">&mdash;</option>';
+                for (var i = 1; i <= count; i++) {
+                    var value = (i < 10 ? '0' : '') + i;
+                    html += '<option value="' + value + '">' + (labels ? labels[i - 1] : i) + '</option>';
+                }
+                return html;
+            }
+
+            function seasonField(index, bound, label, ariaDay, ariaMonth) {
+                return '<div class="field">' +
+                    '<label for="slot_' + bound + '_day_' + index + '">' + label + '</label>' +
+                    '<div class="courses-season-pair">' +
+                        '<select id="slot_' + bound + '_day_' + index + '" name="slots[' + index + '][season_' + bound + '_day]" aria-label="' + ariaDay + '">' +
+                            seasonOptions(31, null) +
+                        '</select>' +
+                        '<select id="slot_' + bound + '_month_' + index + '" name="slots[' + index + '][season_' + bound + '_month]" aria-label="' + ariaMonth + '">' +
+                            seasonOptions(12, monthLabels) +
+                        '</select>' +
+                    '</div>' +
+                '</div>';
+            }
             $('#add-slot').on('click', function() {
                 var html = '<div class="courses-slot-block">' +
                     '<div class="three fields slot-row">' +
@@ -277,8 +352,8 @@
                         '<div class="field"><label for="slot_end_' + slotIndex + '">{{ _T("End time", "courses") }}</label><input type="time" id="slot_end_' + slotIndex + '" name="slots[' + slotIndex + '][end_time]" value=""/></div>' +
                     '</div>' +
                     '<div class="two fields courses-slot-season">' +
-                        '<div class="field"><label for="slot_from_' + slotIndex + '">{{ _T("In season from (day/month)", "courses") }}</label><input type="date" id="slot_from_' + slotIndex + '" name="slots[' + slotIndex + '][season_from]" value=""/></div>' +
-                        '<div class="field"><label for="slot_to_' + slotIndex + '">{{ _T("In season until (day/month)", "courses") }}</label><input type="date" id="slot_to_' + slotIndex + '" name="slots[' + slotIndex + '][season_to]" value=""/></div>' +
+                        seasonField(slotIndex, 'from', {{ _T("In season from (day/month)", "courses")|json_encode|raw }}, {{ _T("Season start day", "courses")|json_encode|raw }}, {{ _T("Season start month", "courses")|json_encode|raw }}) +
+                        seasonField(slotIndex, 'to', {{ _T("In season until (day/month)", "courses")|json_encode|raw }}, {{ _T("Season end day", "courses")|json_encode|raw }}, {{ _T("Season end month", "courses")|json_encode|raw }}) +
                     '</div>' +
                     '</div>';
                 $('#slots-container').append(html);

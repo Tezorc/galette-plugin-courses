@@ -173,6 +173,12 @@ class Event
                     'is_active' => (int)($r->is_active ?? 1) === 1,
                     'season_from' => !empty($r->season_from) ? (string)$r->season_from : null,
                     'season_to' => !empty($r->season_to) ? (string)$r->season_to : null,
+                    // Pre-split for the form, which shows a day list and a
+                    // month list rather than a date picker.
+                    'season_from_day' => self::seasonPart($r->season_from ?? null, 'day'),
+                    'season_from_month' => self::seasonPart($r->season_from ?? null, 'month'),
+                    'season_to_day' => self::seasonPart($r->season_to ?? null, 'day'),
+                    'season_to_month' => self::seasonPart($r->season_to ?? null, 'month'),
                 ];
             }
         } catch (Throwable $e) {
@@ -238,6 +244,33 @@ class Event
 
         if (isset($post['status']) && in_array($post['status'], [self::STATUS_DRAFT, self::STATUS_PENDING, self::STATUS_VALIDATED, self::STATUS_CANCELLED])) {
             $this->status = $post['status'];
+        }
+
+        // Season bounds are posted as a day and a month, with no year: a season
+        // repeats every year. Nothing checks that the start comes before the
+        // end — a season running across the end of the year (winter) is exactly
+        // that case, and it is legitimate.
+        if (isset($post['slots']) && is_array($post['slots'])) {
+            foreach ($post['slots'] as $slot) {
+                if (!is_array($slot)) {
+                    continue;
+                }
+                foreach (['season_from', 'season_to'] as $bound) {
+                    $day   = trim((string)($slot[$bound . '_day'] ?? ''));
+                    $month = trim((string)($slot[$bound . '_month'] ?? ''));
+                    if ($day === '' && $month === '') {
+                        continue;   // borne laissee vide
+                    }
+                    if ($day === '' || $month === '') {
+                        $this->errors[] = _T('A season bound needs both a day and a month.', 'courses');
+                        break 2;
+                    }
+                    if (!self::isValidSeasonBound($day, $month)) {
+                        $this->errors[] = _T('This day does not exist in the selected month.', 'courses');
+                        break 2;
+                    }
+                }
+            }
         }
 
         return $this->errors;
@@ -821,6 +854,61 @@ class Event
     }
 
     /**
+     * Number of days each month can hold, February taken at 29.
+     *
+     * 29 February is accepted on purpose: a season bound carries no year, so
+     * "until 29 February" is a legitimate thing to mean, and the comparison
+     * never builds a real date out of it.
+     */
+    private const SEASON_DAYS_IN_MONTH = [
+        '01' => 31, '02' => 29, '03' => 31, '04' => 30, '05' => 31, '06' => 30,
+        '07' => 31, '08' => 31, '09' => 30, '10' => 31, '11' => 30, '12' => 31,
+    ];
+
+    /**
+     * Sentinel year the season bounds are stored under.
+     *
+     * The form only asks for a day and a month — the year would be noise, since
+     * a season repeats every year. The column stays a real DATE, so a year has
+     * to be written anyway: 2000 is used because it is a leap year, which is
+     * what makes 29 February storable. It is never read back: everything goes
+     * through monthDay().
+     */
+    public const SEASON_YEAR = '2000';
+
+    /**
+     * Assemble a stored season bound from the day and month posted by the form.
+     * Returns null when either half is missing — that is a bound left empty.
+     *
+     * @param string|int|null $day   Day of month, 1-31
+     * @param string|int|null $month Month, 1-12
+     */
+    public static function composeSeasonBound(string|int|null $day, string|int|null $month): ?string
+    {
+        $d = str_pad(trim((string)($day ?? '')), 2, '0', STR_PAD_LEFT);
+        $m = str_pad(trim((string)($month ?? '')), 2, '0', STR_PAD_LEFT);
+        if (!self::isValidSeasonBound($d, $m)) {
+            return null;
+        }
+        return self::SEASON_YEAR . '-' . $m . '-' . $d;
+    }
+
+    /**
+     * Is this day-and-month pair a real position in the year? Rejects 31/04 and
+     * 30/02, accepts 29/02 (see SEASON_DAYS_IN_MONTH).
+     */
+    public static function isValidSeasonBound(string|int|null $day, string|int|null $month): bool
+    {
+        $d = str_pad(trim((string)($day ?? '')), 2, '0', STR_PAD_LEFT);
+        $m = str_pad(trim((string)($month ?? '')), 2, '0', STR_PAD_LEFT);
+        if (!isset(self::SEASON_DAYS_IN_MONTH[$m])) {
+            return false;
+        }
+        $dayNumber = (int)$d;
+        return $dayNumber >= 1 && $dayNumber <= self::SEASON_DAYS_IN_MONTH[$m];
+    }
+
+    /**
      * Does this slot produce a session on the given date?
      *
      * Two independent gates, both of which must pass:
@@ -894,6 +982,20 @@ class Event
             return $raw;
         }
         return null;
+    }
+
+    /**
+     * Day or month of a stored season bound, as a zero-padded string, for the
+     * form to pre-select. Empty string when there is no bound.
+     */
+    private static function seasonPart(mixed $value, string $which): string
+    {
+        $md = self::monthDay($value);
+        if ($md === null) {
+            return '';
+        }
+        [$month, $day] = explode('-', $md);
+        return $which === 'day' ? $day : $month;
     }
 
     /**

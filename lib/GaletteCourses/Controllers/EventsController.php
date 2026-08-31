@@ -317,8 +317,14 @@ class EventsController extends AbstractPluginController
                             'start_time' => $slot['start_time'],
                             'end_time' => $slot['end_time'],
                             'is_active' => !empty($slot['is_active']),
-                            'season_from' => !empty($slot['season_from']) ? $slot['season_from'] : null,
-                            'season_to' => !empty($slot['season_to']) ? $slot['season_to'] : null,
+                            'season_from' => Event::composeSeasonBound(
+                                $slot['season_from_day'] ?? null,
+                                $slot['season_from_month'] ?? null
+                            ),
+                            'season_to' => Event::composeSeasonBound(
+                                $slot['season_to_day'] ?? null,
+                                $slot['season_to_month'] ?? null
+                            ),
                         ];
                     }
                 }
