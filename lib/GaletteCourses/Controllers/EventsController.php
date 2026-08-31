@@ -317,6 +317,8 @@ class EventsController extends AbstractPluginController
                             'start_time' => $slot['start_time'],
                             'end_time' => $slot['end_time'],
                             'is_active' => !empty($slot['is_active']),
+                            'valid_from' => !empty($slot['valid_from']) ? $slot['valid_from'] : null,
+                            'valid_to' => !empty($slot['valid_to']) ? $slot['valid_to'] : null,
                         ];
                     }
                 }
@@ -365,6 +367,35 @@ class EventsController extends AbstractPluginController
                 ));
                 if ($id !== null && !empty($activeSlots)) {
                     $handler = new RecurrenceHandler($this->zdb);
+                    // Seasonal windows: move already-generated future sessions
+                    // onto the slot that now applies on their date BEFORE
+                    // backfilling, otherwise the backfill would add the new
+                    // slot alongside the stale one and double the date.
+                    $realign = $handler->realignSeasonalSessions($event, $activeSlots);
+                    if ($realign['realigned'] > 0) {
+                        $this->flash->addMessage(
+                            'success_detected',
+                            str_replace(
+                                '{count}',
+                                (string)$realign['realigned'],
+                                _T('{count} scheduled session(s) moved to the schedule now in force.', 'courses')
+                            )
+                        );
+                    }
+                    if (!empty($realign['skipped'])) {
+                        $this->flash->addMessage(
+                            'warning_detected',
+                            str_replace(
+                                ['{count}', '{dates}'],
+                                [(string)count($realign['skipped']), implode(', ', $realign['skipped'])],
+                                _T(
+                                    '{count} session(s) keep their former schedule because they already have'
+                                    . ' registrations or an instructor: {dates}. Adjust them one by one if needed.',
+                                    'courses'
+                                )
+                            )
+                        );
+                    }
                     $backfilled = $handler->backfillMissingSlots($event, $activeSlots);
                     if (!empty($backfilled)) {
                         $createdSessions = array_merge($createdSessions, $backfilled);

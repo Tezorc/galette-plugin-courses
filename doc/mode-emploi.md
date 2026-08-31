@@ -153,6 +153,18 @@ Pour qu'un adherent puisse s'inscrire a une seance :
    - **Date de debut** : date de la seance (uniquement a la creation, format `aaaa-mm-jj`)
    - **Creneaux horaires** : horaire debut / fin. Cliquer sur **"Ajouter un creneau"** pour ajouter des creneaux supplementaires
    - **Actif** (Phase 78) : case a cocher devant chaque creneau. Decocher un creneau le conserve en base mais l'**exclut de la generation des seances recurrentes**. Utilisation type : planifier les creneaux ete + hiver sur le meme evenement et basculer la case actif/inactif au changement de saison. Les seances **deja generees** sur un creneau decoche ne sont **pas annulees** automatiquement (toggle = effet uniquement sur la prochaine generation) ; les annuler a la main si necessaire. Re-cocher = backfill automatique au prochain enregistrement / cron de generation.
+   - **Valable a partir du / Valable jusqu'au** : periode de validite facultative de chaque creneau. Laissees vides, le creneau s'applique en permanence (comportement d'origine). Renseignees, le creneau ne genere de seance que pour les dates comprises dans sa fenetre, **bornes incluses**. C'est la maniere recommandee de gerer des horaires saisonniers : deux creneaux sur le meme evenement, chacun avec sa periode, et la bascule se fait toute seule le jour dit — sans avoir a penser a cocher/decocher au bon moment.
+
+     Exemple, pour un cours du mercredi :
+
+     | Creneau | Valable du | Valable jusqu'au |
+     |---|---|---|
+     | 18:00 - 19:30 (ete) | 01/04/2026 | 30/09/2026 |
+     | 17:00 - 18:30 (hiver) | 01/10/2026 | 31/03/2027 |
+
+     Les deux mecanismes se combinent : la case **Actif** reste l'interrupteur maitre, un creneau decoche ne genere rien meme si sa periode couvre la date. Une date de fin anterieure a la date de debut est refusee a l'enregistrement.
+
+   - **Seances deja programmees lors d'un changement de periode** : les seances sont generees d'avance (4 semaines par defaut), donc certaines peuvent porter l'ancien horaire au moment ou vous posez les periodes. A l'enregistrement, celles qui n'ont **ni inscrit ni moniteur** sont automatiquement replacees sur l'horaire desormais applicable, et un message indique combien l'ont ete. Celles qui ont deja des inscrits ou un moniteur sont **laissees telles quelles** — changer leur horaire sous les pieds des personnes engagees n'est pas une decision automatique — et un second message liste leurs dates pour que vous les ajustiez une par une si necessaire.
 
 4. Cliquer sur **Enregistrer**
 

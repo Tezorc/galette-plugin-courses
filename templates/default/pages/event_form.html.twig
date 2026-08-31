@@ -176,43 +176,68 @@
             <div id="slots-container">
                 <label>{{ _T("Time slots", "courses") }}</label>
                 <span class="tip">{{ _T("Uncheck a slot to keep it on file without generating new sessions (e.g. seasonal summer/winter schedule).", "courses") }}</span>
+                <span class="tip">{{ _T("Validity dates are optional: leave them empty for a slot that always applies. Fill them in to alternate seasonal schedules — each date generates the slot whose window covers it.", "courses") }}</span>
                 {% set existing_slots = event.getSlots() %}
                 {% if existing_slots|length > 0 %}
                     {% for slot in existing_slots %}
-                        <div class="three fields slot-row">
-                            <div class="field courses-slot-active-field">
-                                <label for="slot_active_{{ loop.index0 }}">{{ _T("Active", "courses") }}</label>
-                                <div class="ui toggle checkbox">
-                                    <input type="checkbox" name="slots[{{ loop.index0 }}][is_active]" id="slot_active_{{ loop.index0 }}" value="1"{% if slot.is_active is not defined or slot.is_active %} checked="checked"{% endif %}/>
-                                    <label></label>
+                        <div class="courses-slot-block">
+                            <div class="three fields slot-row">
+                                <div class="field courses-slot-active-field">
+                                    <label for="slot_active_{{ loop.index0 }}">{{ _T("Active", "courses") }}</label>
+                                    <div class="ui toggle checkbox">
+                                        <input type="checkbox" name="slots[{{ loop.index0 }}][is_active]" id="slot_active_{{ loop.index0 }}" value="1"{% if slot.is_active is not defined or slot.is_active %} checked="checked"{% endif %}/>
+                                        <label></label>
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label for="slot_start_{{ loop.index0 }}">{{ _T("Start time", "courses") }}</label>
+                                    <input type="time" id="slot_start_{{ loop.index0 }}" name="slots[{{ loop.index0 }}][start_time]" value="{{ slot.start_time }}"/>
+                                </div>
+                                <div class="field">
+                                    <label for="slot_end_{{ loop.index0 }}">{{ _T("End time", "courses") }}</label>
+                                    <input type="time" id="slot_end_{{ loop.index0 }}" name="slots[{{ loop.index0 }}][end_time]" value="{{ slot.end_time }}"/>
                                 </div>
                             </div>
-                            <div class="field">
-                                <label for="slot_start_{{ loop.index0 }}">{{ _T("Start time", "courses") }}</label>
-                                <input type="time" id="slot_start_{{ loop.index0 }}" name="slots[{{ loop.index0 }}][start_time]" value="{{ slot.start_time }}"/>
-                            </div>
-                            <div class="field">
-                                <label for="slot_end_{{ loop.index0 }}">{{ _T("End time", "courses") }}</label>
-                                <input type="time" id="slot_end_{{ loop.index0 }}" name="slots[{{ loop.index0 }}][end_time]" value="{{ slot.end_time }}"/>
+                            <div class="two fields courses-slot-season">
+                                <div class="field">
+                                    <label for="slot_from_{{ loop.index0 }}">{{ _T("Valid from", "courses") }}</label>
+                                    <input type="date" id="slot_from_{{ loop.index0 }}" name="slots[{{ loop.index0 }}][valid_from]" value="{{ slot.valid_from }}"/>
+                                </div>
+                                <div class="field">
+                                    <label for="slot_to_{{ loop.index0 }}">{{ _T("Valid until", "courses") }}</label>
+                                    <input type="date" id="slot_to_{{ loop.index0 }}" name="slots[{{ loop.index0 }}][valid_to]" value="{{ slot.valid_to }}"/>
+                                </div>
                             </div>
                         </div>
                     {% endfor %}
                 {% else %}
-                    <div class="three fields slot-row">
-                        <div class="field courses-slot-active-field">
-                            <label for="slot_active_0">{{ _T("Active", "courses") }}</label>
-                            <div class="ui toggle checkbox">
-                                <input type="checkbox" name="slots[0][is_active]" id="slot_active_0" value="1" checked="checked"/>
-                                <label></label>
+                    <div class="courses-slot-block">
+                        <div class="three fields slot-row">
+                            <div class="field courses-slot-active-field">
+                                <label for="slot_active_0">{{ _T("Active", "courses") }}</label>
+                                <div class="ui toggle checkbox">
+                                    <input type="checkbox" name="slots[0][is_active]" id="slot_active_0" value="1" checked="checked"/>
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label for="slot_start_0">{{ _T("Start time", "courses") }}</label>
+                                <input type="time" id="slot_start_0" name="slots[0][start_time]" value=""/>
+                            </div>
+                            <div class="field">
+                                <label for="slot_end_0">{{ _T("End time", "courses") }}</label>
+                                <input type="time" id="slot_end_0" name="slots[0][end_time]" value=""/>
                             </div>
                         </div>
-                        <div class="field">
-                            <label for="slot_start_0">{{ _T("Start time", "courses") }}</label>
-                            <input type="time" id="slot_start_0" name="slots[0][start_time]" value=""/>
-                        </div>
-                        <div class="field">
-                            <label for="slot_end_0">{{ _T("End time", "courses") }}</label>
-                            <input type="time" id="slot_end_0" name="slots[0][end_time]" value=""/>
+                        <div class="two fields courses-slot-season">
+                            <div class="field">
+                                <label for="slot_from_0">{{ _T("Valid from", "courses") }}</label>
+                                <input type="date" id="slot_from_0" name="slots[0][valid_from]" value=""/>
+                            </div>
+                            <div class="field">
+                                <label for="slot_to_0">{{ _T("Valid until", "courses") }}</label>
+                                <input type="date" id="slot_to_0" name="slots[0][valid_to]" value=""/>
+                            </div>
                         </div>
                     </div>
                 {% endif %}
@@ -239,16 +264,22 @@
         $(function() {
             var slotIndex = {{ (event.getSlots()|length > 0) ? event.getSlots()|length : 1 }};
             $('#add-slot').on('click', function() {
-                var html = '<div class="three fields slot-row">' +
-                    '<div class="field courses-slot-active-field">' +
-                        '<label for="slot_active_' + slotIndex + '">{{ _T("Active", "courses") }}</label>' +
-                        '<div class="ui toggle checkbox">' +
-                            '<input type="checkbox" name="slots[' + slotIndex + '][is_active]" id="slot_active_' + slotIndex + '" value="1" checked="checked"/>' +
-                            '<label></label>' +
+                var html = '<div class="courses-slot-block">' +
+                    '<div class="three fields slot-row">' +
+                        '<div class="field courses-slot-active-field">' +
+                            '<label for="slot_active_' + slotIndex + '">{{ _T("Active", "courses") }}</label>' +
+                            '<div class="ui toggle checkbox">' +
+                                '<input type="checkbox" name="slots[' + slotIndex + '][is_active]" id="slot_active_' + slotIndex + '" value="1" checked="checked"/>' +
+                                '<label></label>' +
+                            '</div>' +
                         '</div>' +
+                        '<div class="field"><label for="slot_start_' + slotIndex + '">{{ _T("Start time", "courses") }}</label><input type="time" id="slot_start_' + slotIndex + '" name="slots[' + slotIndex + '][start_time]" value=""/></div>' +
+                        '<div class="field"><label for="slot_end_' + slotIndex + '">{{ _T("End time", "courses") }}</label><input type="time" id="slot_end_' + slotIndex + '" name="slots[' + slotIndex + '][end_time]" value=""/></div>' +
                     '</div>' +
-                    '<div class="field"><label for="slot_start_' + slotIndex + '">{{ _T("Start time", "courses") }}</label><input type="time" id="slot_start_' + slotIndex + '" name="slots[' + slotIndex + '][start_time]" value=""/></div>' +
-                    '<div class="field"><label for="slot_end_' + slotIndex + '">{{ _T("End time", "courses") }}</label><input type="time" id="slot_end_' + slotIndex + '" name="slots[' + slotIndex + '][end_time]" value=""/></div>' +
+                    '<div class="two fields courses-slot-season">' +
+                        '<div class="field"><label for="slot_from_' + slotIndex + '">{{ _T("Valid from", "courses") }}</label><input type="date" id="slot_from_' + slotIndex + '" name="slots[' + slotIndex + '][valid_from]" value=""/></div>' +
+                        '<div class="field"><label for="slot_to_' + slotIndex + '">{{ _T("Valid until", "courses") }}</label><input type="date" id="slot_to_' + slotIndex + '" name="slots[' + slotIndex + '][valid_to]" value=""/></div>' +
+                    '</div>' +
                     '</div>';
                 $('#slots-container').append(html);
                 $('#slots-container .ui.toggle.checkbox').last().checkbox();
