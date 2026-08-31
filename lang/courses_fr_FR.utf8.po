@@ -2101,20 +2101,17 @@ msgstr "Supprimer cette période de fermeture"
 
 # --- Horaires saisonniers : plage de validite des creneaux ---
 
-msgid "Valid from"
-msgstr "Valable à partir du"
-
-msgid "Valid until"
-msgstr "Valable jusqu'au"
-
-msgid "Validity dates are optional: leave them empty for a slot that always applies. Fill them in to alternate seasonal schedules — each date generates the slot whose window covers it."
-msgstr "Les dates de validité sont facultatives : laissez-les vides pour un créneau valable en permanence. Renseignez-les pour alterner des horaires saisonniers — chaque date génère le créneau dont la période la couvre."
-
-msgid "A time slot end of validity cannot come before its start of validity."
-msgstr "La fin de validité d'un créneau ne peut pas précéder son début de validité."
-
 msgid "{count} scheduled session(s) moved to the schedule now in force."
 msgstr "{count} séance(s) programmée(s) replacée(s) sur l'horaire désormais en vigueur."
 
 msgid "{count} session(s) keep their former schedule because they already have registrations or an instructor: {dates}. Adjust them one by one if needed."
 msgstr "{count} séance(s) conservent leur ancien horaire car elles ont déjà des inscrits ou un moniteur : {dates}. Ajustez-les une par une si nécessaire."
+
+msgid "In season from (day/month)"
+msgstr "En saison à partir du (jour/mois)"
+
+msgid "In season until (day/month)"
+msgstr "En saison jusqu'au (jour/mois)"
+
+msgid "The season is optional: leave both dates empty for a slot that applies all year round. Only the day and month are used — the year is ignored, so the changeover repeats every year. A season may run across the end of the year (1 October to 31 March, for instance)."
+msgstr "La saison est facultative : laissez les deux dates vides pour un créneau valable toute l'année. Seuls le jour et le mois sont pris en compte — l'année est ignorée, la bascule se refait donc chaque année. Une saison peut enjamber la fin d'année (du 1er octobre au 31 mars, par exemple)."

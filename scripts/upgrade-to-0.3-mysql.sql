@@ -24,15 +24,20 @@
 -- `galette_plugins` est inferieure a 0.3 est mise a jour
 -- (cf. Install::getUpdateScripts()).
 --
--- Horaires saisonniers : plage de validite facultative sur chaque creneau. Le
--- generateur retient, pour chaque date d'occurrence, les creneaux actifs dont la
--- fenetre couvre cette date. Les deux colonnes sont nullables : NULL = pas de
--- borne de ce cote, donc un creneau sans fenetre reste valable en permanence et
--- rien ne change pour les installations existantes.
+-- Horaires saisonniers : saison facultative sur chaque creneau. Le generateur
+-- retient, pour chaque date d'occurrence, les creneaux actifs dont la saison
+-- couvre cette date.
+--
+-- Seuls le JOUR et le MOIS de ces deux colonnes sont interpretes : l'annee est
+-- ignoree, la bascule se refait donc automatiquement chaque annee, et une saison
+-- peut enjamber le 31 decembre (hiver). Le type DATE est conserve pour garder un
+-- selecteur de date classique dans le formulaire. Les deux colonnes sont
+-- nullables : NULL = pas de borne de ce cote, donc un creneau sans saison reste
+-- valable en permanence et rien ne change pour les installations existantes.
 --
 -- Note : `executeSql()` decoupe le fichier sur `;` et remplace `galette_` par le
 -- prefixe reel de la base. Ne pas utiliser DELIMITER ni de procedure stockee ici.
 
 ALTER TABLE galette_courses_slots
-    ADD COLUMN valid_from DATE DEFAULT NULL AFTER is_active,
-    ADD COLUMN valid_to DATE DEFAULT NULL AFTER valid_from;
+    ADD COLUMN season_from DATE DEFAULT NULL AFTER is_active,
+    ADD COLUMN season_to DATE DEFAULT NULL AFTER season_from;

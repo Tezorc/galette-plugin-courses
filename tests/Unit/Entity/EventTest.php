@@ -222,8 +222,11 @@ final class EventTest extends TestCase
      * the recurrence handler and the raw arrays posted by the event form, so it
      * is worth pinning down on its own — it decides, date by date, which
      * schedule generates a session.
+     *
+     * The year stored in season_from / season_to is never read: a season is
+     * recurring, so every case below is also checked on a different year.
      */
-    public function testSlotWithoutWindowAppliesToAnyDate(): void
+    public function testSlotWithoutSeasonAppliesToAnyDate(): void
     {
         $slot = ['start_time' => '18:00', 'end_time' => '19:30', 'is_active' => true];
 
@@ -232,44 +235,91 @@ final class EventTest extends TestCase
         self::assertTrue(Event::slotAppliesOn($slot, '2099-12-31'));
     }
 
-    public function testInactiveSlotNeverAppliesEvenInsideItsWindow(): void
+    public function testInactiveSlotNeverAppliesEvenInSeason(): void
     {
         $slot = [
-            'start_time' => '18:00',
-            'end_time'   => '19:30',
-            'is_active'  => false,
-            'valid_from' => '2026-04-01',
-            'valid_to'   => '2026-09-30',
+            'start_time'  => '18:00',
+            'end_time'    => '19:30',
+            'is_active'   => false,
+            'season_from' => '2026-04-01',
+            'season_to'   => '2026-09-30',
         ];
 
         self::assertFalse(Event::slotAppliesOn($slot, '2026-06-15'));
     }
 
-    public function testWindowBoundsAreInclusive(): void
+    public function testSeasonBoundsAreInclusiveAndYearAgnostic(): void
     {
-        $slot = [
-            'start_time' => '18:00',
-            'end_time'   => '19:30',
-            'is_active'  => true,
-            'valid_from' => '2026-04-01',
-            'valid_to'   => '2026-09-30',
+        $summer = [
+            'start_time'  => '18:00',
+            'end_time'    => '19:30',
+            'is_active'   => true,
+            'season_from' => '2026-04-01',
+            'season_to'   => '2026-09-30',
         ];
 
-        self::assertTrue(Event::slotAppliesOn($slot, '2026-04-01'));
-        self::assertTrue(Event::slotAppliesOn($slot, '2026-09-30'));
-        self::assertFalse(Event::slotAppliesOn($slot, '2026-03-31'));
-        self::assertFalse(Event::slotAppliesOn($slot, '2026-10-01'));
+        // L'annee saisie (2026) ne doit jouer aucun role.
+        foreach (['2026', '2027', '2031'] as $year) {
+            self::assertTrue(Event::slotAppliesOn($summer, $year . '-04-01'), $year);
+            self::assertTrue(Event::slotAppliesOn($summer, $year . '-06-15'), $year);
+            self::assertTrue(Event::slotAppliesOn($summer, $year . '-09-30'), $year);
+            self::assertFalse(Event::slotAppliesOn($summer, $year . '-03-31'), $year);
+            self::assertFalse(Event::slotAppliesOn($summer, $year . '-10-01'), $year);
+        }
     }
 
-    public function testOpenEndedWindowsBindOnASingleSide(): void
+    /**
+     * The winter season runs across the end of the year, which is exactly why
+     * an "end before start" window is legitimate rather than an input error.
+     */
+    public function testSeasonRunningAcrossTheEndOfYear(): void
     {
-        $fromOnly = ['start_time' => '17:00', 'end_time' => '18:30', 'valid_from' => '2026-10-01'];
-        self::assertFalse(Event::slotAppliesOn($fromOnly, '2026-09-30'));
-        self::assertTrue(Event::slotAppliesOn($fromOnly, '2030-01-01'));
+        $winter = [
+            'start_time'  => '17:00',
+            'end_time'    => '18:30',
+            'is_active'   => true,
+            'season_from' => '2026-10-01',
+            'season_to'   => '2027-03-31',
+        ];
 
-        $toOnly = ['start_time' => '17:00', 'end_time' => '18:30', 'valid_to' => '2026-09-30'];
-        self::assertTrue(Event::slotAppliesOn($toOnly, '2000-01-01'));
-        self::assertFalse(Event::slotAppliesOn($toOnly, '2026-10-01'));
+        foreach (['2026-10-01', '2026-12-25', '2028-01-15', '2030-03-31'] as $date) {
+            self::assertTrue(Event::slotAppliesOn($winter, $date), $date);
+        }
+        foreach (['2026-09-30', '2027-04-01', '2029-06-15'] as $date) {
+            self::assertFalse(Event::slotAppliesOn($winter, $date), $date);
+        }
+    }
+
+    public function testOpenEndedSeasonsBindOnASingleSide(): void
+    {
+        $fromOnly = ['start_time' => '17:00', 'end_time' => '18:30', 'season_from' => '2026-10-01'];
+        self::assertFalse(Event::slotAppliesOn($fromOnly, '2030-09-30'));
+        self::assertTrue(Event::slotAppliesOn($fromOnly, '2030-10-01'));
+        self::assertTrue(Event::slotAppliesOn($fromOnly, '2030-12-31'));
+
+        $toOnly = ['start_time' => '17:00', 'end_time' => '18:30', 'season_to' => '2026-09-30'];
+        self::assertTrue(Event::slotAppliesOn($toOnly, '2030-01-01'));
+        self::assertFalse(Event::slotAppliesOn($toOnly, '2030-10-01'));
+    }
+
+    /**
+     * 29 February needs no special case: only the mm-dd strings are compared,
+     * nothing is ever built as a real date. A season ending on 29/02 therefore
+     * still behaves in a non-leap year.
+     */
+    public function testLeapDayBoundNeedsNoSpecialCase(): void
+    {
+        $slot = [
+            'start_time'  => '10:00',
+            'end_time'    => '11:00',
+            'is_active'   => true,
+            'season_from' => '2024-12-01',
+            'season_to'   => '2024-02-29',
+        ];
+
+        self::assertTrue(Event::slotAppliesOn($slot, '2027-02-28'));   // annee non bissextile
+        self::assertTrue(Event::slotAppliesOn($slot, '2027-12-15'));
+        self::assertFalse(Event::slotAppliesOn($slot, '2027-03-01'));
     }
 
     /**
@@ -279,11 +329,11 @@ final class EventTest extends TestCase
     public function testEmptyStringsAreTreatedAsNoBound(): void
     {
         $slot = [
-            'start_time' => '18:00',
-            'end_time'   => '19:30',
-            'is_active'  => true,
-            'valid_from' => '',
-            'valid_to'   => '',
+            'start_time'  => '18:00',
+            'end_time'    => '19:30',
+            'is_active'   => true,
+            'season_from' => '',
+            'season_to'   => '',
         ];
 
         self::assertTrue(Event::slotAppliesOn($slot, '2026-06-15'));
@@ -291,25 +341,25 @@ final class EventTest extends TestCase
 
     /**
      * The summer/winter pair an event actually carries: on any given date
-     * exactly one of the two generates, and the changeover is seamless.
+     * exactly one of the two generates, year after year.
      */
     public function testSummerAndWinterSlotsNeverOverlap(): void
     {
         $summer = [
             'start_time' => '18:00', 'end_time' => '19:30', 'is_active' => true,
-            'valid_from' => '2026-04-01', 'valid_to' => '2026-09-30',
+            'season_from' => '2026-04-01', 'season_to' => '2026-09-30',
         ];
         $winter = [
             'start_time' => '17:00', 'end_time' => '18:30', 'is_active' => true,
-            'valid_from' => '2026-10-01', 'valid_to' => '2027-03-31',
+            'season_from' => '2026-10-01', 'season_to' => '2027-03-31',
         ];
 
-        foreach (['2026-04-01', '2026-06-15', '2026-09-30'] as $date) {
+        foreach (['2026-04-01', '2027-06-15', '2031-09-30'] as $date) {
             self::assertTrue(Event::slotAppliesOn($summer, $date), $date);
             self::assertFalse(Event::slotAppliesOn($winter, $date), $date);
         }
 
-        foreach (['2026-10-01', '2026-12-25', '2027-03-31'] as $date) {
+        foreach (['2026-10-01', '2027-12-25', '2031-03-31'] as $date) {
             self::assertFalse(Event::slotAppliesOn($summer, $date), $date);
             self::assertTrue(Event::slotAppliesOn($winter, $date), $date);
         }

@@ -19,11 +19,11 @@
 
 -- Migration PostgreSQL du schema du plugin vers la version 0.3.
 --
--- Equivalent de `upgrade-to-0.3-mysql.sql` : plage de validite facultative sur
--- chaque creneau (horaires saisonniers ete / hiver). Colonnes nullables, donc
--- sans effet sur les creneaux existants.
+-- Equivalent de `upgrade-to-0.3-mysql.sql` : saison facultative sur chaque creneau
+-- (horaires ete / hiver). Seuls le jour et le mois sont interpretes, l'annee est
+-- ignoree. Colonnes nullables, donc sans effet sur les creneaux existants.
 
 ALTER TABLE galette_courses_slots
-    ADD COLUMN valid_from date DEFAULT NULL;
+    ADD COLUMN season_from date DEFAULT NULL;
 ALTER TABLE galette_courses_slots
-    ADD COLUMN valid_to date DEFAULT NULL;
+    ADD COLUMN season_to date DEFAULT NULL;
