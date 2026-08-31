@@ -4,6 +4,71 @@
 
 Plugin Galette pour la gestion de cours, entrainements et evenements sportifs avec inscription en ligne. Situe dans `galette/plugins/galette-galette-plugin-courses/`.
 
+## Branches et deploiement
+
+Deux lignes de code coexistent, chacune liee a une version du coeur Galette. Ne
+jamais deployer l'une sur la cible de l'autre : les incompatibilites sont
+fatales (`$authenticate` indefini, menus muets, `csrf.html.twig` absent).
+
+| Branche | Coeur Galette | Cible de deploiement |
+|---|---|---|
+| `main` | 1.2 | serveur du club (production) |
+| `dev-galette-1.3` | 1.3 | installation locale `Downloads/galette` (v1.3-dev) |
+
+`dev-galette-1.3` = `main` + une couche d'adaptation 1.3 :
+`_routes.php` (`Authenticate::class` au lieu de `$authenticate`),
+`PluginGaletteCourses` (interfaces `*ProviderInterface` et methodes d'instance
+au lieu des methodes statiques), retrait de l'include `csrf.html.twig` dans les
+templates, `_define.php` (`dbver` + `compver: 1.3.0`) et les scripts de
+migration `upgrade-to-0.2-*` / `manual-catchup-0.2-*`.
+
+### Ou commiter
+
+- Correction fonctionnelle ou nouvelle fonctionnalite : **toujours sur `main`
+  d'abord**, c'est la ligne en production.
+- Adaptation propre a la 1.3 : directement sur `dev-galette-1.3`.
+
+### Propager main vers dev-galette-1.3
+
+Par **fusion**, pas par cherry-pick (le cherry-pick duplique les commits et fait
+diverger l'historique) :
+
+```sh
+git checkout dev-galette-1.3
+git merge main
+git checkout main
+```
+
+Seul `templates/default/headers.html.twig` conflit en pratique (fichier d'une
+ligne portant un en-tete de licence sur dev) : garder la version dev, en
+reportant la valeur du cache-buster `?v=` venue de main.
+
+Verifier qu'aucun commit de `main` ne manque sur dev (`+` = absent) :
+
+```sh
+git cherry -v dev-galette-1.3 main
+```
+
+### Deployer sans changer de branche
+
+`git archive` lit n'importe quelle branche sans toucher a l'arbre de travail :
+
+```sh
+git archive dev-galette-1.3 _config.inc.php _define.php _routes.php CLAUDE.md     LICENSE README.md doc lang lib scripts templates webroot   | tar -x -C /c/Users/freda/Downloads/galette/plugins/galette-plugin-courses
+```
+
+Les fichiers de developpement (`tests/`, `.github/`, `composer.*`,
+`phpstan.neon`, `phpunit.xml.dist`) sont volontairement hors de la liste. Les
+`desktop.ini` (OneDrive) et les `*.old` presents dans la cible sont conserves.
+
+### Travailler sur les deux en parallele
+
+Pour eviter les allers-retours de branche, un worktree dedie :
+
+```sh
+git worktree add ../courses-1.3 dev-galette-1.3
+```
+
 ## Documentation a maintenir
 
 **A chaque modification du plugin, mettre a jour les fichiers de documentation suivants :**
