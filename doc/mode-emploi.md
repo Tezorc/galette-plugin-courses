@@ -987,6 +987,21 @@ Le plugin est entierement traduit en francais. Les traductions sont gerees via l
 | `lang/fr_FR.utf8/LC_MESSAGES/courses.mo` | Traductions generiques compilees (format MO binaire) |
 | `lang/courses_fr_FR.utf8_local_lang.php` | Surcharges locales propres a chaque association (URL d'espace adherent, signature, terminologie metier) |
 
+### Langue des courriels
+
+Les courriels envoyes par le plugin sont **toujours rediges dans la langue de
+l'association** (preference Galette « Langue par defaut »), et non dans celle de
+la personne qui declenche l'envoi : le destinataire est quelqu'un d'autre.
+
+C'est particulierement important pour les envois par le cron (digests quotidien
+moniteur et hebdomadaire membre) : ces appels se font sans session ouverte, et
+Galette retomberait sinon sur sa langue par defaut interne (`en_US`) — le corps
+du message arrivait bien en francais (il vient du modele stocke en base) mais le
+pied de page de desinscription sortait en anglais.
+
+Si les courriels arrivent dans la mauvaise langue, verifier la preference
+« Langue par defaut » de Galette (menu Configuration > Preferences).
+
 ### Ajouter ou modifier une traduction
 
 1. Editer le fichier `lang/courses_fr_FR.utf8.po`

@@ -69,36 +69,30 @@ class CronController extends AbstractController
     }
 
     /**
-     * Best-effort: register this plugin's gettext (.mo) translations for the
-     * 'courses' domain.
+     * Force the association default language for the whole cron run.
      *
-     * Cron endpoints are hit unattended (curl, no cookie), a context where
-     * Galette does not load plugin translations — which left the email
-     * unsubscribe footer (_T(..., 'courses')) in English while the DB-stored
-     * template body was in French.
+     * Cron endpoints are hit unattended (curl: no session cookie, and usually
+     * no Accept-Language header), so Galette builds its I18n from
+     * I18n::DEFAULT_LANG — en_US. The plugin catalog is registered for the
+     * 'courses' domain as usual, but every _T() lookup then resolves against
+     * the en_US locale and returns the English msgid. Hence digests going out
+     * with a French body (MailTemplate rows are stored in fr_FR) and an
+     * English unsubscribe footer.
      *
-     * Only the gettext .mo loader is registered here — deliberately NOT the
-     * phparray local_lang loader, which expects a `return [...]` file whereas
-     * Galette's local_lang uses `$lang[...]=...` (loading it via the standard
-     * Laminas loader would throw). The footer strings live in the .mo, and
-     * are not overridden in local_lang, so the .mo alone is sufficient.
-     * Fully wrapped: a failure can never break the cron.
+     * Switching to pref_lang puts the whole run — emails, history entries,
+     * response text — in the association language.
+     * Wrapped: a failure can never break the cron.
      */
-    private function loadCoursesGettext(): void
+    private function applyAssociationLanguage(): void
     {
         try {
-            global $translator;
-            if (isset($translator) && method_exists($translator, 'addTranslationFilePattern')) {
-                $translator->addTranslationFilePattern(
-                    'gettext',
-                    dirname(__DIR__, 3) . '/lang/',
-                    '/%s/LC_MESSAGES/courses.mo',
-                    'courses'
-                );
+            $lang = (string)($this->preferences->pref_lang ?? '');
+            if ($lang !== '') {
+                $this->i18n->changeLanguage($lang);
             }
         } catch (\Throwable $e) {
             Analog::log(
-                'Courses cron: could not register translations: ' . $e->getMessage(),
+                'Courses cron: could not switch to association language: ' . $e->getMessage(),
                 Analog::WARNING
             );
         }
@@ -116,7 +110,7 @@ class CronController extends AbstractController
             return $denied;
         }
 
-        $this->loadCoursesGettext();
+        $this->applyAssociationLanguage();
 
         // Load all validated recurring events
         try {
@@ -227,7 +221,7 @@ class CronController extends AbstractController
             return $denied;
         }
 
-        $this->loadCoursesGettext();
+        $this->applyAssociationLanguage();
 
         $notification = new CourseNotification(
             $this->zdb,
@@ -294,7 +288,7 @@ class CronController extends AbstractController
             return $response->withHeader('Content-Type', 'text/plain');
         }
 
-        $this->loadCoursesGettext();
+        $this->applyAssociationLanguage();
 
         $notification = new CourseNotification(
             $this->zdb,
