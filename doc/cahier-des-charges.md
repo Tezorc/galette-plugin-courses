@@ -743,6 +743,13 @@ d'hiver de cohabiter sur le meme evenement.
   `season_*_day` / `season_*_month` deja decoupes, via `seasonPart()`, pour la
   reselection a l'edition.
 
+- Fiche evenement (`event_show`) : recapitulatif des creneaux — horaires,
+  saison rendue en `jj/mm` a partir des parties deja decoupees (aucun parsing de
+  date, donc aucun risque de decalage de fuseau), *Toute l'annee* faute de
+  saison, badge *Inactif* pour un creneau decoche. Les creneaux n'etaient
+  jusqu'ici visibles que dans le formulaire d'edition : impossible de savoir
+  quelle saison etait configuree sans ouvrir l'edition.
+
 - `composeSeasonBound()` assemble ce qui part en base a partir du couple poste,
   `isValidSeasonBound()` refuse les jours qui n'existent pas dans le mois choisi
   (31/04, 30/02) tout en acceptant le 29/02. `check()` refuse aussi une borne a

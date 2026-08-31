@@ -76,6 +76,36 @@
                         {% endif %}
                     </div>
                 </div>
+                {% set slots = event.getSlots() %}
+                {% if slots|length > 0 %}
+                    <div class="item">
+                        <i class="hourglass half icon" aria-hidden="true"></i>
+                        <div class="content">
+                            <div class="header">{{ _T("Time slots", "courses") }}</div>
+                            <div class="courses-slot-summary">
+                                {% for slot in slots %}
+                                    <div class="courses-slot-summary-row{% if slot.is_active is defined and not slot.is_active %} courses-slot-inactive{% endif %}">
+                                        <strong>{{ slot.start_time|slice(0, 5) }} - {{ slot.end_time|slice(0, 5) }}</strong>
+                                        <span class="courses-slot-season-label">
+                                            {%- if slot.season_from_day is defined and slot.season_from_day and slot.season_to_day is defined and slot.season_to_day -%}
+                                                {{ _T("From %s to %s", "courses")|format(slot.season_from_day ~ '/' ~ slot.season_from_month, slot.season_to_day ~ '/' ~ slot.season_to_month) }}
+                                            {%- elseif slot.season_from_day is defined and slot.season_from_day -%}
+                                                {{ _T("From %s", "courses")|format(slot.season_from_day ~ '/' ~ slot.season_from_month) }}
+                                            {%- elseif slot.season_to_day is defined and slot.season_to_day -%}
+                                                {{ _T("Until %s", "courses")|format(slot.season_to_day ~ '/' ~ slot.season_to_month) }}
+                                            {%- else -%}
+                                                {{ _T("All year round", "courses") }}
+                                            {%- endif -%}
+                                        </span>
+                                        {% if slot.is_active is defined and not slot.is_active %}
+                                            <span class="ui mini grey label">{{ _T("Inactive", "courses") }}</span>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
                 {% if event.getRegisterDeadlineDays() %}
                     <div class="item">
                         <i class="clock icon" aria-hidden="true"></i>

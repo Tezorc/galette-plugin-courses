@@ -2136,3 +2136,19 @@ msgstr "Une borne de saison demande un jour ET un mois."
 msgid "This day does not exist in the selected month."
 msgstr "Ce jour n'existe pas dans le mois choisi."
 
+# --- Recapitulatif des creneaux sur la fiche evenement ---
+
+msgid "From %s to %s"
+msgstr "Du %s au %s"
+
+msgid "From %s"
+msgstr "À partir du %s"
+
+msgid "Until %s"
+msgstr "Jusqu'au %s"
+
+msgid "All year round"
+msgstr "Toute l'année"
+
+msgid "Inactive"
+msgstr "Inactif"
