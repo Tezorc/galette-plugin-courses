@@ -13,7 +13,19 @@ fatales (`$authenticate` indefini, menus muets, `csrf.html.twig` absent).
 | Branche | Coeur Galette | Cible de deploiement |
 |---|---|---|
 | `main` | 1.2 | serveur du club (production) |
-| `dev-galette-1.3` | 1.3 | installation locale `Downloads/galette` (v1.3-dev) |
+| `dev-galette-1.3` | 1.3 | base de test locale, stack Docker `C:\dev\galette-nightly` |
+
+La base de test est une stack Docker (`docker compose up -d` dans
+`C:\dev\galette-nightly`) : Galette sur <http://localhost:8090>, MySQL 8.4,
+phpMyAdmin sur 8091. Le plugin n'y est pas copie mais **monte en bind** depuis
+le clone `C:\dev\galette-plugin-courses` vers
+`/var/www/html/galette/plugins/courses`. Deployer s'y resume donc a un
+`git pull` dans ce clone, suivi de deux gestes :
+
+- vider le cache Twig, sinon la page peut servir un gabarit compile perime :
+  `docker exec galette-nightly rm -rf /var/www/html/galette/data/cache/v1.3-dev/templates` ;
+- si `dbver` a bouge, verifier que la migration est passee :
+  `docker exec galette-mysql-nightly mysql -ugalette -pgalette galette -e "SELECT * FROM galette_plugins"`.
 
 `dev-galette-1.3` = `main` + une couche d'adaptation 1.3 :
 `_routes.php` (`Authenticate::class` au lieu de `$authenticate`),
