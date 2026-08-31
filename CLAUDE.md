@@ -61,17 +61,21 @@ Verifier qu'aucun commit de `main` ne manque sur dev (`+` = absent) :
 git cherry -v dev-galette-1.3 main
 ```
 
-### Deployer sans changer de branche
+### Deployer
 
-`git archive` lit n'importe quelle branche sans toucher a l'arbre de travail :
+**Base de test (1.3)** : `git pull` dans `C:\dev\galette-plugin-courses`, qui
+est monte en bind dans le conteneur. Puis vider le cache Twig (voir plus haut).
+
+**Production (1.2)** : produire une archive depuis `main` sans toucher a l'arbre
+de travail, et la transferer sur le serveur.
 
 ```sh
-git archive dev-galette-1.3 _config.inc.php _define.php _routes.php CLAUDE.md     LICENSE README.md doc lang lib scripts templates webroot   | tar -x -C /c/Users/freda/Downloads/galette/plugins/galette-plugin-courses
+git archive --format=zip --prefix=galette-plugin-courses/     -o ../galette-plugin-courses-$(git rev-parse --short main).zip main     _config.inc.php _define.php _routes.php LICENSE README.md     doc lang lib scripts templates webroot
 ```
 
 Les fichiers de developpement (`tests/`, `.github/`, `composer.*`,
-`phpstan.neon`, `phpunit.xml.dist`) sont volontairement hors de la liste. Les
-`desktop.ini` (OneDrive) et les `*.old` presents dans la cible sont conserves.
+`phpstan.neon`, `phpunit.xml.dist`) sont volontairement hors de la liste, tout
+comme `CLAUDE.md`.
 
 ### Travailler sur les deux en parallele
 
