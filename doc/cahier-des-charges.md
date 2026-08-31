@@ -772,7 +772,11 @@ d'hiver de cohabiter sur le meme evenement.
 - Formulaire : deux listes (jour, mois) par borne, dans un bloc
   `.courses-slot-block` regroupant la ligne horaire et la ligne de saison
   (3 endroits a maintenir : boucle des creneaux existants, ligne vide, gabarit
-  JS d'ajout). Jour et mois sont affiches **en chiffres sur deux positions**,
+  JS d'ajout). **Piege** : le coeur n'initialise les composants Fomantic qu'au
+  chargement de la page (`$('.ui.dropdown:not(...), select').dropdown()` dans
+  `galette-main.bundle.min.js`). Un creneau ajoute apres coup doit donc
+  reinitialiser lui-meme ses listes, sinon elles restent des `<select>` natifs,
+  visiblement plus etroits que ceux des creneaux deja presents. Jour et mois sont affiches **en chiffres sur deux positions**,
   par coherence avec les autres champs de dates du plugin : rien a traduire,
   donc rien a transporter du serveur vers le JS. `loadSlots()` expose
   `season_*_day` / `season_*_month` deja decoupes, via `seasonPart()`, pour la

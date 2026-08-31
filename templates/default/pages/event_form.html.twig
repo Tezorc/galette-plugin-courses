@@ -360,8 +360,15 @@
                         seasonField(slotIndex, 'to', {{ _T("In season until (day/month)", "courses")|json_encode|raw }}, {{ _T("Season end day", "courses")|json_encode|raw }}, {{ _T("Season end month", "courses")|json_encode|raw }}) +
                     '</div>' +
                     '</div>';
-                $('#slots-container').append(html);
-                $('#slots-container .ui.toggle.checkbox').last().checkbox();
+                // Le coeur n'initialise les composants Fomantic qu'au chargement
+                // ($('.ui.dropdown:not(...), select').dropdown() dans son bundle) :
+                // sans ce rappel, les listes d'un creneau ajoute resteraient des
+                // <select> natifs, visiblement plus etroits que les autres.
+                var $block = $(html).appendTo('#slots-container');
+                $block.find('.ui.toggle.checkbox').checkbox();
+                if ($.fn.dropdown) {
+                    $block.find('select').dropdown();
+                }
                 slotIndex++;
             });
 
