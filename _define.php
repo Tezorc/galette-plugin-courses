@@ -34,7 +34,7 @@ $this->register(
     compver: '1.3.0',
     route: 'courses',
     date: '2026-06-07',
-    dbver: 0.2,
+    dbver: 0.3,
     acls: [
         // Event authorship: routes are 'member' but each handler enforces
         // denyUnlessCanAuthorEvents() (admin/staff/group manager/instructor on

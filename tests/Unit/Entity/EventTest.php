@@ -216,4 +216,103 @@ final class EventTest extends TestCase
         $prop->setAccessible(true);
         $prop->setValue($event, $value);
     }
+
+    /**
+     * Seasonal slots: slotAppliesOn() is the single rule shared by the entity,
+     * the recurrence handler and the raw arrays posted by the event form, so it
+     * is worth pinning down on its own — it decides, date by date, which
+     * schedule generates a session.
+     */
+    public function testSlotWithoutWindowAppliesToAnyDate(): void
+    {
+        $slot = ['start_time' => '18:00', 'end_time' => '19:30', 'is_active' => true];
+
+        self::assertTrue(Event::slotAppliesOn($slot, '2020-01-01'));
+        self::assertTrue(Event::slotAppliesOn($slot, '2026-09-01'));
+        self::assertTrue(Event::slotAppliesOn($slot, '2099-12-31'));
+    }
+
+    public function testInactiveSlotNeverAppliesEvenInsideItsWindow(): void
+    {
+        $slot = [
+            'start_time' => '18:00',
+            'end_time'   => '19:30',
+            'is_active'  => false,
+            'valid_from' => '2026-04-01',
+            'valid_to'   => '2026-09-30',
+        ];
+
+        self::assertFalse(Event::slotAppliesOn($slot, '2026-06-15'));
+    }
+
+    public function testWindowBoundsAreInclusive(): void
+    {
+        $slot = [
+            'start_time' => '18:00',
+            'end_time'   => '19:30',
+            'is_active'  => true,
+            'valid_from' => '2026-04-01',
+            'valid_to'   => '2026-09-30',
+        ];
+
+        self::assertTrue(Event::slotAppliesOn($slot, '2026-04-01'));
+        self::assertTrue(Event::slotAppliesOn($slot, '2026-09-30'));
+        self::assertFalse(Event::slotAppliesOn($slot, '2026-03-31'));
+        self::assertFalse(Event::slotAppliesOn($slot, '2026-10-01'));
+    }
+
+    public function testOpenEndedWindowsBindOnASingleSide(): void
+    {
+        $fromOnly = ['start_time' => '17:00', 'end_time' => '18:30', 'valid_from' => '2026-10-01'];
+        self::assertFalse(Event::slotAppliesOn($fromOnly, '2026-09-30'));
+        self::assertTrue(Event::slotAppliesOn($fromOnly, '2030-01-01'));
+
+        $toOnly = ['start_time' => '17:00', 'end_time' => '18:30', 'valid_to' => '2026-09-30'];
+        self::assertTrue(Event::slotAppliesOn($toOnly, '2000-01-01'));
+        self::assertFalse(Event::slotAppliesOn($toOnly, '2026-10-01'));
+    }
+
+    /**
+     * Empty strings are what an untouched date input posts back; they must read
+     * as "no bound", not as a bound that excludes everything.
+     */
+    public function testEmptyStringsAreTreatedAsNoBound(): void
+    {
+        $slot = [
+            'start_time' => '18:00',
+            'end_time'   => '19:30',
+            'is_active'  => true,
+            'valid_from' => '',
+            'valid_to'   => '',
+        ];
+
+        self::assertTrue(Event::slotAppliesOn($slot, '2026-06-15'));
+    }
+
+    /**
+     * The summer/winter pair an event actually carries: on any given date
+     * exactly one of the two generates, and the changeover is seamless.
+     */
+    public function testSummerAndWinterSlotsNeverOverlap(): void
+    {
+        $summer = [
+            'start_time' => '18:00', 'end_time' => '19:30', 'is_active' => true,
+            'valid_from' => '2026-04-01', 'valid_to' => '2026-09-30',
+        ];
+        $winter = [
+            'start_time' => '17:00', 'end_time' => '18:30', 'is_active' => true,
+            'valid_from' => '2026-10-01', 'valid_to' => '2027-03-31',
+        ];
+
+        foreach (['2026-04-01', '2026-06-15', '2026-09-30'] as $date) {
+            self::assertTrue(Event::slotAppliesOn($summer, $date), $date);
+            self::assertFalse(Event::slotAppliesOn($winter, $date), $date);
+        }
+
+        foreach (['2026-10-01', '2026-12-25', '2027-03-31'] as $date) {
+            self::assertFalse(Event::slotAppliesOn($summer, $date), $date);
+            self::assertTrue(Event::slotAppliesOn($winter, $date), $date);
+        }
+    }
+
 }

@@ -94,6 +94,8 @@ CREATE TABLE galette_courses_slots (
     start_time time NOT NULL,
     end_time time NOT NULL,
     is_active tinyint(1) NOT NULL DEFAULT 1,
+    valid_from date DEFAULT NULL,
+    valid_to date DEFAULT NULL,
     PRIMARY KEY (id_slot),
     KEY idx_courses_slots_event (event_id),
     CONSTRAINT fk_courses_slots_event FOREIGN KEY (event_id) REFERENCES galette_courses_events (id_event) ON DELETE CASCADE

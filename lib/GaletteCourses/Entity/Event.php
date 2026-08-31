@@ -171,6 +171,8 @@ class Event
                     'start_time' => (string)$r->start_time,
                     'end_time' => (string)$r->end_time,
                     'is_active' => (int)($r->is_active ?? 1) === 1,
+                    'valid_from' => !empty($r->valid_from) ? (string)$r->valid_from : null,
+                    'valid_to' => !empty($r->valid_to) ? (string)$r->valid_to : null,
                 ];
             }
         } catch (Throwable $e) {
@@ -238,6 +240,24 @@ class Event
             $this->status = $post['status'];
         }
 
+        // Seasonal slots: an inverted validity window would silently disable
+        // the slot for every date, so it is rejected rather than normalised -
+        // guessing which of the two dates the user meant would be worse.
+        if (isset($post['slots']) && is_array($post['slots'])) {
+            foreach ($post['slots'] as $slot) {
+                if (!is_array($slot) || empty($slot['valid_from']) || empty($slot['valid_to'])) {
+                    continue;
+                }
+                if ((string)$slot['valid_from'] > (string)$slot['valid_to']) {
+                    $this->errors[] = _T(
+                        'A time slot end of validity cannot come before its start of validity.',
+                        'courses'
+                    );
+                    break;
+                }
+            }
+        }
+
         return $this->errors;
     }
 
@@ -295,7 +315,7 @@ class Event
     /**
      * Store slots for this event
      *
-     * @param array<array<string, string|bool|int>> $slots_data Array of ['start_time' => '...', 'end_time' => '...', 'is_active' => bool|int]
+     * @param array<array<string, string|bool|int|null>> $slots_data Array of ['start_time' => '...', 'end_time' => '...', 'is_active' => bool|int, 'valid_from' => 'yyyy-mm-dd'|null, 'valid_to' => 'yyyy-mm-dd'|null]
      */
     public function storeSlots(array $slots_data): bool
     {
@@ -316,6 +336,8 @@ class Event
                     'start_time' => $slot['start_time'],
                     'end_time' => $slot['end_time'],
                     'is_active' => !empty($slot['is_active']) ? 1 : 0,
+                    'valid_from' => !empty($slot['valid_from']) ? $slot['valid_from'] : null,
+                    'valid_to' => !empty($slot['valid_to']) ? $slot['valid_to'] : null,
                 ]);
                 $this->zdb->execute($insert);
             }
@@ -822,6 +844,63 @@ class Event
         return array_values(array_filter(
             $this->slots,
             static fn(array $s): bool => !isset($s['is_active']) || (bool)$s['is_active']
+        ));
+    }
+
+    /**
+     * Does this slot produce a session on the given date?
+     *
+     * Two independent gates, both of which must pass:
+     *  - `is_active`, the manual master switch (Phase 78): an unchecked slot is
+     *    kept on file but never generates anything, whatever its window says;
+     *  - the validity window `valid_from` / `valid_to`, either or both of which
+     *    may be null, meaning "no bound on that side". A slot with no window at
+     *    all applies to every date — which is what every pre-existing slot
+     *    looks like, hence no behaviour change on upgrade.
+     *
+     * Static and pure so the very same rule serves the entity, the recurrence
+     * handler and the raw arrays posted by the event form (slot rows are
+     * deleted and re-inserted on save, so their ids are not stable and cannot
+     * be used to look the slot up again).
+     *
+     * Dates are compared as `yyyy-mm-dd` strings: zero-padded, so a plain
+     * string comparison is a chronological one, and no timezone is involved.
+     *
+     * @param array<string, mixed> $slot
+     * @param string               $date Occurrence date, yyyy-mm-dd
+     */
+    public static function slotAppliesOn(array $slot, string $date): bool
+    {
+        if (isset($slot['is_active']) && !$slot['is_active']) {
+            return false;
+        }
+
+        $from = !empty($slot['valid_from']) ? (string)$slot['valid_from'] : null;
+        $to   = !empty($slot['valid_to']) ? (string)$slot['valid_to'] : null;
+
+        if ($from !== null && $date < $from) {
+            return false;
+        }
+        if ($to !== null && $date > $to) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Slots generating a session on the given date: active ones whose validity
+     * window covers it. Seasonal schedules (summer/winter) live as two slots on
+     * the same event, each with its own window.
+     *
+     * @param string $date Occurrence date, yyyy-mm-dd
+     * @return array<array<string, mixed>>
+     */
+    public function getSlotsForDate(string $date): array
+    {
+        return array_values(array_filter(
+            $this->slots,
+            static fn(array $s): bool => self::slotAppliesOn($s, $date)
         ));
     }
 

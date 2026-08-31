@@ -25,10 +25,12 @@ namespace GaletteCourses\Recurrence;
 
 use Galette\Core\Db;
 use GaletteCourses\Entity\Event;
+use GaletteCourses\Entity\Registration;
 use GaletteCourses\Entity\Session;
 use GaletteCourses\Entity\SessionInstructor;
 use GaletteCourses\PluginPreferences;
 use Analog\Analog;
+use Laminas\Db\Sql\Expression;
 use Throwable;
 
 /**
@@ -133,7 +135,10 @@ class RecurrenceHandler
         // the reason.
         $created = [];
         foreach ($dates as $date) {
-            foreach ($slots as $slot) {
+            // Seasonal schedules: the slot list is re-evaluated for every
+            // occurrence date, so a summer slot and a winter slot living on the
+            // same event each generate only inside their own validity window.
+            foreach ($this->slotsForDate($slots, $date) as $slot) {
                 $key = $date . '|' . $slot['start_time'];
                 if (in_array($key, $existingKeys, true)) {
                     continue;
@@ -253,6 +258,143 @@ class RecurrenceHandler
      *
      * @return int Number of sessions updated
      */
+    /**
+     * Slots of $slots that apply on $date (active, and inside their validity
+     * window if they have one).
+     *
+     * @param array<array<string, mixed>> $slots
+     * @return array<array<string, mixed>>
+     */
+    private function slotsForDate(array $slots, string $date): array
+    {
+        return array_values(array_filter(
+            $slots,
+            static fn(array $s): bool => Event::slotAppliesOn($s, $date)
+        ));
+    }
+
+    /**
+     * Re-align already-generated future sessions onto the seasonal schedule.
+     *
+     * Setting a validity window only steers *generation*. Sessions created
+     * before the window was set - generation runs `advance_weeks` ahead, four
+     * by default - keep the old times, and the backfill would then add the
+     * newly-applicable slot on those same dates, leaving two sessions where one
+     * is wanted. This pass runs first and rewrites the stale ones in place, so
+     * the backfill finds nothing missing.
+     *
+     * Deliberately conservative: only sessions with **no registration and no
+     * instructor** are touched. A session someone signed up for, or that a
+     * monitor volunteered for, is left exactly as it is and reported back to
+     * the caller - moving it would change the meeting time under people who
+     * already committed to it, which is a human decision, not a side effect of
+     * saving a form. Same reason for the ambiguous case: if several slots apply
+     * on a date, no automatic pick is made.
+     *
+     * @param array<array<string, mixed>> $slots Slot rows as posted/stored
+     * @return array{realigned: int, skipped: array<int, string>} Skipped dates,
+     *         formatted yyyy-mm-dd, for the caller to surface to the user
+     */
+    public function realignSeasonalSessions(Event $event, array $slots): array
+    {
+        $report = ['realigned' => 0, 'skipped' => []];
+        if ($event->getId() === null || empty($slots)) {
+            return $report;
+        }
+
+        try {
+            $select = $this->zdb->select(Session::TABLE, 's');
+            $select->columns([
+                Session::PK,
+                'session_date',
+                'start_time',
+                // Status inlined rather than bound: it is a class constant of
+                // ours, never user input, and a placeholder inside a SELECT
+                // column would make the binding order matter.
+                'nb_reg' => new Expression(
+                    '(SELECT COUNT(*) FROM ' . PREFIX_DB . Registration::TABLE . ' r'
+                    . ' WHERE r.session_id = s.' . Session::PK
+                    . " AND r.status = '" . Registration::STATUS_REGISTERED . "')"
+                ),
+                'nb_ins' => new Expression(
+                    '(SELECT COUNT(*) FROM ' . PREFIX_DB . SessionInstructor::TABLE . ' si'
+                    . ' WHERE si.session_id = s.' . Session::PK . ')'
+                ),
+            ]);
+            $select->where(['s.event_id' => $event->getId()]);
+            $select->where->greaterThanOrEqualTo('s.session_date', date('Y-m-d'));
+            $select->where->notEqualTo('s.status', Session::STATUS_CANCELLED);
+            $select->order('s.session_date ASC, s.start_time ASC');
+
+            $rows = [];
+            $taken = [];  // [date => [start_time => true]], to never collide
+            foreach ($this->zdb->execute($select) as $r) {
+                $row = [
+                    'id'     => (int)$r->{Session::PK},
+                    'date'   => (string)$r->session_date,
+                    'start'  => (string)$r->start_time,
+                    'locked' => ((int)$r->nb_reg > 0 || (int)$r->nb_ins > 0),
+                ];
+                $rows[] = $row;
+                $taken[$row['date']][$row['start']] = true;
+            }
+
+            foreach ($rows as $row) {
+                $applicable = $this->slotsForDate($slots, $row['date']);
+
+                // Already sitting on an applicable slot: nothing to do.
+                foreach ($applicable as $slot) {
+                    if ((string)$slot['start_time'] === $row['start']) {
+                        continue 2;
+                    }
+                }
+
+                if ($row['locked'] || count($applicable) !== 1) {
+                    $report['skipped'][] = $row['date'];
+                    continue;
+                }
+
+                $target = $applicable[0];
+                if (isset($taken[$row['date']][(string)$target['start_time']])) {
+                    // Another session already occupies the target time on that
+                    // date - realigning would duplicate it.
+                    $report['skipped'][] = $row['date'];
+                    continue;
+                }
+
+                $upd = $this->zdb->update(Session::TABLE);
+                $upd->set([
+                    'start_time' => $target['start_time'],
+                    'end_time'   => $target['end_time'],
+                ]);
+                $upd->where([Session::PK => $row['id']]);
+                $this->zdb->execute($upd);
+
+                unset($taken[$row['date']][$row['start']]);
+                $taken[$row['date']][(string)$target['start_time']] = true;
+                $report['realigned']++;
+            }
+
+            if ($report['realigned'] > 0 || !empty($report['skipped'])) {
+                Analog::log(
+                    'Seasonal realignment for event #' . $event->getId() . ': '
+                    . $report['realigned'] . ' session(s) moved, '
+                    . count($report['skipped']) . ' left untouched',
+                    Analog::INFO
+                );
+            }
+        } catch (Throwable $e) {
+            Analog::log(
+                'Error realigning seasonal sessions for event #' . $event->getId()
+                . ': ' . $e->getMessage(),
+                Analog::ERROR
+            );
+        }
+
+        $report['skipped'] = array_values(array_unique($report['skipped']));
+        return $report;
+    }
+
     private function refreshNoInstructorSessions(Event $event, string $startTime, string $endTime): int
     {
         $today = date('Y-m-d');
@@ -345,7 +487,7 @@ class RecurrenceHandler
             }
 
             foreach ($datesPresent as $date => $slotsPresent) {
-                foreach ($slots as $slot) {
+                foreach ($this->slotsForDate($slots, $date) as $slot) {
                     if (isset($slotsPresent[$slot['start_time']])) {
                         continue;
                     }
