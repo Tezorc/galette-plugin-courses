@@ -689,6 +689,32 @@ Ces tests ont ete valides par mutation : casser le dedup par `session_id`, la br
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Fix - Langue des courriels : pied de page (et defauts) en anglais
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : "tous les mails ne sont pas traduits" — concretement, le corps des digests arrivait en francais (il vient de `galette_courses_mail_templates`, stocke en `fr_FR`) mais le pied de page tombait en anglais : `You receive this email because you are a member.` / `Unsubscribe from notifications:`.
+
+#### Cause reelle
+
+Ce n'etait ni le catalogue ni le domaine : les deux chaines sont bien presentes dans `lang/courses_fr_FR.utf8.po` et dans le `.mo` compile, et `Galette\Core\Plugins::loadModuleL10N()` enregistre bien les patterns du domaine `courses` (gettext + `_local_lang.php`) a chaque requete, cron compris.
+
+Le probleme est la **locale courante**. Un endpoint cron est appele sans cookie de session et, avec `curl`, sans en-tete `Accept-Language`. `Galette\Core\I18n::__construct(false)` retombe alors sur `I18n::DEFAULT_LANG`, qui vaut **`en_US`**, et `dependencies.php` fait `$translator->setLocale($i18n->getLongID())`. Chaque `_T($chaine, 'courses')` resout donc contre `en_US` et renvoie le msgid anglais. D'ou l'asymetrie constatee : corps en francais (BDD) + pied de page en anglais (`_T()`).
+
+Ceci explique aussi pourquoi les deux tentatives precedentes ont echoue : elles reenregistraient des loaders de traduction (commits `af1ac7f`, `703db0c`, `f2a4d1e`) alors que les catalogues etaient deja charges — seule la locale demandee etait fausse.
+
+#### Mise en oeuvre
+
+- `Controllers/CronController.php` : `loadCoursesGettext()` (enregistrement de pattern gettext, sans effet) est remplace par `applyAssociationLanguage()`, qui appelle `$this->i18n->changeLanguage($this->preferences->pref_lang)` en debut des 3 endpoints cron (`generateSessions`, `sendDigest`, `sendWeeklyDigest`). Toute l'execution du cron (courriels, entrees d'historique, texte de reponse) passe ainsi dans la langue de l'association. Sous `try/catch` : un echec ne peut pas casser le cron.
+
+- `Notification/CourseNotification.php` : ajout de `tr(string $string)`, qui traduit dans la langue de l'association **quel que soit le contexte appelant** (cron, web, CLI). Un courriel ne doit pas etre redige dans la langue de celui — ou de ce — qui le declenche : le destinataire est quelqu'un d'autre. Le helper n'enregistre aucun loader (c'etait la cause du 500 de `703db0c`) : il reutilise les catalogues deja lies par Galette via `Translator::translationExists($s, 'courses', $locale)` puis `translate(...)`, sous `try/catch` avec repli sur `_T()`.
+  - `getMailLocale()` resout l'identifiant long (`fr_FR.utf8`, attendu par le pattern `.mo`) depuis `pref_lang` qui stocke l'identifiant court (`fr_FR`), via `new I18n($lang)`. Avec une langue explicite, le constructeur de `I18n` ne fait que `load()` — pas de `updateEnv()`, donc **aucun effet de bord** sur la locale de la requete en cours. Resultat memorise dans `$mail_locale`.
+  - Les 10 appels `_T(..., 'courses')` du fichier passent par `tr()` : pied de page de desinscription (2), libelles `Reason: ` / `Comment: ` des courriels d'annulation (4), replis `Administrator` / `Unknown member` de `getMemberName()` (2), libelles d'historique `[Courses] Email sent` / `[Courses] Email send failed` (2).
+
+- Les defauts de `MailTemplate::getDefaultSubject()` / `getDefaultBody()` restent sur `_T()` : ils alimentent aussi l'ecran d'administration des modeles, ou ils doivent suivre la langue de l'interface de l'admin. En contexte cron ils beneficient desormais du basculement de langue ci-dessus.
+
+- Aucune migration BDD, aucune nouvelle chaine i18n (les 10 chaines existaient deja dans le `.po` et le `.mo`).
+
 ### Phase 79 - Creation des seances differee a la validation de l'evenement
 
 **Statut :** TERMINEE

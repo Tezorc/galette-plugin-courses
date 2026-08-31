@@ -26,7 +26,9 @@ namespace GaletteCourses\Notification;
 use Galette\Core\Db;
 use Galette\Core\GaletteMail;
 use Galette\Core\History;
+use Galette\Core\I18n;
 use Galette\Core\Preferences;
+use Galette\Core\Translator;
 use Galette\Entity\Adherent;
 use GaletteCourses\Entity\Event;
 use GaletteCourses\Entity\MailTemplate;
@@ -44,6 +46,9 @@ class CourseNotification
 {
     private const PENDING_TABLE = 'courses_pending_notifications';
 
+    /** Long locale id used to compose emails, resolved once per instance. */
+    private ?string $mail_locale = null;
+
     public function __construct(
         private Db $zdb,
         private Preferences $preferences,
@@ -51,6 +56,64 @@ class CourseNotification
         private ?MemberPreferences $memberPreferences = null,
         private ?History $history = null
     ) {
+    }
+
+    /**
+     * Translate a plugin string in the association language.
+     *
+     * An email must not be worded in the language of whoever — or whatever —
+     * triggered it: the recipient is someone else, and cron runs with no
+     * session at all, in which case Galette falls back to I18n::DEFAULT_LANG
+     * (en_US) and _T() hands back the English msgid. Bodies already come from
+     * MailTemplate, which is stored per-lang in DB; this pins the parts built
+     * in PHP (unsubscribe footer, reason/comment labels, member fallbacks) to
+     * that same language.
+     *
+     * Registers nothing: it reuses the catalogs Galette already bound for the
+     * 'courses' domain, and falls back to plain _T() on any problem.
+     */
+    private function tr(string $string): string
+    {
+        try {
+            global $translator;
+            $locale = $this->getMailLocale();
+            if (
+                $locale !== ''
+                && $translator instanceof Translator
+                && $translator->translationExists($string, 'courses', $locale)
+            ) {
+                return $translator->translate($string, 'courses', $locale);
+            }
+        } catch (Throwable $e) {
+            Analog::log('CourseNotification::tr error: ' . $e->getMessage(), Analog::WARNING);
+        }
+        return _T($string, 'courses');
+    }
+
+    /**
+     * Long locale id (fr_FR.utf8) matching pref_lang, which holds a short one
+     * (fr_FR) while the gettext catalogs are keyed by the long form.
+     * Given an explicit language, I18n's constructor only loads the language
+     * definition — it does not call updateEnv(), so the global locale of the
+     * running request is left untouched.
+     */
+    private function getMailLocale(): string
+    {
+        if ($this->mail_locale === null) {
+            $this->mail_locale = '';
+            try {
+                $lang = (string)($this->preferences->pref_lang ?? '');
+                if ($lang !== '') {
+                    $this->mail_locale = (new I18n($lang))->getLongID();
+                }
+            } catch (Throwable $e) {
+                Analog::log(
+                    'CourseNotification: cannot resolve mail locale: ' . $e->getMessage(),
+                    Analog::WARNING
+                );
+            }
+        }
+        return $this->mail_locale;
     }
 
     /**
@@ -884,10 +947,10 @@ class CourseNotification
         $recipients = $this->expandRecipientsToFamily($recipients);
 
         $reasonBlock  = $reason !== null
-            ? "\n\n" . _T('Reason: ', 'courses') . $session->getCancellationReasonLabel()
+            ? "\n\n" . $this->tr('Reason: ') . $session->getCancellationReasonLabel()
             : '';
         $commentBlock = !empty($comment)
-            ? "\n" . _T('Comment: ', 'courses') . $comment
+            ? "\n" . $this->tr('Comment: ') . $comment
             : '';
 
         [$subject, $message] = $this->renderTemplate(MailTemplate::REF_WAITLIST_CANCELLATION, [
@@ -919,10 +982,10 @@ class CourseNotification
         $recipients = $this->expandRecipientsToFamily($recipients);
 
         $reasonBlock  = $reason !== null
-            ? "\n\n" . _T('Reason: ', 'courses') . $session->getCancellationReasonLabel()
+            ? "\n\n" . $this->tr('Reason: ') . $session->getCancellationReasonLabel()
             : '';
         $commentBlock = !empty($comment)
-            ? "\n" . _T('Comment: ', 'courses') . $comment
+            ? "\n" . $this->tr('Comment: ') . $comment
             : '';
 
         [$subject, $message] = $this->renderTemplate(MailTemplate::REF_CANCELLATION, [
@@ -997,8 +1060,8 @@ class CourseNotification
         }
         $unsubscribeUrl = $baseUrl . '/plugins/courses/unsubscribe/' . $token;
         return "\n\n---\n"
-            . _T('You receive this email because you are a member.', 'courses') . "\n"
-            . _T('Unsubscribe from notifications:', 'courses') . "\n"
+            . $this->tr('You receive this email because you are a member.') . "\n"
+            . $this->tr('Unsubscribe from notifications:') . "\n"
             . $unsubscribeUrl;
     }
 
@@ -1314,13 +1377,13 @@ class CourseNotification
     private function getMemberName(int $memberId): string
     {
         if ($memberId <= 0) {
-            return _T('Administrator', 'courses');
+            return $this->tr('Administrator');
         }
         try {
             $adherent = new Adherent($this->zdb, $memberId);
             return $adherent->sname;
         } catch (Throwable $e) {
-            return _T('Unknown member', 'courses');
+            return $this->tr('Unknown member');
         }
     }
 
@@ -1452,12 +1515,12 @@ class CourseNotification
         if (!empty($sentEmails)) {
             Analog::log('Notification sent: ' . $subject . ' → ' . implode(', ', $sentEmails), Analog::INFO);
             $this->logHistory(
-                _T('[Courses] Email sent', 'courses'),
+                $this->tr('[Courses] Email sent'),
                 sprintf('%s → %s', $subject, implode(', ', $sentEmails))
             );
         } else {
             $this->logHistory(
-                _T('[Courses] Email send failed', 'courses'),
+                $this->tr('[Courses] Email send failed'),
                 $subject
             );
         }
