@@ -737,8 +737,9 @@ d'hiver de cohabiter sur le meme evenement.
 - Formulaire : deux listes (jour, mois) par borne, dans un bloc
   `.courses-slot-block` regroupant la ligne horaire et la ligne de saison
   (3 endroits a maintenir : boucle des creneaux existants, ligne vide, gabarit
-  JS d'ajout — ce dernier reconstruit les listes en JS a partir des libelles de
-  mois passes en `json_encode`, pour rester traduit). `loadSlots()` expose
+  JS d'ajout). Jour et mois sont affiches **en chiffres sur deux positions**,
+  par coherence avec les autres champs de dates du plugin : rien a traduire,
+  donc rien a transporter du serveur vers le JS. `loadSlots()` expose
   `season_*_day` / `season_*_month` deja decoupes, via `seasonPart()`, pour la
   reselection a l'edition.
 
@@ -757,8 +758,8 @@ d'hiver de cohabiter sur le meme evenement.
   moitie renseignee, validite calendaire, aller-retour formulaire -> base ->
   formulaire).
 
-- 24 chaines i18n au total pour cette evolution, dont les 12 noms de mois
-  (`.po` + `.mo` recompile).
+- 12 chaines i18n pour cette evolution (`.po` + `.mo` recompile). Les listes
+  n'affichent que des chiffres, il n'y a donc aucun nom de mois a traduire.
 
 ### Evolution - Fenetre glissante de 12 mois et ordre chronologique des seances
 
