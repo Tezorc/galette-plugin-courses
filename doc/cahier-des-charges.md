@@ -654,6 +654,57 @@ Le developpement est organise en phases progressives.
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Evolution - Fenetre glissante de 12 mois et ordre chronologique des seances
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : n'afficher que les seances des 12 derniers mois, en
+  ordre decroissant, sur la liste des seances **et** sur l'onglet Seances de la
+  fiche d'un evenement.
+
+#### Regle retenue
+
+Fenetre = `[aujourd'hui - 12 mois, +inf[`. Les seances a venir restent donc
+visibles : ce sont elles qui portent l'inscription, les masquer aurait ferme
+l'acces a l'inscription depuis ces deux ecrans.
+
+Ordre : **seances a venir d'abord, croissant** (la plus proche en tete), puis
+**seances passees, decroissant** (la plus recente en tete). Une seance du jour
+compte comme a venir.
+
+#### Mise en oeuvre
+
+- `Repository/Sessions.php` :
+  - constante `DISPLAY_WINDOW_MONTHS = 12` et helper `windowFloor()`
+    (`date('Y-m-d', strtotime('-12 months'))`).
+  - `chronologicalOrder()` construit les cinq cles de `ORDER BY` sous forme
+    d'objets `Laminas\Db\Sql\Expression` : separation a venir / passe, puis
+    date croissante pour le futur, date decroissante pour le passe, et le meme
+    couple sur `start_time` pour departager les seances d'un meme jour. Les
+    `Expression` sont obligatoires : une chaine passee a `Select::order()` est
+    traitee comme un identifiant de colonne et serait quotee (`CASE WHEN ...`
+    deviendrait une colonne inexistante).
+  - Ecrit en `CASE` sur la date elle-meme, sans arithmetique de dates, donc le
+    meme SQL tourne sur MySQL et PostgreSQL. Le tri des NULL differe entre les
+    deux moteurs, mais sans effet ici : les lignes passees (cle 2 a NULL) sont
+    deja separees des lignes futures par la cle 1.
+  - `getList()` et `getForEvent()` appliquent le plancher. Dans `getList()` il
+    est pose **avant** les filtres utilisateur : `date_from` ne peut que
+    restreindre davantage, jamais remonter avant le plancher.
+  - `buildOrderClause()` renvoie desormais un tableau. `ORDERBY_DATE` ignore la
+    direction de pagination (l'ordre bidirectionnel ne s'exprime pas en un
+    simple ASC/DESC, et cette liste n'a pas de controle de tri) ; `ORDERBY_EVENT`
+    conserve la direction sur `e.name` et retombe sur l'ordre chronologique a
+    l'interieur d'un meme nom.
+
+- `Controllers/SessionsController.php` : suppression du `date_from =
+  aujourd'hui` pose a la premiere visite. Il masquait toute la moitie passee de
+  la fenetre. Le filtre reste disponible pour l'utilisateur.
+
+- Aucune migration BDD, aucune nouvelle chaine i18n. Les filtres deja
+  memorises en session PHP conservent leur `date_from` jusqu'a ce que
+  l'utilisateur le vide (documente dans le mode d'emploi).
+
 ### Fix - Langue des courriels : pied de page (et defauts) en anglais
 
 **Statut :** TERMINEE
