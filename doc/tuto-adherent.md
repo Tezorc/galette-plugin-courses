@@ -180,7 +180,24 @@ insiste.
 
 ---
 
-## 6. Si la seance est complete : la liste d'attente
+## 6. Seances a plusieurs creneaux
+
+Certains cours proposent **plusieurs horaires le meme jour**. Ils tiennent alors
+sur **une seule carte**, qui liste les creneaux avec l'etat de chacun (ouvert,
+complet, annule) et son nombre d'inscrits.
+
+Le menu du bouton d'inscription combine alors les deux informations : chaque
+ligne indique **a quel horaire** et **pour qui**. Une ligne dont le creneau est
+complet bascule sur la liste d'attente.
+
+Un creneau peut aussi etre **saisonnier** : l'association definit les mois
+pendant lesquels il a lieu (horaires d'ete et d'hiver, par exemple). Hors
+saison, il ne produit simplement aucune seance — il n'y a rien a faire de votre
+cote.
+
+---
+
+## 7. Si la seance est complete : la liste d'attente
 
 Le bouton vert est alors remplace par un bouton bleu **« Rejoindre la liste
 d'attente »**, avec exactement la meme logique de choix.
@@ -192,7 +209,7 @@ d'attente »**, avec exactement la meme logique de choix.
 
 ---
 
-## 7. Voir et gerer ses inscriptions
+## 8. Voir et gerer ses inscriptions
 
 Sur l'onglet **Mes inscriptions** :
 
@@ -213,7 +230,7 @@ Chaque carte propose **« Détails »**, un bouton **iCal** (icone calendrier) e
 
 ---
 
-## 8. Se desinscrire
+## 9. Se desinscrire
 
 1. Cliquer sur le bouton rouge **« Se desinscrire »**, depuis la carte ou
    depuis la fiche de la seance
@@ -234,7 +251,7 @@ une place perdue pour quelqu'un d'autre.
 
 ---
 
-## 9. Mettre les seances dans son agenda
+## 10. Mettre les seances dans son agenda
 
 - **Une seance** : le bouton iCal (icone calendrier) sur sa carte, ou
   **« Exporter en iCal »** sur la fiche de la seance
@@ -246,7 +263,7 @@ Outlook.
 
 ---
 
-## 10. Les courriels de l'association
+## 11. Les courriels de l'association
 
 Vous recevez :
 
