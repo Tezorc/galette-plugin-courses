@@ -283,7 +283,7 @@ Quand vous modifiez un evenement existant, les changements sont automatiquement 
 
 ### 3. Consulter les seances
 
-- Menu **Mes inscriptions > Seances** : liste des seances
+- Menu **Gestion des inscriptions > Séances** : liste des seances. Cette entree n'est pas visible par un membre simple (staff, responsables de groupe et moniteurs uniquement) ; un membre passe par **Mes inscriptions**, onglet **M'inscrire à une prochaine séance**.
 - **Fenetre d'affichage : 12 mois glissants.** La liste montre les seances a
   venir et celles des 12 derniers mois ; au-dela, les seances plus anciennes ne
   sont plus affichees. Le plancher se decale chaque jour (aujourd'hui moins 12
@@ -316,7 +316,7 @@ Quand vous modifiez un evenement existant, les changements sont automatiquement 
 
 ### 4. S'inscrire a une seance (membre)
 
-1. Menu **Mes inscriptions > Seances**
+1. Menu **Mes inscriptions > Mes inscriptions**, onglet **M'inscrire à une prochaine séance**
 2. Cliquer sur le bouton **"Détails"** d'une seance ouverte
 3. La page de detail affiche :
    - **En-tete colore** : bandeau avec nom de l'evenement, grande date formatee, horaire et lieu
@@ -368,8 +368,8 @@ Le bandeau detaille le nom de chaque membre concerne et la raison precise (cotis
 - Filtres JS cote client : Type, Activite (cascade), A partir du (date)
   - Selectionner une valeur applique le filtre automatiquement
   - Bouton **"Filtrer"** disponible pour declencher explicitement le filtre (utile en cas de doute)
-  - Bouton **"Effacer le filtre"** : reinitialise tous les filtres aux valeurs par defaut (date du jour)
-- Boutons sur chaque carte : **"S'inscrire"** (vert, si eligible en propre nom) et/ou **"Inscrire un enfant"** (teal, si un enfant est eligible)
+  - Bouton **"Effacer les filtres"** : reinitialise tous les filtres aux valeurs par defaut (date du jour)
+- Bouton unique sur chaque carte (Phase 42) : **"S'inscrire"**. Une seule option eligible -> bouton direct portant le nom de la personne (vert pour soi-meme, teal pour un enfant) ; deux options ou plus -> menu deroulant listant **Moi-même** puis chaque enfant eligible. Le bouton **"Inscrire un enfant"** et sa page intermediaire n'existent plus.
 - **Section "Seances annulees"** : en bas de l'onglet, une section rouge distincte liste les seances futures **annulees** correspondant aux groupes de l'adherent (et de ses enfants), pour l'informer qu'un creneau existe mais qu'il n'aura pas lieu. Chaque carte affiche le motif et le commentaire d'annulation et un bouton **"Details"** (pas de bouton d'inscription). Les seances ou l'adherent (ou un enfant) est deja inscrit n'apparaissent pas ici — elles figurent deja dans l'onglet "Mes inscriptions". Les filtres Type / Activite / Date s'appliquent aussi a cette section.
 
 #### Onglet "Mes inscriptions"
@@ -392,7 +392,7 @@ Sections du tableau de bord personnel :
 
 **Bouton "iCal"** (toutes mes inscriptions) en haut a droite de l'onglet — exporte toutes les inscriptions actives en un seul fichier `.ics`.
 
-**Badge "Conflit horaire"** (Phase 61) : si deux inscriptions du **meme membre** (parent OU un enfant individuellement) tombent le meme jour avec des plages horaires qui se chevauchent, un badge orange `Conflit horaire` apparait sur chaque carte concernee — a cote du badge statut. Le tooltip (survol) liste les autres seances en collision (nom de l'evenement, nom/pseudo, date, plage). Le meme badge apparait sur les cartes de l'onglet **"M'inscrire à une prochaine séance"** lorsque la candidate chevaucherait une inscription deja active du membre ou d'un enfant eligible. **Avertissement non-bloquant** : on peut quand meme s'inscrire si on assume la collision (cas typique : cours d'essai + concours).
+**Badge "Conflit horaire"** (Phase 61) : si deux inscriptions du **meme membre** (parent OU un enfant individuellement) tombent le meme jour avec des plages horaires qui se chevauchent, un badge orange `Conflit horaire` apparait sur chaque carte concernee — a cote du badge statut. Le tooltip (survol) liste les autres seances en collision (nom de l'evenement, nom/pseudo, date, plage). Le meme badge apparait sur les cartes de l'onglet **"M'inscrire à une prochaine séance"** lorsque la candidate chevaucherait une inscription deja active du membre ou d'un enfant eligible. **Le chevauchement est bloquant** depuis le commit 976fc53 : le badge previent, et si l'on clique quand meme, les quatre chemins d'inscription (soi-meme, membre rattache, et leurs deux equivalents en liste d'attente) refusent l'operation cote serveur avec un message d'erreur. Le controle porte sur **une seule personne a la fois** (`hasOverlappingSession($member_id, ...)`) : deux membres rattaches differents peuvent parfaitement etre inscrits sur la meme plage horaire, c'est le meme membre inscrit deux fois qui est refuse.
 
 > **Mise a jour de l'affichage** : s'inscrire, se desinscrire ou rejoindre la liste d'attente depuis la page **Mes inscriptions** (onglets *M'inscrire à une prochaine séance* et *Mes inscriptions*) renvoie automatiquement sur cette meme page rechargee. Les deux onglets refletent immediatement l'etat a jour : la seance disparait de *M'inscrire à une prochaine séance* (puisqu'on y est desormais inscrit) et apparait dans *Mes inscriptions*. Aucun rechargement manuel n'est necessaire. Les memes actions declenchees depuis la fiche detail d'une seance continuent a renvoyer sur cette fiche, comme avant.
 
@@ -1039,7 +1039,7 @@ Les admins et le staff ne voient pas l'entree par defaut : ils gerent les affect
 Elle presente deux onglets (l'onglet "Mes seances comme moniteur" est actif par defaut a l'arrivee sur la page) :
 
 - **Mes seances comme moniteur** : seances groupees en quatre sections (*Prochaine seance*, *A venir*, *Annulees*, *Passees* repliable). Chaque carte affiche le nom de l'evenement, la date, le lieu, le ou les moniteurs, la jauge d'inscrits, et propose les boutons **Details**, **iCal** et — si l'utilisateur est responsable de groupe, staff ou admin — **Export CSV des inscrits**.
-- **Se proposer moniteur** : catalogue des seances sans moniteur ou l'utilisateur peut se proposer (avec filtres Type / Activite / Date et boutons **"Filtrer"** + **"Effacer le filtre"**, identiques a "Mes inscriptions"), suivi d'une section rouge "Seances annulees" listant les creneaux futurs annules dans son perimetre (informatif, sans bouton "Se porter volontaire") — les seances ou l'utilisateur est deja moniteur ne sont pas reprises ici (elles figurent dans l'onglet "Mes seances comme moniteur")
+- **Se proposer moniteur** : catalogue des seances sans moniteur ou l'utilisateur peut se proposer (avec filtres Type / Activite / Date et boutons **"Filtrer"** + **"Effacer les filtres"**, identiques a "Mes inscriptions"), suivi d'une section rouge "Seances annulees" listant les creneaux futurs annules dans son perimetre (informatif, sans bouton "Se porter volontaire") — les seances ou l'utilisateur est deja moniteur ne sont pas reprises ici (elles figurent dans l'onglet "Mes seances comme moniteur")
 
 ### Menu "Gestion des inscriptions" (moniteur, responsable de groupe, staff, admin)
 
@@ -1238,92 +1238,106 @@ Ce tutoriel explique comment utiliser le plugin Galette Courses en tant que **me
 
 ### Prealable
 
-Vous devez etre **connecte a Galette** et avoir votre **cotisation a jour** pour pouvoir vous inscrire aux seances.
+Vous devez etre **connecte a Galette**. Trois conditions sont verifiees a chaque inscription, pour vous comme pour chacun de vos membres rattaches :
 
-### Etape 1 : Decouvrir les seances disponibles
+1. Cotisation **a jour** (ou compte exempte de cotisation)
+2. Compte **actif**
+3. Statut different de **"Non membre"**
 
-1. Dans la barre laterale, cliquer sur **Mes inscriptions > Seances**
-2. Les seances a venir s'affichent sous forme de cards colorees
-3. Chaque card montre : le nom du cours, la date, l'horaire, le lieu et le nombre de places restantes
-4. Si vous souhaitez voir toutes les seances (pas seulement celles de vos groupes), desactiver le toggle **"Mes cours uniquement"**
-5. Utilisez les filtres **Type** et **Nom** pour trouver un cours specifique
+Si l'une manque, un bandeau orange en haut de la page **nomme la personne concernee** et les boutons d'inscription disparaissent pour elle. Les autres membres du foyer restent inscriptibles normalement.
 
-### Etape 2 : S'inscrire a une seance
+### Etape 1 : Ouvrir la page "Mes inscriptions"
 
-1. Cliquer sur **"Détails"** sur la card d'une seance
-2. Verifier les informations (date, horaire, lieu, places disponibles)
-3. Si la seance est **ouverte** et qu'il reste des places, un bouton vert **"S'inscrire"** s'affiche
-4. Cliquer sur **"S'inscrire"** pour vous inscrire
-5. Un message de confirmation s'affiche
+1. Dans le menu lateral, cliquer sur **Mes inscriptions > Mes inscriptions**
+2. La page presente **deux onglets**, chacun avec une pastille chiffree :
+   - **Mes inscriptions** — ce a quoi vous etes deja inscrit. **Actif par defaut** a l'arrivee sur la page.
+   - **M'inscrire à une prochaine séance** — le catalogue des seances encore ouvertes.
 
-**Conditions requises** :
+Un clic explicite sur un onglet est memorise (`localStorage`) : vous retrouverez le meme onglet a la visite suivante.
 
-- Cotisation a jour
+**Note** : l'entree de menu **Séances** (liste complete des seances) n'est pas visible par un membre simple — elle appartient au menu *Gestion des inscriptions*, reserve au staff, aux responsables de groupe et aux moniteurs.
+
+### Etape 2 : Choisir une seance
+
+Sur l'onglet **M'inscrire à une prochaine séance**, chaque seance disponible est une card : nom du cours, date, lieu, moniteur si affecte, et jauge des places restantes.
+
+- Filtres en haut : **Type**, **Activité**, **Du** (date de debut), avec les boutons **"Filtrer"** et **"Effacer les filtres"**. Le filtrage est immediat, sans rechargement.
+- Une section rouge **"Seances annulees"** liste en bas les creneaux futurs annules — informatif, sans inscription possible.
+- Les seances ou plus aucune inscription n'est possible (vous et vos rattaches y etes deja inscrits) sont **automatiquement masquees**.
+
+### Etape 3 : S'inscrire
+
+L'inscription en son propre nom et celle d'un membre rattache passent par **un seul bouton**. Son apparence depend du nombre d'options possibles :
+
+- **Une seule option** : le bouton porte **directement le nom** de la personne concernee (votre pseudo pour vous-meme, sinon le pseudo ou le nom du rattache). Un clic inscrit immediatement.
+- **Deux options ou plus** : le bouton s'appelle **"S'inscrire"** et ouvre un menu listant **Moi-même** (si vous etes eligible) puis chaque membre rattache eligible. Choisir une ligne poste l'inscription correspondante.
+
+Les personnes **deja inscrites a cette seance n'apparaissent pas** dans le menu. Pour inscrire un deuxieme rattache, rouvrir le menu et choisir le nom suivant : **chaque inscription est individuelle**.
+
+Le meme bouton est disponible sur la page de detail de la seance (bouton **"Détails"** de la card).
+
+**Conditions verifiees a la soumission** :
+
+- Les 3 conditions du prealable, sur la personne inscrite
+- Appartenance au groupe requis, si l'evenement est restreint
 - Seance ouverte avec places disponibles
-- Au moins un moniteur assigne
-- Appartenance au groupe requis (si l'evenement est restreint)
+- Un moniteur affecte, sauf si l'evenement autorise les inscriptions sans moniteur
 
-### Etape 3 : Rejoindre la liste d'attente
+### Etape 4 : Rejoindre la liste d'attente
 
-Si la seance est pleine, un message jaune et un bouton bleu **"Rejoindre la liste d'attente"** s'affichent.
+Si la seance est pleine, le bouton vert est remplace par un bouton bleu **"Rejoindre la liste d'attente"**, avec exactement la meme logique de choix (bouton direct ou menu selon le nombre d'options).
 
-1. Cliquer sur **"Rejoindre la liste d'attente"**
-2. Votre position dans la file s'affiche (ex : "Position 3")
-3. Si un inscrit se desinscrit, vous serez automatiquement inscrit(e) et recevrez un email de confirmation
-4. Pour quitter la file : cliquer sur **"Quitter la liste d'attente"**
+- Votre position dans la file s'affiche ensuite sur la card
+- **Si une place se libere, le premier de la file est inscrit automatiquement** et recoit un courriel
+- Chaque membre rattache occupe **son propre rang** dans la file
 
-### Etape 4 : Voir et gerer ses inscriptions
+### Etape 5 : Voir et gerer ses inscriptions
 
-1. Cliquer sur **Mes inscriptions > Mes inscriptions** (ou le lien depuis le tableau de bord)
-2. Votre **prochaine seance** est mise en avant en haut (avec le nom du moniteur si assigne)
-3. Les autres seances a venir s'affichent en grille
-4. Les **seances futures annulees** (si vous etiez inscrit) sont listees dans une section rouge distincte
-5. Les seances passees sont dans l'accordeon "Seances passees" (cliquer pour deployer)
-6. Sur chaque card, trois boutons sont disponibles : **"Details"** (bleu), **iCal** (icone mini) et **"Se desinscrire"** (rouge)
-7. La desinscription est disponible directement depuis la card (pas besoin d'aller sur la page de la seance)
+Sur l'onglet **Mes inscriptions** :
 
-### Etape 5 : Se desinscrire d'une seance
+1. Votre **prochaine seance** est mise en avant en haut de page
+2. Les suivantes s'affichent sous **"À venir"**
+3. Les **seances futures annulees** auxquelles vous etiez inscrit sont listees dans une section rouge distincte
+4. Les seances **"Séances passées"** sont dans un accordeon repliable
+5. Les places en liste d'attente apparaissent avec leur numero de position
 
-1. Aller sur la page de detail de la seance (depuis "Mes inscriptions" ou la liste des seances)
-2. Cliquer sur le bouton rouge **"Se desinscrire"**
-3. Une modale de confirmation s'affiche — cliquer sur **"Confirmer"**
+**Une card par personne inscrite** : si vous et un membre rattache etes inscrits a la meme seance, deux cards apparaissent, chacune portant le pseudo concerne sur une etiquette turquoise et **son propre bouton de desinscription**. On peut donc en retirer un sans toucher a l'autre.
 
-**Attention** : si une deadline de desinscription est configuree (ex : "48h avant la seance"), il ne sera plus possible de se desinscrire passe ce delai.
+Chaque card propose **"Détails"** (bleu), un bouton **iCal** (icone calendrier) et **"Se desinscrire"** (rouge).
 
-### Etape 6 : Exporter son calendrier iCal
+**Badge "Conflit horaire"** : un badge orange signale qu'une **meme personne** est inscrite a deux seances qui se chevauchent le meme jour, avec le detail au survol. Le badge apparait aussi, en prevention, sur les cartes de l'onglet d'inscription. **L'inscription est alors refusee** : on ne peut pas inscrire deux fois la meme personne sur la meme plage. En revanche, deux membres rattaches differents peuvent suivre deux seances a la meme heure — ce n'est pas un conflit.
 
-**Export d'une seance** :
+### Etape 6 : Se desinscrire
 
-- Sur la page de detail d'une seance, cliquer sur **"Exporter en iCal"**
+1. Cliquer sur le bouton rouge **"Se desinscrire"**, depuis la card ou depuis la page de detail de la seance
+2. Une modale de confirmation s'affiche, rappelant le nom et le pseudo concernes
+3. Cliquer sur **"Confirmer"**
 
-**Export de toutes ses inscriptions** :
+La desinscription est **toujours possible tant que la seance n'a pas commence** : il n'y a pas de delai de desinscription.
 
-- Sur la page "Mes inscriptions", cliquer sur **"Exporter en iCal"** (toutes mes inscriptions)
-- Importer le fichier .ics dans votre application calendrier (Google Calendar, Apple Calendar, Outlook...)
+**En revanche, la reinscription n'est pas garantie.** Pour vous reinscrire ensuite, il faut qu'il reste une place **et** que le delai d'inscription de l'evenement ne soit pas depasse (champ *Inscription fermee (jours avant la seance)*). Ne vous desinscrivez donc que si vous en etes sur.
 
-### Etape 7 : Gerer ses notifications email
+### Etape 7 : Exporter dans son agenda
 
-Par defaut, vous recevez des emails pour : les nouvelles seances disponibles, votre promotion de la liste d'attente, l'annulation d'une seance.
+- **Une seance** : bouton iCal (icone calendrier) sur sa card, ou **"Exporter en iCal"** sur la page de detail
+- **Toutes ses inscriptions** : bouton **"iCal"** en haut de l'onglet *Mes inscriptions* (infobulle *Tout exporter en iCal*)
 
-Pour desactiver ces emails :
+Le fichier `.ics` obtenu s'importe dans Google Calendar, Apple Calendrier, Outlook.
+
+### Etape 8 : Gerer ses notifications
+
+Par defaut, vous recevez :
+
+- un **recapitulatif hebdomadaire** des seances ouvertes et des moniteurs affectes ;
+- et **immediatement**, les messages urgents : annulation d'une seance, place obtenue depuis la liste d'attente.
+
+Pour les desactiver :
 
 1. Aller dans **Mes inscriptions > Mes notifications**
 2. Decocher **"Recevoir les notifications par email"**
 3. Cliquer sur **Enregistrer**
 
-Pour vous desabonner sans vous connecter, cliquer sur le lien de desinscription present en bas de chaque email automatique.
-
-### Etape 8 : Inscrire un enfant (si vous etes parent)
-
-Si vous avez des enfants rattaches a votre compte Galette :
-
-1. Sur la page de detail d'une seance, cliquer sur le bouton vert **"Inscrire un enfant"**
-2. Selectionner votre enfant dans la liste
-3. Cliquer sur **"Inscrire"**
-
-Pour desinscrire un enfant :
-
-- Sur la page de la seance, les enfants inscrits s'affichent avec un bouton rouge **"Se desinscrire"**
+Pour vous desabonner sans vous connecter, cliquer sur le lien de desinscription present en bas de chaque courriel automatique.
 
 ---
 
@@ -1362,7 +1376,7 @@ Si l'evenement est rejete, vous recevez un email et pouvez le modifier puis le r
 
 ### Se porter volontaire comme moniteur pour une seance
 
-1. Aller dans **Mes inscriptions > Seances** et cliquer sur **"Détails"** d'une seance de votre groupe
+1. Aller dans **Gestion des inscriptions > Séances** — ou sur **Mes seances comme moniteur**, onglet **Se proposer moniteur** — et cliquer sur **"Détails"** d'une seance de votre groupe
 2. Dans la section **Moniteurs**, cliquer sur le bouton teal **"Se porter volontaire comme moniteur"**
 3. Votre nom apparait dans la liste des moniteurs de la seance
 
