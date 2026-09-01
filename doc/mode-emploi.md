@@ -311,7 +311,7 @@ Apres desinscription, si l'adherent souhaite se reinscrire, il peut le faire tan
 
 ### 6. Consulter ses inscriptions (membre)
 
-La page **Mes inscriptions** (`/plugins/courses/my-registrations`) comporte deux onglets. **L'onglet "Mes inscriptions" est ouvert par defaut** (Phase 73) : a l'arrivee sur la page, le membre voit immediatement ses inscriptions a venir, et bascule sur "Trouver une seance" via le bouton d'onglet (la preference est memorisee en `localStorage` : un clic explicite sur "Trouver une seance" persiste pour les visites suivantes jusqu'au prochain clic sur "Mes inscriptions").
+La page **Mes inscriptions** (`/plugins/courses/my-registrations`) comporte deux onglets. **L'onglet "Mes inscriptions" est ouvert par defaut** (Phase 73) : a l'arrivee sur la page, le membre voit immediatement ses inscriptions a venir, et bascule sur "M'inscrire à une prochaine séance" via le bouton d'onglet (la preference est memorisee en `localStorage` : un clic explicite sur "M'inscrire à une prochaine séance" persiste pour les visites suivantes jusqu'au prochain clic sur "Mes inscriptions").
 
 **Avertissement eligibilite** : un bandeau orange est affiche en haut de la page si **le membre lui-meme ou l'un de ses enfants** n'est pas eligible aux inscriptions. Trois conditions sont verifiees pour chaque membre (Phase 47.2) :
 
@@ -323,7 +323,7 @@ Le bandeau detaille le nom de chaque membre concerne et la raison precise (cotis
 
 **Avertissement changement de groupe** : si l'adherent (ou l'un de ses enfants) est inscrit a une seance future dont l'evenement est restreint a un groupe auquel il n'appartient plus (changement de niveau, retrait du groupe par le staff), un second bandeau orange s'affiche en haut de la page (compteur du nombre d'inscriptions concernees) et chaque card concernee dans "Votre prochaine seance" / "A venir" est mise en evidence (fond jaune, bordure orange, badge "Out of group" remplaceant le statut). Le bouton "Se desinscrire" deja present sur la card permet de regulariser. Aucune desinscription automatique : le membre garde la main, libre a lui de se desinscrire ou d'en parler avec le staff.
 
-#### Onglet "Trouver une seance"
+#### Onglet "M'inscrire à une prochaine séance"
 
 - Affiche toutes les seances ouvertes correspondant aux groupes de l'adherent (et de ses enfants)
 - **Masquage automatique** des seances ou l'adherent est deja inscrit (ou toute son action est epuisee) :
@@ -357,9 +357,9 @@ Sections du tableau de bord personnel :
 
 **Bouton "iCal"** (toutes mes inscriptions) en haut a droite de l'onglet — exporte toutes les inscriptions actives en un seul fichier `.ics`.
 
-**Badge "Conflit horaire"** (Phase 61) : si deux inscriptions du **meme membre** (parent OU un enfant individuellement) tombent le meme jour avec des plages horaires qui se chevauchent, un badge orange `Conflit horaire` apparait sur chaque carte concernee — a cote du badge statut. Le tooltip (survol) liste les autres seances en collision (nom de l'evenement, nom/pseudo, date, plage). Le meme badge apparait sur les cartes de l'onglet **"Trouver une seance"** lorsque la candidate chevaucherait une inscription deja active du membre ou d'un enfant eligible. **Avertissement non-bloquant** : on peut quand meme s'inscrire si on assume la collision (cas typique : cours d'essai + concours).
+**Badge "Conflit horaire"** (Phase 61) : si deux inscriptions du **meme membre** (parent OU un enfant individuellement) tombent le meme jour avec des plages horaires qui se chevauchent, un badge orange `Conflit horaire` apparait sur chaque carte concernee — a cote du badge statut. Le tooltip (survol) liste les autres seances en collision (nom de l'evenement, nom/pseudo, date, plage). Le meme badge apparait sur les cartes de l'onglet **"M'inscrire à une prochaine séance"** lorsque la candidate chevaucherait une inscription deja active du membre ou d'un enfant eligible. **Avertissement non-bloquant** : on peut quand meme s'inscrire si on assume la collision (cas typique : cours d'essai + concours).
 
-> **Mise a jour de l'affichage** : s'inscrire, se desinscrire ou rejoindre la liste d'attente depuis la page **Mes inscriptions** (onglets *Trouver une seance* et *Mes inscriptions*) renvoie automatiquement sur cette meme page rechargee. Les deux onglets refletent immediatement l'etat a jour : la seance disparait de *Trouver une seance* (puisqu'on y est desormais inscrit) et apparait dans *Mes inscriptions*. Aucun rechargement manuel n'est necessaire. Les memes actions declenchees depuis la fiche detail d'une seance continuent a renvoyer sur cette fiche, comme avant.
+> **Mise a jour de l'affichage** : s'inscrire, se desinscrire ou rejoindre la liste d'attente depuis la page **Mes inscriptions** (onglets *M'inscrire à une prochaine séance* et *Mes inscriptions*) renvoie automatiquement sur cette meme page rechargee. Les deux onglets refletent immediatement l'etat a jour : la seance disparait de *M'inscrire à une prochaine séance* (puisqu'on y est desormais inscrit) et apparait dans *Mes inscriptions*. Aucun rechargement manuel n'est necessaire. Les memes actions declenchees depuis la fiche detail d'une seance continuent a renvoyer sur cette fiche, comme avant.
 
 ### 7. Consulter toutes les inscriptions (staff / responsable de groupe)
 
@@ -374,7 +374,7 @@ Sections du tableau de bord personnel :
 
 Quand une seance est pleine, un adherent peut rejoindre la liste d'attente :
 
-1. Aller sur la page de detail de la seance (ou rester sur l'onglet "Trouver une seance")
+1. Aller sur la page de detail de la seance (ou rester sur l'onglet "M'inscrire à une prochaine séance")
 2. Si la seance est pleine, un message jaune s'affiche avec le bouton bleu **"Rejoindre la liste d'attente"**
 3. **Comptes avec membres rattaches (parent + enfants)** : comme pour l'inscription, si plusieurs membres peuvent rejoindre la file, le bouton devient un menu deroulant listant chaque membre eligible (vous-meme + chaque enfant). Choisir le membre concerne pour l'ajouter a la liste d'attente.
 4. Cliquer pour rejoindre la file — la position est affichee (ex: "position 3")
@@ -479,7 +479,7 @@ Les moniteurs eligibles sont les responsables des groupes associes a l'evenement
 2. Cliquer sur le bouton teal **"Se porter volontaire comme moniteur"**
 3. Le bouton n'apparait que si le responsable gere un des groupes de l'evenement et n'est pas deja moniteur
 4. Le bouton n'apparait pas (et l'action est refusee cote serveur) sur une **seance annulee** : une seance annulee n'aura pas lieu, aucun moniteur ne peut s'y porter volontaire
-5. **Conflit horaire (Phase 61)** : le volontariat est refuse cote serveur si l'utilisateur anime deja une autre seance sur la meme plage. Le badge `Conflit horaire` apparait aussi en prevention sur la carte de l'onglet "Trouver une seance" pour eviter le clic en vain
+5. **Conflit horaire (Phase 61)** : le volontariat est refuse cote serveur si l'utilisateur anime deja une autre seance sur la meme plage. Le badge `Conflit horaire` apparait aussi en prevention sur la carte de l'onglet "Se proposer moniteur" pour eviter le clic en vain
 
 #### Indicateur dans la liste des seances
 
@@ -566,7 +566,7 @@ Si un adherent a des enfants lies (via le champ "Membre parent" dans Galette), i
 
 #### Principe de fonctionnement (Phase 42)
 
-L'auto-inscription et l'inscription d'enfants sont desormais regroupees derriere un bouton **"S'inscrire"** unique, a la fois sur les cards de l'onglet "Trouver une seance", sur les cards "Mes inscriptions" et sur la page de detail d'une seance. Le rendu s'adapte au nombre d'options eligibles :
+L'auto-inscription et l'inscription d'enfants sont desormais regroupees derriere un bouton **"S'inscrire"** unique, a la fois sur les cards de l'onglet "M'inscrire à une prochaine séance", sur les cards "Mes inscriptions" et sur la page de detail d'une seance. Le rendu s'adapte au nombre d'options eligibles :
 
 - **1 seule option (parent OU un seul enfant)** : bouton vert direct portant le nom de la personne (`Moi-même` pour le parent, ou le pseudo / nom de l'enfant). Un clic poste immediatement l'inscription, sans page intermediaire.
 - **2 options ou plus (parent + enfant·s, ou plusieurs enfants)** : bouton vert dropdown libelle **"S'inscrire"**. Le menu liste **Moi-même** (si le parent est eligible) puis chaque enfant eligible non deja inscrit (avec son pseudo a defaut, sinon son nom). Selectionner une ligne poste l'inscription correspondante.
@@ -588,7 +588,7 @@ Sur la page de detail de la seance et sur la card "Mes inscriptions", chaque enf
 
 #### Visibilite des seances
 
-Le parent voit dans la liste des seances toutes les seances ouvertes aux groupes de ses enfants, meme s'il n'appartient pas lui-meme a ces groupes. Sur l'onglet "Trouver une seance", les cards dont aucune option (parent et enfants) n'est plus actionnable (deja inscrit partout) sont automatiquement masquees.
+Le parent voit dans la liste des seances toutes les seances ouvertes aux groupes de ses enfants, meme s'il n'appartient pas lui-meme a ces groupes. Sur l'onglet "M'inscrire à une prochaine séance", les cards dont aucune option (parent et enfants) n'est plus actionnable (deja inscrit partout) sont automatiquement masquees.
 
 #### Cas particuliers
 
@@ -985,18 +985,18 @@ Pour ajouter ou modifier des types, intervenir directement en base de donnees da
 
 | Sous-menu | Visible par | Description |
 | --------- | ----------- | ----------- |
-| Mes inscriptions | Tous | Trouver une seance et consulter ses inscriptions (dashboard membre) |
+| Mes inscriptions | Tous | S'inscrire aux seances et consulter ses inscriptions (dashboard membre) |
 | Mes seances comme moniteur | Membres affectes comme moniteur | Toutes les seances ou l'utilisateur est instructeur |
 | Mes notifications | Tous | Mes preferences de notifications email |
 
 La page **Mes inscriptions** comprend deux onglets (l'onglet "Mes inscriptions" est actif par defaut a l'arrivee sur la page) :
 
 - **Mes inscriptions** : seances a venir, annulees et passees
-- **Trouver une seance** : catalogue des seances disponibles avec filtres (type, activite, date) et inscription directe, suivi d'une section rouge "Seances annulees" listant les creneaux futurs annules (informatif, sans inscription)
+- **M'inscrire à une prochaine séance** : catalogue des seances disponibles avec filtres (type, activite, date) et inscription directe, suivi d'une section rouge "Seances annulees" listant les creneaux futurs annules (informatif, sans inscription)
 
 La page **Mes seances comme moniteur** est visible pour :
 
-- les **responsables de groupe** — meme sans seance comme moniteur — afin qu'ils puissent se proposer comme moniteur via l'onglet *Trouver une seance* ;
+- les **responsables de groupe** — meme sans seance comme moniteur — afin qu'ils puissent se proposer comme moniteur via l'onglet *Se proposer moniteur* ;
 - tout autre membre affecte a au moins une seance comme instructeur (typiquement un membre regulier assignee par le staff, mais aussi un admin/staff lui-meme affecte ponctuellement).
 
 Les admins et le staff ne voient pas l'entree par defaut : ils gerent les affectations de moniteurs depuis le menu *Gestion des inscriptions*.
@@ -1004,7 +1004,7 @@ Les admins et le staff ne voient pas l'entree par defaut : ils gerent les affect
 Elle presente deux onglets (l'onglet "Mes seances comme moniteur" est actif par defaut a l'arrivee sur la page) :
 
 - **Mes seances comme moniteur** : seances groupees en quatre sections (*Prochaine seance*, *A venir*, *Annulees*, *Passees* repliable). Chaque carte affiche le nom de l'evenement, la date, le lieu, le ou les moniteurs, la jauge d'inscrits, et propose les boutons **Details**, **iCal** et — si l'utilisateur est responsable de groupe, staff ou admin — **Export CSV des inscrits**.
-- **Trouver une seance** : catalogue des seances sans moniteur ou l'utilisateur peut se proposer (avec filtres Type / Activite / Date et boutons **"Filtrer"** + **"Effacer le filtre"**, identiques a "Mes inscriptions"), suivi d'une section rouge "Seances annulees" listant les creneaux futurs annules dans son perimetre (informatif, sans bouton "Se porter volontaire") — les seances ou l'utilisateur est deja moniteur ne sont pas reprises ici (elles figurent dans l'onglet "Mes seances comme moniteur")
+- **Se proposer moniteur** : catalogue des seances sans moniteur ou l'utilisateur peut se proposer (avec filtres Type / Activite / Date et boutons **"Filtrer"** + **"Effacer le filtre"**, identiques a "Mes inscriptions"), suivi d'une section rouge "Seances annulees" listant les creneaux futurs annules dans son perimetre (informatif, sans bouton "Se porter volontaire") — les seances ou l'utilisateur est deja moniteur ne sont pas reprises ici (elles figurent dans l'onglet "Mes seances comme moniteur")
 
 ### Menu "Gestion des inscriptions" (moniteur, responsable de groupe, staff, admin)
 
@@ -1192,6 +1192,7 @@ Toutes les phases de developpement sont terminees :
 - **Phase 43** : Droits staff scopes a la seance pour les moniteurs — un moniteur affecte a une seance peut desormais **modifier** la seance (date / horaire / capacite), **ajouter ou retirer** des co-moniteurs, **inscrire ou desinscrire** des membres, **fermer / rouvrir / annuler / reactiver** la seance et **gerer la liste d'attente** (augmenter la capacite, promouvoir, creer une nouvelle seance pour la liste d'attente). Ces droits sont scopes a la seance dont il est moniteur — sur les autres seances, il reste un membre/responsable de groupe ordinaire. Implementation par un nouveau guard `denyUnlessSessionManager()` dans le trait `CoursesAclGuard` (admin OU staff OU instructeur de la seance), applique a 11 routes de gestion de seance auparavant `staff`-only.
 - **Phase 45** : Renommage du champ "Delai de desinscription" en "Inscription fermee (jours avant la seance)" — le sens est inverse : le delai controle desormais la **fermeture des inscriptions** (au lieu de la desinscription). La **desinscription est toujours libre** jusqu'au debut de la seance. Migration BDD `scripts/upgrade-register-deadline.sql` (ALTER TABLE CHANGE), les valeurs existantes sont conservees et reinterpretees comme delai d'inscription.
 - **Phase 44** : Periodes de fermeture — les seances recurrentes tombant sur une date de fermeture sont desormais **creees en statut Annule** (au lieu d'etre sautees). Le tableau des dates de fermeture (preferences staff/admin) gagne une colonne **Motif** (champ libre, max 120 car., ex. "Fermeture annuelle", "Concours regional", "AG annuelle"). A la generation, la seance est creee avec statut `Annule`, motif `Fermeture du club` et le libelle saisi en commentaire d'annulation. **Cascade automatique** : a l'enregistrement des preferences, les seances futures DEJA planifiees (Ouverte ou Fermee) tombant dans une periode sont egalement basculees en Annule, avec courriels d'annulation aux inscrits et purge + notification de la liste d'attente (idempotent : pas de double mail si on re-sauve). Aucune notification d'invitation moniteur n'est envoyee pour les seances creees deja annulees.
+- **Phase 71.3** : Libelles d'onglets explicites par contexte — l'onglet de recherche s'appelait "Trouver une seance" sur les deux pages, ce qui ne disait pas ce qu'on y faisait. Il devient **"M'inscrire à une prochaine séance"** sur la page *Mes inscriptions* (membre) et **"Se proposer moniteur"** sur la page *Mes seances comme moniteur*. Les entrees de changelog anterieures (Phases 12, 42) citent l'ancien libelle : c'est volontaire, elles decrivent l'interface telle qu'elle etait alors.
 - **Traductions** : Interface entierement traduite en francais (fichiers PO/MO)
 
 ---
@@ -1332,7 +1333,7 @@ Si l'evenement est rejete, vous recevez un email et pouvez le modifier puis le r
 
 Vous ne pouvez vous porter volontaire que si vous gerez un des groupes associes a l'evenement. Le volontariat est impossible sur une seance **annulee** (elle n'aura pas lieu) : le bouton est masque et l'action est refusee cote serveur.
 
-> **Mise a jour de l'affichage** : se porter volontaire depuis la page **Mes seances comme moniteur** (onglet *Trouver une seance*) renvoie automatiquement sur cette meme page rechargee. La seance disparait de *Trouver une seance* et apparait dans *Mes seances comme moniteur* sans rechargement manuel. Depuis la fiche detail d'une seance, le comportement est inchange (retour sur la fiche).
+> **Mise a jour de l'affichage** : se porter volontaire depuis la page **Mes seances comme moniteur** (onglet *Se proposer moniteur*) renvoie automatiquement sur cette meme page rechargee. La seance disparait de *Se proposer moniteur* et apparait dans *Mes seances comme moniteur* sans rechargement manuel. Depuis la fiche detail d'une seance, le comportement est inchange (retour sur la fiche).
 
 ### Inscrire un membre par procuration
 
