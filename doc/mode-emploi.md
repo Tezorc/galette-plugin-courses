@@ -152,6 +152,14 @@ Le plugin utilise les roles Galette existants. Chaque fonctionnalite est accessi
 | Preferences (dates de fermeture) | - | - | Oui | Oui |
 | Preferences (notifications, generation automatique) | - | - | - | Oui |
 | Modeles de courriels | - | - | - | Oui |
+| Supprimer une seance | - | - | - | - |
+| Regenerer les seances d'un evenement | - | - | - | - |
+
+Les deux dernieres lignes ne sont accessibles a personne dans ce tableau : elles
+sont reservees au **super-administrateur** Galette, c'est-a-dire le compte defini
+dans la configuration du site, et non un adherent portant le drapeau
+administrateur. Ce sont les deux seules operations irreversibles du plugin — elles
+suppriment des inscriptions sans prevenir personne. Voir les sections 21 et 22.
 
 ### Conditions d'inscription
 
@@ -682,6 +690,84 @@ Le **staff**, les **administrateurs** et les **moniteurs affectes a la seance** 
 4. Valider — l'inscription est marquee comme annulee, la jauge est decrementee et la premiere personne sur liste d'attente est promue automatiquement (et notifiee par email) si applicable
 
 A la difference de la desinscription par le membre lui-meme, le delai de desinscription configure sur l'evenement n'est **pas** controle ici : staff/moniteur peuvent corriger une inscription a tout moment.
+
+### 21. Supprimer une seance (super-admin)
+
+L'annulation d'une seance conserve tout : la ligne, les inscriptions, l'historique,
+et les inscrits sont prevenus par courriel. C'est ce qu'il faut utiliser quand une
+seance n'a pas lieu. La **suppression**, elle, ne laisse rien : elle sert a reparer
+une seance qui n'aurait jamais du exister (mauvaise date, doublon issu d'un creneau
+mal regle, reliquat d'un evenement remanie).
+
+Elle est donc reservee au **super-administrateur**.
+
+1. Aller sur la page de detail de la seance
+2. Cliquer sur le bouton rouge **"Supprimer la seance"**, dans la barre d'actions
+3. La fenetre de confirmation recapitule ce qui va disparaitre : nombre
+   d'inscriptions, de places en liste d'attente et d'affectations de moniteur
+4. Cliquer sur **"Supprimer definitivement"**
+
+Consequences :
+
+- La seance et **toutes** ses donnees liees sont effacees : inscriptions, liste
+  d'attente, affectations de moniteur, notifications en attente
+- **Aucun courriel n'est envoye** aux membres qui perdent leur place
+- L'operation est **irreversible** : il n'y a pas de corbeille
+- Une entree est ecrite dans le journal Galette (« [Cours] Seance supprimee »)
+  avec la date de la seance et le nombre d'inscrits concernes
+- On est redirige vers la fiche de l'evenement, qui liste les seances restantes
+
+Le bouton est visible quel que soit le statut ou la date de la seance : une seance
+passee peut donc aussi etre supprimee, ce qui efface la trace de presence
+correspondante. A n'utiliser qu'en connaissance de cause.
+
+### 22. Regenerer les seances d'un evenement (super-admin)
+
+Le bouton **"Generer les seances"** ne fait qu'**ajouter** : il cree les dates
+manquantes et saute celles qui existent deja. C'est le bon comportement pour la
+tache nocturne, mais pas apres avoir remanie un evenement. Si vous changez les
+creneaux, les saisons ou la recurrence d'un evenement qui a deja plusieurs semaines
+de seances au planning, les anciennes seances restent en place : leur date est deja
+prise.
+
+**"Regenerer les seances"** fait table rase avant de regenerer.
+
+1. Aller sur la fiche de l'evenement (statut **Valide** obligatoire)
+2. Cliquer sur le bouton rouge **"Regenerer les seances"**, dans la barre
+   d'actions en bas de page
+3. La fenetre de confirmation affiche le nombre de seances a venir qui seront
+   supprimees, ainsi que les inscriptions, places en liste d'attente et
+   affectations de moniteur perdues
+4. Cliquer sur **"Supprimer et regenerer"**
+
+Deroulement :
+
+1. **Toutes** les seances datees d'aujourd'hui ou plus tard sont supprimees, quel
+   que soit leur statut (ouverte, fermee, annulee), avec leurs inscriptions, leurs
+   listes d'attente et leurs affectations de moniteur
+2. Les seances sont recreees a partir de la definition **actuelle** de
+   l'evenement : creneaux actifs, saisons, type et intervalle de recurrence,
+   fenetre `advance_weeks`, dates de fermeture du club (les dates fermees
+   reviennent en seances **Annulees** portant le libelle de la fermeture)
+3. Les responsables de groupe sont invites a se porter volontaires sur les
+   nouvelles seances, via le recapitulatif quotidien habituel
+
+Points d'attention :
+
+- Les **seances passees ne sont jamais touchees** : elles constituent l'historique
+  de presence
+- **Aucun courriel d'annulation** n'est envoye aux membres qui perdent leur place ;
+  un message d'avertissement rappelle combien d'inscriptions ont ete supprimees
+- Pour un evenement recurrent, le rythme est repris a partir de la derniere seance
+  restante (donc passee) ; si l'evenement n'a plus aucune seance, la date de
+  premiere seance saisie a la creation sert de point de depart
+- Pour un evenement ponctuel, la seance n'est recreee que si sa date initiale est
+  encore a venir
+- Si rien ne peut etre recree, un message invite a verifier les creneaux, les
+  saisons et la recurrence de l'evenement (un creneau desactive ou hors saison ne
+  produit aucune seance)
+- L'operation est tracee dans le journal Galette (« [Cours] Seances regenerees »)
+  avec le detail des suppressions et des recreations
 
 ---
 

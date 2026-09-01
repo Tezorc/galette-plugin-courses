@@ -90,6 +90,13 @@ $app->post(
     [EventsController::class, 'doGenerateSessions']
 )->setName('coursesDoGenerateSessions')->add(Authenticate::class);
 
+// Wipe the upcoming sessions of an event and lay them out again from the
+// current slots/recurrence (super admin only -- destroys registrations).
+$app->post(
+    '/event/{id:[0-9]+}/regenerate-sessions',
+    [EventsController::class, 'doRegenerateSessions']
+)->setName('coursesDoRegenerateSessions')->add($authenticate);
+
 $app->get(
     '/event/{id:[0-9]+}/remove',
     [EventsController::class, 'confirmDelete']
@@ -141,6 +148,13 @@ $app->post(
     '/session/{id:[0-9]+}/volunteer-instructor',
     [SessionsController::class, 'doVolunteerInstructor']
 )->setName('coursesDoVolunteerInstructor')->add(Authenticate::class);
+
+// Session deletion, for good (super admin only). Sits beside the cancellation
+// below, which is the non-destructive option every session manager has.
+$app->post(
+    '/session/{id:[0-9]+}/remove',
+    [SessionsController::class, 'doRemove']
+)->setName('coursesDoSessionRemove')->add($authenticate);
 
 // Session cancellation
 $app->post(

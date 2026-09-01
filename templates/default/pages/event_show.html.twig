@@ -265,6 +265,19 @@
                 </form>
             {% endif %}
 
+            {# Regenerate: unlike "Generate sessions", which only ever adds the
+               dates that are missing, this wipes the upcoming ones first so the
+               event's current slots, seasons and recurrence are applied from
+               scratch. Destroys registrations, hence super admin only. #}
+            {% if login.isSuperAdmin() and event.getStatus() == 'validated' %}
+                <div class="courses-inline-form">
+                    <button type="button" class="ui small basic red labeled icon button" id="regenerate-sessions-btn">
+                        <i class="redo icon" aria-hidden="true"></i>
+                        {{ _T("Regenerate sessions", "courses") }}
+                    </button>
+                </div>
+            {% endif %}
+
             {% if event.canSubmit(login) %}
                 <form action="{{ url_for("coursesDoEventSubmit", {"id": event.getId()}) }}" method="post" class="ui form courses-inline-form">
                     <button type="submit" class="ui small labeled icon orange button">
@@ -290,6 +303,53 @@
             {% endif %}
         </div>
     {% endif %}
+
+    {# Regenerate confirmation — the figures come from the controller, so the
+       super admin sees the cost before the click, not in the flash after. #}
+    {% if login.isSuperAdmin() and event.getStatus() == 'validated' %}
+        <div class="ui small modal" id="regenerate-sessions-modal">
+            <div class="header">
+                <i class="redo icon" aria-hidden="true"></i>
+                {{ _T("Regenerate sessions", "courses") }}
+            </div>
+            <div class="content">
+                <div class="ui red message">
+                    <p>{{ _T("Every upcoming session of this event is deleted first, then sessions are created again from the current time slots, seasons and recurrence.", "courses") }}</p>
+                    <p>{{ _T("Registrations, waitlist entries and instructor assignments on those sessions are lost, and no email is sent. Past sessions are left untouched.", "courses") }}</p>
+                </div>
+                {% if future_footprint %}
+                    <div class="ui list">
+                        <div class="item">
+                            <i class="calendar times icon" aria-hidden="true"></i>
+                            <div class="content">{{ _T("Upcoming sessions to be deleted", "courses") }} : <strong>{{ future_footprint.sessions }}</strong></div>
+                        </div>
+                        <div class="item">
+                            <i class="users icon" aria-hidden="true"></i>
+                            <div class="content">{{ _T("Registrations lost", "courses") }} : <strong>{{ future_footprint.registrations }}</strong></div>
+                        </div>
+                        <div class="item">
+                            <i class="list ol icon" aria-hidden="true"></i>
+                            <div class="content">{{ _T("Waitlist entries lost", "courses") }} : <strong>{{ future_footprint.waitlist }}</strong></div>
+                        </div>
+                        <div class="item">
+                            <i class="chalkboard teacher icon" aria-hidden="true"></i>
+                            <div class="content">{{ _T("Instructor assignments lost", "courses") }} : <strong>{{ future_footprint.instructors }}</strong></div>
+                        </div>
+                    </div>
+                {% endif %}
+                <form action="{{ url_for("coursesDoRegenerateSessions", {"id": event.getId()}) }}" method="post" class="ui form" id="regenerate-sessions-form">
+                    {% include 'components/forms/csrf.html.twig' %}
+                </form>
+            </div>
+            <div class="actions">
+                <button class="ui small cancel button">{{ _T("Close", "courses") }}</button>
+                <button class="ui small red approve button">
+                    <i class="redo icon" aria-hidden="true"></i>
+                    {{ _T("Delete and regenerate", "courses") }}
+                </button>
+            </div>
+        </div>
+    {% endif %}
 {% endblock %}
 
 {% block javascripts %}
@@ -297,6 +357,20 @@
         $(function() {
             $('.ui.progress').progress();
             $('.courses-tabs .item').tab();
+
+            // Regenerate sessions modal (super admin)
+            if ($('#regenerate-sessions-modal').length) {
+                $('#regenerate-sessions-modal').modal({
+                    closable: true,
+                    onApprove: function() {
+                        $('#regenerate-sessions-form').submit();
+                        return false;
+                    }
+                });
+                $('#regenerate-sessions-btn').on('click', function() {
+                    $('#regenerate-sessions-modal').modal('show');
+                });
+            }
         });
     </script>
 {% endblock %}

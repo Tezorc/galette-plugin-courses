@@ -206,6 +206,13 @@ class EventsController extends AbstractPluginController
             $sessions_has_instructor[$s->getId()] = SessionInstructor::hasInstructor($this->zdb, $s->getId());
         }
 
+        // What a regeneration would destroy, so the super admin sees the
+        // figures in the confirmation dialog rather than after the fact.
+        // Nobody else can trigger it, hence the guard around the extra reads.
+        $future_footprint = $this->login->isSuperAdmin()
+            ? Session::futureFootprintForEvent($this->zdb, $id)
+            : null;
+
         $this->view->render(
             $response,
             $this->getTemplate('pages/event_show'),
@@ -215,6 +222,7 @@ class EventsController extends AbstractPluginController
                 'sessions'                => $sessions,
                 'event_type'              => new EventType($this->zdb, $event->getTypeId()),
                 'sessions_has_instructor' => $sessions_has_instructor,
+                'future_footprint'        => $future_footprint,
             ]
         );
         return $response;
@@ -891,6 +899,157 @@ class EventsController extends AbstractPluginController
         return $response
             ->withStatus(302)
             ->withHeader('Location', $this->routeparser->urlFor('coursesEventShow', ['id' => (string)$id]));
+    }
+
+    /**
+     * Wipe the upcoming sessions of an event and lay them out again — super
+     * admin only.
+     *
+     * "Generate sessions" only ever *adds*: it skips every (date, slot) key
+     * that already exists, which is exactly what you want for the nightly cron
+     * and exactly what you do not want after reworking an event. Change the
+     * slots, the season bounds or the recurrence of an event that already has
+     * four weeks of sessions on the books and the old ones stay put, since
+     * their keys are taken. This action clears the board first — every session
+     * dated today or later goes, whatever its status, and the registrations,
+     * waitlist entries and instructor assignments go with it through the
+     * cascade — then runs the ordinary generation on the current definition.
+     *
+     * Past sessions are never touched: they are the attendance record.
+     *
+     * Nobody is emailed about the sessions that disappear. That is the reason
+     * this sits behind the super admin and behind a confirmation dialog that
+     * spells out the number of registrations at stake.
+     */
+    public function doRegenerateSessions(Request $request, Response $response, int $id): Response
+    {
+        $deny = $this->denyUnlessSuperAdmin(
+            $response,
+            $this->routeparser->urlFor('coursesEventShow', ['id' => (string)$id])
+        );
+        if ($deny !== null) {
+            return $deny;
+        }
+
+        $event = new Event($this->zdb, $id);
+        if ($event->getId() === null) {
+            $this->flash->addMessage('error_detected', _T('Event not found.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->routeparser->urlFor('coursesEvents'));
+        }
+
+        $redirect = $response
+            ->withStatus(302)
+            ->withHeader('Location', $this->routeparser->urlFor('coursesEventShow', ['id' => (string)$id]));
+
+        // Sessions only exist for validated events (they are materialised at
+        // validation time), so there is nothing to regenerate before that.
+        if ($event->getStatus() !== Event::STATUS_VALIDATED) {
+            $this->flash->addMessage(
+                'error_detected',
+                _T('Sessions can only be regenerated once the event is validated.', 'courses')
+            );
+            return $redirect;
+        }
+
+        $purged = Session::purgeFutureForEvent($this->zdb, $id);
+
+        // The recurrence handler picks its start date from the last session on
+        // file and adds one interval, which keeps the original rhythm — the
+        // remaining past sessions are enough for that. When the purge left the
+        // event with no session at all, fall back to the date captured on the
+        // event when it was drafted.
+        $created = [];
+        if ($event->isRecurring()) {
+            $startDate = $this->hasAnySession($event) ? null : $event->getInitialSessionDate();
+            // Plugin preferences passed in on purpose, unlike the plain
+            // "generate" button: closure periods then come back as cancelled
+            // sessions carrying the closure label, exactly as the nightly cron
+            // would have produced them.
+            $handler = new RecurrenceHandler($this->zdb, new PluginPreferences($this->zdb));
+            $created = $handler->generateSessions($event, $startDate ?: null);
+        } else {
+            // One-shot event: it owns a single date, and re-creating it only
+            // makes sense while that date is still ahead.
+            $sessionDate = (string)$event->getInitialSessionDate();
+            if ($sessionDate !== '' && $sessionDate >= date('Y-m-d')) {
+                $created = $this->createSessionsForEvent($event, $sessionDate);
+            }
+        }
+
+        $this->history->add(
+            _T('[Courses] Sessions regenerated', 'courses'),
+            sprintf(
+                'event #%d — %s — %d session(s) deleted (%d registration(s), %d waiting, %d instructor assignment(s)), %d recreated',
+                $event->getId(),
+                $event->getName(),
+                $purged['sessions'],
+                $purged['registrations'],
+                $purged['waitlist'],
+                $purged['instructors'],
+                count($created)
+            )
+        );
+
+        if (!empty($created)) {
+            // Same follow-up as a regular generation: the new sessions have no
+            // instructor, so group managers are invited to volunteer (queued
+            // into the daily digest).
+            $notification = new CourseNotification($this->zdb, $this->preferences, new PluginPreferences($this->zdb), new MemberPreferences($this->zdb), $this->history);
+            $notification->notifyNewSessions($event, $created);
+        }
+
+        $this->flash->addMessage(
+            'success_detected',
+            sprintf(
+                _T('%1$d upcoming session(s) deleted, %2$d recreated.', 'courses'),
+                $purged['sessions'],
+                count($created)
+            )
+        );
+
+        if ($purged['registrations'] > 0 || $purged['waitlist'] > 0) {
+            $this->flash->addMessage(
+                'warning_detected',
+                sprintf(
+                    _T('%1$d registration(s) and %2$d waitlist entry/entries were dropped. No email was sent.', 'courses'),
+                    $purged['registrations'],
+                    $purged['waitlist']
+                )
+            );
+        }
+
+        if (empty($created)) {
+            $this->flash->addMessage(
+                'warning_detected',
+                _T('No session could be recreated. Check the time slots, the seasons and the recurrence of the event.', 'courses')
+            );
+        }
+
+        return $redirect;
+    }
+
+    /**
+     * Does the event still hold at least one session, past ones included?
+     * Tells doRegenerateSessions whether the recurrence handler has an anchor
+     * to continue from, or needs to be handed the event's initial date.
+     */
+    private function hasAnySession(Event $event): bool
+    {
+        try {
+            $select = $this->zdb->select(Session::TABLE);
+            $select->columns([Session::PK]);
+            $select->where(['event_id' => $event->getId()]);
+            $select->limit(1);
+            return $this->zdb->execute($select)->count() > 0;
+        } catch (\Throwable $e) {
+            Analog::log(
+                'Error checking sessions of event #' . $event->getId() . ': ' . $e->getMessage(),
+                Analog::ERROR
+            );
+            return false;
+        }
     }
 
     public function confirmRemoveTitle(array $args): string

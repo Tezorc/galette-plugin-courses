@@ -26,6 +26,7 @@ namespace GaletteCourses\Entity;
 use ArrayObject;
 use Galette\Core\Db;
 use Analog\Analog;
+use Laminas\Db\Sql\Expression;
 use Throwable;
 
 /**
@@ -146,6 +147,144 @@ class Session
             );
             throw $e;
         }
+    }
+
+    /**
+     * Delete one or several sessions, for good.
+     *
+     * Every child table (registrations, waitlist, instructors, queued
+     * notifications) carries `ON DELETE CASCADE` on `session_id`, so the single
+     * DELETE below takes the whole subtree with it. Nothing is archived and no
+     * one is notified — the callers are the super-admin-only routes, which warn
+     * about exactly that before they fire.
+     *
+     * @param int[]|null $ids Sessions to delete; defaults to the loaded one
+     */
+    public function remove(?array $ids = null): bool
+    {
+        if ($ids === null) {
+            if (!isset($this->id) || $this->id <= 0) {
+                return false;
+            }
+            $ids = [$this->id];
+        }
+
+        if (empty($ids)) {
+            return false;
+        }
+
+        try {
+            $this->zdb->connection->beginTransaction();
+            $delete = $this->zdb->delete(self::TABLE);
+            $delete->where([self::PK => $ids]);
+            $this->zdb->execute($delete);
+            $this->zdb->connection->commit();
+
+            Analog::log(
+                'Session(s) #' . implode(', #', $ids) . ' deleted successfully.',
+                Analog::INFO
+            );
+            return true;
+        } catch (Throwable $e) {
+            $this->zdb->connection->rollback();
+            Analog::log(
+                'Unable to delete session(s): ' . $e->getMessage(),
+                Analog::ERROR
+            );
+            throw $e;
+        }
+    }
+
+    /**
+     * What deleting an event's upcoming sessions would take with it.
+     *
+     * "Upcoming" is `session_date >= today`, whatever the status: a cancelled
+     * or closed session still occupies its (date, slot) key and would block the
+     * regeneration, so it counts too. Returned before the delete so the
+     * confirmation dialog can state the damage in figures, and again by the
+     * purge itself so the flash message and the history entry agree.
+     *
+     * @return array{sessions: int, registrations: int, waitlist: int, instructors: int, ids: int[]}
+     */
+    public static function futureFootprintForEvent(Db $zdb, int $eventId): array
+    {
+        $footprint = [
+            'sessions'      => 0,
+            'registrations' => 0,
+            'waitlist'      => 0,
+            'instructors'   => 0,
+            'ids'           => [],
+        ];
+
+        try {
+            $select = $zdb->select(self::TABLE);
+            $select->columns([self::PK]);
+            $select->where(['event_id' => $eventId]);
+            $select->where->greaterThanOrEqualTo('session_date', date('Y-m-d'));
+            foreach ($zdb->execute($select) as $row) {
+                $footprint['ids'][] = (int)$row->{self::PK};
+            }
+            $footprint['sessions'] = count($footprint['ids']);
+
+            if ($footprint['sessions'] === 0) {
+                return $footprint;
+            }
+
+            $footprint['registrations'] = self::countChildren(
+                $zdb,
+                Registration::TABLE,
+                $footprint['ids'],
+                Registration::STATUS_REGISTERED
+            );
+            $footprint['waitlist'] = self::countChildren($zdb, Waitlist::TABLE, $footprint['ids']);
+            $footprint['instructors'] = self::countChildren($zdb, SessionInstructor::TABLE, $footprint['ids']);
+        } catch (Throwable $e) {
+            Analog::log(
+                'Error measuring future sessions of event #' . $eventId . ': ' . $e->getMessage(),
+                Analog::ERROR
+            );
+        }
+
+        return $footprint;
+    }
+
+    /**
+     * Rows of $table attached to the given sessions, optionally restricted to
+     * one status value.
+     *
+     * @param int[] $sessionIds
+     */
+    private static function countChildren(Db $zdb, string $table, array $sessionIds, ?string $status = null): int
+    {
+        $select = $zdb->select($table);
+        $select->columns(['cnt' => new Expression('COUNT(*)')]);
+        $select->where->in('session_id', $sessionIds);
+        if ($status !== null) {
+            $select->where->equalTo('status', $status);
+        }
+        $row = $zdb->execute($select)->current();
+        return $row !== false && $row !== null ? (int)$row->cnt : 0;
+    }
+
+    /**
+     * Delete every upcoming session of an event and report what went with it.
+     *
+     * Used by the super-admin "regenerate sessions" action: the slate has to be
+     * wiped before the recurrence handler can lay the sessions out again, since
+     * generation skips any (date, slot) key that already exists. Past sessions
+     * are never touched — they are the attendance record.
+     *
+     * @return array{sessions: int, registrations: int, waitlist: int, instructors: int, ids: int[]}
+     */
+    public static function purgeFutureForEvent(Db $zdb, int $eventId): array
+    {
+        $footprint = self::futureFootprintForEvent($zdb, $eventId);
+        if ($footprint['sessions'] === 0) {
+            return $footprint;
+        }
+
+        (new self($zdb))->remove($footprint['ids']);
+        return $footprint;
     }
 
     public function getRemainingSpots(): ?int

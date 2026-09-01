@@ -554,7 +554,7 @@
 
             {# Session-manager action buttons: Register a member | Close | Cancel (all on one line) #}
             {% set is_future = session.getSessionDate() >= "now"|date("Y-m-d") %}
-            {% set has_action_buttons = (is_session_manager and session.getStatus() == 'cancelled') or (is_session_manager and session.getStatus() == 'closed') or (session.getStatus() == 'open' and is_future and (is_session_manager or login.isGroupManager())) %}
+            {% set has_action_buttons = login.isSuperAdmin() or (is_session_manager and session.getStatus() == 'cancelled') or (is_session_manager and session.getStatus() == 'closed') or (session.getStatus() == 'open' and is_future and (is_session_manager or login.isGroupManager())) %}
             {% if has_action_buttons %}
                 <div class="ui center aligned basic segment courses-actions">
 
@@ -606,6 +606,17 @@
                                 </button>
                             </div>
                         {% endif %}
+                    {% endif %}
+
+                    {# Delete the session outright — super admin only. Unlike
+                       every other button here, it leaves nothing behind. #}
+                    {% if login.isSuperAdmin() %}
+                        <div class="courses-inline-form">
+                            <button type="button" class="ui small basic red labeled icon button" id="delete-session-btn">
+                                <i class="trash icon" aria-hidden="true"></i>
+                                {{ _T("Delete session", "courses") }}
+                            </button>
+                        </div>
                     {% endif %}
 
                 </div>
@@ -722,6 +733,47 @@
                         <button class="ui small red approve button" id="confirm-cancel-btn">
                             <i class="ban icon" aria-hidden="true"></i>
                             {{ _T("Confirm cancellation", "courses") }}
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
+
+            {# Delete session modal — super admin only. States what goes with
+               the session, since nothing warns the members afterwards. #}
+            {% if login.isSuperAdmin() %}
+                <div class="ui small modal" id="delete-session-modal">
+                    <div class="header">
+                        <i class="trash icon" aria-hidden="true"></i>
+                        {{ _T("Delete session", "courses") }}
+                    </div>
+                    <div class="content">
+                        <div class="ui red message">
+                            <p>{{ _T("The session is removed for good, together with its registrations, its waitlist and its instructor assignments. No email is sent to the members concerned.", "courses") }}</p>
+                            <p>{{ _T("To call off a session while keeping its history and warning the members, cancel it instead.", "courses") }}</p>
+                        </div>
+                        <div class="ui list">
+                            <div class="item">
+                                <i class="users icon" aria-hidden="true"></i>
+                                <div class="content">{{ _T("Registrations lost", "courses") }} : <strong>{{ session.getCurrentRegistrations() }}</strong></div>
+                            </div>
+                            <div class="item">
+                                <i class="list ol icon" aria-hidden="true"></i>
+                                <div class="content">{{ _T("Waitlist entries lost", "courses") }} : <strong>{{ waitlist_count }}</strong></div>
+                            </div>
+                            <div class="item">
+                                <i class="chalkboard teacher icon" aria-hidden="true"></i>
+                                <div class="content">{{ _T("Instructor assignments lost", "courses") }} : <strong>{{ instructors|length }}</strong></div>
+                            </div>
+                        </div>
+                        <form action="{{ url_for("coursesDoSessionRemove", {"id": session.getId()}) }}" method="post" class="ui form" id="delete-session-form">
+                            {% include 'components/forms/csrf.html.twig' %}
+                        </form>
+                    </div>
+                    <div class="actions">
+                        <button class="ui small cancel button">{{ _T("Close", "courses") }}</button>
+                        <button class="ui small red approve button">
+                            <i class="trash icon" aria-hidden="true"></i>
+                            {{ _T("Delete permanently", "courses") }}
                         </button>
                     </div>
                 </div>
@@ -1095,6 +1147,20 @@
             $('#cancel-session-btn').on('click', function() {
                 $('#cancel-session-modal').modal('show');
             });
+
+            // Delete session modal (super admin)
+            if ($('#delete-session-modal').length) {
+                $('#delete-session-modal').modal({
+                    closable: true,
+                    onApprove: function() {
+                        $('#delete-session-form').submit();
+                        return false;
+                    }
+                });
+                $('#delete-session-btn').on('click', function() {
+                    $('#delete-session-modal').modal('show');
+                });
+            }
 
 
         });

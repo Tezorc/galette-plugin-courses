@@ -52,6 +52,11 @@ $this->register(
         'coursesDoEventValidate'    => 'staff',
         'coursesDoEventReject'      => 'staff',
         'coursesDoGenerateSessions' => 'staff',
+        // Destructive, irreversible, and silent towards the members who lose
+        // their spot: kept at the strictest ACL Galette offers. The handlers
+        // repeat the check via denyUnlessSuperAdmin().
+        'coursesDoRegenerateSessions' => 'superadmin',
+        'coursesDoSessionRemove'      => 'superadmin',
         'coursesEventRemove'        => 'staff',
         'coursesDoEventRemove'      => 'staff',
         'coursesSessions'           => 'member',
