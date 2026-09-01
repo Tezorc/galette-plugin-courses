@@ -144,7 +144,7 @@ Pour qu'un adherent puisse s'inscrire a une seance :
 
 ### 1. Creer un evenement
 
-1. Menu **Gestion des inscriptions > Ajouter un evenement**
+1. Menu **Gestion des inscriptions > Événements**, puis bouton **"Ajouter un événement"**
 2. Remplir le formulaire :
    - **Nom** (obligatoire) : nom de l'evenement
    - **Type** (obligatoire) : choisir parmi Cours, Entrainement, Competition, Decouverte, Formation, Stage, Autre
@@ -206,7 +206,7 @@ Pour generer de nouvelles seances ulterieurement (les semaines suivantes) :
 1. Aller sur la page de detail de l'evenement
 2. Cliquer sur le bouton teal **"Generer les seances"**
 3. Les nouvelles seances sont creees a partir de la derniere seance existante
-4. Si l'evenement est valide, les adherents eligibles sont notifies par email
+4. Les **responsables de groupe** sont invites a se porter volontaires sur les seances creees sans moniteur — invitation empilee dans le recapitulatif quotidien, pas envoyee a l'unite. Les adherents ne sont pas notifies a ce stade.
 
 **Mise a jour automatique des seances sans moniteur** : lors de la generation, les seances futures sans moniteur assigne sont automatiquement mises a jour avec les nouveaux horaires et la nouvelle capacite de l'evenement. Cela permet de propager les modifications sans recreer les seances.
 
@@ -882,7 +882,7 @@ Le plugin met en place un workflow de validation pour les evenements crees par l
 2. Il clique sur **"Soumettre pour validation"** sur la page de detail de l'evenement
 3. L'evenement passe au statut **En attente** et le staff/admin est notifie par email
 4. Un membre du **staff** ou un **administrateur** peut alors :
-   - **Valider** l'evenement (bouton vert **"Valider"**) : l'evenement passe au statut **Valide**, le createur est notifie, et les adherents eligibles recoivent un email de publication
+   - **Valider** l'evenement (bouton vert **"Valider"**) : l'evenement passe au statut **Valide**, **ses seances sont creees a ce moment-la**, et le createur est notifie. Les adherents ne recoivent **aucun** courriel de publication (le modele correspondant a ete supprime en Phase 34) ; les responsables de groupe recoivent l'invitation a se porter volontaires via le recapitulatif quotidien
    - **Rejeter** l'evenement (bouton rouge **"Rejeter"**) : l'evenement retourne au statut **Brouillon**, le createur est notifie et peut modifier puis resoumettre
 
 ### Cas particulier : staff et administrateurs
@@ -1312,32 +1312,42 @@ Ce tutoriel explique comment utiliser le plugin en tant que **responsable de gro
 
 ### Prealable (responsable de groupe)
 
-Vous devez avoir le role **Responsable de groupe** dans Galette et gerer au moins un groupe.
+Le menu **Gestion des inscriptions** apparait si vous etes dans l'un de ces deux cas :
+
+- vous avez le role **Responsable de groupe** dans Galette et gerez au moins un groupe ;
+- ou vous etes **affecte comme moniteur** sur au moins une seance, meme sans responsabilite de groupe (Phase 46).
 
 ### Creer un evenement
 
-1. Aller dans **Gestion des inscriptions > Ajouter un evenement**
-2. Remplir le formulaire :
-   - **Nom** : nom clair du cours (ex : "Club canin debutants samedi")
-   - **Type** : choisir le type adapte (Cours, Entrainement, Competition, Decouverte, Formation, Stage, Autre)
-   - **Lieu** : lieu precis
-   - **Capacite maximale** : nombre de places disponibles
-   - **Groupes** : cocher les groupes autorises a s'inscrire
-   - **Creneaux horaires** : renseigner l'heure de debut et de fin
+1. Aller dans **Gestion des inscriptions > Événements**, puis cliquer sur **"Ajouter un événement"**
+2. Remplir le formulaire. Les champs marques d'une etoile sont obligatoires :
+   - **Nom**, **Description**, **Type** (Cours, Entrainement, Competition, Decouverte, Formation, Stage, Autre), **Lieu**
+   - **Capacité maximale** : laisser vide pour une jauge illimitee
+   - **Prix**, ou cocher **Événement gratuit**
+   - **Inscription fermée (jours avant la séance)** : delai au-dela duquel on ne peut plus s'inscrire. Il ne concerne **pas** la desinscription, toujours libre jusqu'au debut de la seance.
+   - **Restreindre à certains groupes** puis **Groupes autorisés** : sans restriction, l'evenement est ouvert a tous les adherents
+   - **Autoriser les inscriptions aux séances sans moniteur affecté** : decoche, les adherents ne peuvent s'inscrire qu'une fois un moniteur volontaire
+   - **Pas de moniteur nécessaire (organisateur en contact)** : pour les evenements qui n'en demandent pas
+   - **Date de début** : date de la premiere seance
+   - **Créneaux horaires** : au moins un, avec heure de debut et de fin. Chaque creneau porte en plus une case **Actif** et une saison facultative (**En saison à partir du** / **jusqu'au**, en jour et mois, sans annee — voir la section *Horaires saisonniers* du corps du document).
 3. Cliquer sur **Enregistrer**
 
-L'evenement est cree au statut **Brouillon**. Les adherents ne le voient pas encore.
+Le champ **Statut** n'est modifiable que par le staff et les administrateurs : un responsable de groupe cree toujours au statut **Brouillon**, invisible des adherents.
 
-**Note** : si vous cochez **"Evenement recurrent"**, l'evenement generera automatiquement des seances recurrentes (hebdomadaires, bihebdomadaires, mensuelles). Renseigner la date de debut et le type de recurrence.
+**Evenement recurrent** : cocher **Événement récurrent** donne acces au **Type de récurrence** (hebdomadaire, bihebdomadaire, mensuelle), a l'**Intervalle**, a **Générer à l'avance (semaines)** et a une **Date de fin de récurrence** facultative.
+
+> **Aucune seance n'existe tant que l'evenement n'est pas valide.** La date saisie dans **Date de début** est conservee sur l'evenement, mais la generation des seances n'a lieu **qu'a la validation**. Un evenement en Brouillon ou En attente n'apparait donc dans **aucune** liste de seances — seule sa fiche le montre, avec un message l'expliquant. Ne vous inquietez pas de ne rien voir avant validation.
 
 ### Soumettre pour validation
 
 1. Aller sur la page de detail de l'evenement
 2. Cliquer sur le bouton **"Soumettre pour validation"**
 3. L'evenement passe au statut **En attente** et le staff est notifie
-4. Une fois valide par le staff, l'evenement est publie et les adherents eligibles sont notifies
+4. Une fois valide par le staff, les seances sont creees et l'evenement devient visible
 
-Si l'evenement est rejete, vous recevez un email et pouvez le modifier puis le resoumettre.
+Si l'evenement est rejete, vous recevez un courriel et pouvez le modifier puis le resoumettre.
+
+**Qui est prevenu a la validation** : le **createur** de l'evenement, par courriel. Les adherents **ne recoivent rien** a ce moment-la — il n'y a pas de courriel de publication. Ce qui part, c'est une invitation aux responsables de groupe a se porter volontaires sur les seances sans moniteur, empilee dans le **recapitulatif quotidien** plutot qu'envoyee immediatement. Les adherents sont informes plus tard, par le recapitulatif hebdomadaire, quand la seance recoit un moniteur ou s'ouvre aux inscriptions.
 
 ### Se porter volontaire comme moniteur pour une seance
 
@@ -1345,9 +1355,21 @@ Si l'evenement est rejete, vous recevez un email et pouvez le modifier puis le r
 2. Dans la section **Moniteurs**, cliquer sur le bouton teal **"Se porter volontaire comme moniteur"**
 3. Votre nom apparait dans la liste des moniteurs de la seance
 
-Vous ne pouvez vous porter volontaire que si vous gerez un des groupes associes a l'evenement. Le volontariat est impossible sur une seance **annulee** (elle n'aura pas lieu) : le bouton est masque et l'action est refusee cote serveur.
+Vous ne pouvez vous porter volontaire que si vous gerez un des groupes associes a l'evenement. Le volontariat est impossible sur une seance **annulee** (elle n'aura pas lieu) : le bouton est masque et l'action est refusee cote serveur. Il est egalement refuse si vous animez deja une autre seance sur une plage qui se chevauche le meme jour.
 
 > **Mise a jour de l'affichage** : se porter volontaire depuis la page **Mes seances comme moniteur** (onglet *Se proposer moniteur*) renvoie automatiquement sur cette meme page rechargee. La seance disparait de *Se proposer moniteur* et apparait dans *Mes seances comme moniteur* sans rechargement manuel. Depuis la fiche detail d'une seance, le comportement est inchange (retour sur la fiche).
+
+### Vos droits sur une seance dont vous etes moniteur
+
+Etre affecte comme moniteur d'une seance vous y donne les memes leviers que le staff, **et uniquement sur cette seance** (Phase 43) :
+
+- modifier la seance (date, horaire, capacite)
+- ajouter ou retirer des co-moniteurs
+- inscrire ou desinscrire des membres
+- fermer, rouvrir, annuler ou reactiver la seance
+- gerer la liste d'attente (augmenter la capacite, promouvoir, creer une seance supplementaire)
+
+Sur les autres seances, vous restez un membre ou un responsable de groupe ordinaire.
 
 ### Inscrire un membre par procuration
 
@@ -1359,6 +1381,8 @@ Si un adherent vous demande de l'inscrire :
 2. Selectionner le membre dans le dropdown recherchable
 3. Cliquer sur **"Inscrire"**
 
+Les memes conditions que pour une auto-inscription sont verifiees sur le membre cible : cotisation a jour, compte actif, statut different de "Non membre", appartenance au groupe requis, et absence de chevauchement avec une autre de ses seances le meme jour.
+
 **Bascule liste d'attente** : si la seance est pleine au moment de la soumission, le membre est automatiquement ajoute a la liste d'attente (avec sa position) au lieu d'echouer. Un message vert confirme la bascule. Si le membre est deja sur la waitlist, un message orange l'indique sans creer de doublon.
 
 ### Pointer les presences
@@ -1367,40 +1391,43 @@ Le pointage est disponible le jour de la seance et apres :
 
 1. Aller sur la page de detail de la seance
 2. Dans la liste des inscrits, changer le statut de chaque membre :
-   - **Present** / **Absent** / **Absent (excuse)**
+   - **Présent** / **Absent** / **Absent (excusé)**
 3. Cliquer sur **"Enregistrer le pointage"**
 
-**Presence hors inscription (walk-in)** : pour un participant present sans inscription prealable :
+**Présence hors inscription (walk-in)** : pour un participant present sans inscription prealable :
 
-1. Dans la section **"Presence hors inscription"**, selectionner le membre
+1. Dans la section **"Présence hors inscription"**, selectionner le membre
 2. Cliquer sur **"Ajouter"**
 
 ### Consulter les inscriptions
 
-- **Gestion des inscriptions > Gestion des inscriptions** : toutes les inscriptions aux seances de vos groupes
+- **Gestion des inscriptions > Gestion inscriptions** : toutes les inscriptions aux seances de vos groupes
 - Filtres par type, evenement, statut
 
 ---
 
 ## Annexe C — Tutoriel pour le staff et les administrateurs
 
-Ce tutoriel couvre les fonctions avancees de gestion accessibles au **staff** et aux **administrateurs**. Certaines fonctions (notifications, generation automatique des seances, modeles de courriels) sont reservees aux **administrateurs uniquement**.
+Ce tutoriel couvre les fonctions avancees de gestion accessibles au **staff** et aux **administrateurs**. Certaines fonctions (notifications, generation automatique des seances, modeles de courriels) sont reservees aux **administrateurs uniquement**, et deux operations destructives au **super-administrateur** seul.
 
 ### Gestion complete des evenements (staff / admin)
 
 Le staff et les administrateurs peuvent :
 
 - Voir et modifier **tous les evenements**, quel que soit le createur
-- Creer des evenements directement au statut **Valide** (sans workflow)
-- **Valider** ou **Rejeter** les evenements en attente (statut En attente)
-- **Supprimer** des evenements (avec cascade sur seances et inscriptions)
+- Choisir librement le **Statut** dans le formulaire — le champ n'est visible que par eux — donc creer un evenement directement au statut **Valide**, sans passer par le workflow
+- **Valider** ou **Rejeter** les evenements au statut En attente
+- **Supprimer** des evenements (cascade sur les seances, les inscriptions, les listes d'attente et les affectations de moniteur)
 
 **Valider un evenement** :
 
-1. **Gestion des inscriptions > Evenements** : reperer les evenements au statut "En attente" (badge jaune)
+1. **Gestion des inscriptions > Événements** : reperer les evenements au statut "En attente" (badge jaune)
 2. Cliquer sur le nom pour voir le detail
 3. Cliquer sur le bouton vert **"Valider"**
-4. Le createur est notifie et les adherents eligibles recoivent un email
+
+**C'est la validation qui cree les seances**, pas l'enregistrement de l'evenement : la date de premiere seance saisie au formulaire n'est materialisee qu'ici (evenement ponctuel), de meme que la generation recurrente. Un evenement en Brouillon ou En attente n'a donc aucune seance, et n'apparait dans aucune liste de seances.
+
+**Qui recoit un courriel a la validation** : le **createur** de l'evenement, et lui seul. Les adherents ne sont **pas** notifies a ce moment — il n'existe plus de courriel de publication depuis la Phase 34. Ce qui part en plus, ce sont les invitations aux responsables de groupe a se porter volontaires sur les seances sans moniteur, empilees dans le recapitulatif quotidien.
 
 **Rejeter un evenement** :
 
@@ -1408,7 +1435,9 @@ Le staff et les administrateurs peuvent :
 2. Cliquer sur le bouton rouge **"Rejeter"**
 3. L'evenement retourne au statut Brouillon et le createur est notifie
 
-### Gestion des seances (staff / admin)
+### Gestion des seances (staff / admin / moniteur de la seance)
+
+Les actions de cette section sont ouvertes a **trois profils** : administrateurs, staff, et **moniteurs affectes a la seance concernee** (Phase 43). Un moniteur ne les exerce que sur ses propres seances.
 
 #### Affecter un moniteur
 
@@ -1416,9 +1445,9 @@ Le staff et les administrateurs peuvent :
 2. Utiliser le select pour choisir un responsable de groupe eligible
 3. Cliquer sur **"Affecter un moniteur"**
 
-Le formulaire d'affectation n'est pas disponible sur une seance annulee ou passee.
+Le formulaire d'affectation n'est pas disponible sur une seance annulee ou passee. L'affectation est refusee si le membre anime deja une autre seance sur une plage qui se chevauche le meme jour.
 
-#### Modifier une seance (admin)
+#### Modifier une seance
 
 Pour les seances futures non annulees :
 
@@ -1426,7 +1455,7 @@ Pour les seances futures non annulees :
 2. Modifier la date, l'horaire, ou la capacite maximale
 3. Cliquer sur **Enregistrer**
 
-**Note** : la capacite ne peut pas etre inferieure au nombre d'inscrits actuels.
+**Note** : la capacite ne peut pas etre inferieure au nombre d'inscrits actuels. Si vous l'augmentez alors qu'une liste d'attente existe, les premiers de la file sont promus automatiquement et prevenus par courriel.
 
 #### Fermer / Rouvrir une seance
 
@@ -1437,16 +1466,30 @@ Pour les seances futures non annulees :
 
 1. Sur la page de detail, cliquer sur le bouton rouge **"Annuler la seance"**
 2. Choisir le motif (obligatoire) et ajouter un commentaire optionnel
-3. Confirmer — tous les inscrits recoivent un email d'annulation
+3. Confirmer — tous les inscrits **et** la liste d'attente recoivent un courriel d'annulation
+
+L'annulation **conserve tout** : la seance, ses inscriptions, son historique. C'est l'outil a utiliser quand une seance n'a pas lieu.
 
 #### Generer les seances recurrentes
 
-Pour les evenements recurrents :
+Pour les evenements recurrents **valides** :
 
 1. Aller sur la page de detail de l'evenement
 2. Cliquer sur le bouton teal **"Generer les seances"**
 3. Les seances sont generees jusqu'a aujourd'hui + N semaines
 4. Les seances futures sans moniteur assigne sont automatiquement mises a jour avec les horaires et capacite actuels de l'evenement
+
+**Ce bouton n'ajoute que ce qui manque** : il saute toute date deja occupee. Il ne sert donc pas a repercuter un changement de creneau, de saison ou de rythme sur des seances deja planifiees — voir la regeneration ci-dessous.
+
+### Operations destructives (super-administrateur uniquement)
+
+Deux actions sortent du lot : elles **suppriment definitivement** des seances et leurs inscriptions, **sans prevenir personne**. Elles sont reservees au **super-administrateur** (le compte defini dans la configuration du site, et non un adherent portant le drapeau administrateur) et protegees par une modale qui chiffre les degats avant le clic.
+
+**Supprimer une seance** — bouton rouge **"Supprimer la seance"** sur la fiche de la seance. Efface la seance, ses inscriptions, sa liste d'attente et ses affectations de moniteur. A reserver aux seances qui n'auraient jamais du exister (mauvaise date, doublon, reliquat d'un evenement remanie) ; pour une seance qui n'a simplement pas lieu, utiliser l'annulation.
+
+**Regenerer les seances** — bouton rouge **"Regenerer les seances"** sur la fiche d'un evenement valide. Supprime **toutes** les seances datees d'aujourd'hui ou plus tard, quel que soit leur statut, puis recree le planning a partir de la definition actuelle de l'evenement. C'est la seule facon de repercuter un changement de creneaux, de saison ou de recurrence sur un planning deja etabli. Les **seances passees ne sont jamais touchees** : elles portent le pointage des presences.
+
+Les deux operations sont tracees dans le journal Galette avec le detail de ce qui a ete supprime.
 
 ### Statistiques
 
@@ -1456,6 +1499,7 @@ Pour les evenements recurrents :
 - Graphiques mensuels et top evenements
 - Taux de remplissage par evenement
 - Activite recente des membres
+- **Taux de participation** sur la periode : pourcentage d'adherents actifs ayant participe, avec une jauge coloree selon le seuil
 
 **Filtrer par periode** (membres actifs / inactifs) :
 
@@ -1471,6 +1515,7 @@ Pour les evenements recurrents :
 
 - Ajouter les periodes de fermeture du club (vacances, feries, concours, AG...) avec un **motif libre**
 - Les seances recurrentes tombant sur ces dates sont creees en statut **Annule** avec le motif saisi en commentaire (au lieu d'etre sautees)
+- **Cascade** : a l'enregistrement, les seances futures deja planifiees qui tombent dans une periode basculent aussi en Annule, avec courriels aux inscrits et purge de la liste d'attente
 
 **Notifications email** (admin uniquement) :
 
@@ -1494,8 +1539,8 @@ Pour les evenements recurrents :
 
 ### Modeles de courriels (admin uniquement)
 
-**Gestion des inscriptions > Modeles de courriels** :
+**Gestion des inscriptions > Modèles de courriels** :
 
-- Personnaliser les textes des 11 emails automatiques (soumission, validation, rejet, récapitulatif moniteur + invitation nouvelle seance, seance ouverte avec/sans moniteur, récapitulatif membre hebdomadaire, promotion liste d'attente, annulation inscrits/liste d'attente)
+- Personnaliser les textes des 11 courriels automatiques (soumission, validation, rejet, récapitulatif moniteur + invitation nouvelle seance, seance ouverte avec/sans moniteur, récapitulatif membre hebdomadaire, promotion liste d'attente, annulation inscrits/liste d'attente)
 - Cliquer sur **Reinitialiser** pour revenir au modele par defaut
 - Les variables disponibles sont affichees sous forme de pastilles cliquables pour chaque modele
