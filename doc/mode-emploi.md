@@ -1236,6 +1236,43 @@ Toutes les phases de developpement sont terminees :
 
 Ce tutoriel explique comment utiliser le plugin Galette Courses en tant que **membre de l'association**.
 
+### Se connecter
+
+L'espace adherent est le **site Galette de l'association** — le meme que pour la cotisation et les coordonnees. Ce n'est pas une application separee a installer : le plugin Courses s'y ajoute simplement en menu.
+
+> **Galette** = *Gestionnaire d'Adherents en Ligne Extremement Tarabiscote mais Tellement Efficace*. C'est l'acronyme officiel du logiciel.
+
+1. Ouvrir l'adresse de l'espace adherent de l'association dans un navigateur
+
+   L'URL est propre a chaque club et n'est **pas** connue du plugin : celui-ci vit a l'interieur du site Galette de l'association. Le fichier `lang/courses_<locale>_local_lang.php` prevoit une variable `$site_url` a cet usage, mais **aucun override ne s'en sert actuellement** — depuis la depersonnalisation (Phase 60), les courriels automatiques ne contiennent plus de lien vers le site. Pour en remettre un, surcharger le corps du modele concerne en y injectant `$site_url` (voir *Personnaliser le plugin pour son association*).
+
+2. Saisir **Identifiant :** et **Mot de passe :** (ceux communiques par l'association ; l'identifiant n'est pas forcement l'adresse courriel)
+3. Cliquer sur le bouton **Identification**
+
+**Mot de passe oublie** : le lien **Mot de passe perdu ?** sous le formulaire accepte indifferemment l'identifiant **ou l'adresse courriel**, et envoie un lien de reinitialisation. Si le courriel n'arrive pas, verifier les indesirables puis, aupres du secretariat, que l'adresse enregistree dans la fiche adherent est la bonne : sans adresse valide, le site n'a aucun moyen de joindre l'adherent.
+
+### Mettre un raccourci sur son telephone
+
+Il n'y a **rien a installer** : ni application sur l'App Store, ni sur Google Play. On pose un raccourci vers le site sur l'ecran d'accueil ; il porte l'icone du site et s'ouvre en plein ecran.
+
+L'icone vient du coeur Galette, pas du plugin : `templates/default/elements/header.html.twig` declare un `apple-touch-icon` pointant sur `webroot/themes/default/images/favicon.png` **de l'installation Galette** (192 x 192, taille adaptee aux ecrans d'accueil iOS et Android). Pour que les adherents aient le logo du club sur leur telephone, remplacer ce fichier — il n'y a rien a faire cote plugin.
+
+**iPhone / iPad** — la manipulation n'existe que dans **Safari**, pas dans Chrome iOS :
+
+1. Ouvrir le site dans Safari
+2. Toucher le bouton **Partager** (le carre avec une fleche vers le haut)
+3. Faire defiler et choisir **Sur l'ecran d'accueil**
+4. Toucher **Ajouter**
+
+**Android** (Chrome) :
+
+1. Ouvrir le site dans Chrome
+2. Toucher le menu **⋮** en haut a droite
+3. Choisir **Ajouter a l'ecran d'accueil** (ou **Installer l'application** selon la version)
+4. Confirmer par **Ajouter**
+
+Se connecter une fois depuis ce raccourci et laisser le navigateur memoriser le mot de passe evite de le ressaisir a chaque inscription — a eviter sur un telephone partage.
+
 ### Prealable
 
 Vous devez etre **connecte a Galette**. Trois conditions sont verifiees a chaque inscription, pour vous comme pour chacun de vos membres rattaches :

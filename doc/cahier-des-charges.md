@@ -801,6 +801,74 @@ pas sur `isAdmin()`. Le point est subtil : Galette positionne `admin = true`
   impossible.
 - Aucune migration BDD : les contraintes `ON DELETE CASCADE` existaient deja.
 
+### Evolution - Realignement du mode d'emploi sur le code
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : corriger le libelle d'onglet dans `mode-emploi.md`, puis
+  reprendre les trois annexes, puis y integrer le tutoriel adherent.
+
+#### Constat
+
+`mode-emploi.md` decrit l'etat courant, `cahier-des-charges.md` est un journal
+date. Le second a bien vieilli : il enregistre le renommage des onglets
+(Phase 71.3) et le passage du conflit horaire de non-bloquant a bloquant. Le
+premier avait derive, parce que rien ne signale qu'une phrase du manuel est
+devenue fausse. Les erreurs trouvees, par ordre de nuisance :
+
+1. **Aucun courriel de publication n'existe** depuis la Phase 34
+   (`REF_PUBLICATION_MANAGER` supprime), mais le manuel promettait a 5 endroits
+   que « les adherents eligibles recoivent un email » a la validation d'un
+   evenement. `doValidate()` n'appelle que `notifyValidation()`, qui informe le
+   **createur**. Un president comptant sur ce courriel pour annoncer ses cours
+   attendait un message qui ne partait pas.
+2. **Le conflit horaire bloque** (commit `976fc53`), la ou le manuel affirmait
+   deux fois l'inverse. Nuance omise et importante pour un foyer : le controle
+   porte sur un `member_id` a la fois, donc deux membres rattaches differents
+   peuvent suivre deux seances simultanees ; seul le meme membre inscrit deux
+   fois est refuse.
+3. **Navigation inexistante** : « Mes inscriptions > Seances » a 4 endroits,
+   alors que l'entree *Seances* appartient au menu de gestion, invisible d'un
+   membre simple.
+4. **Parcours d'inscription d'un enfant** decrit dans sa forme d'avant la
+   Phase 42 (bouton dedie + page de selection, tous deux supprimes).
+5. **Delai de desinscription** presente comme bloquant, alors que la Phase 45 l'a
+   inverse en delai d'**inscription**.
+6. **Droits** : « Modifier une seance (admin) » ignorait la Phase 43
+   (`denyUnlessSessionManager` = admin OU staff OU moniteur de la seance), et le
+   prealable moniteur ignorait la Phase 46.
+7. **Libelles** : onglets (Phase 71.3), « Effacer les filtres », et le formulaire
+   d'evenement decrit avec 6 champs sur 18.
+
+#### Corrections
+
+- Les libelles d'onglets sont **differents selon la page** (membre :
+  « M'inscrire a une prochaine seance » ; moniteur : « Se proposer moniteur ») :
+  les 13 occurrences ont ete classees par page avant remplacement, un
+  rechercher-remplacer global aurait fausse un tiers d'entre elles.
+- Les entrees de changelog du manuel citant l'ancien libelle (Phases 12, 42)
+  sont **conservees telles quelles** — elles decrivent l'interface de leur
+  epoque. La Phase 71.3, absente, y est ajoutee et explique le dedoublement.
+- Les trois annexes sont reecrites sur le code (controleurs, gabarits, catalogue
+  PO), pas sur la version precedente du manuel.
+
+#### Ajout : tutoriel adherent complet
+
+L'Annexe A gagne deux sections qui manquaient totalement : **Se connecter**
+(libelles exacts du coeur Galette : champs « Identifiant : » / « Mot de
+passe : », bouton **Identification**, lien **Mot de passe perdu ?** qui accepte
+l'identifiant *ou* le courriel) et **Mettre un raccourci sur son telephone**
+(iOS Safari uniquement / Android Chrome, l'icone venant de
+`favicon.png` du coeur en 192 x 192).
+
+#### Constat annexe, non corrige
+
+`$site_url` et `$club_name` sont **declarees mais inutilisees** dans
+`courses_fr_FR.utf8_local_lang.php` : la depersonnalisation (Phase 60) a retire
+les URL des msgstr sans que le fichier ne les reinjecte. **Consequence : plus
+aucun courriel automatique ne contient de lien vers le site.** A arbitrer —
+regression ou simplification assumee.
+
 ### Evolution - Horaires saisonniers : saison recurrente par creneau
 
 **Statut :** TERMINEE
