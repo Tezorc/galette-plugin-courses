@@ -766,7 +766,6 @@
                             </div>
                         </div>
                         <form action="{{ url_for("coursesDoSessionRemove", {"id": session.getId()}) }}" method="post" class="ui form" id="delete-session-form">
-                            {% include 'components/forms/csrf.html.twig' %}
                         </form>
                     </div>
                     <div class="actions">

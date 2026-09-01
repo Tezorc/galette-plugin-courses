@@ -338,7 +338,6 @@
                     </div>
                 {% endif %}
                 <form action="{{ url_for("coursesDoRegenerateSessions", {"id": event.getId()}) }}" method="post" class="ui form" id="regenerate-sessions-form">
-                    {% include 'components/forms/csrf.html.twig' %}
                 </form>
             </div>
             <div class="actions">

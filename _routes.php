@@ -95,7 +95,7 @@ $app->post(
 $app->post(
     '/event/{id:[0-9]+}/regenerate-sessions',
     [EventsController::class, 'doRegenerateSessions']
-)->setName('coursesDoRegenerateSessions')->add($authenticate);
+)->setName('coursesDoRegenerateSessions')->add(Authenticate::class);
 
 $app->get(
     '/event/{id:[0-9]+}/remove',
@@ -154,7 +154,7 @@ $app->post(
 $app->post(
     '/session/{id:[0-9]+}/remove',
     [SessionsController::class, 'doRemove']
-)->setName('coursesDoSessionRemove')->add($authenticate);
+)->setName('coursesDoSessionRemove')->add(Authenticate::class);
 
 // Session cancellation
 $app->post(
