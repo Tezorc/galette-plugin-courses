@@ -60,6 +60,35 @@ trait CoursesAclGuard
     }
 
     /**
+     * Deny unless the logged-in user is *the* super administrator.
+     *
+     * The strictest guard of the trait, and deliberately so: it gates the two
+     * irreversible operations of the plugin — deleting a session outright, and
+     * wiping an event's upcoming sessions to regenerate them. Both destroy
+     * registrations without notifying anyone, so they are kept out of reach of
+     * regular admins and staff, who have every non-destructive lever already
+     * (cancel, close, edit).
+     *
+     * Note that `isAdmin()` is true for the super admin too (Galette sets both
+     * flags at login), hence the need for an explicit `isSuperAdmin()` test
+     * rather than a stricter reading of the admin guards.
+     */
+    protected function denyUnlessSuperAdmin(
+        Response $response,
+        string $redirectUrl,
+        ?string $errorMessage = null
+    ): ?Response {
+        if ($this->login->isSuperAdmin()) {
+            return null;
+        }
+        $this->flash->addMessage(
+            'error_detected',
+            $errorMessage ?? _T('You do not have permission to perform this action.', 'courses')
+        );
+        return $response->withStatus(302)->withHeader('Location', $redirectUrl);
+    }
+
+    /**
      * Deny unless the logged-in user is admin or staff.
      */
     protected function denyUnlessAdminOrStaff(

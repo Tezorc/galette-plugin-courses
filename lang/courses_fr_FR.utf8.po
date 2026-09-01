@@ -2152,3 +2152,69 @@ msgstr "Toute l'année"
 
 msgid "Inactive"
 msgstr "Inactif"
+
+# --- Suppression et regeneration des seances (super admin) ---
+
+msgid "Delete session"
+msgstr "Supprimer la séance"
+
+msgid "Delete permanently"
+msgstr "Supprimer définitivement"
+
+msgid "The session is removed for good, together with its registrations, its waitlist and its instructor assignments. No email is sent to the members concerned."
+msgstr "La séance est supprimée définitivement, avec ses inscriptions, sa liste d'attente et ses affectations de moniteur. Aucun courriel n'est envoyé aux membres concernés."
+
+msgid "To call off a session while keeping its history and warning the members, cancel it instead."
+msgstr "Pour annuler une séance en conservant son historique et en prévenant les membres, utilisez plutôt l'annulation."
+
+msgid "Registrations lost"
+msgstr "Inscriptions perdues"
+
+msgid "Waitlist entries lost"
+msgstr "Places en liste d'attente perdues"
+
+msgid "Instructor assignments lost"
+msgstr "Affectations de moniteur perdues"
+
+msgid "Session has been deleted."
+msgstr "La séance a été supprimée."
+
+msgid "An error occurred deleting the session."
+msgstr "Une erreur est survenue lors de la suppression de la séance."
+
+msgid "[Courses] Session deleted"
+msgstr "[Cours] Séance supprimée"
+
+msgid "Regenerate sessions"
+msgstr "Régénérer les séances"
+
+msgid "Delete and regenerate"
+msgstr "Supprimer et régénérer"
+
+msgid "Upcoming sessions to be deleted"
+msgstr "Séances à venir qui seront supprimées"
+
+msgid "Every upcoming session of this event is deleted first, then sessions are created again from the current time slots, seasons and recurrence."
+msgstr "Toutes les séances à venir de cet événement sont d'abord supprimées, puis les séances sont recréées à partir des créneaux, des saisons et de la récurrence actuels."
+
+msgid "Registrations, waitlist entries and instructor assignments on those sessions are lost, and no email is sent. Past sessions are left untouched."
+msgstr "Les inscriptions, les listes d'attente et les affectations de moniteur de ces séances sont perdues, et aucun courriel n'est envoyé. Les séances passées ne sont pas touchées."
+
+msgid "Sessions can only be regenerated once the event is validated."
+msgstr "Les séances ne peuvent être régénérées qu'une fois l'événement validé."
+
+msgid "%1$d upcoming session(s) deleted, %2$d recreated."
+msgstr "%1$d séance(s) à venir supprimée(s), %2$d recréée(s)."
+
+msgid "%1$d registration(s) and %2$d waitlist entry/entries were dropped. No email was sent."
+msgstr "%1$d inscription(s) et %2$d place(s) en liste d'attente ont été supprimées. Aucun courriel n'a été envoyé."
+
+msgid "No session could be recreated. Check the time slots, the seasons and the recurrence of the event."
+msgstr "Aucune séance n'a pu être recréée. Vérifiez les créneaux, les saisons et la récurrence de l'événement."
+
+msgid "[Courses] Sessions regenerated"
+msgstr "[Cours] Séances régénérées"
+
+# Fallback message of every CoursesAclGuard::denyUnless* helper.
+msgid "You do not have permission to perform this action."
+msgstr "Vous n'avez pas la permission d'effectuer cette action."

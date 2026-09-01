@@ -1058,6 +1058,76 @@ class SessionsController extends AbstractPluginController
     }
 
     /**
+     * Delete a session for good — super admin only.
+     *
+     * One notch beyond "cancel", and meant to stay there. Cancelling keeps the
+     * row, its registrations and its audit trail, tells the members why, and is
+     * what a session manager reaches for when a session does not happen.
+     * Deleting drops the row and everything hanging off it — registrations,
+     * waitlist, instructor assignments, queued notifications, all through the
+     * ON DELETE CASCADE constraints — and warns nobody. It is the repair tool
+     * for sessions that should never have existed: a wrong date, a duplicate
+     * left by a mis-set slot, a leftover from an event being reshaped.
+     */
+    public function doRemove(Request $request, Response $response, int $id): Response
+    {
+        $deny = $this->denyUnlessSuperAdmin(
+            $response,
+            $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id])
+        );
+        if ($deny !== null) {
+            return $deny;
+        }
+
+        $session = new Session($this->zdb, $id);
+        if ($session->getId() === null) {
+            $this->flash->addMessage('error_detected', _T('Session not found.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
+        }
+
+        // Read everything needed for the history entry and the redirect while
+        // the row still exists.
+        $eventId = $session->getEventId();
+        $label = sprintf(
+            'session #%d — %s %s-%s — event #%d',
+            $id,
+            $session->getSessionDate(),
+            $session->getStartTime(),
+            $session->getEndTime(),
+            $eventId
+        );
+        $registrations = $session->getCurrentRegistrations();
+        $waiting = Waitlist::getCount($this->zdb, $id);
+
+        try {
+            $removed = $session->remove();
+        } catch (\Throwable $e) {
+            Analog::log('Unable to delete ' . $label . ': ' . $e->getMessage(), Analog::ERROR);
+            $removed = false;
+        }
+
+        if ($removed) {
+            $this->history->add(
+                _T('[Courses] Session deleted', 'courses'),
+                $label . sprintf(' — %d registration(s), %d waiting', $registrations, $waiting)
+            );
+            $this->flash->addMessage('success_detected', _T('Session has been deleted.', 'courses'));
+        } else {
+            $this->flash->addMessage('error_detected', _T('An error occurred deleting the session.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+        }
+
+        // The session page is gone: land on the event, which lists what is left.
+        return $response
+            ->withStatus(302)
+            ->withHeader('Location', $this->routeparser->urlFor('coursesEventShow', ['id' => (string)$eventId]));
+    }
+
+    /**
      * Edit session max_capacity. If capacity is increased and there is a waitlist,
      * promote as many people as new spots allow (FIFO), with notification.
      */

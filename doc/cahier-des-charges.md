@@ -654,6 +654,118 @@ Le developpement est organise en phases progressives.
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Evolution - Suppression d'une seance et regeneration des seances (super admin)
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : "un super admin peut supprimer les seances et peut
+  regenerer les seances creees automatiquement".
+
+#### Probleme
+
+Le plugin n'avait aucun chemin destructif sur les seances. L'annulation
+(`doCancel`) conserve la ligne, ses inscriptions et son historique : c'est le bon
+outil quand une seance n'a pas lieu, mais pas quand elle **n'aurait jamais du
+exister** (mauvaise date, doublon issu d'un creneau mal regle, reliquat d'un
+evenement remanie). Seule la suppression de l'evenement entier permettait d'y
+toucher, via la cascade FK.
+
+Symetriquement, `doGenerateSessions` est purement additif : `generateSessions()`
+saute toute cle `(date, start_time)` deja presente. C'est indispensable pour la
+tache nocturne, mais cela rend impossible la reprise en main d'un evenement
+remanie : changer les creneaux, leur saison ou la recurrence d'un evenement qui a
+deja `advance_weeks` semaines de seances au planning ne deplace rien, les dates
+etant deja occupees. `realignSeasonalSessions()` couvre le cas restreint du
+decalage horaire sur les seances libres ; il ne couvre pas un changement de
+rythme ni un creneau retire.
+
+#### Perimetre du droit
+
+Les deux actions sont gatees sur le **super-administrateur** (`isSuperAdmin()`),
+pas sur `isAdmin()`. Le point est subtil : Galette positionne `admin = true`
+**et** `superadmin = true` a la connexion du compte super-admin, donc
+`isAdmin()` seul aurait ouvert l'acces a tout adherent portant
+`bool_admin_adh`. La double gate est posee :
+
+- ACL de route dans `_define.php` : `'superadmin'` (niveau reconnu par
+  `Galette\Middleware\Authenticate`), qui rejette la requete avant le
+  controleur ;
+- garde applicative `CoursesAclGuard::denyUnlessSuperAdmin()`, qui produit le
+  flash + redirection habituels et documente l'intention a l'endroit du code ou
+  elle s'applique.
+
+#### Architecture
+
+- **`Entity\Session`** :
+  - `remove(?array $ids = null): bool` — calque de `Event::remove()`
+    (transaction, log Analog, rethrow). Un seul DELETE suffit : `registrations`,
+    `waitlist`, `session_instructors` et `pending_notifications` portent tous
+    `ON DELETE CASCADE` sur `session_id`.
+  - `futureFootprintForEvent(Db, int): array` — compte les seances datees
+    d'aujourd'hui ou plus tard (**tous statuts confondus** : une seance annulee
+    occupe toujours sa cle `(date, creneau)` et bloquerait la regeneration) et
+    les lignes filles qu'elles portent. Sert deux fois : a la modale de
+    confirmation, pour chiffrer le cout **avant** le clic, et a la purge
+    elle-meme, pour que le flash et l'entree de journal disent la meme chose.
+  - `purgeFutureForEvent(Db, int): array` — footprint puis DELETE groupe.
+- **`SessionsController::doRemove`** (route `POST /session/{id}/remove`,
+  `coursesDoSessionRemove`) : lit date/horaires/`event_id`/compteurs **avant** la
+  suppression (la ligne n'existera plus apres), supprime, journalise
+  « [Cours] Seance supprimee », puis redirige vers la fiche de l'evenement — la
+  page de la seance n'existe plus.
+- **`EventsController::doRegenerateSessions`** (route
+  `POST /event/{id}/regenerate-sessions`, `coursesDoRegenerateSessions`) :
+  1. refuse si l'evenement n'est pas `STATUS_VALIDATED` (les seances ne sont
+     materialisees qu'a la validation depuis Phase 79) ;
+  2. `Session::purgeFutureForEvent()` ;
+  3. regeneration sur la definition **actuelle** : recurrent ->
+     `RecurrenceHandler::generateSessions()`, ponctuel ->
+     `createSessionsForEvent()` sur `initial_session_date` si elle est encore a
+     venir ;
+  4. `notifyNewSessions()` sur les seances recreees (invitation moniteur, via la
+     queue du digest quotidien), comme une generation ordinaire.
+- **Point de depart de la recurrence** : `generateSessions(null)` prend la
+  derniere seance en base et ajoute un intervalle, ce qui **conserve le rythme
+  d'origine** — les seances passees, qui survivent a la purge, suffisent comme
+  ancre. Le helper prive `hasAnySession()` detecte le cas ou la purge a tout
+  emporte et passe alors `initial_session_date` comme date de depart explicite,
+  faute de quoi `getNextStartDate()` renverrait `null` et la regeneration ne
+  produirait rien.
+- **`PluginPreferences` passe au `RecurrenceHandler`**, contrairement au bouton
+  "Generer les seances" : les periodes de fermeture reviennent donc en seances
+  `cancelled` portant le libelle de la fermeture, comme le fait le cron. La
+  regeneration vise le planning definitif, pas un complement.
+- **Templates** : bouton rouge + modale de confirmation sur `session_show`
+  (barre d'actions ; `has_action_buttons` etendu a `login.isSuperAdmin()` pour
+  que le bloc s'affiche meme quand aucune autre action n'est disponible) et sur
+  `event_show` (gate additionnelle `event.getStatus() == 'validated'`, pour ne
+  pas proposer un bouton qui echouerait a coup sur). Les deux modales chiffrent
+  ce qui sera detruit : inscriptions, liste d'attente, affectations de moniteur.
+
+#### Choix assumes
+
+- **Aucun courriel** n'est envoye aux membres qui perdent leur place, ni a la
+  suppression d'une seance ni a la regeneration. C'est le compromis choisi avec
+  l'utilisateur : ces actions reparent des erreurs de planification, elles ne
+  sont pas un canal de communication. La modale et un flash `warning_detected`
+  rappellent le nombre d'inscriptions supprimees.
+- **La purge ne protege pas les seances engagees.** L'option "ne supprimer que
+  les seances futures sans inscrit ni moniteur" a ete ecartee : elle laisse en
+  place exactement les seances qui bloquent la regeneration, donc elle ne resout
+  pas le probleme pose.
+- **Les seances passees ne sont jamais touchees** : elles portent le pointage
+  des presences, donc les statistiques.
+- Le bouton de suppression d'une seance reste visible quels que soient le statut
+  et la date — une seance passee creee par erreur doit pouvoir disparaitre.
+
+#### Hors perimetre
+
+- Pas de suppression en lot depuis la liste des seances (l'entree se fait par la
+  fiche de la seance, ou par la regeneration au niveau de l'evenement).
+- Pas de corbeille ni de restauration : la cascade FK rend la reconstruction
+  impossible.
+- Aucune migration BDD : les contraintes `ON DELETE CASCADE` existaient deja.
+
 ### Evolution - Horaires saisonniers : saison recurrente par creneau
 
 **Statut :** TERMINEE
