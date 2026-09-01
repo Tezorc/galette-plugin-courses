@@ -1250,149 +1250,27 @@ Toutes les phases de developpement sont terminees :
 
 ---
 
-## Annexe A — Tutoriel pour les membres
+## Annexe A — Tutoriel pour les membres (deplace)
 
-Ce tutoriel explique comment utiliser le plugin Galette Courses en tant que **membre de l'association**.
+Le tutoriel adherent est desormais un document autonome :
+**[`doc/tuto-adherent.md`](tuto-adherent.md)**.
 
-### Se connecter
+Il a ete sorti d'ici pour deux raisons :
 
-L'espace adherent est le **site Galette de l'association** — le meme que pour la cotisation et les coordonnees. Ce n'est pas une application separee a installer : le plugin Courses s'y ajoute simplement en menu.
+- il s'adresse aux **adherents**, pas aux gestionnaires : on peut le diffuser
+  tel quel (imprime, joint a un courriel de bienvenue, publie sur le site) sans
+  livrer avec lui les 1 000 lignes de specification qui precedent ;
+- maintenir deux redactions du meme parcours les fait **diverger** — c'est
+  exactement ce qui etait arrive aux annexes avant leur reprise.
 
-> **Galette** = *Gestionnaire d'Adherents en Ligne Extremement Tarabiscote mais Tellement Efficace*. C'est l'acronyme officiel du logiciel.
+Deux substitutions sont a faire avant diffusion, signalees en tete du fichier :
+l'adresse du site, et le terme retenu par l'association pour un **membre
+rattache** (« chien » dans un club canin, « enfant » dans une ecole).
 
-1. Ouvrir l'adresse de l'espace adherent de l'association dans un navigateur
-
-   L'URL est propre a chaque club et n'est **pas** connue du plugin generique : celui-ci vit a l'interieur du site Galette de l'association. Elle est declaree une seule fois, dans la variable `$site_url` en tete de `lang/courses_<locale>_local_lang.php`, et c'est de la qu'elle est reinjectee dans les courriels (voir *Personnaliser le plugin pour son association*). Vous n'avez donc pas besoin de la retenir : **chaque courriel automatique qui vous demande d'agir contient le lien**.
-
-2. Saisir **Identifiant :** et **Mot de passe :** (ceux communiques par l'association ; l'identifiant n'est pas forcement l'adresse courriel)
-3. Cliquer sur le bouton **Identification**
-
-**Mot de passe oublie** : le lien **Mot de passe perdu ?** sous le formulaire accepte indifferemment l'identifiant **ou l'adresse courriel**, et envoie un lien de reinitialisation. Si le courriel n'arrive pas, verifier les indesirables puis, aupres du secretariat, que l'adresse enregistree dans la fiche adherent est la bonne : sans adresse valide, le site n'a aucun moyen de joindre l'adherent.
-
-### Mettre un raccourci sur son telephone
-
-Il n'y a **rien a installer** : ni application sur l'App Store, ni sur Google Play. On pose un raccourci vers le site sur l'ecran d'accueil ; il porte l'icone du site et s'ouvre en plein ecran.
-
-L'icone vient du coeur Galette, pas du plugin : `templates/default/elements/header.html.twig` declare un `apple-touch-icon` pointant sur `webroot/themes/default/images/favicon.png` **de l'installation Galette** (192 x 192, taille adaptee aux ecrans d'accueil iOS et Android). Pour que les adherents aient le logo du club sur leur telephone, remplacer ce fichier — il n'y a rien a faire cote plugin.
-
-**iPhone / iPad** — la manipulation n'existe que dans **Safari**, pas dans Chrome iOS :
-
-1. Ouvrir le site dans Safari
-2. Toucher le bouton **Partager** (le carre avec une fleche vers le haut)
-3. Faire defiler et choisir **Sur l'ecran d'accueil**
-4. Toucher **Ajouter**
-
-**Android** (Chrome) :
-
-1. Ouvrir le site dans Chrome
-2. Toucher le menu **⋮** en haut a droite
-3. Choisir **Ajouter a l'ecran d'accueil** (ou **Installer l'application** selon la version)
-4. Confirmer par **Ajouter**
-
-Se connecter une fois depuis ce raccourci et laisser le navigateur memoriser le mot de passe evite de le ressaisir a chaque inscription — a eviter sur un telephone partage.
-
-### Prealable
-
-Vous devez etre **connecte a Galette**. Trois conditions sont verifiees a chaque inscription, pour vous comme pour chacun de vos membres rattaches :
-
-1. Cotisation **a jour** (ou compte exempte de cotisation)
-2. Compte **actif**
-3. Statut different de **"Non membre"**
-
-Si l'une manque, un bandeau orange en haut de la page **nomme la personne concernee** et les boutons d'inscription disparaissent pour elle. Les autres membres du foyer restent inscriptibles normalement.
-
-### Etape 1 : Ouvrir la page "Mes inscriptions"
-
-1. Dans le menu lateral, cliquer sur **Mes inscriptions > Mes inscriptions**
-2. La page presente **deux onglets**, chacun avec une pastille chiffree :
-   - **Mes inscriptions** — ce a quoi vous etes deja inscrit. **Actif par defaut** a l'arrivee sur la page.
-   - **M'inscrire à une prochaine séance** — le catalogue des seances encore ouvertes.
-
-Un clic explicite sur un onglet est memorise (`localStorage`) : vous retrouverez le meme onglet a la visite suivante.
-
-**Note** : l'entree de menu **Séances** (liste complete des seances) n'est pas visible par un membre simple — elle appartient au menu *Gestion des inscriptions*, reserve au staff, aux responsables de groupe et aux moniteurs.
-
-### Etape 2 : Choisir une seance
-
-Sur l'onglet **M'inscrire à une prochaine séance**, chaque seance disponible est une card : nom du cours, date, lieu, moniteur si affecte, et jauge des places restantes.
-
-- Filtres en haut : **Type**, **Activité**, **Du** (date de debut), avec les boutons **"Filtrer"** et **"Effacer les filtres"**. Le filtrage est immediat, sans rechargement.
-- Une section rouge **"Seances annulees"** liste en bas les creneaux futurs annules — informatif, sans inscription possible.
-- Les seances ou plus aucune inscription n'est possible (vous et vos rattaches y etes deja inscrits) sont **automatiquement masquees**.
-
-### Etape 3 : S'inscrire
-
-L'inscription en son propre nom et celle d'un membre rattache passent par **un seul bouton**. Son apparence depend du nombre d'options possibles :
-
-- **Une seule option** : le bouton porte **directement le nom** de la personne concernee (votre pseudo pour vous-meme, sinon le pseudo ou le nom du rattache). Un clic inscrit immediatement.
-- **Deux options ou plus** : le bouton s'appelle **"S'inscrire"** et ouvre un menu listant **Moi-même** (si vous etes eligible) puis chaque membre rattache eligible. Choisir une ligne poste l'inscription correspondante.
-
-Les personnes **deja inscrites a cette seance n'apparaissent pas** dans le menu. Pour inscrire un deuxieme rattache, rouvrir le menu et choisir le nom suivant : **chaque inscription est individuelle**.
-
-Le meme bouton est disponible sur la page de detail de la seance (bouton **"Détails"** de la card).
-
-**Conditions verifiees a la soumission** :
-
-- Les 3 conditions du prealable, sur la personne inscrite
-- Appartenance au groupe requis, si l'evenement est restreint
-- Seance ouverte avec places disponibles
-- Un moniteur affecte, sauf si l'evenement autorise les inscriptions sans moniteur
-
-### Etape 4 : Rejoindre la liste d'attente
-
-Si la seance est pleine, le bouton vert est remplace par un bouton bleu **"Rejoindre la liste d'attente"**, avec exactement la meme logique de choix (bouton direct ou menu selon le nombre d'options).
-
-- Votre position dans la file s'affiche ensuite sur la card
-- **Si une place se libere, le premier de la file est inscrit automatiquement** et recoit un courriel
-- Chaque membre rattache occupe **son propre rang** dans la file
-
-### Etape 5 : Voir et gerer ses inscriptions
-
-Sur l'onglet **Mes inscriptions** :
-
-1. Votre **prochaine seance** est mise en avant en haut de page
-2. Les suivantes s'affichent sous **"À venir"**
-3. Les **seances futures annulees** auxquelles vous etiez inscrit sont listees dans une section rouge distincte
-4. Les seances **"Séances passées"** sont dans un accordeon repliable
-5. Les places en liste d'attente apparaissent avec leur numero de position
-
-**Une card par personne inscrite** : si vous et un membre rattache etes inscrits a la meme seance, deux cards apparaissent, chacune portant le pseudo concerne sur une etiquette turquoise et **son propre bouton de desinscription**. On peut donc en retirer un sans toucher a l'autre.
-
-Chaque card propose **"Détails"** (bleu), un bouton **iCal** (icone calendrier) et **"Se desinscrire"** (rouge).
-
-**Badge "Conflit horaire"** : un badge orange signale qu'une **meme personne** est inscrite a deux seances qui se chevauchent le meme jour, avec le detail au survol. Le badge apparait aussi, en prevention, sur les cartes de l'onglet d'inscription. **L'inscription est alors refusee** : on ne peut pas inscrire deux fois la meme personne sur la meme plage. En revanche, deux membres rattaches differents peuvent suivre deux seances a la meme heure — ce n'est pas un conflit.
-
-### Etape 6 : Se desinscrire
-
-1. Cliquer sur le bouton rouge **"Se desinscrire"**, depuis la card ou depuis la page de detail de la seance
-2. Une modale de confirmation s'affiche, rappelant le nom et le pseudo concernes
-3. Cliquer sur **"Confirmer"**
-
-La desinscription est **toujours possible tant que la seance n'a pas commence** : il n'y a pas de delai de desinscription.
-
-**En revanche, la reinscription n'est pas garantie.** Pour vous reinscrire ensuite, il faut qu'il reste une place **et** que le delai d'inscription de l'evenement ne soit pas depasse (champ *Inscription fermee (jours avant la seance)*). Ne vous desinscrivez donc que si vous en etes sur.
-
-### Etape 7 : Exporter dans son agenda
-
-- **Une seance** : bouton iCal (icone calendrier) sur sa card, ou **"Exporter en iCal"** sur la page de detail
-- **Toutes ses inscriptions** : bouton **"iCal"** en haut de l'onglet *Mes inscriptions* (infobulle *Tout exporter en iCal*)
-
-Le fichier `.ics` obtenu s'importe dans Google Calendar, Apple Calendrier, Outlook.
-
-### Etape 8 : Gerer ses notifications
-
-Par defaut, vous recevez :
-
-- un **recapitulatif hebdomadaire** des seances ouvertes et des moniteurs affectes ;
-- et **immediatement**, les messages urgents : annulation d'une seance, place obtenue depuis la liste d'attente.
-
-Pour les desactiver :
-
-1. Aller dans **Mes inscriptions > Mes notifications**
-2. Decocher **"Recevoir les notifications par email"**
-3. Cliquer sur **Enregistrer**
-
-Pour vous desabonner sans vous connecter, cliquer sur le lien de desinscription present en bas de chaque courriel automatique.
+Le present document reste la reference **fonctionnelle** du parcours membre :
+sections 4 a 8 pour l'inscription, la desinscription et la liste d'attente,
+section 16-bis pour l'inscription d'un membre rattache, et le tableau des
+permissions plus haut.
 
 ---
 
