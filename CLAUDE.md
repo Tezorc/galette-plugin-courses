@@ -153,6 +153,7 @@ galette-plugin-courses/
   _config.inc.php                  # Constante COURSES_PREFIX
   _define.php                      # Enregistrement plugin + ACLs
   _routes.php                      # Routes Slim (60 routes)
+  scripts/build-pdf.py             # HTML -> PDF imprimable (polices inlinees + controle d'embarquement)
   scripts/mysql.sql                # Schema BDD MySQL/MariaDB (12 tables)
   scripts/pgsql.sql                # Schema BDD PostgreSQL (12 tables, equivalent au mysql)
   scripts/upgrade-to-0.2-mysql.sql # Migration MySQL vers dbver 0.2 (jouee par Galette)
@@ -166,7 +167,8 @@ galette-plugin-courses/
   lang/courses_fr_FR.utf8_local_lang.php # Surcharges locales propres au club (URL, signature, terminologie) — Phase 60
   doc/
     mode-emploi.md                 # Mode d'emploi utilisateur (gestionnaires)
-    tuto-adherent.md               # Tutoriel adherent, diffusable tel quel (2 substitutions en tete)
+    tuto-adherent.md               # Tutoriel adherent, generique, SOURCE DE VERITE du parcours membre
+    tuto-adherent.html             # Meme tutoriel, illustre et personnalise CCAG42 (entree de build-pdf.py)
     cahier-des-charges.md          # Cahier des charges complet
     historique-phases.md           # Archive des phases 1 a 76
   lib/GaletteCourses/

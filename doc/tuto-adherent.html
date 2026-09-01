@@ -1,0 +1,1208 @@
+<!--
+  Version illustree du tutoriel adherent, personnalisee pour CCAG42
+  (club canin) : "chien" pour membre rattache, adherent.ccag42.org pour
+  l'adresse du site. Meme statut que
+  lang/courses_fr_FR.utf8_local_lang.php, qui embarque lui aussi les
+  valeurs d'un club a titre d'exemple.
+
+  SOURCE DE VERITE : doc/tuto-adherent.md, generique et sans URL. Cette
+  page en reprend les sections dans le meme ordre et y ajoute les
+  reconstitutions d'ecran. Quand le parcours membre change, modifier le
+  .md d'abord, puis reporter ici.
+
+  PDF : python scripts/build-pdf.py doc/tuto-adherent.html
+        --expect Newsreader,Signika,Lato
+-->
+<title>Inscrire ses chiens aux cours</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Signika:wght@400;500;600&family=Lato:wght@400;700;900&display=swap">
+
+<style>
+/* ------------------------------------------------------------------
+   Palette : fond crayeux vert-gris (le terrain d'entrainement),
+   accent ocre. Les couleurs Fomantic (vert / turquoise / bleu / rouge
+   / orange) sont reservees aux reproductions d'ecran : ce sont les
+   signaux que l'adherent doit reconnaitre, pas de la decoration.
+   ------------------------------------------------------------------ */
+:root {
+  --ground: #EFF1EA;
+  --surface: #FFFFFF;
+  --surface-2: #F7F8F2;
+  --ink: #1A1E17;
+  --ink-2: #59604F;
+  --ink-3: #7C836F;
+  --rule: #D9DDCF;
+  --rule-strong: #C3C9B4;
+  --accent: #A85B18;
+  --accent-ink: #8A4A12;
+  --accent-soft: #F3E6D7;
+  --mat: #E4E7DC;          /* passe-partout des figures */
+  --shadow: 0 1px 2px rgba(26, 30, 23, .06), 0 8px 24px -12px rgba(26, 30, 23, .18);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #14170F;
+    --surface: #1D2117;
+    --surface-2: #23281B;
+    --ink: #EDEFE6;
+    --ink-2: #A8AF9A;
+    --ink-3: #8B927D;
+    --rule: #333827;
+    --rule-strong: #454B36;
+    --accent: #E0A05A;
+    --accent-ink: #EEB878;
+    --accent-soft: #33260F;
+    --mat: #262B1C;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -12px rgba(0, 0, 0, .7);
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #14170F;
+  --surface: #1D2117;
+  --surface-2: #23281B;
+  --ink: #EDEFE6;
+  --ink-2: #A8AF9A;
+  --ink-3: #8B927D;
+  --rule: #333827;
+  --rule-strong: #454B36;
+  --accent: #E0A05A;
+  --accent-ink: #EEB878;
+  --accent-soft: #33260F;
+  --mat: #262B1C;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -12px rgba(0, 0, 0, .7);
+}
+
+/* Couleurs de l'application. Fixes dans les deux themes : une figure
+   reproduit un ecran, et un ecran ne s'inverse pas. */
+:root {
+  --ui-green: #21ba45;
+  --ui-teal: #00b5ad;
+  --ui-blue: #2185d0;
+  --ui-red: #db2828;
+  --ui-orange: #f2711c;
+  --ui-ink: #1b1c1d;
+  --ui-ink-2: rgba(0, 0, 0, .6);
+  --ui-ink-3: rgba(0, 0, 0, .4);
+  --ui-border: rgba(34, 36, 38, .15);
+  --ui-bg: #ffffff;
+  --ui-bg-2: #f9fafb;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "Signika", "Segoe UI", system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Une seule mesure de lecture, centree. Les figures debordent legerement
+   de part et d'autre : elles montrent un ecran, pas une phrase. */
+.wrap {
+  max-width: 736px;
+  margin: 0 auto;
+  padding: 0 24px 96px;
+}
+.col { max-width: none; }
+
+/* ---------------------------- En-tete ---------------------------- */
+
+.masthead {
+  padding: 72px 0 40px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 48px;
+}
+.eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+  margin: 0 0 20px;
+}
+h1 {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: clamp(38px, 6.4vw, 60px);
+  line-height: 1.04;
+  font-weight: 600;
+  letter-spacing: -.015em;
+  margin: 0 0 20px;
+  text-wrap: balance;
+}
+.standfirst {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 21px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 0;
+  max-width: 34em;
+}
+
+/* --------------------------- L'adresse --------------------------- */
+/* Le fait le plus consulte de la page : il passe avant tout le reste. */
+
+.addr {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent);
+  border-radius: 3px;
+  padding: 22px 28px;
+  margin: 0 0 28px;
+  box-shadow: var(--shadow);
+}
+.addr:hover .addr-url { text-decoration: underline; text-underline-offset: 3px; }
+.addr-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 8px;
+}
+.addr-url {
+  display: block;
+  font-family: "Newsreader", Georgia, serif;
+  font-size: clamp(24px, 4.4vw, 33px);
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--accent-ink);
+  word-break: break-word;
+}
+.addr-hint {
+  display: block;
+  font-size: 14.5px;
+  color: var(--ink-2);
+  margin-top: 8px;
+}
+
+/* -------------------------- L'acronyme -------------------------- */
+/* Les initiales en accent : l'oeil lit GALETTE en diagonale, ce que
+   la phrase seule ne montre pas. */
+
+.backronym {
+  margin: 0 0 44px;
+  padding: 0 0 0 28px;
+  border-left: 1px solid var(--rule-strong);
+}
+.backronym-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 0 0 8px;
+}
+.backronym-expand {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 20px;
+  line-height: 1.45;
+  color: var(--ink);
+  margin: 0 0 8px;
+  max-width: 30em;
+}
+.backronym-expand b {
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.backronym-note {
+  font-size: 14.5px;
+  color: var(--ink-2);
+  margin: 0;
+}
+
+/* ------------------------- Encadre resume ------------------------- */
+
+.brief {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent);
+  border-radius: 3px;
+  padding: 24px 28px;
+  margin: 0 0 56px;
+  box-shadow: var(--shadow);
+}
+.brief h2 {
+  font-family: "Signika", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 0 0 14px;
+}
+.brief ol {
+  margin: 0;
+  padding-left: 1.2em;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.brief li { padding-left: 4px; }
+.brief strong { font-weight: 600; }
+
+/* ------------------------- Texte courant ------------------------- */
+
+h2.section {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -.01em;
+  margin: 72px 0 8px;
+  text-wrap: balance;
+}
+h2.section + .deck {
+  color: var(--ink-2);
+  margin: 0 0 28px;
+  max-width: 34em;
+}
+h3 {
+  font-family: "Signika", sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 40px 0 10px;
+}
+p { margin: 0 0 18px; max-width: 65ch; }
+ul.plain {
+  margin: 0 0 18px;
+  padding-left: 1.15em;
+  max-width: 65ch;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+code {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: .88em;
+  background: var(--surface-2);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: .1em .35em;
+}
+a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ---------------------- Numero de section ---------------------- */
+/* La numerotation reprend celle de doc/tuto-adherent.md : elle encode
+   un ordre reel, celui dans lequel on fait les choses. */
+
+h2.section .num {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  margin-right: .3em;
+}
+
+/* ------------------------- Puces en ligne ------------------------- */
+/* Reproduisent un bouton de l'application au fil du texte, pour que
+   le mot et ce qui est a l'ecran se reconnaissent l'un l'autre. */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: "Lato", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  padding: 5px 9px;
+  border-radius: 4px;
+  white-space: nowrap;
+  vertical-align: baseline;
+  position: relative;
+  top: 1px;
+}
+.chip-blue { background: var(--ui-blue); }
+.chip-red { background: var(--ui-red); }
+.chip-orange { background: var(--ui-orange); }
+.chip-ghost {
+  background: var(--ui-bg);
+  color: var(--ui-ink);
+  border: 1px solid var(--ui-border);
+}
+
+/* --------------------------- Les figures --------------------------- */
+/* Passe-partout : la figure reste claire dans les deux themes, comme
+   une capture d'ecran. */
+
+figure.fig {
+  margin: 28px 0 32px;
+  background: var(--mat);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 22px;
+  overflow-x: auto;
+}
+figure.fig.wide { margin-left: -52px; margin-right: -52px; }
+@media (max-width: 880px) {
+  figure.fig.wide { margin-left: 0; margin-right: 0; }
+}
+.fig-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fig-label::before {
+  content: "";
+  width: 18px;
+  height: 1px;
+  background: var(--rule-strong);
+  flex: none;
+}
+figcaption {
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin-top: 14px;
+  max-width: 60ch;
+}
+figcaption b { color: var(--ink); font-weight: 600; }
+
+/* --------- Reconstitution de l'interface Galette (Fomantic) --------- */
+
+.ui-scope {
+  font-family: "Lato", "Helvetica Neue", Arial, sans-serif;
+  color: var(--ui-ink);
+  font-size: 14px;
+  line-height: 1.4285em;
+  min-width: 320px;
+}
+.ui-card {
+  background: var(--ui-bg);
+  border-radius: 4px;
+  border: 1px solid rgba(34, 36, 38, .1);
+  box-shadow: 0 1px 3px 0 var(--ui-border), 0 0 0 1px var(--ui-border);
+}
+.ui-card + .ui-card { margin-top: 14px; }
+.ui-card-content { padding: 14px; border-top: 1px solid rgba(34, 36, 38, .1); }
+.ui-card-content:first-child { border-top: 0; }
+.ui-card-content.extra { background: var(--ui-bg-2); }
+.ui-header {
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.28;
+  margin-bottom: 6px;
+}
+.ui-meta {
+  color: var(--ui-ink-2);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+}
+.ui-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ui-row + .ui-row { margin-top: 9px; }
+.ui-spread { justify-content: space-between; }
+
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+  color: #fff;
+  padding: 9px 13px;
+  border-radius: 4px;
+  border: 0;
+  white-space: nowrap;
+}
+.ui-btn.green { background: var(--ui-green); }
+.ui-btn.teal { background: var(--ui-teal); }
+.ui-btn.blue { background: var(--ui-blue); }
+.ui-btn.red { background: var(--ui-red); }
+.ui-btn.basic {
+  background: var(--ui-bg);
+  color: var(--ui-ink-2);
+  box-shadow: 0 0 0 1px var(--ui-border) inset;
+  font-weight: 700;
+}
+
+.ui-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 5px 7px;
+  border-radius: 3px;
+  color: #fff;
+}
+.ui-label.teal { background: var(--ui-teal); }
+.ui-label.green { background: var(--ui-green); }
+.ui-label.blue { background: var(--ui-blue); }
+.ui-label.orange { background: var(--ui-orange); }
+.ui-label.red { background: var(--ui-red); }
+
+/* Menu deroulant ouvert */
+.ui-dd { position: relative; display: inline-block; }
+.ui-menu {
+  margin-top: 4px;
+  background: var(--ui-bg);
+  border: 1px solid var(--ui-border);
+  border-radius: 4px;
+  box-shadow: 0 2px 4px 0 rgba(34, 36, 38, .12), 0 2px 10px 0 rgba(34, 36, 38, .15);
+  min-width: 200px;
+  overflow: hidden;
+}
+.ui-item {
+  padding: 11px 14px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border-top: 1px solid rgba(34, 36, 38, .1);
+}
+.ui-item:first-child { border-top: 0; }
+.ui-item .dog { color: var(--ui-ink); }
+.ui-item .hint { color: var(--ui-ink-3); font-size: 12px; margin-left: auto; }
+
+/* Barre de capacite */
+.ui-prog {
+  height: 12px;
+  background: rgba(0, 0, 0, .1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 10px 0 6px;
+}
+.ui-prog span { display: block; height: 100%; background: var(--ui-green); }
+.ui-prog.warn span { background: var(--ui-orange); }
+.ui-cap { font-size: 12px; color: var(--ui-ink-2); }
+
+/* Champs de formulaire */
+.ui-field { margin-bottom: 10px; }
+.ui-input {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid rgba(34, 36, 38, .18);
+  border-radius: 4px;
+  padding: 11px 13px;
+  background: var(--ui-bg);
+  color: var(--ui-ink-3);
+  font-size: 13px;
+}
+.ui-btn.fluid { width: 100%; justify-content: center; padding: 12px; font-size: 14px; }
+.ui-link {
+  color: var(--ui-blue);
+  font-size: 12.5px;
+  text-align: center;
+  display: block;
+  margin-top: 12px;
+}
+
+/* Menu lateral */
+.ui-nav {
+  background: var(--ui-bg);
+  border: 1px solid var(--ui-border);
+  border-radius: 4px;
+  max-width: 300px;
+  overflow: hidden;
+}
+.ui-nav-title {
+  padding: 11px 14px;
+  font-weight: 700;
+  font-size: 13px;
+  background: var(--ui-bg-2);
+  border-bottom: 1px solid var(--ui-border);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.ui-nav-item {
+  padding: 11px 14px 11px 34px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border-bottom: 1px solid rgba(34, 36, 38, .08);
+  color: var(--ui-ink-2);
+}
+.ui-nav-item:last-child { border-bottom: 0; }
+.ui-nav-item.active { color: var(--ui-ink); font-weight: 700; background: rgba(0, 0, 0, .03); }
+
+/* Onglets */
+.ui-tabs { display: flex; gap: 0; }
+.ui-tab {
+  padding: 11px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ui-ink-2);
+  background: var(--ui-bg-2);
+  border: 1px solid var(--ui-border);
+  border-bottom: 0;
+  border-radius: 4px 4px 0 0;
+  margin-right: 4px;
+}
+.ui-tab.on { background: var(--ui-bg); color: var(--ui-ink); }
+.ui-tab { display: inline-flex; align-items: center; gap: 7px; }
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.ui-badge.teal { background: var(--ui-teal); }
+.ui-badge.green { background: var(--ui-green); }
+.ui-tabbody {
+  border: 1px solid var(--ui-border);
+  border-radius: 0 4px 4px 4px;
+  background: var(--ui-bg);
+  padding: 16px;
+}
+
+/* Bandeau d'avertissement */
+.ui-msg {
+  border-radius: 4px;
+  padding: 13px 15px;
+  font-size: 13px;
+  line-height: 1.5;
+  background: #fff8db;
+  color: #573a08;
+  box-shadow: 0 0 0 1px #b58105 inset;
+}
+.ui-msg b { font-weight: 700; }
+
+/* Pictogrammes : SVG au trait, a la couleur du texte porteur. La fonte
+   d'icones de l'application ne peut pas etre chargee ici, et un emoji
+   en couleur sur un bouton vert ne ressemblerait a rien de reel. */
+.ic {
+  width: 1.05em;
+  height: 1.05em;
+  flex: none;
+  vertical-align: -.16em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: .92;
+}
+.ui-caret { width: .72em; height: .72em; opacity: .85; margin-left: 1px; }
+
+/* --------------------------- Tableau --------------------------- */
+
+.tbl-scroll { overflow-x: auto; margin: 24px 0 8px; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15.5px;
+  min-width: 520px;
+}
+th {
+  text-align: left;
+  font-family: "Signika", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding: 0 16px 10px 0;
+  border-bottom: 1px solid var(--rule-strong);
+}
+td {
+  padding: 15px 16px 15px 0;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+  line-height: 1.55;
+}
+td:first-child { font-weight: 600; width: 34%; }
+tr:last-child td { border-bottom: 0; }
+
+/* --------------------------- Rappel --------------------------- */
+
+.note {
+  background: var(--surface-2);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 18px 22px;
+  margin: 28px 0;
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  max-width: 65ch;
+}
+.note > :last-child { margin-bottom: 0; }
+.note b { color: var(--ink); font-weight: 600; }
+
+footer {
+  margin-top: 88px;
+  padding-top: 24px;
+  border-top: 1px solid var(--rule);
+  font-size: 14px;
+  color: var(--ink-3);
+  max-width: 65ch;
+}
+
+
+/* ---------------------------- Impression ---------------------------- */
+/* Le guide est fait pour etre imprime et distribue au club. Deux enjeux :
+   garder les couleurs des figures (le vert, le bleu et le rouge SONT
+   l'information : c'est a eux que l'adherent reconnait les boutons), et
+   ne jamais couper une figure entre deux pages. */
+
+@media print {
+  :root {
+    --ground: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f6f7f2;
+    --ink: #16190f;
+    --ink-2: #3d4235;
+    --ink-3: #5d6352;
+    --rule: #cfd4c2;
+    --rule-strong: #b3baa2;
+    --accent: #8a4a12;
+    --accent-ink: #7a410f;
+    --mat: #f2f4ec;
+    --shadow: none;
+  }
+
+  /* Sans cela, les navigateurs "economisent l'encre" et vident les
+     boutons de leur couleur — la figure ne veut plus rien dire. */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body { font-size: 10.5pt; line-height: 1.5; }
+  .wrap { max-width: none; padding: 0; }
+
+  /* L'URL est deja en clair dans le texte : pas de doublon entre parentheses. */
+  a { color: var(--accent-ink); text-decoration: none; }
+
+  .masthead { padding: 0 0 18pt; margin-bottom: 20pt; }
+  h1 { font-size: 30pt; }
+  .standfirst { font-size: 13pt; }
+
+  h2.section {
+    font-size: 17pt;
+    margin: 22pt 0 4pt;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  h3 { break-after: avoid; page-break-after: avoid; margin-top: 14pt; }
+  h2.section + .deck { margin-bottom: 10pt; }
+
+  p, ul.plain, .note, .brief, .addr, .backronym { max-width: none; }
+
+  /* Une figure coupee en deux est une figure perdue. */
+  figure.fig {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin: 12pt 0 14pt;
+    padding: 12pt;
+    border: 1px solid var(--rule-strong);
+  }
+  figure.fig.wide { margin-left: 0; margin-right: 0; }
+  figcaption { font-size: 9pt; }
+
+  .note, .brief, .addr { break-inside: avoid; page-break-inside: avoid; }
+  tr, .backronym { break-inside: avoid; page-break-inside: avoid; }
+  thead { display: table-header-group; }
+
+  /* Pas de saut de page force avant chaque section : avec 13 sections dont
+     certaines tiennent en quatre lignes, on gaspillerait la moitie des
+     pages. Les regles ci-dessus suffisent — un titre ne reste jamais seul
+     en bas d'une page, une figure n'est jamais coupee. */
+
+  .tbl-scroll { overflow: visible; }
+  table { min-width: 0; font-size: 9.5pt; }
+
+  footer { margin-top: 24pt; break-inside: avoid; page-break-inside: avoid; }
+}
+
+@media (max-width: 640px) {
+  body { font-size: 16px; }
+  .masthead { padding: 48px 0 32px; margin-bottom: 36px; }
+  h2.section { font-size: 27px; margin-top: 56px; }
+  figure.fig { padding: 16px; }
+  .wrap { padding: 0 18px 72px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-cap" viewBox="0 0 16 16"><path d="M8 3l6 3-6 3-6-3z"/><path d="M4.5 7.6V11c0 .9 1.6 1.6 3.5 1.6s3.5-.7 3.5-1.6V7.6"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 16 16"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/></symbol>
+    <symbol id="i-cal-dl" viewBox="0 0 16 16"><path d="M13.5 8V5A1.5 1.5 0 0 0 12 3.5H4A1.5 1.5 0 0 0 2.5 5v6.5A1.5 1.5 0 0 0 4 13h4"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/><path d="M11.5 9.5v4M9.8 11.8l1.7 1.7 1.7-1.7"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 16 16"><path d="M8 2.4a3.6 3.6 0 0 0-3.6 3.6c0 3-1.2 4-1.2 4h9.6s-1.2-1-1.2-4A3.6 3.6 0 0 0 8 2.4z"/><path d="M6.5 12.4a1.6 1.6 0 0 0 3 0"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 16 16"><path d="M8 14s4.4-4.3 4.4-7A4.4 4.4 0 0 0 3.6 7c0 2.7 4.4 7 4.4 7z"/><circle cx="8" cy="6.8" r="1.6"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3.2v9.6M3.2 8h9.6"/></symbol>
+    <symbol id="i-caret" viewBox="0 0 16 16"><path d="M3.8 6l4.2 4.2L12.2 6"/></symbol>
+    <symbol id="i-user" viewBox="0 0 16 16"><circle cx="8" cy="5.5" r="2.6"/><path d="M3 13.4c0-2.5 2.2-3.9 5-3.9s5 1.4 5 3.9"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 16 16"><path d="M7.6 2.4H13a.6.6 0 0 1 .6.6v5.4L8.2 13.8a.8.8 0 0 1-1.2 0L2.2 9a.8.8 0 0 1 0-1.2z"/><circle cx="10.9" cy="5.1" r="1"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 16 16"><path d="M1.5 8S3.9 4 8 4s6.5 4 6.5 4-2.4 4-6.5 4S1.5 8 1.5 8z"/><circle cx="8" cy="8" r="1.8"/></symbol>
+    <symbol id="i-times" viewBox="0 0 16 16"><path d="M4.2 4.2l7.6 7.6M11.8 4.2l-7.6 7.6"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.6"/><path d="M8 4.7V8l2.3 1.7"/></symbol>
+    <symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.4"/><path d="M10.3 10.3l3.2 3.2"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 16 16"><rect x="3.4" y="7" width="9.2" height="6.6" rx="1.3"/><path d="M5.5 7V5.4a2.5 2.5 0 0 1 5 0V7"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 16 16"><path d="M8 2.4L14.4 13.4H1.6z"/><path d="M8 6.6v3.1M8 11.6v.1"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Club Canin d'Agility du Gier &middot; Espace adhérent</p>
+    <h1>Inscrire ses chiens aux cours</h1>
+    <p class="standfirst">Vos chiens sont rattachés à votre compte adhérent. Vous les inscrivez vous-même aux séances, un chien à la fois, depuis la même page.</p>
+  </header>
+
+  <div class="col">
+
+    <a class="addr" href="https://adherent.ccag42.org/">
+      <span class="addr-label">L'adresse du site</span>
+      <span class="addr-url">adherent.ccag42.org</span>
+      <span class="addr-hint">Le même site que pour votre cotisation et vos coordonnées. Il s'appelle <b>Galette</b> — c'est le nom du logiciel, pas une autre application à installer.</span>
+    </a>
+
+    <aside class="backronym">
+      <p class="backronym-label">Galette, donc</p>
+      <p class="backronym-expand"><b>G</b>estionnaire d'<b>A</b>dhérents en <b>L</b>igne <b>E</b>xtrêmement <b>T</b>arabiscoté mais <b>T</b>ellement <b>E</b>fficace.</p>
+      <p class="backronym-note">C'est l'acronyme officiel. Vous voilà prévenu pour les deux moitiés.</p>
+    </aside>
+
+    <div class="brief">
+      <h2>Une fois connecté, en trois clics</h2>
+      <ol>
+        <li>Menu <strong>Mes inscriptions</strong>, onglet <strong>M'inscrire à une prochaine séance</strong>.</li>
+        <li>Sur la séance qui vous intéresse, bouton vert <strong>S'inscrire</strong>.</li>
+        <li>Dans le menu qui s'ouvre, cliquez sur le <strong>nom du chien</strong> à inscrire.</li>
+      </ol>
+    </div>
+
+    <h2 class="section">Ce dont vous avez besoin</h2>
+    <p class="deck">Trois conditions, vérifiées automatiquement à chaque inscription.</p>
+
+    <p>Elles s'appliquent à vous comme à <b>chacun de vos chiens</b>, séparément.</p>
+
+    <ul class="plain">
+      <li><b>Cotisation à jour</b> — ou compte exempté de cotisation.</li>
+      <li><b>Compte actif.</b></li>
+      <li><b>Statut différent de « Non membre ».</b></li>
+    </ul>
+
+    <p>Si l'une manque, un bandeau orange en haut de la page <b>nomme la personne ou le chien concerné</b>, et les boutons d'inscription disparaissent pour lui. Les autres membres du foyer restent inscriptibles normalement.</p>
+
+    <div class="note">
+      <p>La régularisation passe par le secrétariat, jamais par vous. C'est aussi lui qui rattache un nouveau chien à votre compte : si un chien manque, ou si son nom n'apparaît nulle part, c'est là qu'il faut demander.</p>
+    </div>
+
+    <h2 class="section"><span class="num">1.</span> Se connecter</h2>
+    <p class="deck">Un identifiant, un mot de passe, la même page d'accueil pour tout le monde.</p>
+
+    <p>Tapez <b>adherent.ccag42.org</b> dans la barre d'adresse. La page demande deux choses&nbsp;:</p>
+
+    <ul class="plain">
+      <li><b>Identifiant</b> — celui communiqué par le club. Ce n'est pas forcément votre adresse courriel.</li>
+      <li><b>Mot de passe</b> — le vôtre. Personne au club ne peut le lire, même le secrétariat&nbsp;: en cas d'oubli il est remplacé, jamais retrouvé.</li>
+    </ul>
+
+    <figure class="fig">
+      <p class="fig-label">Page d'accueil</p>
+      <div class="ui-scope">
+        <div class="ui-card" style="max-width: 330px;">
+          <div class="ui-card-content">
+            <div class="ui-field">
+              <div class="ui-input"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg> Identifiant&nbsp;:</div>
+            </div>
+            <div class="ui-field">
+              <div class="ui-input"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg> Mot de passe&nbsp;:</div>
+            </div>
+            <span class="ui-btn blue fluid">Identification</span>
+            <span class="ui-link">Mot de passe perdu&nbsp;?</span>
+          </div>
+        </div>
+      </div>
+      <figcaption>Le bouton s'appelle <b>Identification</b>, pas « Connexion ». En dessous, <b>Mot de passe perdu&nbsp;?</b> accepte aussi bien votre identifiant que votre adresse courriel, et vous envoie un lien pour en choisir un nouveau.</figcaption>
+    </figure>
+
+    <div class="note">
+      <p>Si le lien de réinitialisation n'arrive pas&nbsp;: regardez dans les indésirables, puis vérifiez auprès du secrétariat que <b>l'adresse courriel enregistrée est la bonne</b>. Sans adresse valide, le site n'a aucun moyen de vous joindre.</p>
+    </div>
+
+    <h2 class="section"><span class="num">2.</span> Mettre l'icône sur votre téléphone</h2>
+    <p class="deck">Pour y revenir en un geste, sans retaper l'adresse.</p>
+
+    <p><b>Rien à installer, rien à télécharger</b>&nbsp;: pas d'application sur l'App Store ni sur Google Play. On pose un raccourci sur l'écran d'accueil. Il porte le logo du club et ouvre le site en plein écran, comme une vraie application.</p>
+
+    <h3>Sur iPhone et iPad (Safari)</h3>
+    <ul class="plain">
+      <li>Ouvrez <b>adherent.ccag42.org</b> dans <b>Safari</b> — la manipulation n'existe pas dans Chrome sur iPhone.</li>
+      <li>Touchez le bouton <b>Partager</b> en bas de l'écran&nbsp;: le carré avec une flèche qui sort vers le haut.</li>
+      <li>Faites défiler la liste et choisissez <b>Sur l'écran d'accueil</b>.</li>
+      <li>Touchez <b>Ajouter</b>, en haut à droite.</li>
+    </ul>
+
+    <h3>Sur Android (Chrome)</h3>
+    <ul class="plain">
+      <li>Ouvrez <b>adherent.ccag42.org</b> dans <b>Chrome</b>.</li>
+      <li>Touchez le menu <b>⋮</b> en haut à droite.</li>
+      <li>Choisissez <b>Ajouter à l'écran d'accueil</b> (ou <b>Installer l'application</b> selon la version).</li>
+      <li>Confirmez par <b>Ajouter</b>.</li>
+    </ul>
+
+    <div class="note">
+      <p><b>Connectez-vous une fois depuis ce raccourci</b> et laissez le navigateur mémoriser le mot de passe&nbsp;: vous n'aurez plus à le ressaisir à chaque inscription. Sur un téléphone partagé, ne le faites pas.</p>
+    </div>
+
+    <h2 class="section"><span class="num">3.</span> Ouvrir « Mes inscriptions »</h2>
+    <p class="deck">Une page, deux onglets.</p>
+
+    <p>Dans le menu de gauche&nbsp;: <b>Mes inscriptions &gt; Mes inscriptions</b>.</p>
+
+    <figure class="fig">
+      <p class="fig-label">Menu de gauche</p>
+      <div class="ui-scope">
+        <div class="ui-nav">
+          <div class="ui-nav-title"><svg class="ic" aria-hidden="true"><use href="#i-cap"/></svg> Mes inscriptions</div>
+          <div class="ui-nav-item active"><svg class="ic" aria-hidden="true"><use href="#i-calendar"/></svg> Mes inscriptions</div>
+          <div class="ui-nav-item"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg> Mes notifications</div>
+        </div>
+      </div>
+      <figcaption>Le titre du menu et la première ligne portent le même nom. C'est la <b>ligne</b> qu'il faut cliquer. « Mes notifications » sert à régler les courriels que le club vous envoie.</figcaption>
+    </figure>
+
+    <figure class="fig">
+      <p class="fig-label">Les deux onglets</p>
+      <div class="ui-scope">
+        <div class="ui-tabs">
+          <div class="ui-tab"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg> M'inscrire à une prochaine séance <span class="ui-badge teal">7</span></div>
+          <div class="ui-tab on"><svg class="ic" aria-hidden="true"><use href="#i-calendar"/></svg> Mes inscriptions <span class="ui-badge green">3</span></div>
+        </div>
+        <div class="ui-tabbody" style="color: var(--ui-ink-2); font-size: 13px;">
+          Les séances auxquelles vos chiens sont déjà inscrits s'affichent ici.
+        </div>
+      </div>
+      <figcaption>Onglet de gauche&nbsp;: ce à quoi vous pouvez encore inscrire un chien. Onglet de droite&nbsp;: ce qui est déjà réservé — c'est celui qui s'ouvre en premier. Les pastilles comptent les séances de chaque côté, et le site retient votre dernier choix d'onglet.</figcaption>
+    </figure>
+
+    <div class="note">
+      <p>L'entrée de menu <b>Séances</b> n'est pas visible pour un adhérent&nbsp;: elle appartient au menu de gestion, réservé au staff, aux responsables de groupe et aux moniteurs. Si on vous en parle, c'est de cet écran-là.</p>
+    </div>
+
+    <h2 class="section"><span class="num">4.</span> Trouver une séance</h2>
+    <p class="deck">Le catalogue ne montre que ce qu'il vous reste à faire.</p>
+
+    <p>Chaque séance est une carte&nbsp;: le nom du cours, la date, le lieu, le moniteur s'il est déjà connu, et le nombre de places restantes. La barre passe à l'orange quand il ne reste presque plus de place.</p>
+
+    <figure class="fig">
+      <p class="fig-label">Une carte de séance</p>
+      <div class="ui-scope">
+        <div class="ui-card" style="max-width: 420px;">
+          <div class="ui-card-content">
+            <div class="ui-header">Agility &mdash; Débutants</div>
+            <div class="ui-meta"><svg class="ic" aria-hidden="true"><use href="#i-calendar"/></svg> samedi 12 septembre &middot; 10:00 &ndash; 11:30</div>
+            <div class="ui-meta"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg> Terrain principal</div>
+            <div class="ui-prog"><span style="width: 66%;"></span></div>
+            <div class="ui-cap">4 places restantes sur 12</div>
+          </div>
+          <div class="ui-card-content extra">
+            <div class="ui-row">
+              <span class="ui-btn green"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg> S'inscrire <svg class="ic ui-caret" aria-hidden="true"><use href="#i-caret"/></svg></span>
+              <span class="ui-btn basic">Détails</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>Détails</b> ouvre la fiche complète de la séance&nbsp;: description, tarif, moniteur, date limite d'inscription. Vous pouvez aussi vous y inscrire, avec les mêmes boutons.</figcaption>
+    </figure>
+
+    <p>Si la liste est longue, trois filtres la réduisent&nbsp;: <b>Type</b> (cours, entraînement, concours…), <b>Activité</b> et <b>Du</b>, une date à partir de laquelle chercher. Le tri se fait sans recharger la page, et <span class="chip chip-ghost">Effacer les filtres</span> remet tout à zéro.</p>
+
+    <p>Deux comportements à connaître&nbsp;: une section rouge <b>« Séances annulées »</b> liste en bas les créneaux futurs annulés — informatif, sans inscription possible&nbsp;; et les séances où <b>plus aucune inscription n'est possible</b> (vous et vos chiens y êtes déjà inscrits) disparaissent d'elles-mêmes du catalogue.</p>
+
+    <h2 class="section"><span class="num">5.</span> S'inscrire</h2>
+    <p class="deck">Un seul bouton, qui s'adapte à ce que vous pouvez faire.</p>
+
+    <ul class="plain">
+      <li><b>Une seule option possible</b> — le bouton porte <b>directement le nom</b> de la personne ou du chien concerné. Un clic inscrit immédiatement, sans page intermédiaire.</li>
+      <li><b>Deux options ou plus</b> — le bouton s'appelle <b>S'inscrire</b> et ouvre un menu. Chaque ligne est un chien.</li>
+    </ul>
+
+    <figure class="fig">
+      <p class="fig-label">Le menu ouvert &mdash; plusieurs chiens</p>
+      <div class="ui-scope">
+        <div class="ui-dd">
+          <div><span class="ui-btn green"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg> S'inscrire <svg class="ic ui-caret" aria-hidden="true"><use href="#i-caret"/></svg></span></div>
+          <div class="ui-menu">
+            <div class="ui-item"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg> <span class="dog">Gribouille</span></div>
+            <div class="ui-item"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg> <span class="dog">Vodka</span></div>
+            <div class="ui-item"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg> <span class="dog">Nougat</span></div>
+          </div>
+        </div>
+      </div>
+      <figcaption>Un clic sur un nom inscrit ce chien-là, immédiatement. Les chiens <b>déjà inscrits à cette séance n'apparaissent pas</b> dans le menu&nbsp;: il ne montre que ce qui reste à faire.</figcaption>
+    </figure>
+
+    <div class="note">
+      <p>Si une ligne s'appelle <b>Moi-même</b> au lieu d'un nom de chien, c'est que le champ <em>Chien</em> de votre propre fiche est vide. L'inscription fonctionne quand même&nbsp;: signalez-le au secrétariat pour que le nom s'affiche.</p>
+    </div>
+
+    <h3>Inscrire un deuxième, un troisième chien</h3>
+
+    <p><b>Chaque inscription est individuelle.</b> Il n'y a pas de case à cocher multiple&nbsp;: pour le deuxième chien, rouvrez le menu et choisissez le nom suivant. Rien ne limite le nombre de chiens d'un même foyer sur une séance, tant que la place le permet et que chacun est dans le bon groupe.</p>
+
+    <h3>Deux chiens à la même heure</h3>
+
+    <p><b>C'est permis.</b> Deux de vos chiens peuvent suivre deux séances qui se chevauchent — le site ne vérifie pas que vous pouvez être à deux endroits à la fois, c'est à vous de juger si un autre conducteur prend le second.</p>
+
+    <p>En revanche, <b>le même chien ne peut pas être inscrit deux fois sur des créneaux qui se chevauchent</b>. Un badge orange <span class="chip chip-orange">Conflit horaire</span> prévient sur la carte, et si vous cliquez quand même, l'inscription est refusée avec un message d'erreur.</p>
+
+    <h3>Ce qui est vérifié au moment du clic</h3>
+
+    <ul class="plain">
+      <li>Les trois conditions du début, sur le chien inscrit</li>
+      <li>Son appartenance au groupe requis, si le cours est réservé à un niveau</li>
+      <li>Une séance ouverte avec des places disponibles</li>
+      <li>Un moniteur affecté — sauf si le cours autorise les inscriptions sans moniteur</li>
+    </ul>
+
+    <h2 class="section"><span class="num">6.</span> Séances à plusieurs créneaux</h2>
+    <p class="deck">Quand un cours propose deux horaires le même jour.</p>
+
+    <p>Ils tiennent sur <b>une seule carte</b>, avec la liste des horaires et l'état de chacun. Le menu du bouton combine alors les deux informations&nbsp;: <b>l'horaire, puis le chien</b>.</p>
+
+    <figure class="fig">
+      <p class="fig-label">Carte à plusieurs créneaux</p>
+      <div class="ui-scope">
+        <div class="ui-card" style="max-width: 440px;">
+          <div class="ui-card-content">
+            <div class="ui-row ui-spread">
+              <div>
+                <div class="ui-header">Entraînement libre</div>
+                <div class="ui-meta"><svg class="ic" aria-hidden="true"><use href="#i-calendar"/></svg> dimanche 13 septembre</div>
+              </div>
+              <span class="ui-label teal"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg> 2 créneaux</span>
+            </div>
+          </div>
+          <div class="ui-card-content">
+            <div class="ui-row" style="justify-content: flex-start;">
+              <b>09:00 &ndash; 10:30</b> <span class="ui-label green">Ouverte</span> <span style="font-size:12px;color:var(--ui-ink-3);">(6/10)</span>
+            </div>
+            <div class="ui-row" style="justify-content: flex-start;">
+              <b>10:30 &ndash; 12:00</b> <span class="ui-label orange">Complet</span> <span style="font-size:12px;color:var(--ui-ink-3);">(10/10)</span>
+            </div>
+          </div>
+          <div class="ui-card-content extra">
+            <div class="ui-dd">
+              <div><span class="ui-btn green"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg> S'inscrire <svg class="ic ui-caret" aria-hidden="true"><use href="#i-caret"/></svg></span></div>
+              <div class="ui-menu" style="min-width: 240px;">
+                <div class="ui-item"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg> <span class="dog">09:00 &mdash; Gribouille</span></div>
+                <div class="ui-item"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg> <span class="dog">09:00 &mdash; Vodka</span></div>
+                <div class="ui-item"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg> <span class="dog">10:30 &mdash; Gribouille</span> <span class="hint">attente</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>Chaque ligne du menu dit à quel <b>horaire</b> et pour quel <b>chien</b>. Les lignes d'un créneau complet basculent en liste d'attente.</figcaption>
+    </figure>
+
+    <div class="note">
+      <p>Un créneau peut être <b>saisonnier</b>&nbsp;: le club définit les mois pendant lesquels il a lieu — horaires d'été et d'hiver, par exemple. Hors saison, il ne produit simplement aucune séance. Rien à faire de votre côté.</p>
+    </div>
+
+    <h2 class="section"><span class="num">7.</span> Si la séance est complète</h2>
+    <p class="deck">La liste d'attente vous garde une priorité.</p>
+
+    <p>Le bouton vert devient un bouton bleu <span class="chip chip-blue">Rejoindre la liste d'attente</span>. Il fonctionne pareil&nbsp;: un menu, un nom de chien, un clic.</p>
+
+    <figure class="fig">
+      <p class="fig-label">Séance complète</p>
+      <div class="ui-scope">
+        <div class="ui-card" style="max-width: 420px;">
+          <div class="ui-card-content">
+            <div class="ui-header">Agility &mdash; Confirmés</div>
+            <div class="ui-meta"><svg class="ic" aria-hidden="true"><use href="#i-calendar"/></svg> samedi 12 septembre &middot; 14:00 &ndash; 15:30</div>
+            <div class="ui-prog warn"><span style="width: 100%;"></span></div>
+            <div class="ui-cap">Complet &mdash; 12 inscrits sur 12</div>
+          </div>
+          <div class="ui-card-content extra">
+            <div class="ui-row">
+              <span class="ui-btn blue"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg> Rejoindre la liste d'attente <svg class="ic ui-caret" aria-hidden="true"><use href="#i-caret"/></svg></span>
+              <span class="ui-btn basic">Détails</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>La barre pleine et le mot <b>Complet</b> annoncent le passage en liste d'attente. Votre rang s'affiche ensuite sur la carte.</figcaption>
+    </figure>
+
+    <p><b>Si une place se libère, le premier de la liste est inscrit automatiquement</b> et reçoit un courriel. Vous n'avez rien à surveiller. Chaque chien occupe <b>son propre rang</b> dans la file.</p>
+
+    <h2 class="section"><span class="num">8.</span> Voir et gérer ses inscriptions</h2>
+    <p class="deck">Une carte par chien inscrit.</p>
+
+    <p>Sur l'onglet <b>Mes inscriptions</b>, votre <b>prochaine séance</b> est mise en avant en haut de page. Les suivantes s'affichent sous <b>À venir</b>, les séances futures annulées dans une section rouge distincte, et les <b>Séances passées</b> dans un accordéon repliable. Les places en liste d'attente apparaissent avec leur numéro de position.</p>
+
+    <figure class="fig wide">
+      <p class="fig-label">Deux chiens sur la même séance</p>
+      <div class="ui-scope">
+        <div class="ui-card" style="max-width: 460px;">
+          <div class="ui-card-content">
+            <div class="ui-header">Agility &mdash; Débutants</div>
+            <div class="ui-meta"><svg class="ic" aria-hidden="true"><use href="#i-calendar"/></svg> samedi 12 septembre &middot; 10:00 &ndash; 11:30</div>
+            <div class="ui-row" style="margin-top: 10px;">
+              <span class="ui-label teal"><svg class="ic" aria-hidden="true"><use href="#i-tag"/></svg> Gribouille</span>
+              <span class="ui-label green">Inscrit</span>
+            </div>
+          </div>
+          <div class="ui-card-content extra">
+            <div class="ui-row">
+              <span class="ui-btn blue"><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg> Détails</span>
+              <span class="ui-btn basic"><svg class="ic" aria-hidden="true"><use href="#i-cal-dl"/></svg></span>
+              <span class="ui-btn red"><svg class="ic" aria-hidden="true"><use href="#i-times"/></svg> Se désinscrire</span>
+            </div>
+          </div>
+        </div>
+        <div class="ui-card" style="max-width: 460px;">
+          <div class="ui-card-content">
+            <div class="ui-header">Agility &mdash; Débutants</div>
+            <div class="ui-meta"><svg class="ic" aria-hidden="true"><use href="#i-calendar"/></svg> samedi 12 septembre &middot; 10:00 &ndash; 11:30</div>
+            <div class="ui-row" style="margin-top: 10px;">
+              <span class="ui-label teal"><svg class="ic" aria-hidden="true"><use href="#i-tag"/></svg> Vodka</span>
+              <span class="ui-label green">Inscrit</span>
+            </div>
+          </div>
+          <div class="ui-card-content extra">
+            <div class="ui-row">
+              <span class="ui-btn blue"><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg> Détails</span>
+              <span class="ui-btn basic"><svg class="ic" aria-hidden="true"><use href="#i-cal-dl"/></svg></span>
+              <span class="ui-btn red"><svg class="ic" aria-hidden="true"><use href="#i-times"/></svg> Se désinscrire</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>Deux cartes pour la même séance, une par chien. C'est voulu&nbsp;: vous pouvez retirer un chien sans toucher à l'autre. Le petit bouton calendrier ajoute la séance à votre agenda.</figcaption>
+    </figure>
+
+    <h2 class="section"><span class="num">9.</span> Se désinscrire</h2>
+    <p class="deck">Possible jusqu'au début de la séance.</p>
+
+    <p>Le bouton rouge <span class="chip chip-red">Se désinscrire</span> se trouve sur la carte du chien, ou sur la fiche de la séance. Une fenêtre vous demande de confirmer, pour éviter le clic malheureux.</p>
+
+    <p>Vous pouvez vous désinscrire <b>à tout moment avant la séance</b>, sans délai à respecter.</p>
+
+    <div class="note">
+      <p><b>La réinscription, elle, n'est pas garantie.</b> Pour vous réinscrire ensuite, il faut qu'il reste une place <b>et</b> que la date limite d'inscription ne soit pas passée. Ce n'est pas toujours rattrapable&nbsp;: n'annulez que si vous êtes sûr.</p>
+    </div>
+
+    <p>Se désinscrire quand on ne peut pas venir n'est pas une formalité&nbsp;: la place repart aussitôt au premier chien de la liste d'attente. <b>Une place laissée vide est une place perdue pour un autre binôme.</b></p>
+
+    <h2 class="section"><span class="num">10.</span> Mettre les séances dans son agenda</h2>
+    <p class="deck">Google, Apple, Outlook.</p>
+
+    <ul class="plain">
+      <li><b>Une séance</b>&nbsp;: le bouton calendrier sur sa carte, ou <b>Exporter en iCal</b> sur la fiche de la séance.</li>
+      <li><b>Toutes vos inscriptions</b>&nbsp;: le bouton <b>iCal</b> en haut de l'onglet <em>Mes inscriptions</em>.</li>
+    </ul>
+
+    <p>Le fichier <code>.ics</code> obtenu s'importe dans Google Agenda, Apple Calendrier ou Outlook.</p>
+
+    <h2 class="section"><span class="num">11.</span> Les courriels du club</h2>
+    <p class="deck">Un par semaine, plus les urgences.</p>
+
+    <p>Vous recevez un <b>récapitulatif hebdomadaire</b> des séances ouvertes et des moniteurs affectés, plutôt qu'un message à chaque nouveauté. Les messages urgents, eux, partent tout de suite&nbsp;: séance annulée, place obtenue depuis la liste d'attente.</p>
+
+    <p>Chaque courriel qui vous demande d'agir <b>contient le lien vers le site</b>&nbsp;: pas besoin de retenir l'adresse.</p>
+
+    <p>Le réglage se trouve dans <b>Mes notifications</b>, juste sous « Mes inscriptions » dans le menu&nbsp;: décochez <b>Recevoir les notifications par email</b> puis <b>Enregistrer</b>. Un lien de désinscription figure aussi en bas de chaque courriel, utilisable sans se connecter.</p>
+
+    <h2 class="section">Le bouton n'apparaît pas&nbsp;?</h2>
+    <p class="deck">Les cinq raisons possibles, et ce qu'elles veulent dire.</p>
+
+    <p>La plus fréquente s'annonce par un bandeau orange, en haut de la page, qui reste visible quand vous faites défiler. Il <b>nomme la personne ou le chien concerné</b>&nbsp;: lisez-le, il contient la réponse.</p>
+
+    <figure class="fig">
+      <p class="fig-label">Bandeau d'éligibilité</p>
+      <div class="ui-scope">
+        <div class="ui-msg">
+          <div class="ui-row" style="align-items: flex-start; flex-wrap: nowrap; gap: 10px;">
+            <svg class="ic" aria-hidden="true" style="margin-top: 2px;"><use href="#i-warn"/></svg>
+            <div>
+              <b>L'inscription ne sera pas possible pour le(s) membre(s) suivant(s) tant que la situation n'est pas régularisée&nbsp;:</b>
+              <ul style="margin: 8px 0 0; padding-left: 18px;">
+                <li>Vodka &mdash; cotisation échue depuis le 30 juin</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>Ici, un seul chien est bloqué&nbsp;: les autres restent inscriptibles normalement. Le bandeau ne disparaît qu'une fois la situation réglée par le secrétariat.</figcaption>
+    </figure>
+
+    <div class="tbl-scroll">
+      <table>
+        <thead>
+          <tr><th>Ce que vous voyez</th><th>Ce que ça veut dire</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Un bandeau orange, et aucun bouton vert nulle part</td>
+            <td>Une cotisation n'est pas à jour, ou un compte est inactif. Le bandeau précise qui est concerné — vous, ou l'un de vos chiens. Voyez le secrétariat.</td>
+          </tr>
+          <tr>
+            <td>Une étiquette orange <span class="chip chip-orange">Aucun moniteur</span> à la place du bouton</td>
+            <td>Aucun moniteur ne s'est encore proposé pour cette séance. Les inscriptions ouvriront dès qu'il y en aura un&nbsp;; vous recevrez un courriel.</td>
+          </tr>
+          <tr>
+            <td>Le bouton existe, mais il manque un de vos chiens dans le menu</td>
+            <td>Soit il est déjà inscrit à cette séance, soit il n'est pas dans le groupe demandé par ce cours.</td>
+          </tr>
+          <tr>
+            <td>La séance n'apparaît nulle part</td>
+            <td>Elle est réservée à un groupe auquel aucun de vos chiens n'appartient, ou elle est déjà passée.</td>
+          </tr>
+          <tr>
+            <td>Seul le bouton <span class="chip chip-ghost">Détails</span> reste</td>
+            <td>La date limite d'inscription est dépassée, ou la séance a été fermée par le club.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <footer>
+      <p>Une question, un chien à rattacher, une cotisation à régulariser&nbsp;: contactez le secrétariat du club. Les moniteurs ne peuvent pas modifier les fiches ni les groupes.</p>
+      <p style="margin-top: 14px; color: var(--ink-3); font-size: 13px;">Les écrans de ce guide sont des reconstitutions fidèles de l'interface, réalisées à partir des gabarits du site. Les noms de chiens sont des exemples. Contenu synchronisé sur <code>doc/tuto-adherent.md</code> du plugin.</p>
+    </footer>
+
+  </div>
+</div>

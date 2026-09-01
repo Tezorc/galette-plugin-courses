@@ -1267,6 +1267,23 @@ Deux substitutions sont a faire avant diffusion, signalees en tete du fichier :
 l'adresse du site, et le terme retenu par l'association pour un **membre
 rattache** (« chien » dans un club canin, « enfant » dans une ecole).
 
+**Version illustree et PDF** : `doc/tuto-adherent.html` reprend les memes
+sections avec des reconstitutions d'ecran, personnalisees pour CCAG42 (meme
+statut que `lang/courses_fr_FR.utf8_local_lang.php`). Pour en tirer un PDF
+imprimable :
+
+```sh
+python scripts/build-pdf.py doc/tuto-adherent.html --expect Newsreader,Signika,Lato
+```
+
+Le script embarque les polices en base64 avant d'imprimer (le PDF devient
+reproductible, y compris hors ligne), applique la feuille `@media print` de la
+page, puis **relit le PDF produit** pour verifier que les familles attendues
+sont bien embarquees. Ce controle n'est pas decoratif : un PDF dont les polices
+ont echoue s'ouvre normalement et ne signale rien — seule une relecture des
+descripteurs le detecte. Il faut Chrome installe, et un acces reseau au premier
+lancement (les polices sont ensuite mises en cache).
+
 Le present document reste la reference **fonctionnelle** du parcours membre :
 sections 4 a 8 pour l'inscription, la desinscription et la liste d'attente,
 section 16-bis pour l'inscription d'un membre rattache, et le tableau des
