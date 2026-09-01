@@ -28,3 +28,6 @@ desktop.ini
 /composer.lock
 /.phpunit.cache/
 /.phpunit.result.cache
+
+# Cache des polices telechargees par scripts/build-pdf.py
+scripts/.fonts-cache/
