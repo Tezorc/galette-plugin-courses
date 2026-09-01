@@ -1179,6 +1179,24 @@ Pour personnaliser le plugin :
 4. Ajouter au besoin des cles supplementaires (par exemple `$lang['Nickname'] = 'Chien';` pour un club canin)
 5. Vider le cache Twig si necessaire
 
+> **Les corps de courriels surcharges ici sont des valeurs par defaut.**
+> `MailTemplate::load()` sert d'abord la ligne stockee en base
+> (`galette_courses_mail_templates`) quand elle existe. Si un modele a deja ete
+> personnalise depuis **Gestion des inscriptions > Modèles de courriels**, la
+> surcharge du fichier ne s'appliquera qu'apres un clic sur **Reinitialiser**
+> pour ce modele. Sur une installation neuve, elle s'applique directement.
+
+> **La cle doit reproduire le msgid exactement**, guillemets et `\n` compris
+> (source de verite : `MailTemplate::getDefaultBody()`). Une cle qui derive d'un
+> seul caractere est ignoree **en silence** : pas d'erreur, juste un courriel
+> reste au texte generique. En cas de doute, comparer avec le litteral du code
+> plutot que de le recopier de memoire.
+
+Le fichier livre pour CCAG42 contient deux sections : la terminologie metier
+(`Nickname` -> `Chien`, « membre rattache ») et la **reinjection de l'URL du
+site dans les 8 courriels qui demandent une action** au lecteur. Les modeles
+purement informatifs (validation, annulations) n'en portent pas.
+
 Pour revenir au comportement strictement generique, supprimer ou vider le
 fichier `_local_lang.php` : le `.mo` redevient la seule source de traduction.
 
@@ -1244,7 +1262,7 @@ L'espace adherent est le **site Galette de l'association** — le meme que pour 
 
 1. Ouvrir l'adresse de l'espace adherent de l'association dans un navigateur
 
-   L'URL est propre a chaque club et n'est **pas** connue du plugin : celui-ci vit a l'interieur du site Galette de l'association. Le fichier `lang/courses_<locale>_local_lang.php` prevoit une variable `$site_url` a cet usage, mais **aucun override ne s'en sert actuellement** — depuis la depersonnalisation (Phase 60), les courriels automatiques ne contiennent plus de lien vers le site. Pour en remettre un, surcharger le corps du modele concerne en y injectant `$site_url` (voir *Personnaliser le plugin pour son association*).
+   L'URL est propre a chaque club et n'est **pas** connue du plugin generique : celui-ci vit a l'interieur du site Galette de l'association. Elle est declaree une seule fois, dans la variable `$site_url` en tete de `lang/courses_<locale>_local_lang.php`, et c'est de la qu'elle est reinjectee dans les courriels (voir *Personnaliser le plugin pour son association*). Vous n'avez donc pas besoin de la retenir : **chaque courriel automatique qui vous demande d'agir contient le lien**.
 
 2. Saisir **Identifiant :** et **Mot de passe :** (ceux communiques par l'association ; l'identifiant n'est pas forcement l'adresse courriel)
 3. Cliquer sur le bouton **Identification**

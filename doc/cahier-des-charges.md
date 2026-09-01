@@ -861,13 +861,42 @@ l'identifiant *ou* le courriel) et **Mettre un raccourci sur son telephone**
 (iOS Safari uniquement / Android Chrome, l'icone venant de
 `favicon.png` du coeur en 192 x 192).
 
-#### Constat annexe, non corrige
+#### Suite : reinjection des liens dans les courriels
 
-`$site_url` et `$club_name` sont **declarees mais inutilisees** dans
-`courses_fr_FR.utf8_local_lang.php` : la depersonnalisation (Phase 60) a retire
-les URL des msgstr sans que le fichier ne les reinjecte. **Consequence : plus
-aucun courriel automatique ne contient de lien vers le site.** A arbitrer —
-regression ou simplification assumee.
+**Statut :** TERMINEE
+
+Le constat de depart : `$site_url` et `$club_name` etaient **declarees mais
+inutilisees** dans `courses_fr_FR.utf8_local_lang.php`. La depersonnalisation
+(Phase 60) avait retire les URL des msgstr sans que rien ne les reinjecte, si
+bien qu'aucun courriel automatique ne contenait plus de lien : le lecteur y
+lisait « connectez-vous » sans savoir ou. Arbitrage utilisateur : regression, a
+corriger.
+
+**Portee** : les 8 modeles qui demandent une action au lecteur — `REF_SUBMISSION`,
+`REF_REJECTION`, `REF_NEW_SESSIONS_MANAGER`, `REF_DAILY_DIGEST_MANAGER`,
+`REF_WAITLIST_PROMOTION`, `REF_INSTRUCTOR_ASSIGNED`, `REF_SESSION_OPEN`,
+`REF_WEEKLY_DIGEST_MEMBER`. Les 3 autres (`REF_VALIDATION`, `REF_CANCELLATION`,
+`REF_WAITLIST_CANCELLATION`) sont purement informatifs : un lien y serait du
+bruit.
+
+**Methode** : l'URL est **tissee dans la phrase d'appel a l'action existante**
+(« connectez-vous sur <url> et portez-vous volontaire… »,
+« …confirmer votre presence : <url> ») plutot qu'ajoutee en ligne
+supplementaire, qui aurait double le « connectez-vous » deja present.
+
+**Point de vigilance, verifie et non suppose** : la cle d'une surcharge doit
+reproduire le msgid **a l'octet pres**, sinon Galette l'ignore **en silence** —
+pas d'erreur, juste un courriel sans lien. Les cles n'ont donc pas ete recopiees
+a la main : elles sont extraites de `MailTemplate::getDefaultBody()` par
+parcours caractere a caractere de la source, et un script de verification
+confirme que les 8 cles correspondent aux litteraux reels et que chaque corps
+contient bien l'URL.
+
+**Limite a connaitre** : ces textes sont les **valeurs par defaut**.
+`MailTemplate::load()` sert d'abord la ligne de `galette_courses_mail_templates`
+quand elle existe. Sur une installation ayant deja personnalise un modele, la
+surcharge n'apparait qu'apres un clic sur **Reinitialiser** pour ce modele. Le
+fichier de surcharges le rappelle en commentaire.
 
 ### Evolution - Horaires saisonniers : saison recurrente par creneau
 
