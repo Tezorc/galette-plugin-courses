@@ -667,9 +667,14 @@ class Event
         }
     }
 
-    public function setCreatorId(int $id): void
+    /**
+     * The super admin has no member record, so callers pass null to mean "no
+     * creator". It is kept internally as the 0 sentinel, which store() turns
+     * back into a NULL column: creator_id is a nullable FK to adherents.
+     */
+    public function setCreatorId(?int $id): void
     {
-        $this->creator_id = $id;
+        $this->creator_id = $id ?? 0;
     }
 
     public function getId(): ?int
