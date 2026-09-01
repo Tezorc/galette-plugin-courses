@@ -826,6 +826,30 @@ l'identifiant *ou* le courriel) et **Mettre un raccourci sur son telephone**
 (iOS Safari uniquement / Android Chrome, l'icone venant de
 `favicon.png` du coeur en 192 x 192).
 
+#### Suite : le tutoriel adherent devient un document a part
+
+**Statut :** TERMINEE
+
+L'Annexe A du mode d'emploi s'adressait aux **adherents**, au bout de 1 200
+lignes destinees aux gestionnaires — impossible a diffuser sans livrer toute la
+specification avec. Elle sort donc dans **`doc/tuto-adherent.md`**, ecrit pour
+etre imprime, joint a un courriel de bienvenue ou publie tel quel.
+
+**Le mode d'emploi ne garde pas de copie** : l'Annexe A devient un renvoi de
+quelques lignes. Maintenir deux redactions du meme parcours les fait diverger,
+ce qui est exactement ce qui etait arrive aux trois annexes avant leur reprise.
+
+**Generique par construction**, comme le reste du plugin : deux substitutions
+signalees en tete du fichier (l'URL du site, et le mot retenu par l'association
+pour un *membre rattache* — « chien » dans un club canin, « enfant » dans une
+ecole). Aucune valeur CCAG42 n'y est codee en dur.
+
+**Contenu** : connexion (libelles exacts du coeur Galette), raccourci sur
+l'ecran d'accueil iOS/Android, les deux onglets, filtres, inscription pour soi
+et pour chaque membre rattache, regle du conflit horaire, liste d'attente,
+desinscription et son asymetrie avec la reinscription, export iCal,
+notifications, et un tableau de depannage « le bouton n'apparait pas ».
+
 #### Suite : reinjection des liens dans les courriels
 
 **Statut :** TERMINEE

@@ -91,6 +91,18 @@ git worktree add ../courses-1.3 dev-galette-1.3
 
 - `doc/mode-emploi.md` : mode d'emploi utilisateur (fonctionnalites, guide d'utilisation, permissions, navigation). Toute nouvelle fonctionnalite, route, ecran ou changement de comportement doit y etre documente.
 - `doc/cahier-des-charges.md` : specification technique et fonctionnelle du plugin. Mettre a jour l'etat d'avancement des phases et ajouter toute nouvelle exigence.
+- `doc/tuto-adherent.md` : tutoriel destine aux **adherents**, diffusable tel quel. A mettre a jour uniquement quand le **parcours membre** change (inscription, liste d'attente, desinscription, notifications, connexion) — pas pour une evolution cote gestion. Il ne duplique pas le mode d'emploi : celui-ci renvoie vers lui (Annexe A) au lieu de reecrire le parcours, precisement pour que les deux ne divergent pas.
+
+**Attention aux affirmations qui vieillissent en silence.** Un audit (voir
+`cahier-des-charges.md`, *Realignement du mode d'emploi sur le code*) a trouve
+dans `mode-emploi.md` des phrases devenues fausses sans que rien ne le signale :
+un courriel de publication supprime depuis la Phase 34 mais toujours promis, un
+conflit horaire decrit comme non-bloquant alors qu'il bloque, un chemin de menu
+invisible pour le lecteur vise. Les phrases a risque sont celles qui decrivent
+**qui recoit quoi**, **quel bouton se trouve ou** et **quel droit permet quoi** :
+les verifier dans le code, jamais dans la version precedente du document. Le
+`cahier-des-charges.md` est un journal date — ses entrees de phase gardent
+volontairement les libelles de leur epoque et ne doivent pas etre reecrites.
 
 ## Architecture
 
@@ -164,8 +176,10 @@ galette-plugin-courses/
   lang/fr_FR.utf8/LC_MESSAGES/courses.mo # Traductions FR generiques (compilees)
   lang/courses_fr_FR.utf8_local_lang.php # Surcharges locales propres au club (URL, signature, terminologie) — Phase 60
   doc/
-    mode-emploi.md                 # Mode d'emploi utilisateur
+    mode-emploi.md                 # Mode d'emploi utilisateur (gestionnaires)
+    tuto-adherent.md               # Tutoriel adherent, diffusable tel quel (2 substitutions en tete)
     cahier-des-charges.md          # Cahier des charges complet
+    historique-phases.md           # Archive des phases 1 a 76
   lib/GaletteCourses/
     PluginGaletteCourses.php       # Classe principale (menus, dashboard)
     PluginPreferences.php          # Preferences globales du plugin
