@@ -2218,3 +2218,39 @@ msgstr "[Cours] Séances régénérées"
 # Fallback message of every CoursesAclGuard::denyUnless* helper.
 msgid "You do not have permission to perform this action."
 msgstr "Vous n'avez pas la permission d'effectuer cette action."
+
+# --- Acces refuse : messages propres a chaque ecran ---
+
+msgid "You do not have permission to view this event."
+msgstr "Vous n'avez pas la permission de consulter cet événement."
+
+msgid "You do not have permission to view this session."
+msgstr "Vous n'avez pas la permission de consulter cette séance."
+
+msgid "You do not have permission to register members on behalf of others."
+msgstr "Vous n'avez pas la permission d'inscrire des membres à leur place."
+
+msgid "You do not have permission to export this session."
+msgstr "Vous n'avez pas la permission d'exporter cette séance."
+
+msgid "You do not have permission to send a mailing for this session."
+msgstr "Vous n'avez pas la permission d'envoyer un courriel pour cette séance."
+
+# --- Creation des seances differee a la validation ---
+
+msgid "Sessions will be created when the event is validated."
+msgstr "Les séances seront créées à la validation de l'événement."
+
+msgid "Scheduled start date:"
+msgstr "Date de début prévue :"
+
+msgid "Date of the session — sessions are created when the event is validated."
+msgstr "Date de la séance — les séances sont créées à la validation de l'événement."
+
+# --- Divers ---
+
+msgid "Jump to this course"
+msgstr "Aller à ce cours"
+
+msgid "Unsubscribe from notifications"
+msgstr "Désinscription des notifications"
