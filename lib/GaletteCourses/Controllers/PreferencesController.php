@@ -102,14 +102,20 @@ class PreferencesController extends AbstractController
             $from  = trim((string)$from);
             $to    = trim((string)($tos[$i] ?? ''));
             $label = trim((string)($labels[$i] ?? ''));
-            if ($from !== '' && $to !== '' && $to >= $from) {
+            // The date format is checked here, not only in the browser: a date
+            // input reports partial years while they are typed (0002 on the way
+            // to 2026), and such a value used to be stored as-is.
+            if ($this->isIsoDate($from) && $this->isIsoDate($to) && $to >= $from) {
                 if (mb_strlen($label) > 120) {
                     $label = mb_substr($label, 0, 120);
                 }
                 $closures[] = ['from' => $from, 'to' => $to, 'label' => $label];
             }
         }
-        $pluginPrefs->setClosureDates($closures);
+        // A failed save must not be reported as a success: pref_value was a
+        // varchar(255) until the closure ranges outgrew it, and the write error
+        // is swallowed by PluginPreferences::set(), which only returns false.
+        $closuresSaved = $pluginPrefs->setClosureDates($closures);
 
         // Cascade: future OPEN/CLOSED sessions falling within a closure period
         // are switched to CANCELLED with reason=club_closure and the closure
@@ -118,6 +124,16 @@ class PreferencesController extends AbstractController
         // same preferences (or extending an existing range) does not trigger
         // duplicate emails.
         $report = $this->cancelSessionsCoveredByClosures($closures);
+
+        if (!$closuresSaved) {
+            $this->flash->addMessage(
+                'error_detected',
+                _T('Closure periods could not be saved. Check the plugin database schema and the logs.', 'courses')
+            );
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->routeparser->urlFor('coursesPreferences'));
+        }
 
         $this->flash->addMessage('success_detected', _T('Courses preferences saved.', 'courses'));
         if ($report['cancelled'] > 0) {
@@ -133,6 +149,21 @@ class PreferencesController extends AbstractController
         return $response
             ->withStatus(302)
             ->withHeader('Location', $this->routeparser->urlFor('coursesPreferences'));
+    }
+
+    /**
+     * True when the value is a real yyyy-mm-dd calendar date. Rules out the
+     * partial years a date input emits while being typed, and impossible days
+     * such as 2026-02-31.
+     */
+    private function isIsoDate(string $value): bool
+    {
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+        // A year below 1000 is never a date somebody meant to enter: it is the
+        // browser reporting "2026" halfway through, as 0002 then 0202.
+        return $date !== false
+            && $date->format('Y-m-d') === $value
+            && $value >= '1000-01-01';
     }
 
     /**

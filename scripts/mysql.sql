@@ -147,7 +147,7 @@ CREATE TABLE galette_courses_waitlist (
 CREATE TABLE galette_courses_preferences (
     id_pref int(10) unsigned NOT NULL auto_increment,
     pref_name varchar(100) NOT NULL,
-    pref_value varchar(255) NOT NULL DEFAULT '',
+    pref_value text NOT NULL,
     PRIMARY KEY (id_pref),
     UNIQUE KEY uk_courses_pref_name (pref_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
