@@ -158,7 +158,7 @@ CREATE INDEX idx_courses_wl_position ON galette_courses_waitlist (session_id, po
 CREATE TABLE galette_courses_preferences (
     id_pref serial PRIMARY KEY,
     pref_name varchar(100) NOT NULL,
-    pref_value varchar(255) NOT NULL DEFAULT '',
+    pref_value text NOT NULL DEFAULT '',
     CONSTRAINT uk_courses_pref_name UNIQUE (pref_name)
 );
 

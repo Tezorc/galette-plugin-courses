@@ -689,6 +689,71 @@ Ces tests ont ete valides par mutation : casser le dedup par `session_id`, la br
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Fix - Periodes de fermeture : date de debut ecrasee et fermetures effacees
+
+**Statut :** TERMINEE
+
+- Signalement utilisateur : "bug lorsque je saisis la date de fin, la date de
+  debut est modifiee. De plus, si je rentre 3 periodes de fermeture alors tout
+  s'efface."
+
+#### Probleme 1 - la date de debut ecrasee a la saisie de la date de fin
+
+Le handler `change` du tableau des fermetures (`preferences.html.twig`)
+"corrigeait" une plage incoherente en recopiant une borne sur l'autre :
+si `from > to`, le champ que l'utilisateur ne venait pas de toucher etait
+reecrit.
+
+Un `<input type="date">` emet `change` a chaque frappe de l'annee. En tapant
+2026, le champ vaut successivement `0002-…`, `0020-…`, `0202-…`, toutes
+inferieures a la date de debut deja saisie. La premiere de ces valeurs
+declenchait la correction et remplacait la date de debut par la date partielle.
+La suite de la frappe ne la restaurait pas : une fois `to` devenu 2026, la
+plage etait redevenue coherente, donc plus aucune correction n'intervenait.
+
+**Solution** : plus aucune reecriture silencieuse. Le champ de fin recoit
+seulement un attribut `min` egal a la date de debut (le navigateur empeche
+alors la saisie incoherente au selecteur), et une plage inversee reste
+signalee visuellement par `refreshRow()`, qui affichait deja un libelle
+"Erreur". Un helper `isCompleteDate()` ecarte les annees en cours de frappe
+(4 chiffres et >= 1000) dans `refreshRow()` et `checkOverlaps()`.
+
+#### Probleme 2 - toutes les fermetures effacees a partir de 3 periodes
+
+Les periodes sont serialisees en JSON dans une unique ligne de preference
+(`courses_closure_dates`), et la colonne `galette_courses_preferences.pref_value`
+etait un `varchar(255)`.
+
+Une periode pese environ 50 octets, plus son libelle, que le formulaire
+autorise jusqu'a 120 caracteres (et un caractere accentue compte 6 octets une
+fois echappe en `\uXXXX` par `json_encode`). Trois periodes libellees suffisent
+a franchir les 255 octets : 244 octets pour trois libelles de 30 caracteres.
+
+En MySQL non strict, la valeur est alors tronquee en silence. Le JSON devient
+invalide, `json_decode` echoue et `getClosureDates()` renvoie un tableau vide :
+toutes les fermetures disparaissent d'un coup. En Postgres et en MySQL strict,
+l'ecriture est refusee, l'exception est avalee par `PluginPreferences::set()`
+qui se contente de renvoyer `false`, et le controleur ignorait ce retour en
+affichant quand meme "Preferences enregistrees".
+
+**Solution** : `pref_value` passe en `TEXT` (65 535 octets), pour cette
+preference comme pour toutes les autres. Migrations
+`scripts/upgrade-pref-value-text.sql` et `-pgsql.sql`, schemas d'installation
+mis a jour. Note : MySQL interdit un `DEFAULT` sur une colonne TEXT, la valeur
+par defaut `''` disparait cote MySQL (sans consequence, `set()` fournit
+toujours la valeur) et est conservee cote Postgres.
+
+#### Durcissements associes
+
+- `PreferencesController::doStore()` teste le retour de `setClosureDates()` et
+  affiche une vraie erreur au lieu du message de succes quand l'ecriture
+  echoue. Un echec silencieux presente comme une reussite etait le vrai piege :
+  il rendait le probleme 2 indechiffrable cote utilisateur.
+- Nouveau helper prive `isIsoDate()` : les dates postees sont validees en
+  `yyyy-mm-dd` calendaire, annee >= 1000. Ce filtre serveur double la garde
+  cote navigateur, qui ne protege pas d'un POST direct, et ecarte aussi les
+  jours impossibles (2026-02-31).
+- Nouvelle chaine i18n pour le message d'erreur.
 ### Evolution - Suppression d'une seance et regeneration des seances (super admin)
 
 **Statut :** TERMINEE

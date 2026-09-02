@@ -2254,3 +2254,6 @@ msgstr "Aller à ce cours"
 
 msgid "Unsubscribe from notifications"
 msgstr "Désinscription des notifications"
+
+msgid "Closure periods could not be saved. Check the plugin database schema and the logs."
+msgstr "Les périodes de fermeture n'ont pas pu être enregistrées. Vérifiez le schéma de base du plugin et les journaux."
