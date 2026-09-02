@@ -1,0 +1,44 @@
+--
+-- Copyright © 2026-2026 The Galette Team && The CCAG42 Team
+--
+-- This file is part of Galette Courses plugin (https://github.com/Tezorc/galette-plugin-courses).
+--
+-- Galette Courses Plugin is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+--
+-- Galette Courses Plugin is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--  GNU General Public License for more details.
+--
+-- You should have received a copy of the GNU General Public License
+-- along with Galette Courses Plugin. If not, see <http://www.gnu.org/licenses/>.
+--
+
+-- Migration MySQL/MariaDB du schema du plugin vers la version 0.4.
+--
+-- Convention Galette : `scripts/upgrade-to-<version>-<db_type>.sql`, joue
+-- automatiquement lorsqu'une installation dont la version enregistree dans
+-- `galette_plugins` est inferieure a 0.4 est mise a jour
+-- (cf. Install::getUpdateScripts()).
+--
+-- pref_value passe de varchar(255) a TEXT.
+--
+-- Les periodes de fermeture du club sont serialisees en JSON dans une seule
+-- ligne de preference (courses_closure_dates). Une periode pese environ 50
+-- octets, plus son libelle, que le formulaire autorise jusqu'a 120 caracteres
+-- (un caractere accentue comptant 6 octets une fois echappe en \uXXXX par
+-- json_encode). Trois periodes libellees suffisent a depasser 255 octets.
+--
+-- Au-dela, MySQL tronque la valeur en mode non strict : le JSON devient
+-- invalide, json_decode echoue et getClosureDates() renvoie un tableau vide.
+-- Toutes les fermetures disparaissent d'un coup, sans message d'erreur.
+--
+-- Note : MySQL interdit un DEFAULT sur une colonne TEXT, la valeur par defaut
+-- '' de la colonne disparait donc. Sans consequence : PluginPreferences::set()
+-- fournit toujours une valeur.
+
+ALTER TABLE galette_courses_preferences
+    MODIFY pref_value text NOT NULL;

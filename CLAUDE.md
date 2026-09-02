@@ -162,6 +162,8 @@ galette-plugin-courses/
   scripts/manual-catchup-0.2-pgsql.sql # Rattrapage manuel idempotent pgsql (idem)
   scripts/upgrade-to-0.3-mysql.sql # Migration MySQL vers dbver 0.3 : season_from/season_to sur les creneaux (horaires saisonniers)
   scripts/upgrade-to-0.3-pgsql.sql # Migration pgsql vers dbver 0.3 (idem)
+  scripts/upgrade-to-0.4-mysql.sql # Migration MySQL vers dbver 0.4 : pref_value varchar(255) -> TEXT (les periodes de fermeture debordaient)
+  scripts/upgrade-to-0.4-pgsql.sql # Migration pgsql vers dbver 0.4 (idem)
   lang/courses_fr_FR.utf8.po       # Traductions FR generiques (source PO)
   lang/fr_FR.utf8/LC_MESSAGES/courses.mo # Traductions FR generiques (compilees)
   lang/courses_fr_FR.utf8_local_lang.php # Surcharges locales propres au club (URL, signature, terminologie) — Phase 60
