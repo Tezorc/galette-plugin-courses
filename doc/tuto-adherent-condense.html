@@ -1,0 +1,530 @@
+<title>Inscrire ses chiens aux cours</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Signika:wght@400;500;600&family=Lato:wght@400;700;900&display=swap">
+
+<style>
+/* ------------------------------------------------------------------
+   Version condensee du tutoriel adherent. Reprend la palette et les
+   familles de doc/tuto-adherent.html : meme club, meme document, une
+   longueur differente. Les couleurs Fomantic ne servent qu'aux
+   pastilles reproduisant un bouton reel de l'application.
+   ------------------------------------------------------------------ */
+:root {
+  --ground: #EFF1EA;
+  --surface: #FFFFFF;
+  --surface-2: #F7F8F2;
+  --ink: #1A1E17;
+  --ink-2: #59604F;
+  --ink-3: #7C836F;
+  --rule: #D9DDCF;
+  --rule-strong: #C3C9B4;
+  --accent: #A85B18;
+  --accent-ink: #8A4A12;
+  --accent-soft: #F3E6D7;
+  --shadow: 0 1px 2px rgba(26, 30, 23, .06), 0 8px 24px -12px rgba(26, 30, 23, .18);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #14170F;
+    --surface: #1D2117;
+    --surface-2: #23281B;
+    --ink: #EDEFE6;
+    --ink-2: #A8AF9A;
+    --ink-3: #8B927D;
+    --rule: #333827;
+    --rule-strong: #454B36;
+    --accent: #E0A05A;
+    --accent-ink: #EEB878;
+    --accent-soft: #33260F;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -12px rgba(0, 0, 0, .7);
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #14170F;
+  --surface: #1D2117;
+  --surface-2: #23281B;
+  --ink: #EDEFE6;
+  --ink-2: #A8AF9A;
+  --ink-3: #8B927D;
+  --rule: #333827;
+  --rule-strong: #454B36;
+  --accent: #E0A05A;
+  --accent-ink: #EEB878;
+  --accent-soft: #33260F;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -12px rgba(0, 0, 0, .7);
+}
+
+/* Couleurs de l'application : fixes dans les deux themes. Un bouton vert
+   reste vert, c'est le signal que l'adherent doit reconnaitre a l'ecran. */
+:root {
+  --ui-green: #21ba45;
+  --ui-blue: #2185d0;
+  --ui-red: #db2828;
+  --ui-orange: #f2711c;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "Signika", "Segoe UI", system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 22px 88px;
+}
+
+/* --- En-tete --------------------------------------------------- */
+
+header.masthead {
+  padding: 64px 0 34px;
+  border-bottom: 2px solid var(--rule-strong);
+  margin-bottom: 40px;
+}
+
+.eyebrow {
+  font-family: "Lato", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 900;
+  font-size: 11.5px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+  margin: 0 0 14px;
+}
+
+h1 {
+  font-family: "Newsreader", Georgia, serif;
+  font-weight: 600;
+  font-size: clamp(34px, 6vw, 46px);
+  line-height: 1.1;
+  letter-spacing: -.015em;
+  text-wrap: balance;
+  margin: 0 0 16px;
+}
+
+.lede {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 20px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 0;
+  max-width: 58ch;
+}
+
+.lede a {
+  color: var(--accent-ink);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+/* --- Sections --------------------------------------------------- */
+
+section { margin-bottom: 44px; }
+
+h2 {
+  font-family: "Newsreader", Georgia, serif;
+  font-weight: 600;
+  font-size: 26px;
+  line-height: 1.2;
+  text-wrap: balance;
+  margin: 0 0 6px;
+}
+
+.section-sub {
+  color: var(--ink-3);
+  font-size: 15px;
+  margin: 0 0 20px;
+}
+
+p { margin: 0 0 14px; }
+p:last-child { margin-bottom: 0; }
+
+strong { font-weight: 600; }
+
+/* --- Les 4 etapes : une vraie sequence, donc numerotee ----------- */
+
+ol.steps {
+  list-style: none;
+  counter-reset: step;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+ol.steps > li {
+  counter-increment: step;
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  padding: 20px 22px 20px 68px;
+}
+
+ol.steps > li:first-child { border-radius: 3px 3px 0 0; }
+ol.steps > li:last-child { border-radius: 0 0 3px 3px; }
+
+ol.steps > li::before {
+  content: counter(step);
+  position: absolute;
+  left: 22px;
+  top: 17px;
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 30px;
+  line-height: 1;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+ol.steps h3 {
+  font-family: "Signika", sans-serif;
+  font-weight: 600;
+  font-size: 17.5px;
+  margin: 0 0 8px;
+  color: var(--ink);
+}
+
+ol.steps p { font-size: 16px; }
+
+/* --- Points a savoir : pas une sequence, donc pas de numeros ----- */
+
+.facts {
+  display: grid;
+  gap: 2px;
+  grid-template-columns: 1fr;
+}
+
+.fact {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  padding: 18px 20px;
+}
+
+.fact:first-child { border-radius: 3px 3px 0 0; }
+.fact:last-child { border-radius: 0 0 3px 3px; }
+
+.fact h3 {
+  font-family: "Lato", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 900;
+  font-size: 11.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 0 0 7px;
+}
+
+.fact p { font-size: 16px; }
+
+/* --- Encart : la condition prealable ---------------------------- */
+
+.callout {
+  background: var(--accent-soft);
+  border-left: 3px solid var(--accent);
+  padding: 18px 22px;
+  border-radius: 0 3px 3px 0;
+}
+
+.callout h2 { font-size: 22px; margin-bottom: 10px; }
+.callout p { font-size: 16px; }
+
+.callout ol {
+  margin: 0 0 12px;
+  padding-left: 20px;
+  font-size: 16px;
+}
+.callout li { margin-bottom: 3px; }
+
+/* --- Pastilles reproduisant les boutons de l'application -------- */
+
+.btn {
+  display: inline-block;
+  font-family: "Lato", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+.btn-green  { background: var(--ui-green); }
+.btn-blue   { background: var(--ui-blue); }
+.btn-red    { background: var(--ui-red); }
+.btn-orange { background: var(--ui-orange); }
+
+/* Chemin de menu */
+.path {
+  font-family: "Lato", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 2px 7px;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+/* --- Depannage --------------------------------------------------- */
+
+.table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--surface);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15.5px;
+  min-width: 480px;
+}
+
+th {
+  font-family: "Lato", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  text-align: left;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--rule-strong);
+  background: var(--surface-2);
+}
+
+td {
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+  color: var(--ink-2);
+}
+
+td:first-child {
+  color: var(--ink);
+  width: 44%;
+}
+
+tr:last-child td { border-bottom: 0; }
+
+/* --- Pied ------------------------------------------------------- */
+
+footer {
+  margin-top: 52px;
+  padding-top: 22px;
+  border-top: 2px solid var(--rule-strong);
+  color: var(--ink-3);
+  font-size: 15px;
+}
+
+footer a {
+  color: var(--accent-ink);
+  text-underline-offset: 3px;
+}
+
+a:focus-visible,
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 560px) {
+  body { font-size: 16px; }
+  header.masthead { padding-top: 44px; }
+  ol.steps > li { padding: 18px 18px 18px 58px; }
+  ol.steps > li::before { left: 18px; font-size: 26px; }
+}
+
+/* --- Impression -------------------------------------------------
+   Fond blanc, mais couleurs conservees : sans print-color-adjust les
+   navigateurs "economisent l'encre" et vident les pastilles de leur
+   couleur, alors que c'est precisement le vert et le bleu que
+   l'adherent doit reconnaitre a l'ecran.
+   ---------------------------------------------------------------- */
+@media print {
+  :root {
+    --ground: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f6f7f2;
+    --ink: #16190f;
+    --ink-2: #3d4235;
+    --ink-3: #5d6352;
+    --rule: #cfd4c2;
+    --rule-strong: #b3baa2;
+    --accent: #8a4a12;
+    --accent-ink: #7a410f;
+    --accent-soft: #f6efe6;
+    --shadow: none;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body { font-size: 10.5pt; line-height: 1.5; }
+  .wrap { max-width: none; padding: 0; }
+
+  /* L'adresse est deja en clair dans le texte : pas de doublon entre
+     parentheses. */
+  a { color: var(--accent-ink); text-decoration: none; }
+
+  header.masthead { padding: 0 0 16pt; margin-bottom: 20pt; }
+  h1 { font-size: 28pt; }
+  .lede { font-size: 13pt; }
+
+  h2 { font-size: 16pt; margin-top: 20pt; break-after: avoid; page-break-after: avoid; }
+  .section-sub { margin-bottom: 12pt; }
+  ol.steps h3, .fact h3 { break-after: avoid; page-break-after: avoid; }
+
+  /* Une etape coupee en deux se relit deux fois. */
+  ol.steps > li, .fact, .callout, tr { break-inside: avoid; page-break-inside: avoid; }
+  thead { display: table-header-group; }
+  .table-scroll { overflow-x: visible; }
+  table { min-width: 0; }
+}
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Club canin CCAG42</p>
+    <h1>Inscrire ses chiens aux cours</h1>
+    <p class="lede">Tout se passe sur <a href="https://adherent.ccag42.org/">adherent.ccag42.org</a>, le site où vous gérez déjà votre cotisation. Rien à installer.</p>
+  </header>
+
+  <section class="callout">
+    <h2>Avant de commencer</h2>
+    <p>Trois conditions sont vérifiées à chaque inscription, pour vous comme pour chaque chien :</p>
+    <ol>
+      <li>cotisation à jour ;</li>
+      <li>compte actif ;</li>
+      <li>statut autre que « Non membre ».</li>
+    </ol>
+    <p>S'il en manque une, un bandeau orange nomme la personne concernée et ses boutons d'inscription disparaissent. Les autres membres du foyer restent inscriptibles. La régularisation passe par le secrétariat.</p>
+  </section>
+
+  <section>
+    <h2>S'inscrire, en quatre étapes</h2>
+    <p class="section-sub">Comptez deux minutes la première fois.</p>
+    <ol class="steps">
+
+      <li>
+        <h3>Se connecter</h3>
+        <p>Votre <strong>identifiant</strong> est celui communiqué par le club — ce n'est pas forcément votre adresse courriel. Le lien <strong>Mot de passe perdu ?</strong> accepte indifféremment l'identifiant ou l'adresse courriel.</p>
+      </li>
+
+      <li>
+        <h3>Ouvrir le catalogue</h3>
+        <p>Menu latéral : <span class="path">Mes inscriptions &rsaquo; Mes inscriptions</span>, puis l'onglet <strong>M'inscrire à une prochaine séance</strong>. Chaque séance est une carte : date, lieu, moniteur, places restantes. Les filtres <strong>Type</strong>, <strong>Activité</strong> et <strong>Du</strong> réduisent la liste.</p>
+      </li>
+
+      <li>
+        <h3>Choisir le chien</h3>
+        <p>Un seul choix possible : le bouton <span class="btn btn-green">porte le nom</span> et un clic suffit. Plusieurs choix : le bouton <span class="btn btn-green">S'inscrire</span> ouvre un menu, une ligne par personne ou par chien. <strong>Une inscription à la fois</strong> — rouvrez le menu pour le chien suivant.</p>
+        <p>Séance complète : le bouton devient <span class="btn btn-blue">Rejoindre la liste d'attente</span>. Si une place se libère, le premier de la file est inscrit automatiquement et prévenu par courriel. Rien à surveiller.</p>
+      </li>
+
+      <li>
+        <h3>Retrouver ses inscriptions</h3>
+        <p>Onglet <strong>Mes inscriptions</strong> : la prochaine séance en haut, les suivantes sous « À venir », les passées dans un accordéon. <strong>Une carte par chien inscrit</strong>, chacune avec ses propres boutons <strong>Détails</strong>, <strong>iCal</strong> et <span class="btn btn-red">Se désinscrire</span>.</p>
+      </li>
+
+    </ol>
+  </section>
+
+  <section>
+    <h2>Quatre choses à savoir</h2>
+    <div class="facts">
+
+      <div class="fact">
+        <h3>Se désinscrire</h3>
+        <p>Toujours possible tant que la séance n'a pas commencé, sans délai à respecter. <strong>Mais la réinscription n'est pas garantie</strong> : il faudra une place libre et la date limite non dépassée. Ne le faites que si vous en êtes sûr — la place repart aussitôt au premier de la liste d'attente.</p>
+      </div>
+
+      <div class="fact">
+        <h3>Deux chiens à la même heure</h3>
+        <p>C'est permis : le site ne vérifie pas que vous pouvez être à deux endroits à la fois, c'est à vous d'en juger. En revanche <strong>un même chien ne peut pas être inscrit deux fois sur des créneaux qui se chevauchent</strong> — un badge orange « Conflit horaire » prévient, et l'inscription est refusée.</p>
+      </div>
+
+      <div class="fact">
+        <h3>Mettre les séances dans son agenda</h3>
+        <p>Le bouton <strong>iCal</strong> sur une carte exporte une séance ; celui en haut de l'onglet <strong>Mes inscriptions</strong> les exporte toutes. Le fichier s'importe dans Google Agenda, Apple Calendrier ou Outlook.</p>
+      </div>
+
+      <div class="fact">
+        <h3>Les courriels du club</h3>
+        <p>Un <strong>récapitulatif hebdomadaire</strong> des séances ouvertes, et immédiatement les urgences : annulation, place obtenue depuis la liste d'attente. Pour les couper : <span class="path">Mes inscriptions &rsaquo; Mes notifications</span>, ou le lien en bas de chaque courriel.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>Le raccourci sur le téléphone</h2>
+    <p class="section-sub">Rien à télécharger : le site se pose sur l'écran d'accueil et s'ouvre en plein écran.</p>
+    <div class="facts">
+      <div class="fact">
+        <h3>iPhone &middot; iPad</h3>
+        <p>Depuis <strong>Safari</strong> uniquement, pas Chrome : bouton <strong>Partager</strong>, puis <strong>Sur l'écran d'accueil</strong>, puis <strong>Ajouter</strong>.</p>
+      </div>
+      <div class="fact">
+        <h3>Android</h3>
+        <p>Depuis <strong>Chrome</strong> : menu <strong>⋮</strong> en haut à droite, puis <strong>Ajouter à l'écran d'accueil</strong> (ou <strong>Installer l'application</strong>), puis <strong>Ajouter</strong>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Le bouton d'inscription n'apparaît pas ?</h2>
+    <p class="section-sub">Les cinq cas courants, et ce qu'ils veulent dire.</p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Ce que vous voyez</th>
+            <th scope="col">Ce que cela veut dire</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Un bandeau orange, aucun bouton vert</td>
+            <td>Une cotisation n'est pas à jour, ou un compte est inactif. Le bandeau nomme la personne — voir le secrétariat.</td>
+          </tr>
+          <tr>
+            <td>Une étiquette <span class="btn btn-orange">Aucun moniteur</span> à la place du bouton</td>
+            <td>Personne ne s'est encore proposé pour encadrer. Les inscriptions ouvriront dès qu'un moniteur sera affecté, et vous serez prévenu.</td>
+          </tr>
+          <tr>
+            <td>Le bouton existe, mais il manque un nom dans le menu</td>
+            <td>Ce chien est déjà inscrit à cette séance, ou n'appartient pas au groupe demandé par ce cours.</td>
+          </tr>
+          <tr>
+            <td>La séance n'apparaît nulle part</td>
+            <td>Elle est réservée à un groupe auquel personne de votre foyer n'appartient, ou elle est déjà passée.</td>
+          </tr>
+          <tr>
+            <td>Seul le bouton <strong>Détails</strong> reste</td>
+            <td>La date limite d'inscription est dépassée, ou la séance a été fermée par le club.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <p>Pour une cotisation, un chien à ajouter ou un changement de groupe : <strong>contactez le secrétariat</strong>. Les moniteurs ne peuvent modifier ni les fiches ni les groupes.</p>
+  </footer>
+
+</div>
