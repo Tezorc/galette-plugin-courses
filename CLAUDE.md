@@ -92,6 +92,22 @@ git worktree add ../courses-1.3 dev-galette-1.3
 - `doc/mode-emploi.md` : mode d'emploi utilisateur (fonctionnalites, guide d'utilisation, permissions, navigation). Toute nouvelle fonctionnalite, route, ecran ou changement de comportement doit y etre documente.
 - `doc/cahier-des-charges.md` : specification technique et fonctionnelle du plugin. Mettre a jour l'etat d'avancement des phases et ajouter toute nouvelle exigence.
 - `doc/tuto-adherent.md` : tutoriel destine aux **adherents**, diffusable tel quel. A mettre a jour uniquement quand le **parcours membre** change (inscription, liste d'attente, desinscription, notifications, connexion) — pas pour une evolution cote gestion. Il ne duplique pas le mode d'emploi : celui-ci renvoie vers lui (Annexe A) au lieu de reecrire le parcours, precisement pour que les deux ne divergent pas.
+  Deux pages en derivent, toutes deux personnalisees CCAG42 et toutes deux a
+  reporter quand le `.md` bouge : `tuto-adherent.html`, illustre, 10 pages, et
+  `tuto-adherent-condense.html`, sans reconstitution d'ecran, 3 pages, pour une
+  remise en main propre ou un courriel de bienvenue. La condensee coupe
+  volontairement les creneaux saisonniers et les seances multi-creneaux, qui ne
+  demandent aucune action a l'adherent. Les deux PDF se refabriquent par
+  `python scripts/build-pdf.py doc/<fichier>.html --expect Newsreader,Signika,Lato`.
+- `doc/tuto-moniteur.html` : pendant du precedent pour les **moniteurs**, meme
+  systeme visuel, 4 pages. Sa source de verite est l'**Annexe B** du
+  `mode-emploi.md`, pas le tuto adherent. A mettre a jour quand le parcours
+  moniteur change : volontariat, droits sur sa seance, pointage, workflow de
+  validation d'un evenement. Attention en particulier a la frontiere
+  responsable de groupe / moniteur affecte, que le document explique en tete :
+  seul un responsable de groupe peut se porter volontaire (`can_volunteer` dans
+  `SessionsController`), un moniteur affecte gere ses seances mais ne peut pas
+  en prendre de nouvelles.
 
 **Attention aux affirmations qui vieillissent en silence.** Un audit (voir
 `cahier-des-charges.md`, *Realignement du mode d'emploi sur le code*) a trouve
@@ -171,6 +187,11 @@ galette-plugin-courses/
     mode-emploi.md                 # Mode d'emploi utilisateur (gestionnaires)
     tuto-adherent.md               # Tutoriel adherent, generique, SOURCE DE VERITE du parcours membre
     tuto-adherent.html             # Meme tutoriel, illustre et personnalise CCAG42 (entree de build-pdf.py)
+    tuto-adherent-condense.html    # Version courte du meme tutoriel, 3 pages (entree de build-pdf.py)
+    tuto-adherent.pdf              # PDF produit depuis tuto-adherent.html (10 pages)
+    tuto-adherent-condense.pdf     # PDF produit depuis tuto-adherent-condense.html (3 pages)
+    tuto-moniteur.html             # Tutoriel moniteur, condense, personnalise CCAG42 (entree de build-pdf.py)
+    tuto-moniteur.pdf              # PDF produit depuis tuto-moniteur.html (4 pages)
     cahier-des-charges.md          # Cahier des charges complet
     historique-phases.md           # Archive des phases 1 a 76
   lib/GaletteCourses/
