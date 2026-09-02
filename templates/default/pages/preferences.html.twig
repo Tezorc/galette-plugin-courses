@@ -292,14 +292,7 @@ $(function() {
     }
 
     // Initialize existing rows on page load
-    $('.closure-row').each(function() {
-        var $row = $(this);
-        var from = $row.find('.closure-from-input').val();
-        if (isCompleteDate(from)) {
-            $row.find('.closure-to-input').attr('min', from);
-        }
-        refreshRow($row);
-    });
+    $('.closure-row').each(function() { refreshRow($(this)); });
     updateEmptyState();
 
     // Add closure row
@@ -317,17 +310,16 @@ $(function() {
     });
 
     // A date input fires "change" on every keystroke of the year, so while
-    // typing 2026 the field is worth 0002, then 0020, then 0202. Those partial
-    // dates are valid as far as the DOM is concerned, and they used to be
-    // written into the sibling field by an auto-correction that silently
-    // destroyed the start date. Nothing is rewritten any more: the end date
-    // only gets a min bound, and an inconsistent range is flagged by
-    // refreshRow(), which already renders it as an error.
+    // typing 2026 the field is worth 0002, then 0020, then 0202. An earlier
+    // version auto-corrected an inconsistent range by copying one bound onto
+    // the other, which silently destroyed the start date as soon as the first
+    // partial year arrived. A later one put a `min` on the end date, which had
+    // the browser marking the field invalid (red) at every keystroke and would
+    // have blocked submission outright. So: no rewriting, no constraint
+    // attribute. An inconsistent range is reported by refreshRow(), which
+    // already renders it as an error, and rejected server-side.
     $(document).on('change', '.closure-from-input, .closure-to-input', function() {
-        var $row  = $(this).closest('tr');
-        var $from = $row.find('.closure-from-input');
-        var from  = $from.val();
-        $row.find('.closure-to-input').attr('min', isCompleteDate(from) ? from : null);
+        var $row = $(this).closest('tr');
         refreshRow($row);
         checkOverlaps();
     });
