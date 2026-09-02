@@ -1,0 +1,534 @@
+<title>Encadrer une séance</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Signika:wght@400;500;600&family=Lato:wght@400;700;900&display=swap">
+
+<style>
+/* ------------------------------------------------------------------
+   Tutoriel moniteur, pendant de tuto-adherent-condense.html : meme
+   palette, memes familles, meme longueur de lecture. Les couleurs
+   Fomantic ne servent qu'aux pastilles reproduisant un bouton reel.
+   ------------------------------------------------------------------ */
+:root {
+  --ground: #EFF1EA;
+  --surface: #FFFFFF;
+  --surface-2: #F7F8F2;
+  --ink: #1A1E17;
+  --ink-2: #59604F;
+  --ink-3: #7C836F;
+  --rule: #D9DDCF;
+  --rule-strong: #C3C9B4;
+  --accent: #A85B18;
+  --accent-ink: #8A4A12;
+  --accent-soft: #F3E6D7;
+  --shadow: 0 1px 2px rgba(26, 30, 23, .06), 0 8px 24px -12px rgba(26, 30, 23, .18);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #14170F;
+    --surface: #1D2117;
+    --surface-2: #23281B;
+    --ink: #EDEFE6;
+    --ink-2: #A8AF9A;
+    --ink-3: #8B927D;
+    --rule: #333827;
+    --rule-strong: #454B36;
+    --accent: #E0A05A;
+    --accent-ink: #EEB878;
+    --accent-soft: #33260F;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -12px rgba(0, 0, 0, .7);
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #14170F;
+  --surface: #1D2117;
+  --surface-2: #23281B;
+  --ink: #EDEFE6;
+  --ink-2: #A8AF9A;
+  --ink-3: #8B927D;
+  --rule: #333827;
+  --rule-strong: #454B36;
+  --accent: #E0A05A;
+  --accent-ink: #EEB878;
+  --accent-soft: #33260F;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -12px rgba(0, 0, 0, .7);
+}
+
+/* Couleurs de l'application : fixes dans les deux themes. Un bouton
+   teal reste teal, c'est le signal a reconnaitre a l'ecran. */
+:root {
+  --ui-teal: #00b5ad;
+  --ui-green: #21ba45;
+  --ui-blue: #2185d0;
+  --ui-red: #db2828;
+  --ui-orange: #f2711c;
+  --ui-grey: #767676;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "Signika", "Segoe UI", system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 22px 88px;
+}
+
+/* --- En-tete --------------------------------------------------- */
+
+header.masthead {
+  padding: 64px 0 34px;
+  border-bottom: 2px solid var(--rule-strong);
+  margin-bottom: 40px;
+}
+
+.eyebrow {
+  font-family: "Lato", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 900;
+  font-size: 11.5px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+  margin: 0 0 14px;
+}
+
+h1 {
+  font-family: "Newsreader", Georgia, serif;
+  font-weight: 600;
+  font-size: clamp(34px, 6vw, 46px);
+  line-height: 1.1;
+  letter-spacing: -.015em;
+  text-wrap: balance;
+  margin: 0 0 16px;
+}
+
+.lede {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 20px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 0;
+  max-width: 58ch;
+}
+
+.lede a {
+  color: var(--accent-ink);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+/* --- Sections --------------------------------------------------- */
+
+section { margin-bottom: 44px; }
+
+h2 {
+  font-family: "Newsreader", Georgia, serif;
+  font-weight: 600;
+  font-size: 26px;
+  line-height: 1.2;
+  text-wrap: balance;
+  margin: 0 0 6px;
+}
+
+.section-sub {
+  color: var(--ink-3);
+  font-size: 15px;
+  margin: 0 0 20px;
+}
+
+p { margin: 0 0 14px; }
+p:last-child { margin-bottom: 0; }
+
+strong { font-weight: 600; }
+
+/* --- Le cycle d'une seance : une vraie sequence, donc numerotee -- */
+
+ol.steps {
+  list-style: none;
+  counter-reset: step;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+ol.steps > li {
+  counter-increment: step;
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  padding: 20px 22px 20px 68px;
+}
+
+ol.steps > li:first-child { border-radius: 3px 3px 0 0; }
+ol.steps > li:last-child { border-radius: 0 0 3px 3px; }
+
+ol.steps > li::before {
+  content: counter(step);
+  position: absolute;
+  left: 22px;
+  top: 17px;
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 30px;
+  line-height: 1;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+ol.steps h3 {
+  font-family: "Signika", sans-serif;
+  font-weight: 600;
+  font-size: 17.5px;
+  margin: 0 0 8px;
+  color: var(--ink);
+}
+
+ol.steps p { font-size: 16px; }
+
+/* --- Blocs non sequentiels --------------------------------------- */
+
+.facts {
+  display: grid;
+  gap: 2px;
+  grid-template-columns: 1fr;
+}
+
+.fact {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  padding: 18px 20px;
+}
+
+.fact:first-child { border-radius: 3px 3px 0 0; }
+.fact:last-child { border-radius: 0 0 3px 3px; }
+
+.fact h3 {
+  font-family: "Lato", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 900;
+  font-size: 11.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 0 0 7px;
+}
+
+.fact p { font-size: 16px; }
+
+/* --- Encarts ----------------------------------------------------- */
+
+.callout {
+  background: var(--accent-soft);
+  border-left: 3px solid var(--accent);
+  padding: 18px 22px;
+  border-radius: 0 3px 3px 0;
+}
+
+.callout h2 { font-size: 22px; margin-bottom: 10px; }
+.callout p { font-size: 16px; }
+
+.callout ul {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 16px;
+}
+.callout li { margin-bottom: 3px; }
+
+/* --- Pastilles reproduisant les boutons de l'application --------- */
+
+.btn {
+  display: inline-block;
+  font-family: "Lato", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+.btn-teal   { background: var(--ui-teal); }
+.btn-green  { background: var(--ui-green); }
+.btn-blue   { background: var(--ui-blue); }
+.btn-red    { background: var(--ui-red); }
+.btn-orange { background: var(--ui-orange); }
+.btn-grey   { background: var(--ui-grey); }
+
+.path {
+  font-family: "Lato", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 2px 7px;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+/* --- Tableaux ---------------------------------------------------- */
+
+.table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--surface);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15.5px;
+  min-width: 480px;
+}
+
+th {
+  font-family: "Lato", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  text-align: left;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--rule-strong);
+  background: var(--surface-2);
+}
+
+td {
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+  color: var(--ink-2);
+}
+
+td:first-child {
+  color: var(--ink);
+  width: 42%;
+}
+
+tr:last-child td { border-bottom: 0; }
+
+/* --- Pied -------------------------------------------------------- */
+
+footer {
+  margin-top: 52px;
+  padding-top: 22px;
+  border-top: 2px solid var(--rule-strong);
+  color: var(--ink-3);
+  font-size: 15px;
+}
+
+footer a {
+  color: var(--accent-ink);
+  text-underline-offset: 3px;
+}
+
+a:focus-visible,
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 560px) {
+  body { font-size: 16px; }
+  header.masthead { padding-top: 44px; }
+  ol.steps > li { padding: 18px 18px 18px 58px; }
+  ol.steps > li::before { left: 18px; font-size: 26px; }
+}
+
+/* --- Impression -------------------------------------------------- */
+@media print {
+  :root {
+    --ground: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f6f7f2;
+    --ink: #16190f;
+    --ink-2: #3d4235;
+    --ink-3: #5d6352;
+    --rule: #cfd4c2;
+    --rule-strong: #b3baa2;
+    --accent: #8a4a12;
+    --accent-ink: #7a410f;
+    --accent-soft: #f6efe6;
+    --shadow: none;
+  }
+
+  /* Sans cela le navigateur "economise l'encre" et vide les pastilles
+     de leur couleur — or c'est le bouton qu'il faut reconnaitre. */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body { font-size: 10.5pt; line-height: 1.5; }
+  .wrap { max-width: none; padding: 0; }
+  a { color: var(--accent-ink); text-decoration: none; }
+
+  header.masthead { padding: 0 0 16pt; margin-bottom: 20pt; }
+  h1 { font-size: 28pt; }
+  .lede { font-size: 13pt; }
+
+  h2 { font-size: 16pt; margin-top: 20pt; break-after: avoid; page-break-after: avoid; }
+  .section-sub { margin-bottom: 12pt; }
+  ol.steps h3, .fact h3 { break-after: avoid; page-break-after: avoid; }
+
+  ol.steps > li, .fact, .callout, tr { break-inside: avoid; page-break-inside: avoid; }
+  thead { display: table-header-group; }
+  .table-scroll { overflow-x: visible; }
+  table { min-width: 0; }
+}
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Club canin CCAG42 &middot; Moniteurs</p>
+    <h1>Encadrer une séance</h1>
+    <p class="lede">Se proposer, préparer, pointer les présences. Tout se passe sur <a href="https://adherent.ccag42.org/">adherent.ccag42.org</a>, dans le menu <strong>Gestion inscriptions</strong>.</p>
+  </header>
+
+  <section class="callout">
+    <h2>Ce que vous voyez, et pourquoi</h2>
+    <p>Le menu <strong>Gestion inscriptions</strong> apparaît dans deux cas :</p>
+    <ul>
+      <li>vous êtes <strong>responsable de groupe</strong> dans Galette ;</li>
+      <li>ou vous êtes <strong>affecté comme moniteur</strong> sur au moins une séance.</li>
+    </ul>
+    <p style="margin-top:12px">La différence compte : <strong>seuls les responsables de groupe peuvent se porter volontaires</strong> sur une séance. Un moniteur affecté sans cette responsabilité gère ses séances normalement, mais ne peut pas en prendre de nouvelles lui-même — c'est le staff qui l'affecte.</p>
+  </section>
+
+  <section>
+    <h2>Le cycle d'une séance</h2>
+    <p class="section-sub">De la prise en charge au pointage.</p>
+    <ol class="steps">
+
+      <li>
+        <h3>Se proposer</h3>
+        <p><span class="path">Mes inscriptions &rsaquo; Mes séances comme moniteur</span>, onglet <strong>Se proposer moniteur</strong> : la liste des séances sans moniteur sur vos groupes. Le bouton <span class="btn btn-teal">Se porter volontaire comme moniteur</span> vous affecte immédiatement, et la séance bascule dans l'onglet <strong>Mes séances comme moniteur</strong>.</p>
+        <p>Le volontariat est refusé sur une séance <strong>annulée</strong>, et si vous animez déjà une séance qui chevauche le même créneau.</p>
+      </li>
+
+      <li>
+        <h3>Préparer</h3>
+        <p>Depuis la fiche de la séance : <span class="btn btn-teal">Inscrire un membre</span> pour une inscription par procuration, l'ajustement de la <strong>capacité</strong>, et l'ajout d'un <strong>co-moniteur</strong>. Si la séance est pleine, le bloc <strong>Gestion de la liste d'attente</strong> propose d'augmenter la capacité et de promouvoir automatiquement les personnes en file.</p>
+        <p>Une inscription par procuration sur une séance complète bascule d'elle-même en liste d'attente plutôt que d'échouer.</p>
+      </li>
+
+      <li>
+        <h3>Pointer, le jour même</h3>
+        <p>Le pointage apparaît <strong>le jour de la séance et après</strong>, jamais avant. Dans la liste des <strong>Membres inscrits</strong>, choisir pour chacun <strong>Présent</strong>, <strong>Absent</strong> ou <strong>Absent (excusé)</strong>, puis <span class="btn btn-green">Enregistrer le pointage</span>.</p>
+        <p>Quelqu'un est venu sans s'être inscrit : le bloc <strong>Présence hors inscription</strong> permet de l'ajouter directement.</p>
+      </li>
+
+      <li>
+        <h3>Si la séance ne peut pas avoir lieu</h3>
+        <p><span class="btn btn-grey">Fermer la séance</span> arrête les inscriptions <strong>sans toucher aux inscrits</strong> — la séance a bien lieu, elle n'accepte plus personne. <span class="btn btn-red">Annuler la séance</span> est tout autre chose : les inscrits reçoivent un courriel d'annulation et la liste d'attente est purgée.</p>
+        <p>Les deux se défont : une séance fermée se rouvre, une séance annulée se réactive.</p>
+      </li>
+
+    </ol>
+  </section>
+
+  <section>
+    <h2>Vos droits sur une séance dont vous êtes moniteur</h2>
+    <p class="section-sub">Les mêmes leviers que le staff — et uniquement sur celle-là.</p>
+    <div class="facts">
+      <div class="fact">
+        <h3>Sur vos séances</h3>
+        <p>Modifier la date, l'horaire et la capacité ; ajouter ou retirer un co-moniteur ; inscrire ou désinscrire un membre ; fermer, rouvrir, annuler, réactiver ; gérer la liste d'attente.</p>
+      </div>
+      <div class="fact">
+        <h3>Sur les autres</h3>
+        <p>Vous restez un adhérent ou un responsable de groupe ordinaire. Aucun bouton de gestion n'apparaît, et l'action est refusée côté serveur si elle est tentée autrement.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Créer un cours</h2>
+    <p class="section-sub">Réservé aux responsables de groupe et aux moniteurs affectés.</p>
+    <div class="facts">
+      <div class="fact">
+        <h3>Le formulaire</h3>
+        <p><span class="path">Gestion inscriptions &rsaquo; Événements</span>, puis <strong>Ajouter un événement</strong>. Nom, description, type, lieu et au moins un <strong>créneau horaire</strong> sont obligatoires. Un événement récurrent génère ses séances à l'avance, sur le rythme choisi.</p>
+      </div>
+      <div class="fact">
+        <h3>Puis la validation</h3>
+        <p>Vous créez toujours en <strong>Brouillon</strong>. Le bouton <strong>Soumettre pour validation</strong> prévient le staff ; c'est lui qui valide.</p>
+      </div>
+      <div class="fact">
+        <h3>Ne cherchez pas les séances avant</h3>
+        <p><strong>C'est la validation qui crée les séances</strong>, pas l'enregistrement. Un événement en Brouillon ou En attente n'apparaît dans aucune liste de séances — seule sa fiche le montre, avec un message qui l'explique. Rien d'anormal.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Les courriels que vous recevez</h2>
+    <p class="section-sub">Un par jour au maximum, jamais un par séance.</p>
+    <div class="facts">
+      <div class="fact">
+        <h3>Le récapitulatif quotidien</h3>
+        <p>Un seul courriel regroupe toutes les séances nouvellement créées <strong>qui attendent encore un moniteur</strong> sur vos groupes. Une séance qui trouve preneur entre-temps en disparaît d'elle-même.</p>
+      </div>
+      <div class="fact">
+        <h3>Les couper</h3>
+        <p><span class="path">Mes inscriptions &rsaquo; Mes notifications</span>, ou le lien de désinscription en bas de chaque courriel automatique, utilisable sans se connecter.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Quand quelque chose ne s'affiche pas</h2>
+    <p class="section-sub">Cinq situations qui ressemblent à des pannes et n'en sont pas.</p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Ce que vous voyez</th>
+            <th scope="col">Ce que cela veut dire</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>L'onglet <strong>Se proposer moniteur</strong> dit de demander au staff</td>
+            <td>Vous n'êtes pas responsable de groupe. Le staff peut vous affecter sur une séance ; vous la gérerez ensuite normalement.</td>
+          </tr>
+          <tr>
+            <td>Aucune séance dans <strong>Se proposer moniteur</strong></td>
+            <td>Toutes les séances de vos groupes ont déjà un moniteur, ou aucune n'est encore créée.</td>
+          </tr>
+          <tr>
+            <td>Le bouton <span class="btn btn-teal">Se porter volontaire</span> manque sur une séance</td>
+            <td>La séance est annulée, elle ne dépend pas d'un groupe que vous gérez, ou vous animez déjà une séance sur le même créneau.</td>
+          </tr>
+          <tr>
+            <td>L'événement créé n'a aucune séance</td>
+            <td>Il n'est pas encore validé. Les séances naissent à la validation, pas à l'enregistrement.</td>
+          </tr>
+          <tr>
+            <td>Le pointage n'apparaît pas</td>
+            <td>Il n'ouvre que le jour de la séance. Avant, la liste des inscrits est consultable mais non modifiable.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <p>Pour une cotisation, un adhérent à rattacher ou un changement de groupe : <strong>contactez le secrétariat</strong>. Un moniteur ne peut modifier ni les fiches adhérent ni les groupes.</p>
+  </footer>
+
+</div>
