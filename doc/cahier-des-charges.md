@@ -711,12 +711,21 @@ declenchait la correction et remplacait la date de debut par la date partielle.
 La suite de la frappe ne la restaurait pas : une fois `to` devenu 2026, la
 plage etait redevenue coherente, donc plus aucune correction n'intervenait.
 
-**Solution** : plus aucune reecriture silencieuse. Le champ de fin recoit
-seulement un attribut `min` egal a la date de debut (le navigateur empeche
-alors la saisie incoherente au selecteur), et une plage inversee reste
-signalee visuellement par `refreshRow()`, qui affichait deja un libelle
-"Erreur". Un helper `isCompleteDate()` ecarte les annees en cours de frappe
+**Solution** : plus aucune reecriture silencieuse, et aucun attribut de
+contrainte non plus. Une plage inversee est signalee visuellement par
+`refreshRow()`, qui affichait deja un libelle "Erreur", et refusee cote
+serveur. Un helper `isCompleteDate()` ecarte les annees en cours de frappe
 (4 chiffres et >= 1000) dans `refreshRow()` et `checkOverlaps()`.
+
+**Fausse piste, corrigee ensuite** : une premiere version posait sur le champ
+de fin un attribut `min` egal a la date de debut, pour laisser le navigateur
+empecher la saisie incoherente. Mauvaise idee sur un champ date en cours de
+frappe : chaque annee partielle sortant de la borne, le navigateur marquait le
+champ invalide et l'entourait de rouge a chaque touche, et la validation de
+contrainte aurait bloque l'enregistrement du formulaire. Retenir la regle
+generale : ne pas poser de contrainte HTML5 dependant d'un autre champ sur un
+`input type="date"`, dont les valeurs intermediaires sont par nature hors
+bornes.
 
 #### Probleme 2 - toutes les fermetures effacees a partir de 3 periodes
 
