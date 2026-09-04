@@ -25,12 +25,35 @@ declare(strict_types=1);
  * PHPUnit bootstrap.
  *
  * - Loads composer autoload (vendor/ + tests/stubs/ + lib/).
+ * - Registers a fallback PSR-4 loader for `tests/stubs/`, so the stubs resolve
+ *   even when the generated autoloader is out of step with `composer.json`.
  * - Defines `_T()` (Galette's translation marker) as an identity function so
  *   plugin classes that call _T() inside match arms don't crash under test.
  *   In production, Galette installs the real _T() globally.
  */
 
 require_once __DIR__ . '/../vendor/autoload.php';
+
+/*
+ * Stub fallback.
+ *
+ * `vendor/` is gitignored and shared by every branch of a single working tree,
+ * while `autoload-dev` differs between them: `main` maps only Galette\ and
+ * Analog\, `dev-galette-1.3` adds Laminas\ for the Expression stub. Checking
+ * out one branch does not regenerate the other's autoloader, so the suite could
+ * fail on a missing stub class with nothing wrong in the tests themselves
+ * (11 red on `Laminas\Db\Sql\Expression` — a `composer dump-autoload` away
+ * from green, which is not a diagnosis anyone should have to make twice).
+ *
+ * Registered after composer's loader, so a real vendor class always wins; this
+ * only catches prefixes composer has no mapping for.
+ */
+spl_autoload_register(static function (string $class): void {
+    $path = __DIR__ . '/stubs/' . str_replace('\\', '/', $class) . '.php';
+    if (is_file($path)) {
+        require_once $path;
+    }
+});
 
 if (!function_exists('_T')) {
     function _T(string $msg, ?string $domain = null): string

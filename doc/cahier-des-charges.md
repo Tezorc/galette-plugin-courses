@@ -609,6 +609,7 @@ Le developpement est organise en phases progressives.
 
 - Charge `vendor/autoload.php` et definit `_T()` comme fonction identite (en production, Galette installe la vraie). Sans ce stub, toute classe utilisant `_T()` dans un `match` (notamment `MailTemplate`) plante a l'instanciation des tests.
 - `phpunit.xml.dist` pointe vers ce fichier au lieu de `vendor/autoload.php` direct.
+- Enregistre en plus un **autoloader de repli PSR-4 sur `tests/stubs/`**, apres celui de Composer (donc une vraie classe du `vendor/` gagne toujours ; le repli ne rattrape que les prefixes que Composer n'associe a rien). Motif : `vendor/` est gitignore et partage par toutes les branches d'un meme arbre de travail, alors que l'`autoload-dev` differe entre elles — `main` ne declare que `Galette\` et `Analog\`, `dev-galette-1.3` y ajoute `Laminas\` pour le stub `Expression`. Un `git checkout` ne regenere pas l'autoloader de l'autre branche : les 16 cas de `WeeklyDigestMemberTest` tombaient alors sur `Class "Laminas\Db\Sql\Expression" not found`, avale par le `catch (Throwable)` du snapshot, qui renvoyait un rapport vide — 11 echecs sans rien de faux dans les tests ni dans le code. La CI ne l'a jamais vu (elle fait un `composer install` neuf a chaque job) : c'est un piege purement local, et le repli le supprime.
 
 #### F20.4 - Tests securite et ACL
 
