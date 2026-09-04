@@ -96,7 +96,9 @@ $this->register(
         'coursesSessionExportRegistrations' => 'groupmanager',
         'coursesMailSession'                => 'groupmanager',
         'coursesMailInstructors'            => 'member',
-        'coursesStats'                  => 'staff',
+        // 'member' volontairement : un moniteur n'est ni staff ni groupmanager.
+        // Le vrai gate est denyUnlessStaffOrInstructor() dans StatsController.
+        'coursesStats'                  => 'member',
         'coursesPreferences'            => 'staff',
         'coursesDoPreferences'          => 'staff',
         'coursesDoRegenerateCronToken'  => 'admin',

@@ -42,6 +42,7 @@ use Throwable;
 class StatsController extends AbstractController
 {
     use PluginControllerTrait;
+    use CoursesAclGuard;
 
     /**
      * @var array<string, mixed>
@@ -51,6 +52,18 @@ class StatsController extends AbstractController
 
     public function show(Request $request, Response $response): Response
     {
+        // Route ACL is 'member' on purpose: a moniteur is neither staff nor
+        // groupmanager, so the real gate lives here (admin / staff / instructor
+        // of at least one session). Do not tighten the route back to 'staff'.
+        $deny = $this->denyUnlessStaffOrInstructor(
+            $response,
+            $this->routeparser->urlFor('coursesSessions'),
+            _T('You do not have permission to view statistics.', 'courses')
+        );
+        if ($deny !== null) {
+            return $deny;
+        }
+
         $params = $request->getQueryParams();
         $dateFrom = !empty($params['stats_from']) ? $params['stats_from'] : date('Y-01-01');
         $dateTo   = !empty($params['stats_to']) ? $params['stats_to'] : date('Y-m-d');
@@ -90,6 +103,9 @@ class StatsController extends AbstractController
                 'stats'         => $stats,
                 'stats_from'    => $dateFrom,
                 'stats_to'      => $dateTo,
+                // Member fiches are staff-only in the core: for a moniteur the
+                // names are rendered as plain text rather than dead links.
+                'can_view_members' => $this->login->isAdmin() || $this->login->isStaff(),
                 'require_charts' => true,
             ]
         );
