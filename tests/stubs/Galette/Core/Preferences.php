@@ -21,26 +21,21 @@
 
 declare(strict_types=1);
 
-namespace Analog;
+namespace Galette\Core;
 
 /**
- * Test-only stub for Analog\Analog (the logger Galette uses).
- * Swallows log calls so production code's catch blocks don't blow up under test.
+ * Test-only stub for Galette\Core\Preferences.
+ *
+ * The real class is a magic-property bag backed by the DB. Plugin code only
+ * reads a handful of `pref_*` values from it, so a plain public-property object
+ * is enough to satisfy the constructor type hint under test.
  *
  * @author Team CCAG <contact@ccag42.org>
  */
-class Analog
+class Preferences
 {
-    public const URGENT = 0;
-    public const ALERT = 1;
-    public const CRITICAL = 2;
-    public const ERROR = 3;
-    public const WARNING = 4;
-    public const NOTICE = 5;
-    public const INFO = 6;
-    public const DEBUG = 7;
-
-    public static function log(mixed $message, int $level = self::DEBUG): void
-    {
-    }
+    public string $pref_galette_url = 'https://example.test/galette';
+    public string $pref_email = 'club@example.test';
+    public string $pref_email_nom = 'Club';
+    public string $pref_lang = 'fr_FR';
 }

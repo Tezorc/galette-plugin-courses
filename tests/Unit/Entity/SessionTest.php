@@ -31,6 +31,8 @@ use PHPUnit\Framework\TestCase;
 /**
  * Targets the i18n contract for cancellation reason keys (now language-neutral)
  * and the locale-aware date/time formatters that replaced the FRENCH_* tables.
+ *
+ * @author Team CCAG <contact@ccag42.org>
  */
 final class SessionTest extends TestCase
 {

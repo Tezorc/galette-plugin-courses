@@ -23,31 +23,40 @@ declare(strict_types=1);
 
 namespace Galette\Core;
 
+/**
+ * Test-only stub for Galette\Core\Db.
+ *
+ * The query builders return `mixed` rather than the real Laminas types: tests
+ * substitute them with anonymous classes exposing only the surface the code
+ * under test touches, which a narrower return type would reject.
+ *
+ * @author Team CCAG <contact@ccag42.org>
+ */
 class Db
 {
     public mixed $connection = null;
 
-    public function select(string $table)
+    public function select(string $table): mixed
     {
         return new \stdClass();
     }
 
-    public function insert(string $table)
+    public function insert(string $table): mixed
     {
         return new \stdClass();
     }
 
-    public function update(string $table)
+    public function update(string $table): mixed
     {
         return new \stdClass();
     }
 
-    public function delete(string $table)
+    public function delete(string $table): mixed
     {
         return new \stdClass();
     }
 
-    public function execute(mixed $query)
+    public function execute(mixed $query): mixed
     {
         return new \ArrayIterator([]);
     }

@@ -28,6 +28,13 @@ use GaletteCourses\MemberPreferences;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Targets the unsubscribe-token lookup, the one entry point reachable without
+ * authentication: findMemberIdByToken() must reject anything that is not a
+ * well-formed token before it ever reaches the database.
+ *
+ * @author Team CCAG <contact@ccag42.org>
+ */
 final class MemberPreferencesTest extends TestCase
 {
     /**

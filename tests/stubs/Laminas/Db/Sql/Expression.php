@@ -21,26 +21,25 @@
 
 declare(strict_types=1);
 
-namespace Analog;
+namespace Laminas\Db\Sql;
 
 /**
- * Test-only stub for Analog\Analog (the logger Galette uses).
- * Swallows log calls so production code's catch blocks don't blow up under test.
+ * Test-only stub for Laminas\Db\Sql\Expression.
+ *
+ * laminas-db lives in the Galette core vendor/, not the plugin's, so the raw
+ * SQL fragments the plugin wraps (e.g. `MAX(id_pending)`) need a placeholder
+ * class to be instantiable under test. It only has to hold the string.
  *
  * @author Team CCAG <contact@ccag42.org>
  */
-class Analog
+class Expression
 {
-    public const URGENT = 0;
-    public const ALERT = 1;
-    public const CRITICAL = 2;
-    public const ERROR = 3;
-    public const WARNING = 4;
-    public const NOTICE = 5;
-    public const INFO = 6;
-    public const DEBUG = 7;
-
-    public static function log(mixed $message, int $level = self::DEBUG): void
+    public function __construct(private string $expression = '')
     {
+    }
+
+    public function getExpression(): string
+    {
+        return $this->expression;
     }
 }

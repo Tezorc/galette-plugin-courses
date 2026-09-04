@@ -32,6 +32,8 @@ use PHPUnit\Framework\TestCase;
  * Targets canRegisterSelf — the gate behind the green "S'inscrire" button
  * that phase 17/19 hardened. The early-exit branches are the most valuable
  * to lock down because a regression here would re-open IDOR-style bypasses.
+ *
+ * @author Team CCAG <contact@ccag42.org>
  */
 final class EventTest extends TestCase
 {
