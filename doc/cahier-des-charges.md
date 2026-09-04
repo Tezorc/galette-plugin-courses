@@ -580,7 +580,7 @@ Le developpement est organise en phases progressives.
 
 ### Phase 20 - Mise en place de l'infrastructure de tests
 
-**Statut :** EN COURS - 71 tests verts (ACL + securite token + templates email + seances + digest hebdo membre)
+**Statut :** EN COURS - 83 tests verts (ACL + securite token + templates email + seances + digest hebdo membre)
 
 #### F20.1 - Outillage PHPUnit
 
@@ -609,7 +609,7 @@ Le developpement est organise en phases progressives.
 
 - Charge `vendor/autoload.php` et definit `_T()` comme fonction identite (en production, Galette installe la vraie). Sans ce stub, toute classe utilisant `_T()` dans un `match` (notamment `MailTemplate`) plante a l'instanciation des tests.
 - `phpunit.xml.dist` pointe vers ce fichier au lieu de `vendor/autoload.php` direct.
-- Enregistre en plus un **autoloader de repli PSR-4 sur `tests/stubs/`**, apres celui de Composer (donc une vraie classe du `vendor/` gagne toujours ; le repli ne rattrape que les prefixes que Composer n'associe a rien). Motif : `vendor/` est gitignore et partage par toutes les branches d'un meme arbre de travail, alors que l'`autoload-dev` differe entre elles — `main` ne declare que `Galette\` et `Analog\`, `dev-galette-1.3` y ajoute `Laminas\` pour le stub `Expression`. Un `git checkout` ne regenere pas l'autoloader de l'autre branche : les 16 cas de `WeeklyDigestMemberTest` tombaient alors sur `Class "Laminas\Db\Sql\Expression" not found`, avale par le `catch (Throwable)` du snapshot, qui renvoyait un rapport vide — 11 echecs sans rien de faux dans les tests ni dans le code. La CI ne l'a jamais vu (elle fait un `composer install` neuf a chaque job) : c'est un piege purement local, et le repli le supprime.
+- Enregistre en plus un **autoloader de repli PSR-4 sur `tests/stubs/`**, apres celui de Composer (donc une vraie classe du `vendor/` gagne toujours ; le repli ne rattrape que les prefixes que Composer n'associe a rien). Motif : `vendor/` est gitignore et partage par toutes les branches d'un meme arbre de travail, alors que l'`autoload-dev` peut differer entre elles. Un `git checkout` ne regenere pas l'autoloader de l'autre branche, et un prefixe manquant se manifeste tres mal : quand `Laminas\` n'etait declare que sur `dev-galette-1.3`, les 16 cas de `WeeklyDigestMemberTest` tombaient sur `Class "Laminas\Db\Sql\Expression" not found`, avale par le `catch (Throwable)` du snapshot, qui renvoyait un rapport vide — 11 echecs sans rien de faux dans les tests ni dans le code. La CI ne l'a jamais vu (elle fait un `composer install` neuf a chaque job) : c'est un piege purement local, et le repli le supprime, y compris maintenant que les deux branches declarent le meme `autoload-dev`.
 
 #### F20.4 - Tests securite et ACL
 
@@ -664,9 +664,9 @@ Ces tests ont ete valides par mutation : casser le dedup par `session_id`, la br
 - Promotion FIFO de la liste d'attente (`Registration::cancel` + `Waitlist::promoteNext`) — necessite probablement des tests d'integration MySQL (FK CASCADE et UNIQUE rendent les mocks peu representatifs).
 - CI GitHub Actions pour relancer la suite a chaque push.
 
-**Bilan : 71 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
+**Bilan : 83 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
 
-> Note Windows : `php-cs-fixer` signale les 37 fichiers PHP du depot en local a cause du checkout CRLF (`core.autocrlf=true`, pas de `.gitattributes`) alors que les blobs sont stockes en LF. La CI Linux ne voit rien. Ne pas lancer `php-cs-fixer fix` depuis Windows : il reecrirait tous les fichiers. De meme, `phpstan` / `phpcs` / `twigcs` / `docheader` ne tournent qu'avec le plugin place dans un checkout du coeur Galette (`galette/plugins/...`), leurs binaires vivant dans le `vendor/` du coeur.
+> Note Windows : `php-cs-fixer` signale les fichiers PHP du depot en local a cause du checkout CRLF (`core.autocrlf=true`, pas de `.gitattributes`) alors que les blobs sont stockes en LF. La CI Linux ne voit rien. Ne pas lancer `php-cs-fixer fix` depuis Windows : il reecrirait tous les fichiers. De meme, `phpstan` / `phpcs` / `twigcs` / `docheader` ne tournent qu'avec le plugin place dans un checkout du coeur Galette (`galette/plugins/...`), leurs binaires vivant dans le `vendor/` du coeur.
 
 ### Phase 58 - Polish smartphone du tableau des periodes de fermeture (preferences)
 

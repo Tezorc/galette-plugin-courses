@@ -38,12 +38,15 @@ require_once __DIR__ . '/../vendor/autoload.php';
  * Stub fallback.
  *
  * `vendor/` is gitignored and shared by every branch of a single working tree,
- * while `autoload-dev` differs between them: `main` maps only Galette\ and
- * Analog\, `dev-galette-1.3` adds Laminas\ for the Expression stub. Checking
- * out one branch does not regenerate the other's autoloader, so the suite could
- * fail on a missing stub class with nothing wrong in the tests themselves
- * (11 red on `Laminas\Db\Sql\Expression` — a `composer dump-autoload` away
- * from green, which is not a diagnosis anyone should have to make twice).
+ * while `autoload-dev` can differ between them. Checking out one branch does not
+ * regenerate the other's autoloader, and a missing prefix fails badly: when
+ * Laminas\ was declared on `dev-galette-1.3` only, the 16 WeeklyDigestMemberTest
+ * cases died on `Class "Laminas\Db\Sql\Expression" not found`, swallowed by the
+ * snapshot's `catch (Throwable)`, which then returned an empty report. Eleven red
+ * assertions, nothing wrong in the tests or the code, and a `composer
+ * dump-autoload` away from green -- not a diagnosis anyone should make twice.
+ * Both branches now declare the same `autoload-dev`; this keeps it from
+ * mattering again.
  *
  * Registered after composer's loader, so a real vendor class always wins; this
  * only catches prefixes composer has no mapping for.
