@@ -689,6 +689,69 @@ Ces tests ont ete valides par mutation : casser le dedup par `session_id`, la br
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Evolution - Statistiques ouvertes aux moniteurs
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : "les moniteurs doivent avoir acces aux statistiques".
+
+#### Probleme
+
+La page `/stats` etait fermee aux moniteurs par deux verrous simultanes : l'ACL de
+route `coursesStats => 'staff'` dans `_define.php`, et la condition d'affichage du
+menu `isAdmin() || isStaff()` dans `PluginGaletteCourses::getMenusItemsList()`. Un
+moniteur — adherent affecte comme instructeur sur au moins une seance — voyait donc
+le menu **Gestion des inscriptions** (ouvert depuis la Phase 46) sans y trouver
+l'entree Statistiques, et une URL saisie a la main tombait sur le refus de l'ACL.
+
+#### Mise en oeuvre
+
+- **`CoursesAclGuard`** : nouveau garde `denyUnlessStaffOrInstructor()`. Autorise
+  admin, staff, ou tout membre avec `SessionInstructor::countSessionsForMember() > 0`
+  — la meme definition de "moniteur" que `denyUnlessCanAuthorEvents()` et que la
+  visibilite du menu, **moins le raccourci responsable de groupe** : un responsable
+  qui ne s'est jamais porte volontaire n'est pas un moniteur et n'a rien ici. Garde
+  de page et non de seance : les chiffres sont globaux au club, la question est
+  "fait-il partie de l'equipe encadrante ?", pas "encadre-t-il *cette* seance ?".
+- **`StatsController::show()`** : appelle le garde en tete d'action, redirection vers
+  `coursesSessions` avec flash en cas de refus.
+- **`_define.php`** : `coursesStats` passe de `staff` a `member`, avec le commentaire
+  d'usage — l'ACL de route est un filtre grossier, le vrai gate est dans le
+  controleur (meme motif que les actions de gestion de seance de la Phase 43, dont
+  le durcissement naif vers `staff` casserait les droits moniteur).
+- **Menu** : la condition des Statistiques devient
+  `isAdmin() || isStaff() || $isInstructorAnywhere`, en reutilisant la variable deja
+  calculee pour l'ouverture du menu de gestion (pas de requete supplementaire). Les
+  **Preferences** restent sur `isAdmin() || isStaff()` — elles ont ete extraites du
+  meme bloc `if`, qui portait les deux entrees.
+- **Template `stats.html.twig`** : nouvelle variable `can_view_members`
+  (`isAdmin() || isStaff()`). Les 4 colonnes de noms (activite recente, membres
+  actifs, moniteurs, membres inactifs) rendent un `<a href>` vers la fiche adherent
+  du coeur pour le staff, et le nom en texte brut sinon. Le coeur de Galette refuse
+  deja la fiche a un non-staff : sans ce garde d'affichage, le moniteur n'aurait eu
+  que des liens morts.
+- **i18n** : une chaine ajoutee, `You do not have permission to view statistics.`,
+  traduite dans `courses_fr_FR.utf8.po` et le `.mo` recompile.
+
+#### Perimetre de ce que voit le moniteur (choix assume)
+
+Le moniteur voit **les memes chiffres que le staff, a l'echelle du club entier** :
+compteurs globaux, inscriptions par mois, top evenements, taux de remplissage, taux
+de participation, presence des moniteurs, et la **liste nominative** des adherents
+actifs et inactifs sur la periode, exportable en CSV. Aucune requete n'a ete reduite
+au perimetre de ses propres seances : la demande portait sur l'acces a la page
+existante, et un cloisonnement par moniteur aurait vide de sens les indicateurs
+transverses (taux de participation du club, comparaison des encadrants). C'est donc
+une **extension reelle de la visibilite sur les donnees adherents** — a arbitrer si
+le club veut au contraire un tableau de bord restreint.
+
+#### Hors perimetre
+
+- Pas de version scopee "mes seances uniquement" des statistiques.
+- Pas d'ouverture aux responsables de groupe non moniteurs (volontairement : le
+  garde ne comporte pas de raccourci `isGroupManager()`).
+- Preferences, modeles de courriels et actions destructives inchanges.
+
 ### Fix - Periodes de fermeture : date de debut ecrasee et fermetures effacees
 
 **Statut :** TERMINEE

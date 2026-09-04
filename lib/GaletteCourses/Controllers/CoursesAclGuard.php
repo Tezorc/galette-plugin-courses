@@ -132,6 +132,36 @@ trait CoursesAclGuard
     }
 
     /**
+     * Deny unless the logged-in user is admin, staff, or a moniteur — i.e. a
+     * member assigned as instructor on at least one session, past or future.
+     *
+     * Page-level guard (no session in scope), used by the Statistics page:
+     * the figures it shows are club-wide, so the question is only "is this
+     * person part of the teaching team?", not "does this person run *that*
+     * session?". Same membership test as `denyUnlessCanAuthorEvents()`, minus
+     * the group-manager shortcut: a responsable de groupe who has never taken
+     * a session is not a moniteur and gets nothing here.
+     */
+    protected function denyUnlessStaffOrInstructor(
+        Response $response,
+        string $redirectUrl,
+        ?string $errorMessage = null
+    ): ?Response {
+        if ($this->login->isAdmin() || $this->login->isStaff()) {
+            return null;
+        }
+        $memberId = (int)$this->login->id;
+        if ($memberId > 0 && SessionInstructor::countSessionsForMember($this->zdb, $memberId) > 0) {
+            return null;
+        }
+        $this->flash->addMessage(
+            'error_detected',
+            $errorMessage ?? _T('You do not have permission to perform this action.', 'courses')
+        );
+        return $response->withStatus(302)->withHeader('Location', $redirectUrl);
+    }
+
+    /**
      * Deny unless the logged-in user can proxy-register a member onto the
      * given session: admin, staff, group manager, OR an instructor of this
      * specific session. Mirrors the UI gate of session_show.html.twig

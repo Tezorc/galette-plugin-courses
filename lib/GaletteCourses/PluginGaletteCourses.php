@@ -132,12 +132,17 @@ class PluginGaletteCourses extends GalettePlugin implements
                 ];
             }
 
-            if ($login->isAdmin() || $login->isStaff()) {
+            // Les statistiques sont ouvertes aux moniteurs (meme gate que
+            // StatsController::show) ; les preferences restent staff+.
+            if ($login->isAdmin() || $login->isStaff() || $isInstructorAnywhere) {
                 $mgmtItems[] = [
                     'label' => _T('Statistics', 'courses'),
                     'route' => ['name' => 'coursesStats'],
                     'icon'  => 'chart bar',
                 ];
+            }
+
+            if ($login->isAdmin() || $login->isStaff()) {
                 $mgmtItems[] = [
                     'label' => _T('Preferences', 'courses'),
                     'route' => ['name' => 'coursesPreferences'],

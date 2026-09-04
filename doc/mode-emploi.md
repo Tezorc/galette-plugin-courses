@@ -148,7 +148,7 @@ Le plugin utilise les roles Galette existants. Chaque fonctionnalite est accessi
 | Voir toutes les inscriptions | - | Oui | Oui | Oui |
 | Exporter inscrits/liste d'attente en CSV | - | - | Oui | Oui |
 | Envoyer un courriel aux inscrits / liste d'attente | - | Oui | Oui | Oui |
-| Voir les statistiques | - | - | Oui | Oui |
+| Voir les statistiques | Oui (si moniteur) | Oui (si moniteur) | Oui | Oui |
 | Preferences (dates de fermeture) | - | - | Oui | Oui |
 | Preferences (notifications, generation automatique) | - | - | - | Oui |
 | Modeles de courriels | - | - | - | Oui |
@@ -442,7 +442,7 @@ Le plugin permet d'exporter les seances au format iCal (.ics) pour les ajouter a
 
 Le fichier .ics genere contient les informations de la seance (nom, date, horaire, lieu, description).
 
-### 11. Statistiques (staff / admin)
+### 11. Statistiques (moniteur / staff / admin)
 
 Le menu **Gestion des inscriptions > Statistiques** affiche un tableau de bord complet avec :
 
@@ -455,6 +455,8 @@ Le menu **Gestion des inscriptions > Statistiques** affiche un tableau de bord c
   - **Taux de participation (Phase 62)** : encart bleu en haut de la section affichant le **pourcentage d'adherents actifs ayant participe sur la periode** (`actifs / (actifs + inactifs)`), avec une jauge progress coloree selon le seuil (rouge < 20 %, jaune 20-39 %, teal 40-74 %, vert ≥ 75 %) et la ligne `N / M adhérents actifs ont participé sur la période`. Le pourcentage se recalcule automatiquement a chaque changement de periode.
 - **Presence des moniteurs sur la periode (Phase 64)** : section separee (encadre teal) listant chaque moniteur ayant assure au moins une seance non annulee sur la periode, triee par nombre de seances decroissant. Colonnes : Moniteur, Pseudo, **Seances assurees**, **Mois actifs** (nombre de mois distincts ou il a encadre une seance — indicateur de regularite sur l'annee, badge vert ≥ 6 mois / jaune 3-5 / gris < 3), Evenements. Tableau exportable en CSV. Permet d'identifier les moniteurs reguliers et ceux ponctuels.
 - **Membres inactifs sur la periode** : section separee (encadre rouge) listant tous les adherents actifs n'ayant participe a aucune seance sur la periode, avec compteur et export CSV
+
+**Qui y a acces.** La page est ouverte aux **administrateurs, au staff et aux moniteurs** — un moniteur etant ici tout adherent affecte comme moniteur sur **au moins une seance**, passee ou a venir. C'est le meme test que celui qui ouvre le menu de gestion (`SessionInstructor::countSessionsForMember`), et non un droit Galette : un responsable de groupe qui ne s'est jamais porte volontaire n'y a pas acces, tandis qu'un adherent ordinaire affecte a une seance l'obtient. Le chiffrage est **global au club** dans tous les cas : un moniteur voit les memes tableaux qu'un administrateur, y compris la liste nominative des adherents actifs et inactifs. Seule difference a l'affichage, les noms ne sont pas cliquables pour un moniteur : les fiches adherents restent reservees au staff par le coeur de Galette.
 
 #### Filtrer les membres actifs et inactifs par periode
 
@@ -1054,7 +1056,7 @@ Le menu apparait des qu'un membre est **auteur d'evenements** (Phase 46) :
 | Evenements | Auteur (moniteur, responsable, staff, admin) | Liste des evenements (avec bouton "Ajouter un evenement" en haut de page) ; chaque utilisateur voit ses propres evenements (toute statut) + tous les evenements valides |
 | Seances | Auteur | Liste complete des seances avec filtres avances |
 | Gestion des inscriptions | Responsable de groupe+ | Toutes les inscriptions (le moniteur seul n'y a pas acces, il gere ses inscriptions via le detail de seance) |
-| Statistiques | Staff / Admin | Statistiques de participation |
+| Statistiques | Moniteur / Staff / Admin | Statistiques de participation |
 | Preferences | Staff / Admin | Parametres du plugin |
 | Modeles de courriels | Admin uniquement | Modeles d'emails |
 
@@ -1389,6 +1391,14 @@ Le pointage est disponible le jour de la seance et apres :
 - **Gestion des inscriptions > Gestion inscriptions** : toutes les inscriptions aux seances de vos groupes
 - Filtres par type, evenement, statut
 
+### Consulter les statistiques
+
+**Gestion des inscriptions > Statistiques** vous est ouvert des lors que vous etes affecte comme moniteur sur **au moins une seance** — passee ou a venir, peu importe laquelle. Le simple fait d'etre responsable de groupe ne suffit pas : tant que vous ne vous etes jamais porte volontaire, l'entree de menu n'apparait pas.
+
+Vous y voyez exactement les memes chiffres que le staff, **a l'echelle du club entier** et non de vos seules seances : compteurs globaux, inscriptions par mois, top evenements, taux de remplissage, taux de participation, presence des moniteurs sur la periode, et la liste nominative des adherents actifs et inactifs. La section **Presence des moniteurs** vous situe par rapport aux autres encadrants (seances assurees, mois actifs).
+
+Seule difference avec la vue du staff : les noms d'adherents ne sont pas cliquables, car les fiches adherents restent reservees au staff par Galette lui-meme.
+
 ---
 
 ## Annexe C — Tutoriel pour le staff et les administrateurs
@@ -1478,7 +1488,7 @@ Les deux operations sont tracees dans le journal Galette avec le detail de ce qu
 
 ### Statistiques
 
-**Gestion des inscriptions > Statistiques** offre une vue complete :
+**Gestion des inscriptions > Statistiques** offre une vue complete, accessible aux **moniteurs** comme au staff et aux admins :
 
 - Compteurs globaux (evenements, seances, inscriptions, seances a venir)
 - Graphiques mensuels et top evenements
