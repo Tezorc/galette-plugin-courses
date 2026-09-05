@@ -108,6 +108,21 @@ git worktree add ../courses-1.3 dev-galette-1.3
   seul un responsable de groupe peut se porter volontaire (`can_volunteer` dans
   `SessionsController`), un moniteur affecte gere ses seances mais ne peut pas
   en prendre de nouvelles.
+- `doc/tuto-pointage.html` : le **pointage depuis un telephone**, 7 pages, meme
+  systeme visuel que les precedents. Il ne traite que ca — trouver la seance du
+  jour, pointer les inscrits, ajouter une presence hors inscription — la ou le
+  tuto moniteur n'y consacre qu'une etape. Ses reconstitutions d'ecran sont
+  dessinees **dans un cadre de telephone** parce que l'affichage mobile differe
+  reellement : `webroot/galette_courses.css` (media query mobile) masque la
+  colonne *Chien* et la date d'inscription, remonte le nom du chien en gris a
+  cote du nom, et passe le bouton d'enregistrement en pleine largeur. Sources de
+  verite : `session_show.html.twig`, `RegistrationsController::doMarkAttendance`
+  / `doWalkIn`, et `SessionsController::show` pour la liste hors inscription.
+  Deux details que le document affirme et qui se reverifient dans le code : le
+  compteur du message de succes vaut le nombre de **lignes soumises**, pas de
+  modifications (`$updated++` sur chaque `updateStatus()` reussi), et l'ajout
+  hors inscription est **immediat** (formulaire distinct, pas de passage par
+  *Enregistrer le pointage*).
 
 **Attention aux affirmations qui vieillissent en silence.** Un audit (voir
 `cahier-des-charges.md`, *Realignement du mode d'emploi sur le code*) a trouve
@@ -192,6 +207,8 @@ galette-plugin-courses/
     tuto-adherent-condense.pdf     # PDF produit depuis tuto-adherent-condense.html (3 pages)
     tuto-moniteur.html             # Tutoriel moniteur, condense, personnalise CCAG42 (entree de build-pdf.py)
     tuto-moniteur.pdf              # PDF produit depuis tuto-moniteur.html (4 pages)
+    tuto-pointage.html             # Tutoriel pointage sur telephone, personnalise CCAG42 (entree de build-pdf.py)
+    tuto-pointage.pdf              # PDF produit depuis tuto-pointage.html (7 pages)
     cahier-des-charges.md          # Cahier des charges complet
     historique-phases.md           # Archive des phases 1 a 76
   lib/GaletteCourses/

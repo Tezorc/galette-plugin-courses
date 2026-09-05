@@ -1,0 +1,831 @@
+<!--
+  Tutoriel "Pointer les presences depuis un telephone", personnalise
+  CCAG42 (club canin) : "chien" pour membre rattache,
+  adherent.ccag42.org pour l'adresse du site. Meme systeme visuel que
+  tuto-adherent.html et tuto-moniteur.html.
+
+  SOURCE DE VERITE : la section "Pointer les presences" de l'Annexe B de
+  doc/mode-emploi.md, et le code (session_show.html.twig,
+  RegistrationsController::doMarkAttendance / doWalkIn,
+  SessionsController::show pour la liste hors inscription). Quand le
+  pointage change, verifier ces trois endroits, pas la version
+  precedente de cette page.
+
+  Les reconstitutions d'ecran sont volontairement dessinees dans un
+  cadre de telephone : le pointage se fait sur le terrain, jamais devant
+  un ordinateur, et l'ecran etroit change reellement l'affichage (la
+  colonne Chien et la date d'inscription disparaissent, le menu de
+  pointage passe a droite du nom).
+
+  PDF : python scripts/build-pdf.py doc/tuto-pointage.html
+        --expect Newsreader,Signika,Lato
+-->
+<title>Pointer les présences</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Signika:wght@400;500;600&family=Lato:wght@400;700;900&display=swap">
+
+<style>
+/* ------------------------------------------------------------------
+   Meme palette que tuto-adherent.html et tuto-moniteur.html : fond
+   crayeux vert-gris, accent ocre. Les couleurs de l'application
+   (vert, ambre, turquoise, rouge) ne servent qu'aux reconstitutions
+   d'ecran : ce sont les signaux a reconnaitre sur le terrain, pas de
+   la decoration.
+   ------------------------------------------------------------------ */
+:root {
+  --ground: #EFF1EA;
+  --surface: #FFFFFF;
+  --surface-2: #F7F8F2;
+  --ink: #1A1E17;
+  --ink-2: #59604F;
+  --ink-3: #7C836F;
+  --rule: #D9DDCF;
+  --rule-strong: #C3C9B4;
+  --accent: #A85B18;
+  --accent-ink: #8A4A12;
+  --accent-soft: #F3E6D7;
+  --mat: #E4E7DC;          /* passe-partout des figures */
+  --shadow: 0 1px 2px rgba(26, 30, 23, .06), 0 8px 24px -12px rgba(26, 30, 23, .18);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #14170F;
+    --surface: #1D2117;
+    --surface-2: #23281B;
+    --ink: #EDEFE6;
+    --ink-2: #A8AF9A;
+    --ink-3: #8B927D;
+    --rule: #333827;
+    --rule-strong: #454B36;
+    --accent: #E0A05A;
+    --accent-ink: #EEB878;
+    --accent-soft: #33260F;
+    --mat: #23281B;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -12px rgba(0, 0, 0, .7);
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #14170F;
+  --surface: #1D2117;
+  --surface-2: #23281B;
+  --ink: #EDEFE6;
+  --ink-2: #A8AF9A;
+  --ink-3: #8B927D;
+  --rule: #333827;
+  --rule-strong: #454B36;
+  --accent: #E0A05A;
+  --accent-ink: #EEB878;
+  --accent-soft: #33260F;
+  --mat: #23281B;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -12px rgba(0, 0, 0, .7);
+}
+
+/* Couleurs de l'application : fixes dans les deux themes. Un bouton
+   ambre reste ambre, c'est ce qu'on cherche du pouce sur le terrain. */
+:root {
+  --ui-bg: #FFFFFF;
+  --ui-bg-2: #F9FAFB;
+  --ui-ink: #1B1C1D;
+  --ui-ink-2: #6E7377;
+  --ui-border: rgba(34, 36, 38, .15);
+  --ui-amber: #FFB619;   /* boutons "primary" de Galette */
+  --ui-green: #21BA45;
+  --ui-teal: #00B5AD;
+  --ui-red: #DB2828;
+  --ui-grey: #767676;
+  --phone-shell: #2A2F24;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "Signika", "Segoe UI", system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: 680px; margin: 0 auto; padding: 0 22px 88px; }
+
+/* --- En-tete ----------------------------------------------------- */
+
+header.masthead {
+  padding: 64px 0 34px;
+  border-bottom: 2px solid var(--rule-strong);
+  margin-bottom: 40px;
+}
+
+.eyebrow {
+  font-family: "Lato", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 900;
+  font-size: 11.5px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+  margin: 0 0 14px;
+}
+
+h1 {
+  font-family: "Newsreader", Georgia, serif;
+  font-weight: 600;
+  font-size: clamp(34px, 6vw, 46px);
+  line-height: 1.1;
+  letter-spacing: -.015em;
+  text-wrap: balance;
+  margin: 0 0 16px;
+}
+
+.lede {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 20px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 0;
+  max-width: 58ch;
+}
+.lede a { color: var(--accent-ink); text-underline-offset: 3px; }
+
+/* --- Sections ---------------------------------------------------- */
+
+section { margin-bottom: 46px; }
+
+h2.section {
+  font-family: "Newsreader", Georgia, serif;
+  font-weight: 600;
+  font-size: 27px;
+  line-height: 1.2;
+  text-wrap: balance;
+  margin: 0 0 6px;
+}
+h2.section .num {
+  font-family: "Lato", sans-serif;
+  font-weight: 900;
+  font-size: 15px;
+  color: var(--accent);
+  margin-right: 8px;
+  vertical-align: 3px;
+}
+
+h3 {
+  font-family: "Signika", sans-serif;
+  font-weight: 600;
+  font-size: 17.5px;
+  margin: 26px 0 8px;
+}
+
+.deck { color: var(--ink-3); font-size: 15px; margin: 0 0 20px; }
+
+p { margin: 0 0 14px; }
+p:last-child { margin-bottom: 0; }
+b, strong { font-weight: 600; }
+
+ul.plain { margin: 0 0 16px; padding-left: 20px; }
+ul.plain li { margin-bottom: 6px; }
+
+/* --- Encarts ----------------------------------------------------- */
+
+.callout {
+  background: var(--accent-soft);
+  border-left: 3px solid var(--accent);
+  padding: 18px 22px;
+  border-radius: 0 3px 3px 0;
+}
+.callout h2 {
+  font-family: "Newsreader", Georgia, serif;
+  font-weight: 600;
+  font-size: 22px;
+  margin: 0 0 10px;
+}
+.callout p, .callout li { font-size: 16px; }
+.callout ul { margin: 0; padding-left: 20px; }
+.callout li { margin-bottom: 3px; }
+
+.note {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--rule-strong);
+  border-radius: 0 3px 3px 0;
+  padding: 15px 18px;
+  margin: 20px 0;
+  font-size: 16px;
+}
+
+/* --- Pastilles reproduisant les boutons -------------------------- */
+
+.chip {
+  display: inline-block;
+  font-family: "Lato", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.chip-amber { background: var(--ui-amber); }
+.chip-teal  { background: var(--ui-teal); }
+.chip-green { background: var(--ui-green); }
+.chip-red   { background: var(--ui-red); }
+.chip-ghost { background: var(--surface-2); color: var(--ink); border: 1px solid var(--rule); }
+
+.path {
+  font-family: "Lato", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 2px 7px;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+/* --- Figures : un telephone, toujours ---------------------------- */
+
+figure.fig {
+  margin: 26px 0 30px;
+  background: var(--mat);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 24px 18px 20px;
+}
+.fig-label {
+  font-family: "Lato", sans-serif;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 0 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fig-label::before {
+  content: "";
+  width: 18px; height: 1px;
+  background: var(--rule-strong);
+  flex: none;
+}
+figcaption {
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin-top: 16px;
+  max-width: 60ch;
+}
+figcaption b { color: var(--ink); font-weight: 600; }
+
+/* Le cadre du telephone. Volontairement sobre : c'est le contenu de
+   l'ecran qui doit se reconnaitre, pas le mobilier. */
+.phone {
+  width: 322px;
+  margin: 0 auto;
+  background: var(--phone-shell);
+  border-radius: 30px;
+  padding: 9px 8px 12px;
+  box-shadow: 0 12px 28px -16px rgba(0, 0, 0, .55);
+}
+.phone-notch {
+  height: 14px;
+  display: flex; align-items: center; justify-content: center;
+}
+.phone-notch::after {
+  content: "";
+  width: 62px; height: 5px;
+  border-radius: 3px;
+  background: #5A6150;
+}
+.phone-screen {
+  background: var(--ui-bg-2);
+  border-radius: 20px;
+  overflow: hidden;
+  padding: 10px;
+}
+
+/* --- Reconstitution de l'interface (Fomantic) -------------------- */
+
+.ui-scope {
+  font-family: "Lato", "Helvetica Neue", Arial, sans-serif;
+  color: var(--ui-ink);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.ic {
+  width: 13px; height: 13px;
+  fill: none; stroke: currentColor; stroke-width: 1.4;
+  stroke-linecap: round; stroke-linejoin: round;
+  flex: none; vertical-align: -2px;
+}
+
+/* Bandeau colore de la seance */
+.ui-hero {
+  background: var(--ui-green);
+  color: #fff;
+  border-radius: 4px;
+  padding: 11px 12px;
+}
+.ui-hero-title { font-weight: 700; font-size: 15px; }
+.ui-hero-sub { font-size: 11.5px; opacity: .92; margin-top: 4px; }
+
+/* Segment blanc */
+.ui-seg {
+  background: var(--ui-bg);
+  border: 1px solid var(--ui-border);
+  border-radius: 4px;
+  padding: 10px;
+  margin-top: 9px;
+  box-shadow: 0 1px 2px rgba(34, 36, 38, .08);
+}
+.ui-seg-title {
+  font-weight: 700;
+  font-size: 13px;
+  display: flex; align-items: center; gap: 6px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--ui-border);
+  margin-bottom: 9px;
+}
+
+/* Menu de navigation */
+.ui-nav { background: var(--ui-bg); border: 1px solid var(--ui-border); border-radius: 4px; overflow: hidden; }
+.ui-nav-title {
+  font-weight: 900; font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ui-ink-2); padding: 9px 11px; background: var(--ui-bg-2);
+  display: flex; align-items: center; gap: 7px;
+}
+.ui-nav-item {
+  padding: 10px 11px; border-top: 1px solid var(--ui-border);
+  display: flex; align-items: center; gap: 8px;
+}
+.ui-nav-item.active {
+  background: rgba(255, 182, 25, .16);
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--ui-amber);
+}
+
+/* Onglets */
+.ui-tabs { display: flex; gap: 3px; }
+.ui-tab {
+  flex: 1; text-align: center; padding: 8px 5px; font-size: 11.5px;
+  background: var(--ui-bg-2); border: 1px solid var(--ui-border); border-bottom: 0;
+  border-radius: 4px 4px 0 0; color: var(--ui-ink-2);
+}
+.ui-tab.on { background: var(--ui-bg); color: var(--ui-ink); font-weight: 700; }
+.ui-badge {
+  display: inline-block; min-width: 16px; padding: 1px 4px; border-radius: 9px;
+  font-size: 10px; font-weight: 700; color: #fff; margin-left: 3px;
+}
+.ui-badge.green { background: var(--ui-green); }
+.ui-badge.teal { background: var(--ui-teal); }
+
+/* Carte de seance */
+.ui-card {
+  background: var(--ui-bg);
+  border: 1px solid var(--ui-border);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(34, 36, 38, .1);
+}
+.ui-card-content { padding: 11px; border-top: 1px solid var(--ui-border); }
+.ui-card-content:first-child { border-top: 0; }
+.ui-card-content.extra { background: var(--ui-bg-2); }
+.ui-title { font-weight: 700; font-size: 14px; }
+.ui-meta { color: var(--ui-ink-2); font-size: 11.5px; margin-top: 4px; display: flex; align-items: center; gap: 5px; }
+
+/* Boutons */
+.ui-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font-weight: 700; font-size: 12px; line-height: 1; color: #fff;
+  padding: 9px 12px; border-radius: 4px; white-space: nowrap;
+}
+.ui-btn.amber { background: var(--ui-amber); }
+.ui-btn.basic { background: var(--ui-bg); color: var(--ui-ink-2); box-shadow: 0 0 0 1px var(--ui-border) inset; }
+.ui-btn.fluid { display: flex; width: 100%; }
+
+/* Ligne de pointage, telle qu'elle s'affiche sur ecran etroit :
+   une carte par personne, nom a gauche, menu a droite. */
+.att-row {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--ui-bg);
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
+}
+.att-name { flex: 1 1 auto; min-width: 0; font-size: 12px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.att-nick { color: #888; font-size: 10.5px; margin-left: 4px; }
+.ui-select {
+  flex: 0 0 auto; min-width: 98px;
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  background: var(--ui-bg); border: 1px solid var(--ui-border);
+  border-radius: 4px; padding: 8px 9px; font-size: 11.5px; color: var(--ui-ink);
+}
+.ui-select.open { border-color: rgba(34, 36, 38, .35); border-radius: 4px 4px 0 0; }
+.ui-menu {
+  border: 1px solid rgba(34, 36, 38, .35); border-top: 0;
+  border-radius: 0 0 4px 4px; background: var(--ui-bg);
+  box-shadow: 0 2px 8px rgba(34, 36, 38, .18);
+  margin-left: auto; width: 142px;
+}
+.ui-item { padding: 8px 10px; font-size: 11.5px; border-top: 1px solid rgba(34, 36, 38, .07); }
+.ui-item:first-child { border-top: 0; }
+.ui-item.sel { background: rgba(0, 0, 0, .05); font-weight: 700; }
+.ui-menu-row { display: flex; margin-bottom: 6px; }
+
+/* Champ de recherche */
+.ui-input {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--ui-bg); border: 1px solid var(--ui-border);
+  border-radius: 4px 4px 0 0; padding: 9px 10px; font-size: 12px; color: var(--ui-ink-2);
+}
+
+/* Message flash */
+.ui-msg {
+  border-radius: 4px; padding: 10px 11px; font-size: 12px;
+  background: #FCFFF5; color: #2C662D; box-shadow: 0 0 0 1px #A3C293 inset;
+  display: flex; align-items: center; gap: 7px;
+}
+
+/* --- Tableau ----------------------------------------------------- */
+
+.table-scroll { overflow-x: auto; border: 1px solid var(--rule); border-radius: 3px; background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: 15.5px; min-width: 460px; }
+th {
+  font-family: "Lato", sans-serif; font-weight: 900; font-size: 11px;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3);
+  text-align: left; padding: 12px 16px;
+  border-bottom: 1px solid var(--rule-strong); background: var(--surface-2);
+}
+td { padding: 13px 16px; border-bottom: 1px solid var(--rule); vertical-align: top; color: var(--ink-2); }
+td:first-child { color: var(--ink); width: 44%; }
+tr:last-child td { border-bottom: 0; }
+
+/* --- Pied -------------------------------------------------------- */
+
+footer {
+  margin-top: 52px;
+  padding-top: 22px;
+  border-top: 2px solid var(--rule-strong);
+  color: var(--ink-3);
+  font-size: 15px;
+}
+footer a { color: var(--accent-ink); text-underline-offset: 3px; }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (max-width: 560px) {
+  body { font-size: 16px; }
+  header.masthead { padding-top: 44px; }
+  figure.fig { padding: 18px 12px 16px; }
+}
+
+/* --- Impression -------------------------------------------------- */
+@media print {
+  :root {
+    --ground: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f6f7f2;
+    --ink: #16190f;
+    --ink-2: #3d4235;
+    --ink-3: #5d6352;
+    --rule: #cfd4c2;
+    --rule-strong: #b3baa2;
+    --accent: #8a4a12;
+    --accent-ink: #7a410f;
+    --accent-soft: #f6efe6;
+    --mat: #eff1ea;
+    --shadow: none;
+  }
+
+  /* Sans cela le navigateur "economise l'encre" et vide les ecrans de
+     leur couleur — or le bandeau vert et le bouton ambre SONT
+     l'information. */
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  body { font-size: 10.5pt; line-height: 1.5; }
+  .wrap { max-width: none; padding: 0; }
+  a { color: var(--accent-ink); text-decoration: none; }
+
+  header.masthead { padding: 0 0 16pt; margin-bottom: 20pt; }
+  h1 { font-size: 28pt; }
+  .lede { font-size: 13pt; }
+
+  section { margin-bottom: 22pt; }
+  h2.section { font-size: 16pt; margin-top: 16pt; break-after: avoid; page-break-after: avoid; }
+  h3 { break-after: avoid; page-break-after: avoid; }
+  .deck { margin-bottom: 11pt; }
+
+  /* Un telephone coupe en deux est une figure perdue. */
+  figure.fig, .callout, .note, tr { break-inside: avoid; page-break-inside: avoid; }
+  figure.fig { margin: 14pt 0 16pt; }
+  figcaption { font-size: 9pt; }
+  .phone { box-shadow: none; }
+  thead { display: table-header-group; }
+  .table-scroll { overflow-x: visible; }
+  table { min-width: 0; }
+  footer { margin-top: 24pt; }
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-cap" viewBox="0 0 16 16"><path d="M8 3l6 3-6 3-6-3z"/><path d="M4.5 7.6V11c0 .9 1.6 1.6 3.5 1.6s3.5-.7 3.5-1.6V7.6"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 16 16"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 16 16"><path d="M8 14s4.4-4.3 4.4-7A4.4 4.4 0 0 0 3.6 7c0 2.7 4.4 7 4.4 7z"/><circle cx="8" cy="6.8" r="1.6"/></symbol>
+    <symbol id="i-users" viewBox="0 0 16 16"><circle cx="6.2" cy="5.6" r="2.3"/><path d="M1.8 13c0-2.3 2-3.5 4.4-3.5s4.4 1.2 4.4 3.5"/><path d="M11 4.2a2.2 2.2 0 0 1 0 4.3M12.2 9.9c1.4.4 2.4 1.4 2.4 3.1"/></symbol>
+    <symbol id="i-userplus" viewBox="0 0 16 16"><circle cx="6.4" cy="5.4" r="2.5"/><path d="M1.8 13.2c0-2.4 2.1-3.7 4.6-3.7 1 0 1.9.2 2.7.6"/><path d="M12.2 8.6v4.4M10 10.8h4.4"/></symbol>
+    <symbol id="i-caret" viewBox="0 0 16 16"><path d="M3.8 6l4.2 4.2L12.2 6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 16 16"><path d="M3.2 8.4l3.2 3.2 6.4-7"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3.2v9.6M3.2 8h9.6"/></symbol>
+    <symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.4"/><path d="M10.3 10.3l3.2 3.2"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 16 16"><path d="M7.6 2.4H13a.6.6 0 0 1 .6.6v5.4L8.2 13.8a.8.8 0 0 1-1.2 0L2.2 9a.8.8 0 0 1 0-1.2z"/><circle cx="10.9" cy="5.1" r="1"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 16 16"><path d="M8 2.4a3.6 3.6 0 0 0-3.6 3.6c0 3-1.2 4-1.2 4h9.6s-1.2-1-1.2-4A3.6 3.6 0 0 0 8 2.4z"/><path d="M6.5 12.4a1.6 1.6 0 0 0 3 0"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Club canin CCAG42 &middot; Moniteurs</p>
+    <h1>Pointer les présences</h1>
+    <p class="lede">En fin de séance, sur le terrain, avec votre téléphone. Deux minutes&nbsp;: qui était là, et qui est venu sans s'être inscrit. Tout se passe sur <a href="https://adherent.ccag42.org/">adherent.ccag42.org</a>.</p>
+  </header>
+
+  <section class="callout">
+    <h2>Qui peut pointer, et quand</h2>
+    <ul>
+      <li>Le <b>moniteur affecté à la séance</b>, un <b>responsable de groupe</b>, le staff et les administrateurs.</li>
+      <li><b>Le jour de la séance et après</b>, jamais avant. La veille, la liste des inscrits s'affiche, mais sans les menus de pointage&nbsp;: ce n'est pas une panne.</li>
+    </ul>
+    <p style="margin-top:12px">Le pointage se refait autant de fois que nécessaire. Revenir sur la séance le lendemain pour corriger une erreur est parfaitement normal.</p>
+  </section>
+
+  <section>
+    <h2 class="section"><span class="num">1.</span> Préparer le téléphone, une fois pour toutes</h2>
+    <p class="deck">Pour ne pas retaper l'adresse ni le mot de passe sous la pluie.</p>
+
+    <p><b>Rien à installer</b>&nbsp;: pas d'application à télécharger. On pose un raccourci sur l'écran d'accueil, qui ouvre le site en plein écran.</p>
+
+    <h3>Sur iPhone (Safari)</h3>
+    <ul class="plain">
+      <li>Ouvrez <b>adherent.ccag42.org</b> dans <b>Safari</b> — la manipulation n'existe pas dans Chrome sur iPhone.</li>
+      <li>Touchez <b>Partager</b> (le carré avec la flèche vers le haut), puis <b>Sur l'écran d'accueil</b>, puis <b>Ajouter</b>.</li>
+    </ul>
+
+    <h3>Sur Android (Chrome)</h3>
+    <ul class="plain">
+      <li>Ouvrez <b>adherent.ccag42.org</b> dans <b>Chrome</b>.</li>
+      <li>Menu <b>⋮</b> en haut à droite, puis <b>Ajouter à l'écran d'accueil</b> (ou <b>Installer l'application</b> selon la version).</li>
+    </ul>
+
+    <div class="note">
+      <p>Connectez-vous une fois depuis ce raccourci et laissez le téléphone mémoriser le mot de passe. Sur le terrain, il ne restera qu'à toucher l'icône. Sur un téléphone prêté ou partagé, ne le faites pas.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="section"><span class="num">2.</span> Ouvrir la séance du jour</h2>
+    <p class="deck">Deux écrans avant le pointage&nbsp;: le menu, puis la liste de vos séances.</p>
+
+    <p>Dans le menu&nbsp;: <span class="path">Mes inscriptions &rsaquo; Mes séances comme moniteur</span>. C'est la voie la plus courte&nbsp;: cette page ne montre que <b>vos</b> séances.</p>
+
+    <figure class="fig">
+      <p class="fig-label">Le menu</p>
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="ui-scope">
+            <div class="ui-nav">
+              <div class="ui-nav-title"><svg class="ic"><use href="#i-cap"/></svg> Mes inscriptions</div>
+              <div class="ui-nav-item"><svg class="ic"><use href="#i-calendar"/></svg> Mes inscriptions</div>
+              <div class="ui-nav-item active"><svg class="ic"><use href="#i-users"/></svg> Mes séances comme moniteur</div>
+              <div class="ui-nav-item"><svg class="ic"><use href="#i-bell"/></svg> Mes notifications</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>Le titre du menu et sa première ligne portent le même nom&nbsp;: c'est la <b>deuxième</b> ligne qu'il vous faut. Si ce menu n'apparaît pas du tout, c'est que vous n'êtes ni responsable de groupe, ni affecté sur une séance.</figcaption>
+    </figure>
+
+    <p>La page s'ouvre sur l'onglet <b>Mes séances comme moniteur</b>. La séance du jour reste dans <b>À venir</b> jusqu'à minuit&nbsp;: elle ne bascule dans <b>Séances passées</b> que le lendemain. Touchez <span class="chip chip-ghost">Détails</span>.</p>
+
+    <figure class="fig">
+      <p class="fig-label">La séance du jour</p>
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="ui-scope">
+            <div class="ui-tabs">
+              <div class="ui-tab">Se proposer moniteur <span class="ui-badge teal">2</span></div>
+              <div class="ui-tab on">Mes séances <span class="ui-badge green">5</span></div>
+            </div>
+            <div class="ui-seg" style="margin-top:0; border-radius:0 0 4px 4px">
+              <div class="ui-seg-title"><svg class="ic"><use href="#i-calendar"/></svg> À venir</div>
+              <div class="ui-card">
+                <div class="ui-card-content">
+                  <div class="ui-title">Agility &mdash; Débutants</div>
+                  <div class="ui-meta"><svg class="ic"><use href="#i-calendar"/></svg> samedi 12 septembre &middot; 10:00 – 11:30</div>
+                  <div class="ui-meta"><svg class="ic"><use href="#i-pin"/></svg> Terrain principal</div>
+                  <div class="ui-meta"><svg class="ic"><use href="#i-users"/></svg> 8 inscrits</div>
+                </div>
+                <div class="ui-card-content extra">
+                  <span class="ui-btn basic fluid"><svg class="ic"><use href="#i-search"/></svg> Détails</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>L'onglet de gauche sert à prendre de nouvelles séances&nbsp;; celui de droite, ouvert par défaut, liste celles que vous encadrez déjà. <b>Détails</b> ouvre la fiche où se fait le pointage.</figcaption>
+    </figure>
+
+    <div class="note">
+      <p>Le staff et les responsables de groupe peuvent aussi passer par <span class="path">Gestion inscriptions &rsaquo; Séances</span>, qui liste <b>toutes</b> les séances du club et se filtre par date. C'est le chemin à prendre pour pointer une séance dont vous n'êtes pas le moniteur attitré.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="section"><span class="num">3.</span> Pointer les inscrits</h2>
+    <p class="deck">Une ligne par personne, un menu à droite, un seul enregistrement.</p>
+
+    <p>La fiche s'ouvre sur un bandeau coloré&nbsp;: <b>vert</b> si la séance est ouverte, gris si elle est fermée aux inscriptions, rouge si elle est annulée. Plus bas, le bloc <b>Membres inscrits</b> devient, le jour J, une liste de pointage.</p>
+
+    <p>Sur un écran de téléphone, chaque personne tient sur une ligne&nbsp;: son nom, le nom de son chien en petit à côté, et le menu de pointage à droite. La colonne <b>Chien</b> et la date d'inscription, visibles sur ordinateur, sont masquées&nbsp;: elles ne servent à rien sur le terrain.</p>
+
+    <figure class="fig">
+      <p class="fig-label">Le pointage, un menu ouvert</p>
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="ui-scope">
+            <div class="ui-hero">
+              <div class="ui-hero-title"><svg class="ic"><use href="#i-calendar"/></svg> Agility &mdash; Débutants</div>
+              <div class="ui-hero-sub">12 septembre &middot; 10:00 – 11:30<br><svg class="ic"><use href="#i-pin"/></svg> Terrain principal</div>
+            </div>
+            <div class="ui-seg">
+              <div class="ui-seg-title"><svg class="ic"><use href="#i-users"/></svg> Membres inscrits (4)</div>
+
+              <div class="att-row">
+                <div class="att-name">Claire Bonnet <span class="att-nick"><svg class="ic"><use href="#i-tag"/></svg> Iouka</span></div>
+                <div class="ui-select">Présent <svg class="ic"><use href="#i-caret"/></svg></div>
+              </div>
+
+              <div class="att-row" style="margin-bottom:0">
+                <div class="att-name">Marc Delorme <span class="att-nick"><svg class="ic"><use href="#i-tag"/></svg> Filou</span></div>
+                <div class="ui-select open">Inscrit <svg class="ic"><use href="#i-caret"/></svg></div>
+              </div>
+              <div class="ui-menu-row">
+                <div class="ui-menu">
+                  <div class="ui-item sel">Inscrit</div>
+                  <div class="ui-item">Présent</div>
+                  <div class="ui-item">Absent</div>
+                  <div class="ui-item">Absent (excusé)</div>
+                </div>
+              </div>
+
+              <div class="att-row">
+                <div class="att-name">Sophie Vernet <span class="att-nick"><svg class="ic"><use href="#i-tag"/></svg> Nala</span></div>
+                <div class="ui-select">Absent <svg class="ic"><use href="#i-caret"/></svg></div>
+              </div>
+
+              <div class="att-row">
+                <div class="att-name">Yann Rivière <span class="att-nick"><svg class="ic"><use href="#i-tag"/></svg> Pixel</span></div>
+                <div class="ui-select">Absent (exc.) <svg class="ic"><use href="#i-caret"/></svg></div>
+              </div>
+
+              <span class="ui-btn amber fluid" style="margin-top:8px"><svg class="ic"><use href="#i-check"/></svg> Enregistrer le pointage</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>Quatre choix&nbsp;: <b>Inscrit</b> (l'état de départ), <b>Présent</b>, <b>Absent</b>, <b>Absent (excusé)</b>. Le bouton du bas enregistre <b>toute la liste d'un coup</b> — inutile de valider après chaque personne.</figcaption>
+    </figure>
+
+    <p>Trois choses à savoir, qui évitent les mauvaises surprises&nbsp;:</p>
+    <ul class="plain">
+      <li><b>Une ligne à laquelle vous ne touchez pas reste « Inscrit »</b>. Ce n'est ni présent, ni absent&nbsp;: la personne ne comptera pas dans la participation. Pointez toute la liste, y compris les absents.</li>
+      <li><b>Absent</b> ou <b>Absent (excusé)</b>&nbsp;: la distinction ne déclenche rien automatiquement, c'est une trace pour le club. Excusé = prévenu à l'avance.</li>
+      <li><b>Aucun courriel n'est envoyé</b> par le pointage. Personne n'est prévenu d'avoir été noté absent.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 class="section"><span class="num">4.</span> Quelqu'un est venu sans s'être inscrit</h2>
+    <p class="deck">Le bloc <b>Présence hors inscription</b>, juste sous la liste.</p>
+
+    <p>Sous les inscrits, un second bloc permet d'ajouter une personne présente sur le terrain mais absente de la liste. Touchez le champ, tapez les premières lettres du nom, choisissez, puis <span class="chip chip-amber">Ajouter</span>.</p>
+
+    <figure class="fig">
+      <p class="fig-label">Présence hors inscription</p>
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="ui-scope">
+            <div class="ui-seg" style="margin-top:0">
+              <div class="ui-seg-title"><svg class="ic"><use href="#i-userplus"/></svg> Présence hors inscription</div>
+              <div class="ui-input"><svg class="ic"><use href="#i-search"/></svg> Ver</div>
+              <div class="ui-menu" style="width:100%; margin-left:0">
+                <div class="ui-item sel">Julie Vermeil <span class="att-nick">(Titan)</span></div>
+                <div class="ui-item">Paul Verney <span class="att-nick">(Baxter)</span></div>
+                <div class="ui-item">Sophie Vernet <span class="att-nick">(Nala)</span></div>
+              </div>
+              <span class="ui-btn amber fluid" style="margin-top:9px"><svg class="ic"><use href="#i-plus"/></svg> Ajouter</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>La recherche filtre à la frappe. Chaque proposition affiche le nom de l'adhérent et, entre parenthèses, celui de son chien&nbsp;: c'est ce qui permet de distinguer deux chiens d'un même foyer.</figcaption>
+    </figure>
+
+    <p><b>L'ajout est immédiat</b>&nbsp;: il n'attend pas le bouton <i>Enregistrer le pointage</i>. La personne apparaît aussitôt dans la liste du dessus avec le statut <b>Présent (non inscrit)</b>, et le compteur d'inscrits augmente d'une unité.</p>
+
+    <div class="note">
+      <p>Ce statut ne se choisit pas dans le menu de pointage&nbsp;: il n'est posé que par ce bloc. Il reste distinct de <b>Présent</b> dans les statistiques, ce qui permet de mesurer combien de monde vient sans s'inscrire.</p>
+    </div>
+
+    <p>Le menu ne propose que des adhérents <b>éligibles à cette séance</b>&nbsp;: compte actif, cotisation à jour, statut autre que « Non membre », et appartenance au groupe requis si l'événement est restreint. Les personnes <b>déjà inscrites</b> n'y figurent pas — elles sont dans la liste du dessus, où il faut les pointer.</p>
+  </section>
+
+  <section>
+    <h2 class="section"><span class="num">5.</span> Vérifier que c'est enregistré</h2>
+    <p class="deck">Un bandeau vert, en haut de la page rechargée.</p>
+
+    <figure class="fig">
+      <p class="fig-label">Confirmation</p>
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="ui-scope">
+            <div class="ui-msg"><svg class="ic"><use href="#i-check"/></svg> 8 pointage(s) enregistré(s).</div>
+            <div class="ui-seg">
+              <div class="ui-seg-title"><svg class="ic"><use href="#i-users"/></svg> Membres inscrits (8)</div>
+              <div class="att-row">
+                <div class="att-name">Claire Bonnet <span class="att-nick"><svg class="ic"><use href="#i-tag"/></svg> Iouka</span></div>
+                <div class="ui-select">Présent <svg class="ic"><use href="#i-caret"/></svg></div>
+              </div>
+              <div class="att-row" style="margin-bottom:0">
+                <div class="att-name">Julie Vermeil <span class="att-nick">Titan</span></div>
+                <div class="ui-select" style="min-width:126px; font-size:11px">Présent (non inscrit) <svg class="ic"><use href="#i-caret"/></svg></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>Le nombre annoncé est celui des <b>lignes enregistrées</b>, pas des seules modifications&nbsp;: pointer deux personnes sur huit affiche quand même «&nbsp;8&nbsp;». Ce qui compte, c'est que chaque ligne affiche ensuite le bon statut.</figcaption>
+    </figure>
+
+    <p>Si le réseau lâche au moment d'enregistrer, rien n'est perdu de définitif&nbsp;: la page n'a simplement pas été soumise. Refaites les choix et touchez à nouveau le bouton, une fois revenu à portée de réseau.</p>
+  </section>
+
+  <section>
+    <h2 class="section"><span class="num">6.</span> Quand l'écran ne montre pas ce qu'on attend</h2>
+    <p class="deck">Cinq situations qui ressemblent à des pannes et n'en sont pas.</p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Ce que vous voyez</th>
+            <th scope="col">Ce que cela veut dire</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Aucun menu à droite des noms</td>
+            <td>La séance n'a pas encore eu lieu — le pointage n'ouvre que le jour même. Ou vous n'êtes ni moniteur de cette séance, ni responsable de groupe&nbsp;: la liste reste alors consultable, mais figée.</td>
+          </tr>
+          <tr>
+            <td>Pas de bloc <b>Présence hors inscription</b></td>
+            <td>Aucun adhérent éligible à proposer&nbsp;: tous ceux qui pouvaient venir sont déjà inscrits, ou aucun ne remplit les conditions (cotisation, compte actif, groupe requis).</td>
+          </tr>
+          <tr>
+            <td>Un nom introuvable dans la recherche</td>
+            <td>Il est déjà dans la liste des inscrits&nbsp;; ou sa cotisation n'est pas à jour&nbsp;; ou il n'appartient pas au groupe exigé par l'événement. La régularisation passe par le secrétariat.</td>
+          </tr>
+          <tr>
+            <td><b>Présent (non inscrit)</b> absent du menu</td>
+            <td>Normal&nbsp;: ce statut ne se choisit pas, il est posé par le bloc <b>Présence hors inscription</b>. Il n'apparaît dans le menu que pour les personnes ajoutées ainsi.</td>
+          </tr>
+          <tr>
+            <td>Le bandeau de la séance est rouge</td>
+            <td>La séance est annulée. Le pointage reste possible si elle a malgré tout eu lieu, mais vérifiez d'abord auprès du staff qu'il ne s'agit pas d'une erreur.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="callout">
+    <h2>Pourquoi le club y tient</h2>
+    <p>Le pointage alimente <span class="path">Gestion inscriptions &rsaquo; Statistiques</span>&nbsp;: taux de participation, séances réellement suivies par chaque adhérent, et surtout la <b>liste des adhérents inactifs</b>, ceux qu'on ne voit plus. Une séance non pointée n'apparaît nulle part dans ces chiffres&nbsp;: ses inscrits restent «&nbsp;Inscrit&nbsp;», donc ni venus ni absents.</p>
+  </section>
+
+  <footer>
+    <p>Pour une cotisation à régulariser, un chien à rattacher ou un changement de groupe&nbsp;: <b>contactez le secrétariat</b>. Un moniteur ne peut modifier ni les fiches adhérent ni les groupes.</p>
+  </footer>
+
+</div>

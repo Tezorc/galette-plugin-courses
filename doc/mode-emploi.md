@@ -1386,6 +1386,12 @@ Le pointage est disponible le jour de la seance et apres :
 1. Dans la section **"Présence hors inscription"**, selectionner le membre
 2. Cliquer sur **"Ajouter"**
 
+L'ajout est **immediat** : il ne passe pas par le bouton *Enregistrer le pointage*. Le membre apparait aussitot dans la liste des inscrits au statut **Présent (non inscrit)**, distinct de *Présent* dans les statistiques, et le compteur d'inscrits augmente. La liste proposee ne contient que des adherents eligibles a la seance (compte actif, cotisation a jour, statut different de "Non membre", groupe requis si l'evenement est restreint) et exclut ceux qui y sont deja inscrits. Ni le pointage ni l'ajout hors inscription n'envoient de courriel.
+
+Une ligne a laquelle on ne touche pas reste au statut **Inscrit** : ni presente, ni absente, elle ne compte pas dans le taux de participation. Le message de succes annonce le nombre de **lignes enregistrees**, pas de modifications — pointer deux personnes sur huit affiche « 8 pointage(s) enregistré(s) ».
+
+> **Version diffusable** : [`doc/tuto-pointage.html`](tuto-pointage.html) (et son PDF) reprend ce parcours pour les moniteurs, ecran par ecran, **depuis un telephone** — c'est la que le pointage se fait en pratique. C'est la source a mettre a jour, avec la presente section, quand le pointage change.
+
 ### Consulter les inscriptions
 
 - **Gestion des inscriptions > Gestion inscriptions** : toutes les inscriptions aux seances de vos groupes
