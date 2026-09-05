@@ -62,6 +62,7 @@
   --ui-green: #21ba45;
   --ui-blue: #2185d0;
   --ui-red: #db2828;
+  --ui-amber: #ffb619;   /* boutons "primary" de Galette */
   --ui-orange: #f2711c;
   --ui-grey: #767676;
 }
@@ -262,6 +263,7 @@ ol.steps p { font-size: 16px; }
 .btn-green  { background: var(--ui-green); }
 .btn-blue   { background: var(--ui-blue); }
 .btn-red    { background: var(--ui-red); }
+.btn-amber  { background: var(--ui-amber); }
 .btn-orange { background: var(--ui-orange); }
 .btn-grey   { background: var(--ui-grey); }
 
@@ -428,13 +430,13 @@ a:focus-visible,
 
       <li>
         <h3>Pointer, le jour même</h3>
-        <p>Le pointage apparaît <strong>le jour de la séance et après</strong>, jamais avant. Dans la liste des <strong>Membres inscrits</strong>, choisir pour chacun <strong>Présent</strong>, <strong>Absent</strong> ou <strong>Absent (excusé)</strong>, puis <span class="btn btn-green">Enregistrer le pointage</span>.</p>
+        <p>Le pointage apparaît <strong>le jour de la séance et après</strong>, jamais avant. Dans la liste des <strong>Membres inscrits</strong>, choisir pour chacun <strong>Présent</strong>, <strong>Absent</strong> ou <strong>Absent (excusé)</strong>, puis <span class="btn btn-amber">Enregistrer le pointage</span>.</p>
         <p>Quelqu'un est venu sans s'être inscrit : le bloc <strong>Présence hors inscription</strong> permet de l'ajouter directement.</p>
       </li>
 
       <li>
         <h3>Si la séance ne peut pas avoir lieu</h3>
-        <p><span class="btn btn-grey">Fermer la séance</span> arrête les inscriptions <strong>sans toucher aux inscrits</strong> — la séance a bien lieu, elle n'accepte plus personne. <span class="btn btn-red">Annuler la séance</span> est tout autre chose : les inscrits reçoivent un courriel d'annulation et la liste d'attente est purgée.</p>
+        <p><span class="btn btn-orange">Fermer la séance</span> arrête les inscriptions <strong>sans toucher aux inscrits</strong> — la séance a bien lieu, elle n'accepte plus personne. <span class="btn btn-red">Annuler la séance</span> est tout autre chose : les inscrits reçoivent un courriel d'annulation et la liste d'attente est purgée.</p>
         <p>Les deux se défont : une séance fermée se rouvre, une séance annulée se réactive.</p>
       </li>
 
