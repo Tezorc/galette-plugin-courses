@@ -681,6 +681,98 @@ Ces tests ont ete valides par mutation : casser le dedup par `session_id`, la br
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Evolution - Foyer symetrique : une fiche fille inscrit son parent et sa fratrie
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : "une fiche fille devrait pouvoir inscrire un parent ou
+  une autre fille".
+
+#### Probleme
+
+Le plugin ne connaissait qu'un lien **descendant**. Partout ou il fallait savoir
+"pour qui ce membre peut agir", le code chargeait
+`new Adherent($zdb, $id, ['children' => true])` et parcourait `->children` :
+`RegistrationsController::isChildOf()` (4 appels : inscription, desinscription,
+liste d'attente, retrait de liste d'attente), la construction du menu deroulant
+dans `myRegistrations()` et `SessionsController::show()`, l'ACL de
+`mailInstructors()`, et cote SQL le predicat `child.parent_id = ?` recopie six
+fois dans `Repository\Events` et `Repository\Sessions`.
+
+Consequence pour un foyer ou c'est l'adolescent qui gere les inscriptions
+familiales depuis sa propre fiche : il ne voyait ni le parent ni la fratrie dans
+le menu **S'inscrire**, et un POST force sur `coursesDoParentRegister` etait
+refuse par `isChildOf()`. La seule voie restait de se connecter avec le compte
+du parent.
+
+`Event::canAccess()` faisait exception : il testait deja le parent **et** les
+enfants — mais pas la fratrie, et son verdict etait de toute facon contredit par
+les depots, qui ne remontaient jamais au parent. Une fiche fille pouvait donc
+avoir l'acces a un evenement sans que la seance apparaisse dans aucune liste.
+
+#### Mise en oeuvre
+
+Nouvelle entite `Entity\Household`, source unique de la regle :
+
+```text
+chef de foyer H = parent_id du membre s'il existe, sinon le membre lui-meme
+foyer           = { H } ∪ { x | x.parent_id = H }
+```
+
+Un parent retrouve donc exactement ses enfants (comportement d'avant, inchange),
+une fiche fille obtient en plus son parent et ses freres et soeurs. Profondeur
+volontairement limitee a **un niveau** : Galette autorise des chaines plus
+longues, mais les remonter ferait dependre le perimetre d'inscription d'une
+arborescence que personne ne voit dans l'interface.
+
+- `memberIds()` / `linkedMemberIds()` / `isLinked()` : deux SELECT (resolution du
+  chef de foyer, puis listing), avec cache par requete — `canAccess()` etant
+  appele une fois par evenement affiche, une liste de 40 evenements ferait sinon
+  80 requetes pour un resultat constant.
+- `eventGroupsExistsSql($suffix)` : le fragment `EXISTS (...)` des depots, qui
+  resout le chef de foyer **dans la requete**
+  (`COALESCE(me.parent_id, me.id_adh)`) au lieu de le calculer en PHP. Les six
+  predicats gardent ainsi leur unique parametre lie et leur passe SQL unique ;
+  le suffixe rend les alias uniques quand deux fragments coexistent.
+- `isChildOf()` devient `isLinkedMember()` et delegue a `Household::isLinked()`.
+  Les messages d'erreur ne changent pas : ils parlaient deja de *linked members*,
+  seul l'ensemble s'elargit.
+- `Event::canAccess()` : les deux branches parent / enfants sont remplacees par
+  une boucle sur `linkedMemberIds()`, ce qui ajoute la fratrie. L'Adherent du
+  connecte n'est plus charge avec `['children' => true]` — `getGroups()` y
+  agregeait les groupes des enfants (cf. le commentaire de `canRegisterSelf`),
+  ce qui brouillait la frontiere entre les deux tests.
+
+Ce qui **ne** change **pas**, et qui porte la securite reelle :
+
+- `Event::canRegisterSelf()` reste strictement personnel (SQL direct sur
+  `groups_members` pour le seul `login->id`) : appartenir au foyer n'autorise
+  jamais a s'inscrire soi-meme hors de son groupe ;
+- eligibilite par personne (compte actif, statut != "Non member", cotisation a
+  jour) via `getMemberEligibilityError()` / `batchEligibleMemberIds()` ;
+- restriction de groupe verifiee sur la personne inscrite, jauge, seance ouverte,
+  moniteur affecte, conflit horaire, delai de fermeture ;
+- le regroupement parent/enfants des courriels (Phase 59) reste **descendant** :
+  le parent recoit le mail de son enfant, l'inverse n'a pas ete ouvert — un
+  enfant n'est pas presume responsable de la correspondance du foyer.
+
+Aucune migration BDD : la regle se deduit de `adherents.parent_id`, deja
+renseigne. Les cles de template (`children`, `children_registered`,
+`browse_eligible_children`) sont conservees pour ne pas toucher aux deux gros
+gabarits ; seul l'ensemble qu'elles portent s'elargit.
+
+#### Tests
+
+`tests/Unit/Entity/HouseholdTest.php` (9 cas) avec un faux `Db` repondant aux
+deux SELECT dans l'ordre : parent -> ses enfants (non-regression), fiche fille ->
+parent + fratrie, membre isole -> aucun rattache, `isLinked()` refusant soi-meme
+/ un etranger / l'id 0 du superadmin, echec SQL -> repli sur soi seul (jamais un
+foyer partiel qui aurait l'air complet dans un menu), cache (une seule paire de
+requetes), et forme du fragment SQL (COALESCE present, un seul `?`, alias
+suffixes). Le bootstrap de tests definit desormais `PREFIX_DB` et un stub
+`Galette\Entity\Adherent`, sans quoi tout code produisant du SQL brut restait
+hors de portee des tests.
+
 ### Evolution - Statistiques ouvertes aux moniteurs
 
 **Statut :** TERMINEE

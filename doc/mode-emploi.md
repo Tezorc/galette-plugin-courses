@@ -92,7 +92,7 @@ Le plugin utilise les roles Galette existants. Chaque fonctionnalite est accessi
 | Voir le detail d'un evenement | Oui (valides) | Oui | Oui | Oui |
 | S'inscrire / se desinscrire | Oui | Oui | - | - |
 | Rejoindre / quitter la liste d'attente | Oui | Oui | - | - |
-| Inscrire un enfant | Oui (parent) | Oui (parent) | - | - |
+| Inscrire un membre de son foyer | Oui | Oui | - | - |
 | Voir "Mes inscriptions" | Oui | Oui | - | - |
 | Exporter en iCal (seance / mes inscriptions) | Oui | Oui | Oui | Oui |
 | Gerer ses preferences de notifications | Oui | Oui | Oui | Oui |
@@ -313,7 +313,7 @@ Apres desinscription, si l'adherent souhaite se reinscrire, il peut le faire tan
 
 La page **Mes inscriptions** (`/plugins/courses/my-registrations`) comporte deux onglets. **L'onglet "Mes inscriptions" est ouvert par defaut** (Phase 73) : a l'arrivee sur la page, le membre voit immediatement ses inscriptions a venir, et bascule sur "M'inscrire à une prochaine séance" via le bouton d'onglet (la preference est memorisee en `localStorage` : un clic explicite sur "M'inscrire à une prochaine séance" persiste pour les visites suivantes jusqu'au prochain clic sur "Mes inscriptions").
 
-**Avertissement eligibilite** : un bandeau orange est affiche en haut de la page si **le membre lui-meme ou l'un de ses enfants** n'est pas eligible aux inscriptions. Trois conditions sont verifiees pour chaque membre (Phase 47.2) :
+**Avertissement eligibilite** : un bandeau orange est affiche en haut de la page si **le membre lui-meme ou l'un des membres rattaches de son foyer** n'est pas eligible aux inscriptions. Trois conditions sont verifiees pour chaque membre (Phase 47.2) :
 
 1. La cotisation est a jour (`date_echeance >= today` ou compte exempte de cotisation)
 2. Le compte est actif (`activite_adh = 1` dans la fiche Galette)
@@ -321,21 +321,21 @@ La page **Mes inscriptions** (`/plugins/courses/my-registrations`) comporte deux
 
 Le bandeau detaille le nom de chaque membre concerne et la raison precise (cotisation). Les comptes **inactifs** ou avec statut **"Non membre"** ne sont pas listes dans le bandeau — on suppose que ce sont des ex-adherents ou des membres en cours de retrait, le rappel serait du bruit. L'inscription, la liste d'attente et l'inscription par parent sont bloquees pour le membre concerne tant que la situation n'est pas regularisee. L'inscription par staff/moniteur (`proxyRegister`) applique aussi ces 3 conditions sur le membre cible. Le super administrateur (compte sans fiche adherent) n'a pas acces a cette page : il est redirige vers la liste des seances avec un message d'avertissement.
 
-**Avertissement changement de groupe** : si l'adherent (ou l'un de ses enfants) est inscrit a une seance future dont l'evenement est restreint a un groupe auquel il n'appartient plus (changement de niveau, retrait du groupe par le staff), un second bandeau orange s'affiche en haut de la page (compteur du nombre d'inscriptions concernees) et chaque card concernee dans "Votre prochaine seance" / "A venir" est mise en evidence (fond jaune, bordure orange, badge "Out of group" remplaceant le statut). Le bouton "Se desinscrire" deja present sur la card permet de regulariser. Aucune desinscription automatique : le membre garde la main, libre a lui de se desinscrire ou d'en parler avec le staff.
+**Avertissement changement de groupe** : si l'adherent (ou l'un des membres de son foyer) est inscrit a une seance future dont l'evenement est restreint a un groupe auquel il n'appartient plus (changement de niveau, retrait du groupe par le staff), un second bandeau orange s'affiche en haut de la page (compteur du nombre d'inscriptions concernees) et chaque card concernee dans "Votre prochaine seance" / "A venir" est mise en evidence (fond jaune, bordure orange, badge "Out of group" remplaceant le statut). Le bouton "Se desinscrire" deja present sur la card permet de regulariser. Aucune desinscription automatique : le membre garde la main, libre a lui de se desinscrire ou d'en parler avec le staff.
 
 #### Onglet "M'inscrire à une prochaine séance"
 
-- Affiche toutes les seances ouvertes correspondant aux groupes de l'adherent (et de ses enfants)
+- Affiche toutes les seances ouvertes correspondant aux groupes de l'adherent (et des membres de son foyer)
 - **Masquage automatique** des seances ou l'adherent est deja inscrit (ou toute son action est epuisee) :
   - La seance disparait si le membre est deja inscrit en son propre nom
-  - La seance disparait si le membre ne peut pas s'inscrire lui-meme ET n'est pas en liste d'attente ET tous ses enfants eligibles sont deja inscrits
+  - La seance disparait si le membre ne peut pas s'inscrire lui-meme ET n'est pas en liste d'attente ET tous les membres rattaches eligibles sont deja inscrits
   - Cela garantit que les cartes restantes ont toujours une action disponible
 - Filtres JS cote client : Type, Activite (cascade), A partir du (date)
   - Selectionner une valeur applique le filtre automatiquement
   - Bouton **"Filtrer"** disponible pour declencher explicitement le filtre (utile en cas de doute)
   - Bouton **"Effacer les filtres"** : reinitialise tous les filtres aux valeurs par defaut (date du jour)
-- Bouton unique sur chaque carte (Phase 42) : **"S'inscrire"**. Une seule option eligible -> bouton direct portant le nom de la personne (vert pour soi-meme, teal pour un enfant) ; deux options ou plus -> menu deroulant listant **Moi-même** puis chaque enfant eligible. Le bouton **"Inscrire un enfant"** et sa page intermediaire n'existent plus.
-- **Section "Seances annulees"** : en bas de l'onglet, une section rouge distincte liste les seances futures **annulees** correspondant aux groupes de l'adherent (et de ses enfants), pour l'informer qu'un creneau existe mais qu'il n'aura pas lieu. Chaque carte affiche le motif et le commentaire d'annulation et un bouton **"Details"** (pas de bouton d'inscription). Les seances ou l'adherent (ou un enfant) est deja inscrit n'apparaissent pas ici — elles figurent deja dans l'onglet "Mes inscriptions". Les filtres Type / Activite / Date s'appliquent aussi a cette section.
+- Bouton unique sur chaque carte (Phase 42) : **"S'inscrire"**. Une seule option eligible -> bouton direct portant le nom de la personne (vert pour soi-meme, teal pour un membre rattache) ; deux options ou plus -> menu deroulant listant **Moi-même** puis chaque membre rattache eligible. Le bouton **"Inscrire un enfant"** et sa page intermediaire n'existent plus.
+- **Section "Seances annulees"** : en bas de l'onglet, une section rouge distincte liste les seances futures **annulees** correspondant aux groupes de l'adherent (et des membres de son foyer), pour l'informer qu'un creneau existe mais qu'il n'aura pas lieu. Chaque carte affiche le motif et le commentaire d'annulation et un bouton **"Details"** (pas de bouton d'inscription). Les seances ou l'adherent (ou un membre rattache) est deja inscrit n'apparaissent pas ici — elles figurent deja dans l'onglet "Mes inscriptions". Les filtres Type / Activite / Date s'appliquent aussi a cette section.
 
 #### Onglet "Mes inscriptions"
 
@@ -347,7 +347,7 @@ Sections du tableau de bord personnel :
 - **"Seances passees"** : accordeon replie avec cards grisees (cliquer pour deployer)
 - **Etat vide** : message engageant avec icone paw et bouton "Parcourir les seances disponibles"
 
-**Boutons sur chaque card (Prochaine seance, A venir, Annulees)** — identiques pour le parent et l'enfant :
+**Boutons sur chaque card (Prochaine seance, A venir, Annulees)** — identiques pour soi-meme et pour un membre rattache :
 
 - **"Details"** (petit, bleu) : lien vers la page de detail de la seance
 - Bouton **iCal** (mini icone) : export iCal de cette seance
@@ -357,7 +357,7 @@ Sections du tableau de bord personnel :
 
 **Bouton "iCal"** (toutes mes inscriptions) en haut a droite de l'onglet — exporte toutes les inscriptions actives en un seul fichier `.ics`.
 
-**Badge "Conflit horaire"** (Phase 61) : si deux inscriptions du **meme membre** (parent OU un enfant individuellement) tombent le meme jour avec des plages horaires qui se chevauchent, un badge orange `Conflit horaire` apparait sur chaque carte concernee — a cote du badge statut. Le tooltip (survol) liste les autres seances en collision (nom de l'evenement, nom/pseudo, date, plage). Le meme badge apparait sur les cartes de l'onglet **"M'inscrire à une prochaine séance"** lorsque la candidate chevaucherait une inscription deja active du membre ou d'un enfant eligible. **Le chevauchement est bloquant** depuis le commit 976fc53 : le badge previent, et si l'on clique quand meme, les quatre chemins d'inscription (soi-meme, membre rattache, et leurs deux equivalents en liste d'attente) refusent l'operation cote serveur avec un message d'erreur. Le controle porte sur **une seule personne a la fois** (`hasOverlappingSession($member_id, ...)`) : deux membres rattaches differents peuvent parfaitement etre inscrits sur la meme plage horaire, c'est le meme membre inscrit deux fois qui est refuse.
+**Badge "Conflit horaire"** (Phase 61) : si deux inscriptions du **meme membre** (soi-meme OU un membre rattache individuellement) tombent le meme jour avec des plages horaires qui se chevauchent, un badge orange `Conflit horaire` apparait sur chaque carte concernee — a cote du badge statut. Le tooltip (survol) liste les autres seances en collision (nom de l'evenement, nom/pseudo, date, plage). Le meme badge apparait sur les cartes de l'onglet **"M'inscrire à une prochaine séance"** lorsque la candidate chevaucherait une inscription deja active du membre ou d'un membre rattache eligible. **Le chevauchement est bloquant** depuis le commit 976fc53 : le badge previent, et si l'on clique quand meme, les quatre chemins d'inscription (soi-meme, membre rattache, et leurs deux equivalents en liste d'attente) refusent l'operation cote serveur avec un message d'erreur. Le controle porte sur **une seule personne a la fois** (`hasOverlappingSession($member_id, ...)`) : deux membres rattaches differents peuvent parfaitement etre inscrits sur la meme plage horaire, c'est le meme membre inscrit deux fois qui est refuse.
 
 > **Mise a jour de l'affichage** : s'inscrire, se desinscrire ou rejoindre la liste d'attente depuis la page **Mes inscriptions** (onglets *M'inscrire à une prochaine séance* et *Mes inscriptions*) renvoie automatiquement sur cette meme page rechargee. Les deux onglets refletent immediatement l'etat a jour : la seance disparait de *M'inscrire à une prochaine séance* (puisqu'on y est desormais inscrit) et apparait dans *Mes inscriptions*. Aucun rechargement manuel n'est necessaire. Les memes actions declenchees depuis la fiche detail d'une seance continuent a renvoyer sur cette fiche, comme avant.
 
@@ -376,13 +376,13 @@ Quand une seance est pleine, un adherent peut rejoindre la liste d'attente :
 
 1. Aller sur la page de detail de la seance (ou rester sur l'onglet "M'inscrire à une prochaine séance")
 2. Si la seance est pleine, un message jaune s'affiche avec le bouton bleu **"Rejoindre la liste d'attente"**
-3. **Comptes avec membres rattaches (parent + enfants)** : comme pour l'inscription, si plusieurs membres peuvent rejoindre la file, le bouton devient un menu deroulant listant chaque membre eligible (vous-meme + chaque enfant). Choisir le membre concerne pour l'ajouter a la liste d'attente.
+3. **Comptes avec membres rattaches (foyer)** : comme pour l'inscription, si plusieurs membres peuvent rejoindre la file, le bouton devient un menu deroulant listant chaque membre eligible (vous-meme + chaque membre rattache). Choisir le membre concerne pour l'ajouter a la liste d'attente.
 4. Cliquer pour rejoindre la file — la position est affichee (ex: "position 3")
 5. Pour quitter la file : cliquer sur le bouton orange **"Quitter la liste d'attente"**
 
 **Promotion automatique** : quand un inscrit se desinscrit, le premier en file d'attente est automatiquement inscrit et recoit un email de notification.
 
-**Suivi depuis "Mes inscriptions"** (Phase 67) : toutes les seances ou vous (ou un de vos membres rattaches) etes en liste d'attente apparaissent dans un bloc dedie **"Sur liste d'attente"** entre la grille "Upcoming" et les seances passees. Chaque carte affiche le numero de position, le nom du membre concerne (si ce n'est pas vous-meme) et un bouton orange "Quitter la liste d'attente" -- valable aussi pour les enfants (le retrait passe par `coursesDoParentLeaveWaitlist`).
+**Suivi depuis "Mes inscriptions"** (Phase 67) : toutes les seances ou vous (ou un de vos membres rattaches) etes en liste d'attente apparaissent dans un bloc dedie **"Sur liste d'attente"** entre la grille "Upcoming" et les seances passees. Chaque carte affiche le numero de position, le nom du membre concerne (si ce n'est pas vous-meme) et un bouton orange "Quitter la liste d'attente" -- valable aussi pour les membres rattaches (le retrait passe par `coursesDoParentLeaveWaitlist`).
 
 Les admins, staff et responsables de groupe voient la liste d'attente complete sur la page de detail (position, nom, date d'ajout).
 
@@ -562,40 +562,51 @@ Limitations :
 - Le decalage de jour n'agit que si vous renseignez explicitement la date de debut sur le formulaire d'edition (le champ est vide par defaut).
 - Le recalcul du jour utilise la premiere seance future non-annulee comme reference. Si certaines seances ont ete deplacees individuellement vers un autre jour, le decalage commun s'appliquera quand meme et pourrait les re-aligner sur le nouveau jour.
 
-### 16-bis. Inscription d'un enfant (parent)
+### 16-bis. Inscription d'un membre rattache (foyer)
 
-Si un adherent a des enfants lies (via le champ "Membre parent" dans Galette), il peut les inscrire a une seance, independamment de sa propre inscription.
+Un adherent peut inscrire a une seance, independamment de sa propre inscription, les autres membres de son **foyer**.
+
+#### Ce qu'est un foyer
+
+Le foyer est l'ensemble des fiches reliees par le champ **"Membre parent"** de Galette :
+
+- le **chef de foyer** est le membre parent s'il y en a un, sinon le membre lui-meme ;
+- le foyer est le chef de foyer plus toutes les fiches qui le declarent comme parent.
+
+Concretement, un parent retrouve ses fiches filles, **et une fiche fille retrouve son parent ainsi que ses freres et soeurs**. La relation est symetrique : depuis une fiche fille connectee, on inscrit le parent ou une autre fiche fille exactement comme le parent inscrit ses enfants. La profondeur reste d'un seul niveau — une fiche fille de fiche fille n'est pas dans le foyer du grand-parent.
+
+Appartenir au meme foyer ne donne aucun droit en soi : cela dit seulement **pour qui** on peut agir. L'eligibilite (compte actif, statut, cotisation) et la restriction de groupe de l'evenement restent verifiees personne par personne.
 
 #### Principe de fonctionnement (Phase 42)
 
-L'auto-inscription et l'inscription d'enfants sont desormais regroupees derriere un bouton **"S'inscrire"** unique, a la fois sur les cards de l'onglet "M'inscrire à une prochaine séance", sur les cards "Mes inscriptions" et sur la page de detail d'une seance. Le rendu s'adapte au nombre d'options eligibles :
+L'auto-inscription et l'inscription des membres rattaches sont regroupees derriere un bouton **"S'inscrire"** unique, a la fois sur les cards de l'onglet "M'inscrire à une prochaine séance", sur les cards "Mes inscriptions" et sur la page de detail d'une seance. Le rendu s'adapte au nombre d'options eligibles :
 
-- **1 seule option (parent OU un seul enfant)** : bouton vert direct portant le nom de la personne (`Moi-même` pour le parent, ou le pseudo / nom de l'enfant). Un clic poste immediatement l'inscription, sans page intermediaire.
-- **2 options ou plus (parent + enfant·s, ou plusieurs enfants)** : bouton vert dropdown libelle **"S'inscrire"**. Le menu liste **Moi-même** (si le parent est eligible) puis chaque enfant eligible non deja inscrit (avec son pseudo a defaut, sinon son nom). Selectionner une ligne poste l'inscription correspondante.
+- **1 seule option (soi-meme OU un seul membre rattache)** : bouton vert direct portant le nom de la personne (`Moi-même` pour soi, ou le pseudo / nom du membre rattache). Un clic poste immediatement l'inscription, sans page intermediaire.
+- **2 options ou plus** : bouton vert dropdown libelle **"S'inscrire"**. Le menu liste **Moi-même** (si l'on est eligible) puis chaque membre rattache eligible non deja inscrit (avec son pseudo a defaut, sinon son nom). Selectionner une ligne poste l'inscription correspondante.
 
-Les enfants deja inscrits sont exclus du menu (et un bouton de desinscription dedie est visible ailleurs sur la card / la page).
+Les membres rattaches deja inscrits sont exclus du menu (et un bouton de desinscription dedie est visible ailleurs sur la card / la page).
 
 La page intermediaire "Inscrire un membre rattache" n'existe plus : le choix se fait directement depuis le bouton.
 
 #### Conditions verifiees a la soumission
 
-- Lien parent/enfant dans Galette (relation `parent_id`)
-- Appartenance de l'enfant (ou du parent) a un groupe requis par l'evenement, ou evenement sans restriction
+- Appartenance au meme foyer dans Galette (relation `parent_id`, dans un sens ou dans l'autre)
+- Appartenance du membre inscrit a un groupe requis par l'evenement, ou evenement sans restriction
 - Seance ouverte avec places disponibles (sinon liste d'attente, voir 14)
 - Moniteur affecte a la seance, sauf si l'evenement coche **"Autoriser les inscriptions sans moniteur"** (Phase 40)
 
-#### Desinscrire un enfant
+#### Desinscrire un membre rattache
 
-Sur la page de detail de la seance et sur la card "Mes inscriptions", chaque enfant deja inscrit apparait sur sa propre ligne avec son nom + pseudo et un bouton rouge **"Se desinscrire"**. Le bouton est visible meme si le parent n'est pas inscrit lui-meme et meme si l'enfant appartient a un groupe different du parent.
+Sur la page de detail de la seance et sur la card "Mes inscriptions", chaque membre rattache deja inscrit apparait sur sa propre ligne avec son nom + pseudo et un bouton rouge **"Se desinscrire"**. Le bouton est visible meme si l'on n'est pas inscrit soi-meme et meme si le membre rattache appartient a un autre groupe.
 
 #### Visibilite des seances
 
-Le parent voit dans la liste des seances toutes les seances ouvertes aux groupes de ses enfants, meme s'il n'appartient pas lui-meme a ces groupes. Sur l'onglet "M'inscrire à une prochaine séance", les cards dont aucune option (parent et enfants) n'est plus actionnable (deja inscrit partout) sont automatiquement masquees.
+On voit dans la liste des seances toutes celles ouvertes aux groupes des membres de son foyer, meme si l'on n'appartient pas soi-meme a ces groupes. Sur l'onglet "M'inscrire à une prochaine séance", les cards dont aucune option (soi-meme et membres rattaches) n'est plus actionnable (deja inscrit partout) sont automatiquement masquees.
 
 #### Cas particuliers
 
-- Parent non eligible en propre nom + 1 seul enfant eligible -> bouton direct au nom de l'enfant
-- Parent non eligible + plusieurs enfants -> dropdown listant uniquement les enfants
+- Non eligible en son propre nom + 1 seul membre rattache eligible -> bouton direct au nom de ce membre
+- Non eligible + plusieurs membres rattaches -> dropdown listant uniquement ceux-ci
 - Aucune option eligible -> aucun bouton "S'inscrire" (un message explicatif s'affiche si pertinent)
 
 ### 17. Modale de confirmation de desinscription
@@ -934,11 +945,13 @@ Un evenement peut etre restreint a certains groupes d'adherents :
 
 Si aucun groupe n'est selectionne, l'evenement est ouvert a tous les adherents.
 
-### Acces via membre lie (parent/enfant)
+### Acces via membre lie (foyer)
 
-Si un adherent n'est pas directement membre d'un groupe autorise, le systeme verifie aussi les groupes de ses **membres lies** (parent et enfants). Si un parent ou un enfant appartient a un groupe autorise, l'acces est accorde.
+Si un adherent n'est pas directement membre d'un groupe autorise, le systeme verifie aussi les groupes des autres membres de son **foyer** (parent, freres et soeurs, enfants — voir 16-bis). Si l'un d'eux appartient a un groupe autorise, l'acces est accorde.
 
-Cela permet par exemple a un parent qui n'est pas dans le groupe "Club canin" de s'inscrire a un evenement restreint a ce groupe si son enfant y est membre.
+Cela permet par exemple a un parent qui n'est pas dans le groupe "Club canin" de voir un evenement restreint a ce groupe si son enfant y est membre — et, symetriquement, a une fiche fille de voir l'evenement ouvert au groupe de son parent ou de sa soeur.
+
+Attention a la distinction : cet acces ouvre la **visibilite** de l'evenement et permet d'agir pour la personne concernee. Il ne dispense pas de la regle d'auto-inscription, qui reste stricte — pour s'inscrire *en son propre nom*, il faut appartenir soi-meme au groupe requis.
 
 ### Filtrage automatique
 
@@ -1074,8 +1087,8 @@ Toutes les routes sont prefixees par `/plugins/courses/`.
 | GET | `/session/{id}/proxy-register` | Formulaire d'inscription par procuration |
 | POST | `/session/{id}/proxy-register` | Inscrire un membre par procuration |
 | POST | `/session/{id}/proxy-unregister` | Annuler une inscription (staff/admin/moniteur de la seance) |
-| POST | `/session/{id}/parent-register` | Inscrire un enfant (parent) |
-| POST | `/session/{id}/parent-unregister` | Desinscrire un enfant (parent) |
+| POST | `/session/{id}/parent-register` | Inscrire un membre de son foyer |
+| POST | `/session/{id}/parent-unregister` | Desinscrire un membre de son foyer |
 | GET | `/session/{id}/ical` | Export iCal d'une seance |
 | GET | `/session/{id}/export-registrations` | Export CSV inscrits + liste d'attente (staff) |
 | GET | `/session/{id}/mail` | Pre-selectionner les inscrits dans le mailing Galette (staff / responsable) |
@@ -1213,6 +1226,7 @@ Toutes les phases de developpement sont terminees :
 - **Phase 45** : Renommage du champ "Delai de desinscription" en "Inscription fermee (jours avant la seance)" — le sens est inverse : le delai controle desormais la **fermeture des inscriptions** (au lieu de la desinscription). La **desinscription est toujours libre** jusqu'au debut de la seance. Migration BDD `scripts/upgrade-register-deadline.sql` (ALTER TABLE CHANGE), les valeurs existantes sont conservees et reinterpretees comme delai d'inscription.
 - **Phase 44** : Periodes de fermeture — les seances recurrentes tombant sur une date de fermeture sont desormais **creees en statut Annule** (au lieu d'etre sautees). Le tableau des dates de fermeture (preferences staff/admin) gagne une colonne **Motif** (champ libre, max 120 car., ex. "Fermeture annuelle", "Concours regional", "AG annuelle"). A la generation, la seance est creee avec statut `Annule`, motif `Fermeture du club` et le libelle saisi en commentaire d'annulation. **Cascade automatique** : a l'enregistrement des preferences, les seances futures DEJA planifiees (Ouverte ou Fermee) tombant dans une periode sont egalement basculees en Annule, avec courriels d'annulation aux inscrits et purge + notification de la liste d'attente (idempotent : pas de double mail si on re-sauve). Aucune notification d'invitation moniteur n'est envoyee pour les seances creees deja annulees.
 - **Phase 71.3** : Libelles d'onglets explicites par contexte — l'onglet de recherche s'appelait "Trouver une seance" sur les deux pages, ce qui ne disait pas ce qu'on y faisait. Il devient **"M'inscrire à une prochaine séance"** sur la page *Mes inscriptions* (membre) et **"Se proposer moniteur"** sur la page *Mes seances comme moniteur*. Les entrees de changelog anterieures (Phases 12, 42) citent l'ancien libelle : c'est volontaire, elles decrivent l'interface telle qu'elle etait alors.
+- **Foyer symetrique** : le perimetre "membres rattaches" ne descend plus seulement du parent vers ses fiches filles, il couvre le **foyer** entier (voir 16-bis). Une fiche fille connectee peut inscrire, desinscrire, placer en liste d'attente ou en retirer son parent et ses freres et soeurs, exactement comme le parent le fait pour elle ; elle voit aussi les seances ouvertes a leurs groupes, et peut contacter les moniteurs d'une seance ou l'un d'eux est inscrit. Les controles en aval sont inchanges : eligibilite (compte actif, statut, cotisation), appartenance au groupe requis, chevauchement horaire, jauge. L'auto-inscription reste strictement personnelle. Aucune migration de base : la regle se deduit de `parent_id`.
 - **Traductions** : Interface entierement traduite en francais (fichiers PO/MO)
 
 ---

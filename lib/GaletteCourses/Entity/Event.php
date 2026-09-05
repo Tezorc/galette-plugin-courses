@@ -467,7 +467,10 @@ class Event
 
         // For regular members, check their group membership
         try {
-            $adherent = new \Galette\Entity\Adherent($this->zdb, (int)$login->id, ['children' => true]);
+            // No `children` dep: getGroups() then folds the children's groups
+            // into the member's own (see canRegisterSelf), which would blur the
+            // two branches below. Household members are walked explicitly.
+            $adherent = new \Galette\Entity\Adherent($this->zdb, (int)$login->id);
             $member_groups = $adherent->getGroups();
             foreach ($member_groups as $group) {
                 $gid = is_object($group) ? $group->getId() : (int)$group;
@@ -476,35 +479,16 @@ class Event
                 }
             }
 
-            // Check linked members' groups (parent)
-            if ($adherent->parent !== null) {
-                $parent_id = is_object($adherent->parent) ? $adherent->parent->id : (int)$adherent->parent;
-                if ($parent_id > 0) {
-                    $parent = new \Galette\Entity\Adherent($this->zdb, $parent_id);
-                    $parent_groups = $parent->getGroups();
-                    foreach ($parent_groups as $group) {
-                        $gid = is_object($group) ? $group->getId() : (int)$group;
-                        if (in_array($gid, $this->groups)) {
-                            return true;
-                        }
-                    }
-                }
-            }
-
-            // Check linked members' groups (children)
-            $children = $adherent->children;
-            if (!empty($children)) {
-                foreach ($children as $child) {
-                    $child_id = $child->id;
-                    if ($child_id > 0) {
-                        $child_adh = new \Galette\Entity\Adherent($this->zdb, $child_id);
-                        $child_groups = $child_adh->getGroups();
-                        foreach ($child_groups as $group) {
-                            $gid = $group->getId();
-                            if (in_array($gid, $this->groups)) {
-                                return true;
-                            }
-                        }
+            // Check the groups of the other household members (parent, siblings,
+            // children — see Entity\Household). Used to be a parent branch plus a
+            // children branch, which left a child record blind to an event opened
+            // to its sibling's group.
+            foreach (Household::linkedMemberIds($this->zdb, (int)$login->id) as $linked_id) {
+                $linked_adh = new \Galette\Entity\Adherent($this->zdb, $linked_id);
+                foreach ($linked_adh->getGroups() as $group) {
+                    $gid = is_object($group) ? $group->getId() : (int)$group;
+                    if (in_array($gid, $this->groups)) {
+                        return true;
                     }
                 }
             }

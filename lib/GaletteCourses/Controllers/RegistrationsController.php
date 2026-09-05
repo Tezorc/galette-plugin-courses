@@ -28,6 +28,7 @@ use Galette\Core\PluginControllerTrait;
 use Galette\Entity\Adherent;
 use GaletteCourses\Entity\Event;
 use GaletteCourses\Entity\EventType;
+use GaletteCourses\Entity\Household;
 use GaletteCourses\Entity\Registration;
 use GaletteCourses\Entity\Session;
 use GaletteCourses\Entity\SessionInstructor;
@@ -220,7 +221,7 @@ class RegistrationsController extends AbstractController
 
         // Verify parent-child relationship
         try {
-            if (!$this->isChildOf($parent_id, $child_id)) {
+            if (!$this->isLinkedMember($parent_id, $child_id)) {
                 $this->flash->addMessage('error_detected', _T('You can only unregister your own linked members.', 'courses'));
                 return $response
                     ->withStatus(302)
@@ -247,7 +248,7 @@ class RegistrationsController extends AbstractController
         if ($result !== false) {
             $this->history->add(
                 _T('[Courses] Linked member unregistered from session', 'courses'),
-                sprintf('session #%d — member #%d (by parent #%d)', $id, $child_id, $parent_id)
+                sprintf('session #%d — member #%d (by household member #%d)', $id, $child_id, $parent_id)
             );
             $this->flash->addMessage('success_detected', _T('The linked member has been unregistered successfully.', 'courses'));
             if (is_int($result)) {
@@ -481,7 +482,7 @@ class RegistrationsController extends AbstractController
         }
 
         try {
-            if (!$this->isChildOf($parent_id, $child_id)) {
+            if (!$this->isLinkedMember($parent_id, $child_id)) {
                 $this->flash->addMessage('error_detected', _T('You can only manage your own linked members.', 'courses'));
                 return $response
                     ->withStatus(302)
@@ -505,7 +506,7 @@ class RegistrationsController extends AbstractController
         if ($entry->remove()) {
             $this->history->add(
                 _T('[Courses] Linked member left waitlist', 'courses'),
-                sprintf('session #%d — member #%d (by parent #%d)', $id, $child_id, $parent_id)
+                sprintf('session #%d — member #%d (by household member #%d)', $id, $child_id, $parent_id)
             );
             $this->flash->addMessage('success_detected', _T('The linked member has been removed from the waitlist.', 'courses'));
         } else {
@@ -534,9 +535,12 @@ class RegistrationsController extends AbstractController
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
         }
 
-        // Collect member IDs to load: parent + children
+        // Collect member IDs to load: the whole household (self + parent +
+        // siblings + children, see Entity\Household). The template keys keep
+        // their historical `children` names — the set they carry simply widened
+        // from "my children" to "the other members of my household".
         $member_ids  = [$member_id];
-        $children_ids = []; // IDs of linked members (children) only
+        $children_ids = []; // IDs of the linked household members, self excluded
         $reg_members = []; // memberId => ['name' => ..., 'nickname' => ...]
         // Phase 47.2: ineligible members (active=0 / non-member status / cotisation
         // not up to date). Stored as a flat list of pre-formatted reasons:
@@ -544,7 +548,7 @@ class RegistrationsController extends AbstractController
         $ineligible_members = [];
 
         try {
-            $currentAdherent = new Adherent($this->zdb, $member_id, ['children' => true]);
+            $currentAdherent = new Adherent($this->zdb, $member_id);
             $reg_members[$member_id] = [
                 'name'     => $currentAdherent->sname ?? '',
                 'nickname' => !empty($currentAdherent->nickname) ? (string)$currentAdherent->nickname : '',
@@ -557,8 +561,7 @@ class RegistrationsController extends AbstractController
             if ($err !== null) {
                 $ineligible_members[] = $err;
             }
-            foreach ($currentAdherent->children as $child) {
-                $childId = is_object($child) ? (int)$child->id : (int)$child;
+            foreach (Household::linkedMemberIds($this->zdb, $member_id) as $childId) {
                 if ($childId <= 0) {
                     continue;
                 }
@@ -579,7 +582,7 @@ class RegistrationsController extends AbstractController
                 }
             }
         } catch (\Throwable $e) {
-            Analog::log('Error loading children for my_registrations: ' . $e->getMessage(), Analog::ERROR);
+            Analog::log('Error loading household for my_registrations: ' . $e->getMessage(), Analog::ERROR);
             $reg_members[$member_id] = ['name' => '', 'nickname' => ''];
         }
 
@@ -714,7 +717,7 @@ class RegistrationsController extends AbstractController
         }
 
         // Load upcoming open sessions for the "Browse" tab
-        // Always filtered by the member's own groups and children, regardless of role (staff/monitor/admin)
+        // Always filtered by the member's own groups and their household's, regardless of role (staff/monitor/admin)
         $browse_filters = new SessionsList();
         $browse_filters->date_from = date('Y-m-d');
         $browse_filters->status_filter = 'open';
@@ -755,14 +758,14 @@ class RegistrationsController extends AbstractController
             $browse_on_waitlist[$sid]      = isset($browse_waitlist_self[$sid]);
         }
 
-        // For each browse session: can the member self-register? which children are eligible?
+        // For each browse session: can the member self-register? which linked members are eligible?
         // canRegisterSelf() is the single source of truth — same check as doRegister()/doWaitlist().
         // It loads event groups internally; getGroups() is valid immediately after.
         $browse_can_self_register = []; // [sid => bool]
         $browse_eligible_children = []; // [sid => [child_id => child_info]]
 
         // Phase 47.2 follow-up: pre-compute eligibility (active + status + cotisation)
-        // for parent + all children in ONE SQL query, then use it to filter the
+        // for the whole household in ONE SQL query, then use it to filter the
         // self-register button and the children dropdown. Members who fail any
         // condition are not offered as a choice (the handler would block them).
         $eligibility_set = self::batchEligibleMemberIds(
@@ -1322,7 +1325,7 @@ class RegistrationsController extends AbstractController
 
         // Verify parent-child relationship
         try {
-            if (!$this->isChildOf($parent_id, $child_id)) {
+            if (!$this->isLinkedMember($parent_id, $child_id)) {
                 $this->flash->addMessage('error_detected', _T('You can only register your own linked members.', 'courses'));
                 return $response
                     ->withStatus(302)
@@ -1405,7 +1408,7 @@ class RegistrationsController extends AbstractController
         if ($registration->store($session)) {
             $this->history->add(
                 _T('[Courses] Linked member registered to session', 'courses'),
-                sprintf('session #%d — member #%d (by parent #%d)', $id, $child_id, $parent_id)
+                sprintf('session #%d — member #%d (by household member #%d)', $id, $child_id, $parent_id)
             );
             $this->flash->addMessage('success_detected', _T('The linked member has been registered successfully.', 'courses'));
             return $response
@@ -1481,7 +1484,7 @@ class RegistrationsController extends AbstractController
 
         // Verify parent-child relationship
         try {
-            if (!$this->isChildOf($parent_id, $child_id)) {
+            if (!$this->isLinkedMember($parent_id, $child_id)) {
                 $this->flash->addMessage('error_detected', _T('You can only register your own linked members.', 'courses'));
                 return $response
                     ->withStatus(302)
@@ -1563,7 +1566,7 @@ class RegistrationsController extends AbstractController
         if ($waitlist->store()) {
             $this->history->add(
                 _T('[Courses] Linked member joined waitlist', 'courses'),
-                sprintf('session #%d — member #%d (by parent #%d) — position %d', $id, $child_id, $parent_id, $waitlist->getPosition())
+                sprintf('session #%d — member #%d (by household member #%d) — position %d', $id, $child_id, $parent_id, $waitlist->getPosition())
             );
             $this->flash->addMessage(
                 'success_detected',
@@ -1858,18 +1861,17 @@ class RegistrationsController extends AbstractController
     }
 
     /**
-     * Return true if $childId is a linked member of $parentId.
+     * Return true if $otherId belongs to $memberId's household.
+     *
+     * Was `isChildOf()`, a one-way parent -> child test. The relationship is now
+     * symmetric (see Entity\Household): a child record acts for its parent and
+     * its siblings just as a parent acts for its children. Every caller already
+     * spoke of "linked members" in its user-facing strings, so only the extent
+     * of the set changes here.
      */
-    private function isChildOf(int $parentId, int $childId): bool
+    private function isLinkedMember(int $memberId, int $otherId): bool
     {
-        $parentAdherent = new Adherent($this->zdb, $parentId, ['children' => true]);
-        foreach ($parentAdherent->children as $child) {
-            $cid = is_object($child) ? (int)$child->id : (int)$child;
-            if ($cid === $childId) {
-                return true;
-            }
-        }
-        return false;
+        return Household::isLinked($this->zdb, $memberId, $otherId);
     }
 
     /**

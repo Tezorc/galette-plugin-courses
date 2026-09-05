@@ -139,6 +139,13 @@ les memes boutons.
 L'inscription en son propre nom et celle d'un membre rattache passent par **un
 seul bouton**, dont l'apparence depend du nombre d'options possibles.
 
+> **Qui sont vos membres rattaches ?** Les autres personnes de votre foyer, au
+> sens des fiches de l'association : la personne declaree comme votre membre
+> parent, les fiches qui vous declarent comme parent, et celles qui partagent
+> le meme parent que vous. **Le sens n'a pas d'importance** : depuis la fiche
+> d'un enfant on inscrit le parent ou un frere aussi bien que l'inverse. Un
+> seul niveau de rattachement est pris en compte.
+
 **Une seule option possible** — le bouton porte **directement le nom** de la
 personne concernee. Un clic inscrit immediatement, sans page intermediaire.
 
