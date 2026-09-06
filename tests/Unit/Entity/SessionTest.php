@@ -348,6 +348,64 @@ final class SessionTest extends TestCase
         self::assertSame('Registrations for this session have been closed.', $session->getClosedMessage());
     }
 
+    // ---- Manager exemption -------------------------------------------------
+
+    /**
+     * Staff and instructors register members on their behalf, so the two
+     * timing rules are waived for them: someone turning up on the morning of
+     * the session can still be signed up.
+     */
+    public function testManagerCanStillRegisterOnTheDayOfTheSession(): void
+    {
+        $session = $this->makeOpenSession(date('Y-m-d'), null);
+
+        self::assertFalse($session->isOpen());
+        self::assertTrue($session->isOpenForManager());
+    }
+
+    public function testManagerCanStillRegisterPastTheDeadline(): void
+    {
+        $session = $this->makeOpenSession(date('Y-m-d', strtotime('+10 days')), 10);
+
+        self::assertSame(Session::CLOSED_DEADLINE, $session->getClosedReason());
+        self::assertTrue($session->isOpenForManager());
+    }
+
+    /**
+     * The exemption covers timing only. These three still block a manager --
+     * the session's own state is not something a deadline waiver should reach.
+     */
+    public function testManagerIsStillBlockedByACancelledSession(): void
+    {
+        $session = $this->makeOpenSession(date('Y-m-d', strtotime('+10 days')), null);
+        $this->setProp($session, 'status', Session::STATUS_CANCELLED);
+
+        self::assertFalse($session->isOpenForManager());
+    }
+
+    public function testManagerIsStillBlockedByAClosedSession(): void
+    {
+        $session = $this->makeOpenSession(date('Y-m-d', strtotime('+10 days')), null);
+        $this->setProp($session, 'status', Session::STATUS_CLOSED);
+
+        self::assertFalse($session->isOpenForManager());
+    }
+
+    public function testManagerIsStillBlockedByAPastSession(): void
+    {
+        $session = $this->makeOpenSession(date('Y-m-d', strtotime('-1 day')), null);
+
+        self::assertFalse($session->isOpenForManager());
+    }
+
+    public function testManagerExemptionDoesNotChangeTheMemberRule(): void
+    {
+        $open = $this->makeOpenSession(date('Y-m-d', strtotime('+10 days')), null);
+
+        self::assertTrue($open->isOpen());
+        self::assertTrue($open->isOpenForManager());
+    }
+
     // ---- Helpers ----------------------------------------------------------
 
     private function makeSessionWithReason(string $reason): Session

@@ -1615,7 +1615,11 @@ class RegistrationsController extends AbstractController
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
         }
 
-        if (!$session->isOpen()) {
+        // Staff, group managers and the session's instructors register members
+        // on their behalf, so the deadline and the session-day cutoff do not
+        // apply to them -- someone turning up on the morning of the session can
+        // still be signed up. A cancelled, closed or past session still blocks.
+        if (!$session->isOpenForManager()) {
             $this->flash->addMessage(
                 'error_detected',
                 $session->getClosedMessage() ?? _T('This session is not open for registration.', 'courses')

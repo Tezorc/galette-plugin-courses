@@ -396,6 +396,27 @@ class Session
     }
 
     /**
+     * Whether a session manager (staff, group manager, or an instructor of
+     * this session) can still register someone on their behalf.
+     *
+     * Managers are exempt from the two *timing* rules only -- the registration
+     * deadline and the session-day cutoff -- so they can still sign someone up
+     * on the morning of the session. Everything else still blocks them: a
+     * cancelled session, one they closed themselves, or one already past.
+     *
+     * Waiving is opt-in per reason on purpose: a reason added later blocks
+     * managers too until someone decides otherwise, which is the safe default.
+     */
+    public function isOpenForManager(): bool
+    {
+        $reason = $this->getClosedReason();
+
+        return $reason === null
+            || $reason === self::CLOSED_DEADLINE
+            || $reason === self::CLOSED_SAME_DAY;
+    }
+
+    /**
      * Explicit, member-facing explanation of why registrations are refused,
      * or null when the session is open. Says *what* the rule is and *since
      * when* it applies -- a bare "not open for registration" leaves the member

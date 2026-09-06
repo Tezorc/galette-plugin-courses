@@ -681,6 +681,43 @@ Ces tests ont ete valides par mutation : casser le dedup par `session_id`, la br
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Evolution - La gestion echappe aux regles de calendrier
+
+**Statut :** TERMINEE
+
+- Demande utilisateur, dans la foulee de l'evolution precedente : "il faudrait
+  que le staff et les moniteurs puissent inscrire quelqu'un le jour meme". La
+  fermeture du jour meme etait passee par `isOpen()`, donc elle avait aussi
+  ferme `doProxyRegister` -- effet de bord signale a la livraison, ici corrige.
+
+- Nouveau `Session::isOpenForManager()`. Il ne reprend pas la question a zero :
+  il part de `getClosedReason()` et **waive deux motifs**, `CLOSED_DEADLINE` et
+  `CLOSED_SAME_DAY`. Les trois autres continuent de bloquer -- seance annulee,
+  seance fermee par la gestion, seance passee. Une renonciation au calendrier
+  n'a aucune raison d'atteindre l'etat de la seance.
+
+- Le waiver est **opt-in par motif**, jamais une liste de motifs bloquants :
+  un motif ajoute plus tard bloquera la gestion aussi, jusqu'a ce que
+  quelqu'un decide le contraire. C'est le sens sur dans lequel se tromper.
+
+- Un seul appelant change, `doProxyRegister`. Les 4 autres gardes
+  (`doRegister`, `doWaitlist`, `doParentRegister`, `doParentWaitlist`) restent
+  sur `isOpen()` : ce sont les inscriptions qu'un membre fait pour lui-meme ou
+  pour son foyer, exactement celles que la regle vise. `proxyRegisterForm` ne
+  testait deja pas l'ouverture, rien a y faire.
+
+- Cote page, rien a modifier : le bouton *Inscrire un membre* etait deja
+  conditionne a `session.getStatus() == 'open' and is_future`, et `is_future`
+  vaut `date >= aujourd'hui`, donc il s'affichait deja le jour meme.
+
+- A noter, sans consequence pratique : un staff qui n'est pas inscrit voit le
+  jour meme le message jaune "les inscriptions etaient possibles jusqu'au ..."
+  **et** le bouton *Inscrire un membre*. Les deux disent vrai -- il ne peut pas
+  s'inscrire lui-meme, il peut inscrire autrui.
+
+- 6 tests, dont les trois motifs qui doivent continuer de bloquer la gestion.
+  Suite complete : 113 verts. Aucune migration BDD, aucune chaine i18n.
+
 ### Evolution - Plus d'inscription le jour meme de la seance
 
 **Statut :** TERMINEE
