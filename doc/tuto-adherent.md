@@ -129,8 +129,9 @@ Deux details utiles :
   catalogue ne montre que ce qu'il vous reste a faire.
 
 Le bouton **« Détails »** ouvre la fiche complete de la seance : description,
-tarif, moniteur, date limite d'inscription. On peut s'y inscrire aussi, avec
-les memes boutons.
+tarif, moniteur, date limite d'inscription — donnee en clair (« Inscriptions
+possibles jusqu'au 16/09/2026 inclus »), pas seulement en nombre de jours. On
+peut s'y inscrire aussi, avec les memes boutons.
 
 ---
 
@@ -298,7 +299,7 @@ sans se connecter.
 | Une etiquette orange **« Aucun moniteur »** a la place du bouton | Aucun moniteur ne s'est encore propose. Les inscriptions ouvriront des qu'il y en aura un, et vous serez prevenu. |
 | Le bouton existe, mais il manque quelqu'un dans le menu | Cette personne est deja inscrite a cette seance, ou n'appartient pas au groupe demande par ce cours. |
 | La seance n'apparait nulle part | Elle est reservee a un groupe auquel personne de votre foyer n'appartient, ou elle est deja passee. |
-| Seul le bouton **« Détails »** reste | La date limite d'inscription est depassee, ou la seance a ete fermee par l'association. |
+| Seul le bouton **« Détails »** reste | La date limite d'inscription est depassee, ou la seance a ete fermee par l'association. Ouvrez la fiche : un **message jaune** y dit lequel des deux, et jusqu'a quelle date les inscriptions etaient possibles. |
 
 Pour toute question sur une cotisation, un membre rattache a ajouter ou un
 changement de groupe : **contacter le secretariat**. Les moniteurs ne peuvent

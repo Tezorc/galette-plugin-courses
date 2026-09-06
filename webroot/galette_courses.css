@@ -1147,3 +1147,9 @@ tr.courses-pending { background-color: #fffde7 !important; }
     white-space: nowrap;
     border: 0;
 }
+/* Concrete registration deadline, under the "closes N days before" rule. */
+.courses-deadline-date {
+    font-size: .9em;
+    color: #555;
+    margin-top: .15em;
+}

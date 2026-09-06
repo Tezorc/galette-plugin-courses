@@ -551,6 +551,24 @@
                 </div>
             {% endif %}
 
+            {# Registrations refused: say why. Without this the action segment above
+               is simply absent and the member sees no button and no explanation --
+               the deadline case looked like a bug. Cancelled sessions already have
+               their own banner at the top of the page; past ones need no telling. #}
+            {% if login.isLogged() and not login.isSuperAdmin()
+                and (has_instructor or event.isInstructorOptional())
+                and not is_registered and not is_on_waitlist
+                and not session.isOpen()
+                and session.getStatus() != 'cancelled'
+                and session.getSessionDate() >= "now"|date("Y-m-d") %}
+                <div class="ui center aligned basic segment">
+                    <div class="ui yellow icon message">
+                        <i class="info circle icon" aria-hidden="true"></i>
+                        <div class="content">{{ session.getClosedMessage() }}</div>
+                    </div>
+                </div>
+            {% endif %}
+
             {# Session-manager action buttons: Register a member | Close | Cancel (all on one line) #}
             {% set is_future = session.getSessionDate() >= "now"|date("Y-m-d") %}
             {% set has_action_buttons = login.isSuperAdmin() or (is_session_manager and session.getStatus() == 'cancelled') or (is_session_manager and session.getStatus() == 'closed') or (session.getStatus() == 'open' and is_future and (is_session_manager or login.isGroupManager())) %}
@@ -1073,6 +1091,11 @@
                             <div class="content">
                                 <div class="header">{{ _T("Registration deadline", "courses") }}</div>
                                 {{ _T("Closes %d days before the session", "courses")|format(event.getRegisterDeadlineDays()) }}
+                                {% if session.getFormattedLastRegistrationDate() %}
+                                    <div class="courses-deadline-date">
+                                        {{ _T("Registrations accepted until %s inclusive.", "courses")|format(session.getFormattedLastRegistrationDate()) }}
+                                    </div>
+                                {% endif %}
                             </div>
                         </div>
                     {% endif %}

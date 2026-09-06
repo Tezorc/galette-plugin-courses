@@ -154,6 +154,7 @@ Pour qu'un adherent puisse s'inscrire a une seance :
    - **Prix** : prix de la participation
    - **Evenement gratuit** : cocher si l'evenement est gratuit
    - **Inscription fermee (jours avant la seance)** : nombre de jours avant la seance a partir duquel les inscriptions sont **fermees**. Vide ou 0 = inscription possible jusqu'au debut de la seance. La **desinscription est toujours possible** jusqu'au debut de la seance (Phase 45).
+     La fermeture prend effet **des le debut du jour** `date de seance - N` : ce jour-la, il est deja trop tard. Le dernier jour ou l'on peut encore s'inscrire est donc `date de seance - N - 1`. La page de la seance affiche cette date en clair sous la regle (« Inscriptions possibles jusqu'au 16/09/2026 inclus »), pour que personne n'ait a faire le calcul.
    - **Autoriser les inscriptions aux seances sans moniteur affecte** (Phase 40) : si coche, les membres peuvent s'inscrire des la creation/validation de la seance sans attendre qu'un moniteur volontaire soit affecte. Si decoche (defaut), l'inscription reste bloquee tant qu'aucun moniteur n'est affecte (comportement historique).
    - **Statut** : statut de l'evenement (voir ci-dessous)
 
@@ -291,13 +292,25 @@ Quand vous modifiez un evenement existant, les changements sont automatiquement 
      - **"Se desinscrire"** : bouton rouge
      - **"Rejoindre la liste d'attente"** : bouton bleu avec position
    - **Description** de l'evenement dans un segment separe (si existante)
-   - **Informations complementaires** dans un panneau lateral (statut, prix, deadline d'inscription, **frequence** = Seance unique / Seance recurrente avec type, **restriction de groupe** = liste des groupes autorises ou "Ouverte a tous les membres")
+   - **Informations complementaires** dans un panneau lateral (statut, prix, deadline d'inscription — regle *et* date limite calculee, **frequence** = Seance unique / Seance recurrente avec type, **restriction de groupe** = liste des groupes autorises ou "Ouverte a tous les membres")
    - **Liste des inscrits** : liste avec icones utilisateur (admin/staff uniquement)
    - **Liste d'attente** : liste numerotee propre (admin/staff uniquement)
 4. Cliquer sur le bouton vert **"S'inscrire"** (icone paw)
 5. Un message de confirmation apparait
 
 Si l'inscription est impossible (cotisation expiree, seance pleine, etc.), un message d'erreur explique la raison.
+
+**Inscriptions closes.** Quand la seance n'accepte plus d'inscription, le bloc des boutons disparait et un **message jaune prend sa place** en nommant le motif exact — auparavant il n'y avait ni bouton ni explication, ce qui se lisait comme un bug. Les cinq motifs possibles :
+
+| Motif | Message affiche |
+| --- | --- |
+| Delai d'inscription depasse | « Les inscriptions etaient possibles jusqu'au *date* inclus : elles ferment *N* jours avant la seance. » |
+| Seance fermee par l'association | « Les inscriptions a cette seance ont ete closes. » |
+| Seance commencee (le jour meme) | « Les inscriptions ont ete closes au debut de la seance, a *heure*. » |
+| Seance annulee | Bandeau rouge deja present en haut de page (motif + commentaire) |
+| Seance passee | Aucun message : la date parle d'elle-meme |
+
+Le meme texte est renvoye en message d'erreur si une inscription est tout de meme soumise (page restee ouverte, bouton d'une autre liste).
 
 ### 5. Se desinscrire d'une seance
 

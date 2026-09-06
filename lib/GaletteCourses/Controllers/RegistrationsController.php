@@ -119,7 +119,10 @@ class RegistrationsController extends AbstractController
 
         // Check session is open
         if (!$session->isOpen()) {
-            $this->flash->addMessage('error_detected', _T('This session is not open for registration.', 'courses'));
+            $this->flash->addMessage(
+                'error_detected',
+                $session->getClosedMessage() ?? _T('This session is not open for registration.', 'courses')
+            );
             return $response
                 ->withStatus(302)
                 ->withHeader('Location', $returnUrl);
@@ -338,7 +341,10 @@ class RegistrationsController extends AbstractController
 
         // Check session is open
         if (!$session->isOpen()) {
-            $this->flash->addMessage('error_detected', _T('This session is not open for registration.', 'courses'));
+            $this->flash->addMessage(
+                'error_detected',
+                $session->getClosedMessage() ?? _T('This session is not open for registration.', 'courses')
+            );
             return $response
                 ->withStatus(302)
                 ->withHeader('Location', $returnUrl);
@@ -1298,7 +1304,10 @@ class RegistrationsController extends AbstractController
         }
 
         if (!$session->isOpen()) {
-            $this->flash->addMessage('error_detected', _T('This session is not open for registration.', 'courses'));
+            $this->flash->addMessage(
+                'error_detected',
+                $session->getClosedMessage() ?? _T('This session is not open for registration.', 'courses')
+            );
             return $response
                 ->withStatus(302)
                 ->withHeader('Location', $returnUrl);
@@ -1457,7 +1466,10 @@ class RegistrationsController extends AbstractController
         }
 
         if (!$session->isOpen()) {
-            $this->flash->addMessage('error_detected', _T('This session is not open for registration.', 'courses'));
+            $this->flash->addMessage(
+                'error_detected',
+                $session->getClosedMessage() ?? _T('This session is not open for registration.', 'courses')
+            );
             return $response
                 ->withStatus(302)
                 ->withHeader('Location', $returnUrl);
@@ -1604,7 +1616,10 @@ class RegistrationsController extends AbstractController
         }
 
         if (!$session->isOpen()) {
-            $this->flash->addMessage('error_detected', _T('This session is not open for registration.', 'courses'));
+            $this->flash->addMessage(
+                'error_detected',
+                $session->getClosedMessage() ?? _T('This session is not open for registration.', 'courses')
+            );
             return $response
                 ->withStatus(302)
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));

@@ -681,6 +681,67 @@ Ces tests ont ete valides par mutation : casser le dedup par `session_id`, la br
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Evolution - Inscription hors delai : dire pourquoi, et jusqu'a quand
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : "Inscription fermee (jours avant la seance) — en cas
+  d'inscription en dehors de la periode, le message d'information n'est pas
+  explicite."
+
+- Deux defauts, pas un seul. Le message d'erreur
+  `This session is not open for registration.` etait renvoye a l'identique par
+  les 5 gardes de `RegistrationsController` (inscription, re-inscription,
+  inscription d'un membre du foyer x2, liste d'attente), sans distinguer delai
+  depasse / seance fermee / seance commencee / seance passee. **Et surtout**, le
+  cas nominal ne montrait meme pas ce message : dans `session_show.html.twig`,
+  tout le segment d'actions est garde par `session.isOpen()`, donc une fois le
+  delai passe le membre ne voyait **ni bouton ni explication** — un blanc qui se
+  lit comme un bug.
+
+- `Entity\Session` : le corps de `isOpen()` devient `getClosedReason()`, qui
+  renvoie l'une des cles `CLOSED_CANCELLED` / `CLOSED_BY_MANAGER` /
+  `CLOSED_DEADLINE` / `CLOSED_PAST` / `CLOSED_STARTED`, ou `null`. `isOpen()`
+  n'est plus que `getClosedReason() === null` : une seule source de verite, la
+  page ne peut donc pas masquer le bouton en expliquant autre chose.
+  `getClosedMessage()` en derive le texte membre. L'ordre des tests ne change
+  pas le resultat booleen, seulement le libelle : une seance passee **dont le
+  delai a aussi expire** est annoncee comme passee, la plus informative des deux
+  verites.
+
+- Le delai devient une date. `register_deadline_days = N` ferme les inscriptions
+  **des le debut du jour** `date de seance - N` — ce jour-la il est deja trop
+  tard, le dernier jour utile est donc `date de seance - N - 1`. C'est cette
+  derniere date, et non le seuil, que `getLastRegistrationDate()` expose et que
+  tout l'affichage utilise : demander a un adherent de faire lui-meme ce calcul
+  a partir de "ferme 3 jours avant" etait precisement le probleme signale. La
+  semantique de fermeture, elle, est inchangee.
+
+- `templates/default/pages/session_show.html.twig` :
+  - nouveau segment jaune la ou le bloc d'actions ne s'affiche pas, portant
+    `session.getClosedMessage()`. Garde par les memes conditions que le bloc
+    d'actions (`has_instructor or event.isInstructorOptional()`) pour ne pas
+    doubler le message orange "aucun moniteur", exclu sur les seances annulees
+    (bandeau rouge deja en tete de page) et sur les seances passees (la date
+    parle d'elle-meme) ;
+  - le panneau *Information* affiche desormais la date limite calculee sous la
+    regle : "Inscriptions possibles jusqu'au 16/09/2026 inclus".
+
+- i18n : 5 nouvelles chaines (`courses_fr_FR.utf8.po` + `.mo` recompile).
+  `This session is not open for registration.` reste dans le catalogue : les
+  gardes de controleur la gardent en repli `??` derriere
+  `getClosedMessage()`, qui est `?string` — un repli qui satisfait aussi
+  l'analyse statique.
+
+- Tests : 12 cas dans `SessionTest` couvrant l'equivalence avec l'ancien
+  `isOpen()` (futur sans delai, futur avant seuil, seuil atteint, `N = 0`,
+  seance passee, jour meme avant/apres l'heure de debut, annulee, fermee) plus
+  le calcul de `getLastRegistrationDate()` et le contenu du message de delai.
+  Suite complete : 105 tests verts.
+
+- Aucune migration BDD. Aucun changement de comportement fonctionnel : ce qui
+  etait refuse l'est toujours, aux memes dates.
+
 ### Evolution - Foyer symetrique : une fiche fille inscrit son parent et sa fratrie
 
 **Statut :** TERMINEE
