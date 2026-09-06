@@ -235,7 +235,7 @@ final class SessionTest extends TestCase
 
         $message = (string)$session->getClosedMessage();
 
-        self::assertStringContainsString((string)$session->getFormattedLastRegistrationDate(), $message);
+        self::assertStringContainsString($session->getFormattedLastRegistrationDate(), $message);
         self::assertStringContainsString('10 days', $message);
     }
 
@@ -251,20 +251,26 @@ final class SessionTest extends TestCase
         self::assertSame('2026-09-16', $session->getLastRegistrationDate());
     }
 
-    public function testLastRegistrationDateIsNullWithoutDeadline(): void
+    /**
+     * Without a deadline the cutoff is the session day itself, so the last day
+     * to register is the eve. There is no "no deadline at all" case any more.
+     */
+    public function testWithoutDeadlineTheLastDayIsTheEveOfTheSession(): void
     {
         $session = $this->makeOpenSession('2026-09-20', null);
 
-        self::assertNull($session->getLastRegistrationDate());
-        self::assertNull($session->getFormattedLastRegistrationDate());
+        self::assertSame('2026-09-19', $session->getLastRegistrationDate());
     }
 
-    public function testZeroDeadlineDaysMeansNoDeadline(): void
+    public function testZeroDeadlineDaysBehavesLikeNoDeadline(): void
     {
         $session = $this->makeOpenSession(date('Y-m-d', strtotime('+2 days')), 0);
 
         self::assertTrue($session->isOpen());
-        self::assertNull($session->getLastRegistrationDate());
+        self::assertSame(
+            date('Y-m-d', strtotime('+1 day')),
+            $session->getLastRegistrationDate()
+        );
     }
 
     /**
@@ -279,21 +285,49 @@ final class SessionTest extends TestCase
         self::assertSame(Session::CLOSED_PAST, $session->getClosedReason());
     }
 
-    public function testSameDaySessionIsOpenUntilItStarts(): void
+    /**
+     * No registration on the day of the session, whatever the hour: the start
+     * time plays no part in the decision. Both cases below used to be open
+     * (registration was accepted until the session started).
+     */
+    public function testSameDaySessionIsClosedBeforeItStarts(): void
     {
         $session = $this->makeOpenSession(date('Y-m-d'), null);
         $this->setProp($session, 'start_time', '23:59:59');
 
-        self::assertTrue($session->isOpen());
+        self::assertFalse($session->isOpen());
+        self::assertSame(Session::CLOSED_SAME_DAY, $session->getClosedReason());
     }
 
-    public function testSameDaySessionClosesOnceStarted(): void
+    public function testSameDaySessionIsClosedAfterItStarts(): void
     {
         $session = $this->makeOpenSession(date('Y-m-d'), null);
         $this->setProp($session, 'start_time', '00:00:00');
 
         self::assertFalse($session->isOpen());
-        self::assertSame(Session::CLOSED_STARTED, $session->getClosedReason());
+        self::assertSame(Session::CLOSED_SAME_DAY, $session->getClosedReason());
+    }
+
+    public function testSameDayMessageNamesTheEveAndTheRule(): void
+    {
+        $session = $this->makeOpenSession(date('Y-m-d'), null);
+
+        $message = (string)$session->getClosedMessage();
+
+        self::assertStringContainsString($session->getFormattedLastRegistrationDate(), $message);
+        self::assertStringContainsString('the day before the session', $message);
+    }
+
+    /**
+     * The eve is the last day, and it really is open: without this the rule
+     * could silently swallow one more day.
+     */
+    public function testEveOfTheSessionIsStillOpen(): void
+    {
+        $session = $this->makeOpenSession(date('Y-m-d', strtotime('+1 day')), null);
+
+        self::assertTrue($session->isOpen());
+        self::assertSame(date('Y-m-d'), $session->getLastRegistrationDate());
     }
 
     public function testCancelledSessionReportsCancellation(): void

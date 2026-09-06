@@ -46,7 +46,7 @@ class Session
     public const CLOSED_BY_MANAGER = 'closed';
     public const CLOSED_DEADLINE = 'deadline';
     public const CLOSED_PAST = 'past';
-    public const CLOSED_STARTED = 'started';
+    public const CLOSED_SAME_DAY = 'same_day';
 
     public const CANCEL_REASONS = [
         'competition'       => 'Competition',
@@ -311,38 +311,38 @@ class Session
     }
 
     /**
-     * First day (Y-m-d) on which registrations are refused because of the
-     * event's `register_deadline_days`, or null when the event sets no
-     * deadline. Registrations are accepted up to the day *before* this one.
+     * First day (Y-m-d) on which registrations are refused.
+     *
+     * Registrations always close at the start of the session day -- nobody
+     * signs up for a session happening today. The event's
+     * `register_deadline_days` (when set, > 0) only moves that boundary N days
+     * earlier; it never re-opens the session day itself.
      */
-    private function getRegistrationCutoffDate(): ?string
+    private function getRegistrationCutoffDate(): string
     {
         $deadline_days = $this->getEvent()->getRegisterDeadlineDays();
         if ($deadline_days === null || $deadline_days <= 0) {
-            return null;
+            return $this->session_date;
         }
         return date('Y-m-d', strtotime($this->session_date . ' -' . $deadline_days . ' days'));
     }
 
     /**
-     * Last day (Y-m-d) on which registrations are still accepted, or null when
-     * the event sets no deadline. This is the date a member can act on -- the
-     * cutoff itself is already refused -- so it is the one every message and
-     * template shows.
+     * Last day (Y-m-d) on which registrations are still accepted -- the day
+     * before the cutoff, which is itself already refused. This is the date a
+     * member can act on, so it is the one every message and template shows.
      */
-    public function getLastRegistrationDate(): ?string
+    public function getLastRegistrationDate(): string
     {
-        $cutoff = $this->getRegistrationCutoffDate();
-        return $cutoff === null ? null : date('Y-m-d', strtotime($cutoff . ' -1 day'));
+        return date('Y-m-d', strtotime($this->getRegistrationCutoffDate() . ' -1 day'));
     }
 
     /**
      * getLastRegistrationDate() in the active locale's short style.
      */
-    public function getFormattedLastRegistrationDate(): ?string
+    public function getFormattedLastRegistrationDate(): string
     {
-        $last = $this->getLastRegistrationDate();
-        return $last === null ? null : self::formatDay($last);
+        return self::formatDay($this->getLastRegistrationDate());
     }
 
     /**
@@ -355,10 +355,9 @@ class Session
      * only -- a past session whose deadline also elapsed is reported as past,
      * which is the more informative of the two.
      *
-     * The event's `register_deadline_days` (when set, > 0) closes registrations
-     * earlier than the session start: registrations close at the start of the
-     * day `(session_date - N days)`. When null/0, the only cutoff is the
-     * session start time itself.
+     * Registrations are never accepted on the session day (see
+     * getRegistrationCutoffDate()). The start time therefore plays no part in
+     * the decision: 08:00 and 18:00 on the day of the session are both closed.
      */
     public function getClosedReason(): ?string
     {
@@ -370,19 +369,22 @@ class Session
         }
 
         $today = date('Y-m-d');
-        $cutoff = $this->getRegistrationCutoffDate();
 
         if ($this->session_date < $today) {
             return self::CLOSED_PAST;
         }
-        if ($cutoff !== null && $today >= $cutoff) {
-            return self::CLOSED_DEADLINE;
+        if ($today >= $this->getRegistrationCutoffDate()) {
+            return $this->hasRegisterDeadline() ? self::CLOSED_DEADLINE : self::CLOSED_SAME_DAY;
         }
-        if ($this->session_date > $today) {
-            return null;
-        }
-        // Same day, no deadline: allow registration until the session starts
-        return date('H:i:s') < $this->start_time ? null : self::CLOSED_STARTED;
+        return null;
+    }
+
+    /**
+     * Whether the event moves the cutoff earlier than the session day.
+     */
+    private function hasRegisterDeadline(): bool
+    {
+        return (int)$this->getEvent()->getRegisterDeadlineDays() > 0;
     }
 
     /**
@@ -410,13 +412,16 @@ class Session
                     'Registrations were accepted until %1$s inclusive: they close %2$d days before the session.',
                     'courses'
                 ),
-                (string)$this->getFormattedLastRegistrationDate(),
+                $this->getFormattedLastRegistrationDate(),
                 (int)$this->getEvent()->getRegisterDeadlineDays()
             ),
             self::CLOSED_PAST => _T('This session has already taken place.', 'courses'),
-            self::CLOSED_STARTED => sprintf(
-                _T('Registrations closed when the session started, at %s.', 'courses'),
-                $this->getFormattedStartTime()
+            self::CLOSED_SAME_DAY => sprintf(
+                _T(
+                    'Registrations were accepted until %s inclusive: they close the day before the session.',
+                    'courses'
+                ),
+                $this->getFormattedLastRegistrationDate()
             ),
             default => null,
         };
