@@ -681,6 +681,58 @@ Ces tests ont ete valides par mutation : casser le dedup par `session_id`, la br
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Evolution - Plus d'inscription le jour meme de la seance
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : "modifier pour ne pas pouvoir s'inscrire le jour meme
+  de la seance". Le declencheur : les cours du club ont lieu le samedi, et sans
+  delai configure un adherent pouvait encore s'inscrire le samedi matin, jusqu'a
+  l'heure de debut -- trop tard pour que le moniteur prepare sa seance.
+
+- La regle devient inconditionnelle. `getRegistrationCutoffDate()` ne renvoie
+  plus `null` en l'absence de delai : elle renvoie la **date de la seance**.
+  Autrement dit les inscriptions ferment toujours au debut du jour J, et
+  `register_deadline_days = N` ne fait que reculer cette borne de N jours de
+  plus. Corollaire direct : `getLastRegistrationDate()` et sa variante formatee
+  ne sont plus nullables, tous les appelants se simplifient.
+
+- `start_time` sort completement de la decision. L'ancienne branche "jour meme,
+  ouvert jusqu'a l'heure de debut" disparait, et avec elle la cle
+  `CLOSED_STARTED`, remplacee par `CLOSED_SAME_DAY`. 08:00 et 18:00 le jour de
+  la seance sont desormais fermes de la meme facon. `getClosedReason()` y perd
+  une branche : apres les statuts et le cas "seance passee", il ne reste qu'une
+  comparaison a la borne, dont le libelle se choisit selon qu'un delai est
+  configure ou non.
+
+- Nouveau tableau pour un cours du samedi : vide/0 -> dernier moment vendredi
+  23h59 (auparavant samedi, a l'heure de debut) ; 1 -> jeudi 23h59 ; 2 ->
+  mercredi 23h59. **Les valeurs `N >= 1` deja saisies ne bougent pas** : seul le
+  cas "aucun delai" change, et il se resserre d'une journee.
+
+- La regle etant desormais universelle, l'encart *Delai d'inscription* de la
+  fiche seance et de la fiche evenement n'est plus conditionne a la presence
+  d'un delai : il s'affiche toujours, disant soit "Ferme N jours avant la
+  seance", soit "Ferme la veille de la seance", et la fiche seance y ajoute la
+  date limite calculee. Sans cela un adherent decouvrirait la nouvelle
+  contrainte en butant dessus -- exactement le reproche qui a lance l'evolution
+  precedente.
+
+- **Effet de bord assume** : `doProxyRegister` passe par le meme `isOpen()`, donc
+  le jour de la seance un staff ou un moniteur ne peut plus inscrire quelqu'un
+  via *Inscrire un membre*. La voie prevue pour ce cas reste le formulaire
+  **hors inscription** de la feuille de pointage (`doWalkIn`), qui ne consulte
+  pas `isOpen()` et fonctionne donc sans restriction de date. Documente dans le
+  mode d'emploi et dans le tuto adherent.
+
+- i18n : 2 chaines ajoutees, 1 retiree (le message "closes when the session
+  started" n'a plus de cas d'emploi). Tests : les 2 cas "jour meme" passent de
+  ouvert/ferme selon l'heure a fermes tous les deux, plus 3 cas neufs -- message
+  du jour meme, veille encore ouverte, et absence de delai equivalente a `N = 0`.
+  Suite complete : 107 verts.
+
+- Aucune migration BDD.
+
 ### Evolution - Inscription hors delai : dire pourquoi, et jusqu'a quand
 
 **Statut :** TERMINEE

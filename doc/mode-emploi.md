@@ -153,8 +153,11 @@ Pour qu'un adherent puisse s'inscrire a une seance :
    - **Capacite maximale** : nombre maximum de participants (laisser vide = illimite)
    - **Prix** : prix de la participation
    - **Evenement gratuit** : cocher si l'evenement est gratuit
-   - **Inscription fermee (jours avant la seance)** : nombre de jours avant la seance a partir duquel les inscriptions sont **fermees**. Vide ou 0 = inscription possible jusqu'au debut de la seance. La **desinscription est toujours possible** jusqu'au debut de la seance (Phase 45).
-     La fermeture prend effet **des le debut du jour** `date de seance - N` : ce jour-la, il est deja trop tard. Le dernier jour ou l'on peut encore s'inscrire est donc `date de seance - N - 1`. La page de la seance affiche cette date en clair sous la regle (« Inscriptions possibles jusqu'au 16/09/2026 inclus »), pour que personne n'ait a faire le calcul.
+   - **Inscription fermee (jours avant la seance)** : nombre de jours avant la seance a partir duquel les inscriptions sont **fermees**. La **desinscription reste toujours possible** jusqu'au debut de la seance (Phase 45).
+     **On ne s'inscrit jamais le jour meme de la seance**, quelle que soit l'heure : les inscriptions ferment au plus tard au debut de ce jour-la. Vide ou 0 signifie donc « jusqu'a la veille au soir », pas « jusqu'au debut de la seance ». Une valeur `N` ne fait que reculer cette limite de N jours de plus : elle ferme des le debut du jour `date de seance - N`, le dernier jour utile etant `date de seance - N - 1`.
+     Pour un cours du **samedi** : vide/0 -> dernier moment vendredi 23h59 ; `1` -> jeudi 23h59 ; `2` -> mercredi 23h59.
+     La page de la seance affiche cette date en clair sous la regle (« Inscriptions possibles jusqu'au 16/09/2026 inclus »), pour que personne n'ait a faire le calcul.
+     Consequence a connaitre : le jour de la seance, **plus personne ne peut inscrire personne**, y compris un staff ou un moniteur via *Inscrire un membre*. Pour quelqu'un qui se presente le jour meme, c'est le formulaire **hors inscription** de la feuille de pointage qui sert (voir Annexe B), et il fonctionne sans restriction de date.
    - **Autoriser les inscriptions aux seances sans moniteur affecte** (Phase 40) : si coche, les membres peuvent s'inscrire des la creation/validation de la seance sans attendre qu'un moniteur volontaire soit affecte. Si decoche (defaut), l'inscription reste bloquee tant qu'aucun moniteur n'est affecte (comportement historique).
    - **Statut** : statut de l'evenement (voir ci-dessous)
 
@@ -306,7 +309,7 @@ Si l'inscription est impossible (cotisation expiree, seance pleine, etc.), un me
 | --- | --- |
 | Delai d'inscription depasse | « Les inscriptions etaient possibles jusqu'au *date* inclus : elles ferment *N* jours avant la seance. » |
 | Seance fermee par l'association | « Les inscriptions a cette seance ont ete closes. » |
-| Seance commencee (le jour meme) | « Les inscriptions ont ete closes au debut de la seance, a *heure*. » |
+| Jour meme de la seance | « Les inscriptions etaient possibles jusqu'au *date* inclus : elles ferment la veille de la seance. » |
 | Seance annulee | Bandeau rouge deja present en haut de page (motif + commentaire) |
 | Seance passee | Aucun message : la date parle d'elle-meme |
 

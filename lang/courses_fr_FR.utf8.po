@@ -2272,8 +2272,11 @@ msgstr "Les inscriptions étaient possibles jusqu'au %1$s inclus : elles ferment
 msgid "This session has already taken place."
 msgstr "Cette séance a déjà eu lieu."
 
-msgid "Registrations closed when the session started, at %s."
-msgstr "Les inscriptions ont été closes au début de la séance, à %s."
+msgid "Registrations were accepted until %s inclusive: they close the day before the session."
+msgstr "Les inscriptions étaient possibles jusqu'au %s inclus : elles ferment la veille de la séance."
+
+msgid "Closes the day before the session"
+msgstr "Ferme la veille de la séance"
 
 msgid "Registrations accepted until %s inclusive."
 msgstr "Inscriptions possibles jusqu'au %s inclus."

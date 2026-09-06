@@ -133,6 +133,12 @@ tarif, moniteur, date limite d'inscription — donnee en clair (« Inscriptions
 possibles jusqu'au 16/09/2026 inclus »), pas seulement en nombre de jours. On
 peut s'y inscrire aussi, avec les memes boutons.
 
+**On ne s'inscrit pas le jour meme d'une seance.** Les inscriptions ferment au
+plus tard la veille au soir : pour un cours du samedi, il faut s'y prendre
+avant vendredi minuit. Certains cours ferment encore plus tot, la fiche le dit.
+Si vous vous presentez malgre tout le jour meme, voyez directement avec le
+moniteur : il peut vous noter present sans inscription prealable.
+
 ---
 
 ## 5. S'inscrire
@@ -299,7 +305,7 @@ sans se connecter.
 | Une etiquette orange **« Aucun moniteur »** a la place du bouton | Aucun moniteur ne s'est encore propose. Les inscriptions ouvriront des qu'il y en aura un, et vous serez prevenu. |
 | Le bouton existe, mais il manque quelqu'un dans le menu | Cette personne est deja inscrite a cette seance, ou n'appartient pas au groupe demande par ce cours. |
 | La seance n'apparait nulle part | Elle est reservee a un groupe auquel personne de votre foyer n'appartient, ou elle est deja passee. |
-| Seul le bouton **« Détails »** reste | La date limite d'inscription est depassee, ou la seance a ete fermee par l'association. Ouvrez la fiche : un **message jaune** y dit lequel des deux, et jusqu'a quelle date les inscriptions etaient possibles. |
+| Seul le bouton **« Détails »** reste | La date limite d'inscription est depassee (au plus tard la veille de la seance), ou la seance a ete fermee par l'association. Ouvrez la fiche : un **message jaune** y dit lequel des deux, et jusqu'a quelle date les inscriptions etaient possibles. |
 
 Pour toute question sur une cotisation, un membre rattache a ajouter ou un
 changement de groupe : **contacter le secretariat**. Les moniteurs ne peuvent
