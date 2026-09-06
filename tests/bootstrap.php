@@ -64,3 +64,12 @@ if (!function_exists('_T')) {
         return $msg;
     }
 }
+
+/*
+ * Galette defines PREFIX_DB from the installed configuration. Classes that
+ * build raw SQL fragments (Entity\Household, the repositories) read it at call
+ * time, so the constant has to exist for them to be testable at all.
+ */
+if (!defined('PREFIX_DB')) {
+    define('PREFIX_DB', 'galette_');
+}

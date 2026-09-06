@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace GaletteCourses\Tests\Unit\Entity;
 
 use Galette\Core\Db;
+use GaletteCourses\Entity\Event;
 use GaletteCourses\Entity\Session;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -191,6 +192,128 @@ final class SessionTest extends TestCase
         self::assertMatchesRegularExpression('/^14[:\.h]00$/u', $session->getFormattedStartTime());
     }
 
+    // ---- Why registrations are refused ------------------------------------
+
+    /**
+     * getClosedReason() replaced the body of isOpen(); these cases pin the
+     * equivalence, since a drift would silently open or close registrations.
+     */
+    public function testFutureSessionWithoutDeadlineIsOpen(): void
+    {
+        $session = $this->makeOpenSession(date('Y-m-d', strtotime('+10 days')), null);
+
+        self::assertTrue($session->isOpen());
+        self::assertNull($session->getClosedReason());
+        self::assertNull($session->getClosedMessage());
+    }
+
+    public function testFutureSessionBeforeItsDeadlineIsOpen(): void
+    {
+        // Session in 10 days, closing 3 days before: cutoff is 7 days away.
+        $session = $this->makeOpenSession(date('Y-m-d', strtotime('+10 days')), 3);
+
+        self::assertTrue($session->isOpen());
+        self::assertNull($session->getClosedReason());
+    }
+
+    public function testDeadlineClosesRegistrationsOnTheCutoffDayItself(): void
+    {
+        // Session in 10 days, closing 10 days before: the cutoff is today.
+        $session = $this->makeOpenSession(date('Y-m-d', strtotime('+10 days')), 10);
+
+        self::assertFalse($session->isOpen());
+        self::assertSame(Session::CLOSED_DEADLINE, $session->getClosedReason());
+    }
+
+    /**
+     * The whole point of the change: the member must be told the rule and the
+     * date, not just that the session "is not open".
+     */
+    public function testDeadlineMessageNamesTheLastAcceptedDayAndTheRule(): void
+    {
+        $session = $this->makeOpenSession(date('Y-m-d', strtotime('+10 days')), 10);
+
+        $message = (string)$session->getClosedMessage();
+
+        self::assertStringContainsString((string)$session->getFormattedLastRegistrationDate(), $message);
+        self::assertStringContainsString('10 days', $message);
+    }
+
+    /**
+     * Registrations close at the *start* of (session - N days), so the last day
+     * a member can act is the day before that. Templates and messages show this
+     * date rather than the cutoff, which is already refused.
+     */
+    public function testLastRegistrationDateIsTheDayBeforeTheCutoff(): void
+    {
+        $session = $this->makeOpenSession('2026-09-20', 3);
+
+        self::assertSame('2026-09-16', $session->getLastRegistrationDate());
+    }
+
+    public function testLastRegistrationDateIsNullWithoutDeadline(): void
+    {
+        $session = $this->makeOpenSession('2026-09-20', null);
+
+        self::assertNull($session->getLastRegistrationDate());
+        self::assertNull($session->getFormattedLastRegistrationDate());
+    }
+
+    public function testZeroDeadlineDaysMeansNoDeadline(): void
+    {
+        $session = $this->makeOpenSession(date('Y-m-d', strtotime('+2 days')), 0);
+
+        self::assertTrue($session->isOpen());
+        self::assertNull($session->getLastRegistrationDate());
+    }
+
+    /**
+     * A past session whose deadline also elapsed is reported as past: of the
+     * two true statements it is the informative one.
+     */
+    public function testPastSessionIsReportedAsPastNotAsDeadline(): void
+    {
+        $session = $this->makeOpenSession(date('Y-m-d', strtotime('-1 day')), 3);
+
+        self::assertFalse($session->isOpen());
+        self::assertSame(Session::CLOSED_PAST, $session->getClosedReason());
+    }
+
+    public function testSameDaySessionIsOpenUntilItStarts(): void
+    {
+        $session = $this->makeOpenSession(date('Y-m-d'), null);
+        $this->setProp($session, 'start_time', '23:59:59');
+
+        self::assertTrue($session->isOpen());
+    }
+
+    public function testSameDaySessionClosesOnceStarted(): void
+    {
+        $session = $this->makeOpenSession(date('Y-m-d'), null);
+        $this->setProp($session, 'start_time', '00:00:00');
+
+        self::assertFalse($session->isOpen());
+        self::assertSame(Session::CLOSED_STARTED, $session->getClosedReason());
+    }
+
+    public function testCancelledSessionReportsCancellation(): void
+    {
+        $session = $this->makeOpenSession(date('Y-m-d', strtotime('+10 days')), null);
+        $this->setProp($session, 'status', Session::STATUS_CANCELLED);
+
+        self::assertSame(Session::CLOSED_CANCELLED, $session->getClosedReason());
+        self::assertSame('This session has been cancelled.', $session->getClosedMessage());
+    }
+
+    public function testManuallyClosedSessionIsDistinguishedFromCancelled(): void
+    {
+        $session = $this->makeOpenSession(date('Y-m-d', strtotime('+10 days')), null);
+        $this->setProp($session, 'status', Session::STATUS_CLOSED);
+
+        self::assertSame(Session::CLOSED_BY_MANAGER, $session->getClosedReason());
+        self::assertSame('Registrations for this session have been closed.', $session->getClosedMessage());
+    }
+
     // ---- Helpers ----------------------------------------------------------
 
     private function makeSessionWithReason(string $reason): Session
@@ -211,6 +334,25 @@ final class SessionTest extends TestCase
     {
         $session = new Session($this->createMock(Db::class));
         $this->setProp($session, 'start_time', $time);
+        return $session;
+    }
+
+    /**
+     * An OPEN session on $date whose event closes registrations $deadline days
+     * before it (null = no deadline). The event is injected, so getEvent()
+     * never touches the database.
+     */
+    private function makeOpenSession(string $date, ?int $deadline): Session
+    {
+        $event = $this->createMock(Event::class);
+        $event->method('getRegisterDeadlineDays')->willReturn($deadline);
+
+        $session = new Session($this->createMock(Db::class));
+        $session->setEvent($event);
+        $this->setProp($session, 'session_date', $date);
+        $this->setProp($session, 'start_time', '10:00:00');
+        $this->setProp($session, 'status', Session::STATUS_OPEN);
+
         return $session;
     }
 

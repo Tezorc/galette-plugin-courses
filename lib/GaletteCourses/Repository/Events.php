@@ -26,6 +26,7 @@ namespace GaletteCourses\Repository;
 use Galette\Core\Db;
 use Galette\Core\Login;
 use GaletteCourses\Entity\Event;
+use GaletteCourses\Entity\Household;
 use GaletteCourses\Entity\SessionInstructor;
 use GaletteCourses\Filters\EventsList;
 use Analog\Analog;
@@ -164,12 +165,10 @@ class Events
                 ),
                 PredicateSet::OP_OR
             );
+            // OR events matching the groups of any other member of the household
             $nested->addPredicate(
                 new PredicateExpression(
-                    'EXISTS (SELECT 1 FROM ' . PREFIX_DB . 'courses_events_groups eg_c'
-                    . ' INNER JOIN ' . PREFIX_DB . 'groups_members gm_c ON eg_c.group_id = gm_c.id_group'
-                    . ' INNER JOIN ' . PREFIX_DB . 'adherents child ON child.id_adh = gm_c.id_adh'
-                    . ' WHERE eg_c.event_id = e.' . Event::PK . ' AND child.parent_id = ?)',
+                    Household::eventGroupsExistsSql('c'),
                     [$memberId]
                 ),
                 PredicateSet::OP_OR

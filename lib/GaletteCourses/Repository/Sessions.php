@@ -27,6 +27,7 @@ use Galette\Core\Db;
 use Galette\Core\Login;
 use GaletteCourses\Entity\Session;
 use GaletteCourses\Entity\Event;
+use GaletteCourses\Entity\Household;
 use GaletteCourses\Filters\SessionsList;
 use Analog\Analog;
 use Laminas\Db\Sql\Expression;
@@ -67,7 +68,7 @@ class Sessions
     /**
      * Force member-based group filtering regardless of role.
      * Use for personal views (e.g. "My registrations") so that staff/admin/monitors
-     * only see sessions relevant to their own groups and children.
+     * only see sessions relevant to their own groups and their household's.
      */
     public function setPersonalMemberId(int $memberId): void
     {
@@ -175,13 +176,10 @@ class Sessions
                     ),
                     PredicateSet::OP_OR
                 );
-                // OR events matching any of the member's children's groups
+                // OR events matching the groups of any other member of the household
                 $nested->addPredicate(
                     new PredicateExpression(
-                        'EXISTS (SELECT 1 FROM ' . PREFIX_DB . 'courses_events_groups eg_c'
-                        . ' INNER JOIN ' . PREFIX_DB . 'groups_members gm_c ON eg_c.group_id = gm_c.id_group'
-                        . ' INNER JOIN ' . PREFIX_DB . 'adherents child ON child.id_adh = gm_c.id_adh'
-                        . ' WHERE eg_c.event_id = e.' . Event::PK . ' AND child.parent_id = ?)',
+                        Household::eventGroupsExistsSql('c1'),
                         [$memberId]
                     ),
                     PredicateSet::OP_OR
@@ -230,13 +228,10 @@ class Sessions
                 ),
                 PredicateSet::OP_OR
             );
-            // OR events matching any of the member's children's groups
+            // OR events matching the groups of any other member of the household
             $nested->addPredicate(
                 new PredicateExpression(
-                    'EXISTS (SELECT 1 FROM ' . PREFIX_DB . 'courses_events_groups eg_c'
-                    . ' INNER JOIN ' . PREFIX_DB . 'groups_members gm_c ON eg_c.group_id = gm_c.id_group'
-                    . ' INNER JOIN ' . PREFIX_DB . 'adherents child ON child.id_adh = gm_c.id_adh'
-                    . ' WHERE eg_c.event_id = e.' . Event::PK . ' AND child.parent_id = ?)',
+                    Household::eventGroupsExistsSql('c2'),
                     [$memberId]
                 ),
                 PredicateSet::OP_OR
@@ -262,13 +257,10 @@ class Sessions
                         ),
                         PredicateSet::OP_OR
                     );
-                    // OR events matching any of the member's children's groups
+                    // OR events matching the groups of any other member of the household
                     $nested->addPredicate(
                         new PredicateExpression(
-                            'EXISTS (SELECT 1 FROM ' . PREFIX_DB . 'courses_events_groups eg_c'
-                            . ' INNER JOIN ' . PREFIX_DB . 'groups_members gm_c ON eg_c.group_id = gm_c.id_group'
-                            . ' INNER JOIN ' . PREFIX_DB . 'adherents child ON child.id_adh = gm_c.id_adh'
-                            . ' WHERE eg_c.event_id = e.' . Event::PK . ' AND child.parent_id = ?)',
+                            Household::eventGroupsExistsSql('c3'),
                             [$memberId]
                         ),
                         PredicateSet::OP_OR
@@ -332,13 +324,10 @@ class Sessions
                 ),
                 PredicateSet::OP_OR
             );
-            // OR events with groups matching any of the member's children's groups
+            // OR events matching the groups of any other member of the household
             $nested->addPredicate(
                 new PredicateExpression(
-                    'EXISTS (SELECT 1 FROM ' . PREFIX_DB . 'courses_events_groups eg5'
-                    . ' INNER JOIN ' . PREFIX_DB . 'groups_members gm5 ON eg5.group_id = gm5.id_group'
-                    . ' INNER JOIN ' . PREFIX_DB . 'adherents child ON child.id_adh = gm5.id_adh'
-                    . ' WHERE eg5.event_id = e.' . Event::PK . ' AND child.parent_id = ?)',
+                    Household::eventGroupsExistsSql('c4'),
                     [$memberId]
                 ),
                 PredicateSet::OP_OR
@@ -394,10 +383,7 @@ class Sessions
                     );
                     $nested->addPredicate(
                         new PredicateExpression(
-                            'EXISTS (SELECT 1 FROM ' . PREFIX_DB . 'courses_events_groups eg_c'
-                            . ' INNER JOIN ' . PREFIX_DB . 'groups_members gm_c ON eg_c.group_id = gm_c.id_group'
-                            . ' INNER JOIN ' . PREFIX_DB . 'adherents child ON child.id_adh = gm_c.id_adh'
-                            . ' WHERE eg_c.event_id = e.' . Event::PK . ' AND child.parent_id = ?)',
+                            Household::eventGroupsExistsSql('c5'),
                             [$memberId]
                         ),
                         PredicateSet::OP_OR

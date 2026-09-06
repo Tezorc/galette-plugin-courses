@@ -2260,3 +2260,20 @@ msgstr "Désinscription des notifications"
 
 msgid "Closure periods could not be saved. Check the plugin database schema and the logs."
 msgstr "Les périodes de fermeture n'ont pas pu être enregistrées. Vérifiez le schéma de base du plugin et les journaux."
+
+# --- Inscription refusee : motif explicite (Session::getClosedMessage) ---
+
+msgid "Registrations for this session have been closed."
+msgstr "Les inscriptions à cette séance ont été closes."
+
+msgid "Registrations were accepted until %1$s inclusive: they close %2$d days before the session."
+msgstr "Les inscriptions étaient possibles jusqu'au %1$s inclus : elles ferment %2$d jours avant la séance."
+
+msgid "This session has already taken place."
+msgstr "Cette séance a déjà eu lieu."
+
+msgid "Registrations closed when the session started, at %s."
+msgstr "Les inscriptions ont été closes au début de la séance, à %s."
+
+msgid "Registrations accepted until %s inclusive."
+msgstr "Inscriptions possibles jusqu'au %s inclus."

@@ -24,8 +24,8 @@ declare(strict_types=1);
 namespace GaletteCourses\Controllers;
 
 use Galette\Controllers\Crud\AbstractPluginController;
-use Galette\Entity\Adherent;
 use GaletteCourses\Entity\Event;
+use GaletteCourses\Entity\Household;
 use GaletteCourses\Entity\Registration;
 use GaletteCourses\Entity\Session;
 use GaletteCourses\Entity\SessionInstructor;
@@ -348,9 +348,17 @@ class SessionsController extends AbstractPluginController
             }
         }
 
-        // Load children for the current user (for child picker)
+        // Load the current user's household (for the linked-member picker).
+        // `$children` / `$children_registered` keep their names: the template
+        // contract is unchanged, only the set widened from "my children" to
+        // "the other members of my household" (parent + siblings included).
         $children = [];
         $children_registered = [];
+        // Display name of the logged-in member ("Myself" line of the register
+        // dropdown). Loaded through the batch helper below rather than a full
+        // Adherent, which is why it lives outside the try.
+        $current_member_name = '';
+        $current_member_nickname = '';
         $parent_eligible = false; // fail-secure default
         $eventGroups = [];
         $eligibility_set = []; // [memberId => true] — populated below
@@ -371,16 +379,9 @@ class SessionsController extends AbstractPluginController
             $eventGroups = $event->getGroups(); // already loaded by canRegisterSelf()
 
             try {
-                $currentAdherent = new Adherent($this->zdb, $currentMemberId, ['children' => true]);
-                $childrenIds = $currentAdherent->children;
-                // Collect valid child IDs first
-                $validChildIds = [];
-                foreach ($childrenIds as $child) {
-                    $childId = is_object($child) ? (int)$child->id : (int)$child;
-                    if ($childId > 0) {
-                        $validChildIds[] = $childId;
-                    }
-                }
+                // Household::linkedMemberIds() already filters out self and any
+                // invalid id, so the list is directly usable.
+                $validChildIds = Household::linkedMemberIds($this->zdb, $currentMemberId);
 
                 // Phase 47.2 follow-up: also compute eligibility for the children
                 // (single SQL query) and merge into the existing parent set.
@@ -409,9 +410,13 @@ class SessionsController extends AbstractPluginController
                     }
                 }
 
-                // Batch-load display data for all children at once instead of
-                // creating one Adherent per child (= one SELECT per child).
-                $childDisplay = $this->batchLoadMemberDisplay($validChildIds);
+                // Batch-load display data for the member and every linked member
+                // at once instead of one Adherent each (= one SELECT each).
+                $childDisplay = $this->batchLoadMemberDisplay(
+                    array_merge([$currentMemberId], $validChildIds)
+                );
+                $current_member_name     = $childDisplay[$currentMemberId]['sname'] ?? '';
+                $current_member_nickname = $childDisplay[$currentMemberId]['nickname'] ?? '';
 
                 foreach ($validChildIds as $childId) {
                     $childName     = $childDisplay[$childId]['sname']    ?? '';
@@ -440,7 +445,7 @@ class SessionsController extends AbstractPluginController
                     $children[$childId] = ['name' => $childName, 'nickname' => $childNickname];
                 }
             } catch (\Throwable $e) {
-                Analog::log('Error loading children for member #' . ((int)$this->login->id) . ': ' . $e->getMessage(), Analog::ERROR);
+                Analog::log('Error loading household for member #' . ((int)$this->login->id) . ': ' . $e->getMessage(), Analog::ERROR);
             }
         }
 
@@ -530,8 +535,8 @@ class SessionsController extends AbstractPluginController
                 'children' => $children,
                 'children_registered' => $children_registered,
                 'parent_eligible' => $parent_eligible,
-                'current_member_name' => isset($currentAdherent) ? ($currentAdherent->sname ?? '') : '',
-                'current_member_nickname'  => isset($currentAdherent) && !empty($currentAdherent->nickname) ? (string)$currentAdherent->nickname : '',
+                'current_member_name' => $current_member_name,
+                'current_member_nickname'  => $current_member_nickname,
                 'walkin_eligible_members' => $walkin_eligible_members,
                 'restricted_group_names' => $restricted_group_names,
                 'organizer_name' => $organizer_name,
@@ -1720,8 +1725,8 @@ class SessionsController extends AbstractPluginController
      * Phase 75. Recipients are pre-loaded into the session and the user is
      * redirected to Galette's standard mailing UI (subject/body compose).
      *
-     * ACL: the member must be on the session themselves OR be the parent of a
-     * registered/waitlisted child. Admin/staff/group managers bypass.
+     * ACL: the member must be on the session themselves OR share a household
+     * with a registered/waitlisted member. Admin/staff/group managers bypass.
      */
     public function mailInstructors(Request $request, Response $response, int $id): Response
     {
@@ -1740,21 +1745,12 @@ class SessionsController extends AbstractPluginController
         }
 
         // ACL: admin/staff/groupmanager bypass; otherwise the user (or one of
-        // their children) must be registered or on the waitlist.
+        // their household members) must be registered or on the waitlist.
         $isPrivileged = $this->login->isAdmin() || $this->login->isStaff() || $this->login->isGroupManager();
         if (!$isPrivileged) {
-            $candidateIds = [$memberId];
-            try {
-                $parent = new \Galette\Entity\Adherent($this->zdb, $memberId, ['children' => true]);
-                foreach ($parent->children as $child) {
-                    $cid = is_object($child) ? (int)$child->id : (int)$child;
-                    if ($cid > 0) {
-                        $candidateIds[] = $cid;
-                    }
-                }
-            } catch (\Throwable $e) {
-                // children load failed -- continue with self only
-            }
+            // Household::memberIds() includes self and falls back to self alone
+            // when the lookup fails.
+            $candidateIds = Household::memberIds($this->zdb, $memberId);
 
             $hasAccess = false;
             try {

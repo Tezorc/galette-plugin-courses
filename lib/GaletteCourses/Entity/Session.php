@@ -41,6 +41,13 @@ class Session
     public const STATUS_CLOSED = 'closed';
     public const STATUS_CANCELLED = 'cancelled';
 
+    /** Keys returned by getClosedReason() -- see getClosedMessage(). */
+    public const CLOSED_CANCELLED = 'cancelled';
+    public const CLOSED_BY_MANAGER = 'closed';
+    public const CLOSED_DEADLINE = 'deadline';
+    public const CLOSED_PAST = 'past';
+    public const CLOSED_STARTED = 'started';
+
     public const CANCEL_REASONS = [
         'competition'       => 'Competition',
         'instructor_absent' => 'Instructor absent',
@@ -304,36 +311,125 @@ class Session
     }
 
     /**
-     * Whether new registrations are accepted right now.
+     * First day (Y-m-d) on which registrations are refused because of the
+     * event's `register_deadline_days`, or null when the event sets no
+     * deadline. Registrations are accepted up to the day *before* this one.
+     */
+    private function getRegistrationCutoffDate(): ?string
+    {
+        $deadline_days = $this->getEvent()->getRegisterDeadlineDays();
+        if ($deadline_days === null || $deadline_days <= 0) {
+            return null;
+        }
+        return date('Y-m-d', strtotime($this->session_date . ' -' . $deadline_days . ' days'));
+    }
+
+    /**
+     * Last day (Y-m-d) on which registrations are still accepted, or null when
+     * the event sets no deadline. This is the date a member can act on -- the
+     * cutoff itself is already refused -- so it is the one every message and
+     * template shows.
+     */
+    public function getLastRegistrationDate(): ?string
+    {
+        $cutoff = $this->getRegistrationCutoffDate();
+        return $cutoff === null ? null : date('Y-m-d', strtotime($cutoff . ' -1 day'));
+    }
+
+    /**
+     * getLastRegistrationDate() in the active locale's short style.
+     */
+    public function getFormattedLastRegistrationDate(): ?string
+    {
+        $last = $this->getLastRegistrationDate();
+        return $last === null ? null : self::formatDay($last);
+    }
+
+    /**
+     * Why registrations are refused right now, as one of the CLOSED_* keys,
+     * or null when the session still accepts registrations.
+     *
+     * Single source of truth behind isOpen() and getClosedMessage(): the two
+     * must never be able to disagree, or the page would hide the button while
+     * the message explains something else. Order matters for the *wording*
+     * only -- a past session whose deadline also elapsed is reported as past,
+     * which is the more informative of the two.
      *
      * The event's `register_deadline_days` (when set, > 0) closes registrations
      * earlier than the session start: registrations close at the start of the
      * day `(session_date - N days)`. When null/0, the only cutoff is the
      * session start time itself.
      */
+    public function getClosedReason(): ?string
+    {
+        if ($this->status === self::STATUS_CANCELLED) {
+            return self::CLOSED_CANCELLED;
+        }
+        if ($this->status !== self::STATUS_OPEN) {
+            return self::CLOSED_BY_MANAGER;
+        }
+
+        $today = date('Y-m-d');
+        $cutoff = $this->getRegistrationCutoffDate();
+
+        if ($this->session_date < $today) {
+            return self::CLOSED_PAST;
+        }
+        if ($cutoff !== null && $today >= $cutoff) {
+            return self::CLOSED_DEADLINE;
+        }
+        if ($this->session_date > $today) {
+            return null;
+        }
+        // Same day, no deadline: allow registration until the session starts
+        return date('H:i:s') < $this->start_time ? null : self::CLOSED_STARTED;
+    }
+
+    /**
+     * Whether new registrations are accepted right now.
+     */
     public function isOpen(): bool
     {
-        if ($this->status !== self::STATUS_OPEN) {
-            return false;
-        }
-        $today = date('Y-m-d');
+        return $this->getClosedReason() === null;
+    }
 
-        $deadline_days = $this->getEvent()->getRegisterDeadlineDays();
-        if ($deadline_days !== null && $deadline_days > 0) {
-            $cutoff = date('Y-m-d', strtotime($this->session_date . ' -' . $deadline_days . ' days'));
-            if ($today >= $cutoff) {
-                return false;
-            }
-        }
+    /**
+     * Explicit, member-facing explanation of why registrations are refused,
+     * or null when the session is open. Says *what* the rule is and *since
+     * when* it applies -- a bare "not open for registration" leaves the member
+     * guessing whether the session is full, cancelled or simply past its
+     * deadline.
+     */
+    public function getClosedMessage(): ?string
+    {
+        return match ($this->getClosedReason()) {
+            self::CLOSED_CANCELLED => _T('This session has been cancelled.', 'courses'),
+            self::CLOSED_BY_MANAGER => _T('Registrations for this session have been closed.', 'courses'),
+            self::CLOSED_DEADLINE => sprintf(
+                _T(
+                    'Registrations were accepted until %1$s inclusive: they close %2$d days before the session.',
+                    'courses'
+                ),
+                (string)$this->getFormattedLastRegistrationDate(),
+                (int)$this->getEvent()->getRegisterDeadlineDays()
+            ),
+            self::CLOSED_PAST => _T('This session has already taken place.', 'courses'),
+            self::CLOSED_STARTED => sprintf(
+                _T('Registrations closed when the session started, at %s.', 'courses'),
+                $this->getFormattedStartTime()
+            ),
+            default => null,
+        };
+    }
 
-        if ($this->session_date > $today) {
-            return true;
-        }
-        if ($this->session_date < $today) {
-            return false;
-        }
-        // Same day: allow registration until the session starts
-        return date('H:i:s') < $this->start_time;
+    /**
+     * Formats an arbitrary Y-m-d date in the active locale's short style,
+     * the same way getFormattedDate() does for the session's own date.
+     */
+    private static function formatDay(string $date): string
+    {
+        return (string)self::dateFormatter(\IntlDateFormatter::SHORT, \IntlDateFormatter::NONE)
+            ->format(strtotime($date));
     }
 
     public function incrementRegistrations(): void
