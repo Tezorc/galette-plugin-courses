@@ -808,6 +808,7 @@ footer {
         <li>Sur la séance qui vous intéresse, bouton vert <strong>S'inscrire</strong>.</li>
         <li>Dans le menu qui s'ouvre, cliquez sur le <strong>nom du chien</strong> à inscrire.</li>
       </ol>
+      <p style="margin: 16px 0 0; color: var(--ink-2); font-size: 15px;"><strong>Au plus tard la veille</strong>&nbsp;: on ne s'inscrit pas le jour même d'une séance.</p>
     </div>
 
     <h2 class="section">Ce dont vous avez besoin</h2>
@@ -950,6 +951,27 @@ footer {
     <p>Si la liste est longue, trois filtres la réduisent&nbsp;: <b>Type</b> (cours, entraînement, concours…), <b>Activité</b> et <b>Du</b>, une date à partir de laquelle chercher. Le tri se fait sans recharger la page, et <span class="chip chip-ghost">Effacer les filtres</span> remet tout à zéro.</p>
 
     <p>Deux comportements à connaître&nbsp;: une section rouge <b>« Séances annulées »</b> liste en bas les créneaux futurs annulés — informatif, sans inscription possible&nbsp;; et les séances où <b>plus aucune inscription n'est possible</b> (vous et vos chiens y êtes déjà inscrits) disparaissent d'elles-mêmes du catalogue.</p>
+
+    <h3>La veille au plus tard</h3>
+
+    <p><b>On ne s'inscrit pas le jour même d'une séance.</b> Les inscriptions ferment au plus tard la veille au soir&nbsp;: pour un cours du samedi, il faut s'y prendre avant vendredi minuit. Certains cours ferment plus tôt encore — la fiche de la séance donne la date en clair, et c'est elle qui fait foi.</p>
+
+    <figure class="fig">
+      <p class="fig-label">Le message quand c'est trop tard</p>
+      <div class="ui-scope">
+        <div class="ui-msg">
+          <div class="ui-row" style="align-items: flex-start; flex-wrap: nowrap; gap: 10px;">
+            <svg class="ic" aria-hidden="true" style="margin-top: 2px;"><use href="#i-warn"/></svg>
+            <div>Les inscriptions étaient possibles jusqu'au <b>11/09/2026</b> inclus&nbsp;: elles ferment la veille de la séance.</div>
+          </div>
+        </div>
+      </div>
+      <figcaption>Le message <b>donne la date</b> plutôt qu'un nombre de jours, et il dit laquelle des deux règles s'applique&nbsp;: la veille par défaut, ou le délai plus long propre à ce cours. Le bouton vert a disparu, seul <span class="chip chip-ghost">Détails</span> reste.</figcaption>
+    </figure>
+
+    <div class="note">
+      <p>Vous vous présentez quand même le jour de la séance&nbsp;? <b>Voyez directement avec le moniteur.</b> Il peut vous noter présent sans inscription préalable, ou vous inscrire lui-même&nbsp;: la fermeture de la veille ne vaut que pour les inscriptions que vous faites vous-même.</p>
+    </div>
 
     <h2 class="section"><span class="num">5.</span> S'inscrire</h2>
     <p class="deck">Un seul bouton, qui s'adapte à ce que vous pouvez faire.</p>
@@ -1195,7 +1217,7 @@ footer {
           </tr>
           <tr>
             <td>Seul le bouton <span class="chip chip-ghost">Détails</span> reste</td>
-            <td>La date limite d'inscription est dépassée, ou la séance a été fermée par le club.</td>
+            <td>La date limite est dépassée. Elle tombe <b>au plus tard la veille</b> de la séance, plus tôt si le cours l'exige&nbsp;; le message jaune sur la fiche donne la date. Ou bien la séance a été fermée par le club.</td>
           </tr>
         </tbody>
       </table>
