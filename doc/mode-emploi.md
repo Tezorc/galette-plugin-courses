@@ -1306,7 +1306,7 @@ Le menu **Gestion des inscriptions** apparait si vous etes dans l'un de ces deux
    - **Nom**, **Description**, **Type** (Cours, Entrainement, Competition, Decouverte, Formation, Stage, Autre), **Lieu**
    - **Capacité maximale** : laisser vide pour une jauge illimitee
    - **Prix**, ou cocher **Événement gratuit**
-   - **Inscription fermée (jours avant la séance)** : delai au-dela duquel on ne peut plus s'inscrire. Il ne concerne **pas** la desinscription, toujours libre jusqu'au debut de la seance.
+   - **Inscription fermée (jours avant la séance)** : delai au-dela duquel un adherent ne peut plus s'inscrire lui-meme. **Le laisser vide ne veut pas dire « sans limite »** : les inscriptions ferment de toute facon au debut du jour de la seance, une valeur `N` ne fait que reculer cette borne de N jours (voir *Delai d'inscription* dans le corps du document). Il ne concerne **pas** la desinscription, toujours libre jusqu'au debut de la seance, ni les inscriptions que vous faites vous-meme pour autrui.
    - **Restreindre à certains groupes** puis **Groupes autorisés** : sans restriction, l'evenement est ouvert a tous les adherents
    - **Autoriser les inscriptions aux séances sans moniteur affecté** : decoche, les adherents ne peuvent s'inscrire qu'une fois un moniteur volontaire
    - **Pas de moniteur nécessaire (organisateur en contact)** : pour les evenements qui n'en demandent pas
@@ -1366,6 +1366,12 @@ Si un adherent vous demande de l'inscrire :
 Les memes conditions que pour une auto-inscription sont verifiees sur le membre cible : cotisation a jour, compte actif, statut different de "Non membre", appartenance au groupe requis, et absence de chevauchement avec une autre de ses seances le meme jour.
 
 **Bascule liste d'attente** : si la seance est pleine au moment de la soumission, le membre est automatiquement ajoute a la liste d'attente (avec sa position) au lieu d'echouer. Un message vert confirme la bascule. Si le membre est deja sur la waitlist, un message orange l'indique sans creer de doublon.
+
+**Le delai ne vous concerne pas.** Un adherent ne peut plus s'inscrire lui-meme des le debut du jour de la seance (et plus tot encore si le cours a un delai). *Inscrire un membre* echappe a cette fermeture : vous pouvez inscrire quelqu'un le matin meme. Restent bloquantes pour vous aussi, et c'est voulu : une seance **annulee**, une seance **fermee** par la gestion, une seance **passee** — trois etats de la seance, pas des questions de calendrier.
+
+> **Deux affichages qui semblent se contredire, le jour de la seance.** Si vous n'etes pas vous-meme inscrit, la fiche affiche a la fois le message jaune « les inscriptions etaient possibles jusqu'au ... » **et** le bouton *Inscrire un membre*. Les deux disent vrai : vous ne pouvez plus vous inscrire vous-meme, vous pouvez encore inscrire autrui. Ce n'est pas un bug.
+
+Pour quelqu'un qui se presente sans avoir ete inscrit et que vous n'avez pas a inscrire retroactivement, le formulaire **Presence hors inscription** de la feuille de pointage (section suivante) est plus direct : il le compte present en un geste, sans passer par une inscription.
 
 ### Pointer les presences
 

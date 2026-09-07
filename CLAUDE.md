@@ -100,7 +100,7 @@ git worktree add ../courses-1.3 dev-galette-1.3
   demandent aucune action a l'adherent. Les deux PDF se refabriquent par
   `python scripts/build-pdf.py doc/<fichier>.html --expect Newsreader,Signika,Lato`.
 - `doc/tuto-moniteur.html` : pendant du precedent pour les **moniteurs**, meme
-  systeme visuel, 4 pages. Sa source de verite est l'**Annexe B** du
+  systeme visuel, 5 pages. Sa source de verite est l'**Annexe B** du
   `mode-emploi.md`, pas le tuto adherent. A mettre a jour quand le parcours
   moniteur change : volontariat, droits sur sa seance, pointage, workflow de
   validation d'un evenement. Attention en particulier a la frontiere
@@ -219,7 +219,7 @@ galette-plugin-courses/
     tuto-adherent.pdf              # PDF produit depuis tuto-adherent.html (11 pages)
     tuto-adherent-condense.pdf     # PDF produit depuis tuto-adherent-condense.html (4 pages)
     tuto-moniteur.html             # Tutoriel moniteur, condense, personnalise CCAG42 (entree de build-pdf.py)
-    tuto-moniteur.pdf              # PDF produit depuis tuto-moniteur.html (4 pages)
+    tuto-moniteur.pdf              # PDF produit depuis tuto-moniteur.html (5 pages)
     tuto-pointage.html             # Tutoriel pointage sur telephone, personnalise CCAG42 (entree de build-pdf.py)
     tuto-pointage.pdf              # PDF produit depuis tuto-pointage.html (7 pages)
     cahier-des-charges.md          # Cahier des charges complet
