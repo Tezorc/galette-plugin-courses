@@ -1219,6 +1219,9 @@ msgid "Some closure periods overlap. They will be merged during session generati
 msgstr "Certaines périodes se chevauchent. Elles seront fusionnées lors de la génération des séances."
 
 # --- Cron token ---
+msgid "Incomplete address: the site URL is not set in Galette general preferences. Add it in front of the path above, or set it once there — the unsubscribe links in emails need it too."
+msgstr "Adresse incomplète : l'URL du site n'est pas renseignée dans les préférences générales de Galette. Ajoutez-la devant le chemin ci-dessus, ou renseignez-la une bonne fois là-bas — les liens de désinscription des courriels en ont besoin aussi."
+
 msgid "Regenerate token"
 msgstr "Régénérer le jeton"
 

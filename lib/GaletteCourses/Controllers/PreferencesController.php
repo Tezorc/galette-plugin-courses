@@ -53,12 +53,20 @@ class PreferencesController extends AbstractController
     {
         $pluginPrefs = new PluginPreferences($this->zdb);
 
+        // Base URL for the cron lines shown below. `url_for()` yields a path
+        // only, and a path is not something curl can fetch: pasted as-is into a
+        // crontab it fails with "URL malformed" every night, silently. Built
+        // from the admin-configured pref_galette_url, like the unsubscribe
+        // links -- never from the Host header.
+        $cronBaseUrl = rtrim((string)($this->preferences->pref_galette_url ?? ''), '/');
+
         $params = [
             'page_title'            => _T('Courses plugin preferences', 'courses'),
             'notifications_enabled' => $pluginPrefs->isNotificationsEnabled(),
             'test_email'            => $pluginPrefs->getTestEmail(),
             'closure_dates'         => $pluginPrefs->getClosureDates(),
             'cron_token'            => $pluginPrefs->getCronToken(),
+            'cron_base_url'         => $cronBaseUrl,
             'weekly_digest_day'     => $pluginPrefs->getWeeklyDigestDay(),
             'is_admin'              => $this->login->isAdmin() || $this->login->isSuperAdmin(),
         ];

@@ -690,6 +690,85 @@ Ces tests ont ete valides par mutation : casser le dedup par `session_id`, la br
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Evolution - L'URL de la tache cron etait un chemin, pas une URL
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : « explique les taches cron car j'ai l'impression
+  qu'elles ne fonctionnent pas ». Les trois endpoints ont ete verifies en
+  direct sur la stack de test : 403 sans token, 200 avec, rapport texte en
+  sortie. Le mecanisme est sain. Le defaut etait dans ce que l'interface
+  donne a copier.
+
+#### Constat
+
+`preferences.html.twig` construisait le champ « URL a programmer » ainsi :
+
+```twig
+{{ url_for('coursesCronGenerateSessions')|replace({'http:': '', 'https:': ''}) ~ '?token=' ~ cron_token }}
+```
+
+Or `url_for` est le `urlFor` de slim/twig-view, qui delegue a
+`RouteParser::urlFor()` et **rend un chemin** : `/plugins/courses/cron/...`.
+Le filtre `|replace` a donc toujours ete inerte — il a ete ecrit comme si la
+valeur etait absolue, ce qu'elle n'a jamais ete. Le bouton *copier* rendait
+un chemin nu.
+
+Un chemin n'est pas une URL : `curl "/plugins/courses/..."` sort en **code 3**
+(URL malformee), verifie. Dans une crontab, avec le `-s` que la page suggere
+elle-meme et sans `MAILTO`, cet echec n'ecrit nulle part. La tache parait
+programmee, s'execute chaque nuit, et ne fait rien — sans une ligne de log,
+sans un courriel d'erreur, sans rien dans l'historique Galette. C'est le pire
+profil de panne : silencieux des deux cotes.
+
+L'exemple en `<code>` juste en dessous, lui, etait correct : il prefixait
+`https://votre-site.fr`. Mais il faut avoir lu les deux et compris que le
+champ du dessus, celui qui porte un bouton *copier*, est le mauvais.
+
+#### Correction
+
+- `PreferencesController::show()` calcule `cron_base_url` depuis
+  `pref_galette_url` — **la meme source que les liens de desinscription des
+  courriels**, et pour la meme raison : c'est une valeur posee par un
+  administrateur, pas un en-tete `Host` que le client controle. Le
+  commentaire de `CourseNotification::buildUnsubscribeFooter()` disait deja
+  « Never use $_SERVER['HTTP_HOST'] (Host header injection risk) » ; la page
+  de preferences s'aligne.
+- Le gabarit derive les deux URL (`cron_url`, `weekly_url`) de cette base, et
+  s'en sert **partout** : le champ copiable, l'exemple de crontab et l'URL du
+  récapitulatif hebdomadaire, qui etait elle aussi un chemin nu.
+- `full_url_for` existe pourtant dans slim/twig-view et aurait resolu le cas
+  en une fonction. Ecarte volontairement : il se deduit de la requete
+  courante, donc rend `http://` derriere un proxy qui termine le TLS, et
+  surtout il n'a pas ete verifie sur la 1.2 de production. Une page de
+  preferences en 500 serait une regression pire que le bug corrige.
+- Si `pref_galette_url` est vide, le champ montre le chemin **et** un
+  avertissement neuf qui dit quoi faire. Devinner l'hote aurait rendu une URL
+  d'apparence correcte et parfois fausse ; dire ce qui manque vaut mieux.
+  Cette preference vide est de toute facon deja un probleme : elle supprime
+  silencieusement les liens de desinscription des courriels (un simple
+  `Analog::log` en WARNING).
+
+#### Documentation
+
+Le `mode-emploi.md` gagne une section **« Si rien ne semble partir »**, batie
+sur le premier geste utile — lancer l'URL a la main, elle repond en clair —
+et sur ce que chaque reponse permet de conclure : `403` = token regenere sans
+mise a jour de la crontab ; compteurs a zero = rien a envoyer ; compteurs
+non nuls = la ligne de crontab est en cause. Y sont aussi consignes les
+pieges qui ne se voient pas : l'adresse de test qui detourne tout, et le jour
+du récapitulatif hebdomadaire compare a `date('N')` **dans le fuseau du
+serveur** — un cron peu apres minuit peut tomber la veille pour PHP et laisser
+l'hebdomadaire indefiniment « skipped ».
+
+Verifie en rendant reellement le gabarit dans le conteneur, avec et sans
+`pref_galette_url` : le champ sort
+`https://adherent.ccag42.org/plugins/courses/cron/generate-sessions?token=...`
+dans le premier cas, le chemin plus l'avertissement dans le second.
+
+- 1 chaine i18n ajoutee, `.mo` recompile. Aucune migration BDD, aucun
+  changement de comportement du cron lui-meme.
+
 ### Evolution - Passe de nettoyage : code mort, traductions orphelines, inventaires
 
 **Statut :** TERMINEE
