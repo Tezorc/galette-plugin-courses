@@ -426,12 +426,13 @@ a:focus-visible,
         <h3>Préparer</h3>
         <p>Depuis la fiche de la séance : <span class="btn btn-teal">Inscrire un membre</span> pour une inscription par procuration, l'ajustement de la <strong>capacité</strong>, et l'ajout d'un <strong>co-moniteur</strong>. Si la séance est pleine, le bloc <strong>Gestion de la liste d'attente</strong> propose d'augmenter la capacité et de promouvoir automatiquement les personnes en file.</p>
         <p>Une inscription par procuration sur une séance complète bascule d'elle-même en liste d'attente plutôt que d'échouer.</p>
+        <p><strong>Les adhérents, eux, ne s'inscrivent plus le jour même</strong> : leurs inscriptions ferment au début du jour de la séance, plus tôt encore si le cours porte un délai. Le samedi matin, plus personne n'arrive dans la liste tout seul — c'est à vous de jouer.</p>
       </li>
 
       <li>
         <h3>Pointer, le jour même</h3>
         <p>Le pointage apparaît <strong>le jour de la séance et après</strong>, jamais avant. Dans la liste des <strong>Membres inscrits</strong>, choisir pour chacun <strong>Présent</strong>, <strong>Absent</strong> ou <strong>Absent (excusé)</strong>, puis <span class="btn btn-amber">Enregistrer le pointage</span>.</p>
-        <p>Quelqu'un est venu sans s'être inscrit : le bloc <strong>Présence hors inscription</strong> permet de l'ajouter directement.</p>
+        <p>Quelqu'un est venu sans s'être inscrit : le bloc <strong>Présence hors inscription</strong> permet de l'ajouter directement. C'est <strong>la voie la plus courte</strong> maintenant que l'adhérent ne peut plus s'inscrire le matin même — un geste, pas d'inscription rétroactive, et l'ajout est immédiat sans passer par <span class="btn btn-amber">Enregistrer le pointage</span>.</p>
       </li>
 
       <li>
@@ -450,6 +451,10 @@ a:focus-visible,
       <div class="fact">
         <h3>Sur vos séances</h3>
         <p>Modifier la date, l'horaire et la capacité ; ajouter ou retirer un co-moniteur ; inscrire ou désinscrire un membre ; fermer, rouvrir, annuler, réactiver ; gérer la liste d'attente.</p>
+      </div>
+      <div class="fact">
+        <h3>Le calendrier ne vous ferme pas la porte</h3>
+        <p><span class="btn btn-teal">Inscrire un membre</span> <strong>reste actif le jour de la séance</strong>, délai ou pas : la fermeture ne vaut que pour l'adhérent qui s'inscrit lui-même. Trois choses vous bloquent quand même, et ce sont des états de la séance, pas des questions de date : <strong>annulée</strong>, <strong>fermée</strong>, <strong>passée</strong>.</p>
       </div>
       <div class="fact">
         <h3>Sur les autres</h3>
@@ -498,7 +503,7 @@ a:focus-visible,
 
   <section>
     <h2>Quand quelque chose ne s'affiche pas</h2>
-    <p class="section-sub">Cinq situations qui ressemblent à des pannes et n'en sont pas.</p>
+    <p class="section-sub">Six situations qui ressemblent à des pannes et n'en sont pas.</p>
     <div class="table-scroll">
       <table>
         <thead>
@@ -527,6 +532,10 @@ a:focus-visible,
           <tr>
             <td>Le pointage n'apparaît pas</td>
             <td>Il n'ouvre que le jour de la séance. Avant, la liste des inscrits est consultable mais non modifiable.</td>
+          </tr>
+          <tr>
+            <td>Le jour de la séance, un bandeau jaune dit que les inscriptions sont closes, mais <span class="btn btn-teal">Inscrire un membre</span> est toujours là</td>
+            <td>Les deux disent vrai. Le bandeau parle de <strong>votre</strong> inscription, que vous ne pouvez plus faire vous-même ; le bouton parle de celle des autres, que vous pouvez encore faire. Ce n'est pas un bug.</td>
           </tr>
         </tbody>
       </table>
