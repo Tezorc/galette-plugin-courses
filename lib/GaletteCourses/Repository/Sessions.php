@@ -145,66 +145,6 @@ class Sessions
         }
     }
 
-    /**
-     * @return array<int, Session>
-     */
-    public function getUpcoming(int $limit = 20): array
-    {
-        try {
-            $select = $this->zdb->select(Session::TABLE, 's');
-            $select->join(
-                ['e' => PREFIX_DB . Event::TABLE],
-                's.event_id = e.' . Event::PK,
-                []
-            );
-            $select->where->greaterThanOrEqualTo('s.session_date', date('Y-m-d'));
-            $select->where->equalTo('s.status', Session::STATUS_OPEN);
-            $select->where->equalTo('e.status', Event::STATUS_VALIDATED);
-
-            // Group restriction filtering for regular members
-            if (!$this->login->isAdmin() && !$this->login->isStaff() && !$this->login->isGroupManager() && $this->login->id !== null) {
-                $memberId = (int)$this->login->id;
-                $nested = $select->where->nest();
-                $nested->equalTo('e.is_restricted', 0);
-                // OR events matching the member's own groups
-                $nested->addPredicate(
-                    new PredicateExpression(
-                        'EXISTS (SELECT 1 FROM ' . PREFIX_DB . 'courses_events_groups eg'
-                        . ' INNER JOIN ' . PREFIX_DB . 'groups_members gm ON eg.group_id = gm.id_group'
-                        . ' WHERE eg.event_id = e.' . Event::PK . ' AND gm.id_adh = ?)',
-                        [$memberId]
-                    ),
-                    PredicateSet::OP_OR
-                );
-                // OR events matching the groups of any other member of the household
-                $nested->addPredicate(
-                    new PredicateExpression(
-                        Household::eventGroupsExistsSql('c1'),
-                        [$memberId]
-                    ),
-                    PredicateSet::OP_OR
-                );
-                $nested->unnest();
-            }
-
-            $select->order('s.session_date ASC, s.start_time ASC');
-            $select->limit($limit);
-
-            $results = $this->zdb->execute($select);
-            $sessions = [];
-            foreach ($results as $r) {
-                $sessions[(int)$r->{Session::PK}] = new Session($this->zdb, $r);
-            }
-            return $sessions;
-        } catch (Throwable $e) {
-            Analog::log(
-                'Error loading upcoming sessions: ' . $e->getMessage(),
-                Analog::ERROR
-            );
-            return [];
-        }
-    }
-
     private function buildWhereClause(Select $select): void
     {
         // In personal view mode, always restrict to validated events and member's own groups

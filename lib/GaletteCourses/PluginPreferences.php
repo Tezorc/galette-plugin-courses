@@ -165,14 +165,6 @@ class PluginPreferences
     }
 
     /**
-     * Check if a given date (yyyy-mm-dd) falls within a closure period.
-     */
-    public function isClosureDate(string $date): bool
-    {
-        return $this->getClosureForDate($date) !== null;
-    }
-
-    /**
      * Return the matching closure range for a given date, or null if none.
      * Used by RecurrenceHandler to create a cancelled session with the
      * closure label as cancellation comment.

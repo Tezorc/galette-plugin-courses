@@ -681,6 +681,122 @@ Ces tests ont ete valides par mutation : casser le dedup par `session_id`, la br
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Evolution - Passe de nettoyage : code mort, traductions orphelines, inventaires
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : "recherche et optimise les fichiers obsoletes
+  et/ou orphelins". Aucun fichier entier ne s'est revele orphelin — tous
+  les templates, toutes les classes, toutes les migrations SQL et tous les
+  stubs de test sont atteignables. Ce qui etait mort l'etait *a l'interieur*
+  des fichiers, et c'est ce que cette passe retire.
+
+#### Constat
+
+Le meme mecanisme que pour le mode d'emploi : rien ne signale qu'une
+methode a cesse d'etre appelee, ni qu'une chaine traduite a cesse d'etre
+affichee. Trois inventaires ont ete croises avec le code :
+
+1. **Methodes jamais appelees** (15). Recherche de chaque `function` de
+   `lib/` dans tout le depot — PHP, Twig, tests, `_routes.php`, `_define.php`
+   — en excluant les surcharges que le coeur Galette appelle par convention
+   (`getMenusContents`, `getDashboardsContents`, `getDefaultOrder`,
+   `doDelete`, `isInstalled`...) et la propriete injectee `$module_info`.
+2. **Traductions orphelines** (50 msgid). Chaque msgid du `.po` cherche comme
+   litteral exact dans le code. Le piege ici est la comparaison par
+   sous-chaine : `"[Courses] Event submitted for validation: "` semble
+   presente parce qu'elle est prefixe de la version `{event_name}` qui l'a
+   remplacee. Seule la comparaison sur litteral complet les fait sortir.
+3. **Regles CSS sans selecteur** (5) et **ACL manquantes** (2).
+
+#### Corrections
+
+- **15 methodes mortes supprimees.** Deux comptent au-dela du volume :
+  - `Repository\Sessions::getUpcoming()` (56 lignes) portait sa **propre**
+    restriction par groupe, `equalTo('e.is_restricted', 0)`, la ou
+    `buildWhereClause()` — la seule encore appelee — utilise
+    `NOT EXISTS (... courses_events_groups ...)`. Deux definitions
+    divergentes de "evenement ouvert a tous" dans la meme classe, dont une
+    que personne n'exercait donc que personne ne verifiait.
+  - `MemberPreferences::filterOptedInRecipients()` et `getOptedInMemberIds()`
+    dupliquaient la regle opt-out (pas de ligne en base = abonne) que
+    `CourseNotification` applique deja en SQL par `LEFT JOIN`. Meme risque de
+    derive silencieuse.
+  - Les 13 autres sont des accesseurs ou des predicats d'une ligne :
+    `Event::needsValidation()` / `setInitialSessionDate()` /
+    `getModificationDate()` / `getSlotsForDate()` / `getErrors()`,
+    `MailTemplate::getRef()` / `getLang()`, `Registration::getRegisteredBy()`,
+    `SessionInstructor::getAssignedDate()` / `getAssignedBy()`,
+    `PluginPreferences::isClosureDate()`, et le garde
+    `CoursesAclGuard::denyUnlessAdminOrStaff()`, sans appelant depuis que la
+    Phase 43 a bascule ses trois derniers sur `denyUnlessSessionManager()`.
+  - `Event::getSlotsForDate()` merite une mention : c'etait un doublon inerte
+    de `RecurrenceHandler::slotsForDate()`, alors meme que la saisonnalite
+    repose sur l'unicite de la regle (`Event::slotAppliesOn()`). Un doublon
+    non appele reste une invitation a diverger.
+
+- **50 entrees supprimees du `.po`**, `.mo` recompile (`msgfmt --check`). Le
+  `.mo` versionne etait bien la compilation exacte du `.po` versionne — verifie
+  avant recompilation, pour ne pas ecraser une divergence editee a la main.
+  Les disparues sont des libelles remplaces (le delai de desinscription
+  devenu delai d'inscription en Phase 45), des objets de courriel d'avant
+  les placeholders `{event_name}`, la description de `REF_SESSION_OPEN`
+  d'avant le digest hebdomadaire, et le pied de page de desinscription
+  d'avant "Unsubscribe from notifications:".
+
+- **1 surcharge locale morte** dans `courses_fr_FR.utf8_local_lang.php` :
+  `Select a linked member to register` (sans point final). Le code n'emet que
+  la variante ponctuee, elle aussi surchargee juste en dessous. Une cle qui ne
+  correspond a rien n'echoue pas : elle ne fait rien, en silence. C'est le
+  mode de panne a surveiller dans ce fichier.
+
+- **5 regles CSS sans selecteur** retirees de `galette_courses.css` :
+  `.courses-next-session`, `.courses-registered`, `.courses-segment-tight`,
+  `.courses-past-accordion .title`, `.courses-mobile-actions` (2 occurrences,
+  en co-selecteur de `.actions_row` qui reste). Le cache-buster `?v=` de
+  `headers.html.twig` n'est volontairement pas bouge : aucune de ces classes
+  n'est posee sur un element, un CSS mis en cache rend donc a l'identique.
+
+- **2 ACL manquantes** dans `_define.php` : `coursesDoParentWaitlist` et
+  `coursesDoParentLeaveWaitlist` n'y figuraient pas, alors que leurs quatre
+  soeurs (`coursesDoWaitlist`, `coursesDoLeaveWaitlist`,
+  `coursesDoParentRegister`, `coursesDoParentUnregister`) y sont declarees
+  `member`. Sans effet pratique — le controleur porte le vrai gate et
+  `$authenticate` couvrait le reste — mais une carte incomplete se relit mal.
+  Les seules routes desormais absentes de la carte sont les 3 endpoints cron
+  et `coursesUnsubscribe`, publics par construction.
+
+- **`.phpcs.xml` recentre sur le plugin.** Son bloc `<file>` listait
+  `galette/lib/`, `galette/webroot/index.php`, `tests/Galette/`... — les
+  chemins du **coeur** Galette, dont aucun n'existe ici. La CI n'en souffrait
+  pas : elle passe `lib/ ./*.php` en argument, ce qui prime sur la liste. Mais
+  un `phpcs` lance a la main depuis la racine du plugin ne verifiait rien.
+
+- **Inventaire de `CLAUDE.md` recale** : ajout de `Entity/Household.php`, des
+  deux `upgrade-slot-active*.sql` et de `webroot/galette_courses.css`, absents
+  du bloc structure ; la ligne `CoursesAclGuard.php` listait 3 helpers dont un
+  supprime ici, elle liste desormais les 6 reels.
+
+#### Ce qui a ete verifie et laisse en place
+
+- `scripts/pgsql.sql` est bien du PostgreSQL (`serial`, `boolean`, `timestamp`,
+  `CREATE INDEX` sortis du `CREATE TABLE`) et couvre les memes colonnes que le
+  MySQL, migrations comprises. Seule coquetterie : `slots.is_active` y est
+  `smallint` la ou les autres drapeaux sont `boolean` — sans consequence,
+  laisse tel quel pour ne pas rendre une migration necessaire.
+- Les 12 migrations `upgrade-*.sql` restent : `main` n'a pas de `dbver`, la
+  montee de version en production est manuelle, elles sont le seul chemin.
+- Les stubs `tests/stubs/Analog` et `tests/stubs/Galette/Entity/Adherent` ne
+  sont nommes par aucun test : ils sont charges par le code sous test.
+- Classes CSS posees sur un element mais sans regle (`courses-back-btn`,
+  `courses-browse-filters`, `courses-grid-gap`) : signalees, pas touchees.
+  `courses-grid-gap` est le cas interessant — le nom annonce un espacement que
+  la feuille ne definit pas ; c'est une regle manquante, pas un orphelin.
+
+- Aucune migration BDD, aucune chaine i18n ajoutee, aucun comportement
+  utilisateur modifie. Suite complete : 113 verts. `php-cs-fixer` : 0 fichier a
+  corriger sur 43 (verifie en fins de ligne LF, comme la CI).
+
 ### Evolution - La gestion echappe aux regles de calendrier
 
 **Statut :** TERMINEE

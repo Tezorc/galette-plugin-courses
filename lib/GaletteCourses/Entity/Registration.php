@@ -286,11 +286,6 @@ class Registration
         $this->registered_by = $registered_by;
     }
 
-    public function getRegisteredBy(): ?int
-    {
-        return $this->registered_by;
-    }
-
     public function getId(): ?int
     {
         return $this->id ?? null;

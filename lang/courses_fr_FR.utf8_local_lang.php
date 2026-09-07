@@ -41,11 +41,8 @@ $lang['[Courses] Linked member registered to session']   = '[Cours] Inscription 
 $lang['[Courses] Linked member unregistered from session'] = '[Cours] Désinscription d\'un membre rattaché de la séance';
 
 $lang['Register a linked member']             = 'Inscrire un membre rattaché';
-$lang['Select a linked member to register']   = 'Sélectionner un membre rattaché à inscrire';
 $lang['Select a linked member to register.']  = 'Veuillez sélectionner un membre rattaché à inscrire.';
 
-$lang['No linked member eligible for this session (already registered or not in the required group).']
-    = 'Aucun membre rattaché éligible pour cette séance (déjà inscrit ou n\'appartenant pas au groupe requis).';
 $lang['You can only register your own linked members.']
     = 'Vous ne pouvez inscrire que vos propres membres rattachés (enfant, conjoint, autre chien).';
 $lang['This linked member does not belong to a required group for this event.']

@@ -581,11 +581,6 @@ class Event
         return SessionInstructor::countSessionsForMember($zdb, $memberId) > 0;
     }
 
-    public function needsValidation(): bool
-    {
-        return $this->status === self::STATUS_PENDING;
-    }
-
     public function canSubmit(Login $login): bool
     {
         if (!isset($this->id) || $this->status !== self::STATUS_DRAFT) {
@@ -741,11 +736,6 @@ class Event
         return $this->initial_session_date;
     }
 
-    public function setInitialSessionDate(?string $date): void
-    {
-        $this->initial_session_date = $date;
-    }
-
     public function isRestricted(): bool
     {
         return $this->is_restricted;
@@ -803,11 +793,6 @@ class Event
     public function getCreationDate(): string
     {
         return $this->creation_date;
-    }
-
-    public function getModificationDate(): ?string
-    {
-        return $this->modification_date;
     }
 
     /**
@@ -985,29 +970,5 @@ class Event
         }
         [$month, $day] = explode('-', $md);
         return $which === 'day' ? $day : $month;
-    }
-
-    /**
-     * Slots generating a session on the given date: active ones whose season
-     * covers it. Seasonal schedules (summer/winter) live as two slots on the
-     * same event, each with its own season.
-     *
-     * @param string $date Occurrence date, yyyy-mm-dd
-     * @return array<array<string, mixed>>
-     */
-    public function getSlotsForDate(string $date): array
-    {
-        return array_values(array_filter(
-            $this->slots,
-            static fn(array $s): bool => self::slotAppliesOn($s, $date)
-        ));
-    }
-
-    /**
-     * @return string[]
-     */
-    public function getErrors(): array
-    {
-        return $this->errors;
     }
 }

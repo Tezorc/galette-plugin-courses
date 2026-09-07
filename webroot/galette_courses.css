@@ -125,8 +125,6 @@
 /* ----- WAITLIST list ----- */
 .courses-waitlist-item { display: flex; align-items: center; flex-wrap: wrap; gap: .4em; }
 .courses-waitlist-pos { flex: 0 0 auto; min-width: 2.2em; text-align: center; }
-.courses-next-session { border-left: 4px solid #21ba45 !important; }
-.courses-registered   { border-left: 4px solid #21ba45 !important; opacity: .85; }
 
 /* ----- LAYOUT HELPERS ----- */
 .courses-cards-grid { margin-top: 1em !important; }
@@ -135,7 +133,6 @@
 .courses-results-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .4em; margin-bottom: .6em; }
 .courses-section-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5em; }
 .courses-section-actions { display: flex; gap: .4em; flex-wrap: wrap; align-items: center; }
-.courses-segment-tight { padding: .5em 0 !important; }
 .courses-divider-top0 { margin-top: 0 !important; }
 .courses-input-narrow { width: 6em; }
 .courses-input-medium { width: 12em; }
@@ -284,7 +281,6 @@ tr.courses-pending { background-color: #fffde7 !important; }
 .courses-group-header { margin-top: 1.5em !important; padding-bottom: .4em !important; }
 .courses-group-header:first-child { margin-top: .5em !important; }
 .courses-group-header .circular.label { margin-right: .4em; vertical-align: middle; }
-.courses-past-accordion .title { color: #888 !important; }
 /* Generic collapsible section header (history "past sessions" and any
    foldable section like "Upcoming" / "On the waitlist"). The chevron's
    `.rotated` class is the source of truth for expanded state. */
@@ -510,12 +506,10 @@ tr.courses-pending { background-color: #fffde7 !important; }
         content: attr(data-label); font-weight: 700; font-size: .78em; color: #999;
         text-transform: uppercase; letter-spacing: .04em; flex-shrink: 0; min-width: 7em;
     }
-    .courses-responsive-table tbody td.actions_row,
-    .courses-responsive-table tbody td.courses-mobile-actions {
+    .courses-responsive-table tbody td.actions_row {
         justify-content: flex-end !important; gap: .5em !important; flex-wrap: wrap;
     }
-    .courses-responsive-table tbody td.actions_row::before,
-    .courses-responsive-table tbody td.courses-mobile-actions::before { content: none !important; }
+    .courses-responsive-table tbody td.actions_row::before { content: none !important; }
     .courses-responsive-table tbody td.courses-mobile-hide { display: none !important; }
 
     /* --- Filter toggle --- */

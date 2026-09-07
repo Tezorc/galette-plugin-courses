@@ -200,6 +200,8 @@ galette-plugin-courses/
   scripts/upgrade-cancel-reasons-i18n.sql # Migration MySQL/pgsql : cles de cancellation_reason en EN (Phase 16)
   scripts/upgrade-perf-indexes.sql       # Migration MySQL : indexes hot path (Phase 74)
   scripts/upgrade-perf-indexes-pgsql.sql # Migration pgsql : idem (Phase 74)
+  scripts/upgrade-slot-active.sql       # Migration MySQL : colonne is_active sur les creneaux (Phase 78)
+  scripts/upgrade-slot-active-pgsql.sql # Migration pgsql : idem (Phase 78)
   scripts/upgrade-slot-season.sql       # Migration MySQL : colonnes season_from/season_to sur les creneaux (horaires saisonniers)
   scripts/upgrade-slot-season-pgsql.sql # Migration pgsql : idem
   scripts/upgrade-defer-sessions.sql       # Migration MySQL : colonne initial_session_date (creation des seances differee a la validation)
@@ -233,6 +235,7 @@ galette-plugin-courses/
       Registration.php             # Inscription (store, cancel, re-inscription, promotion waitlist)
       Waitlist.php                 # Liste d'attente (position, promotion, FIFO)
       SessionInstructor.php        # Instructeur affecte a une session
+      Household.php                # Foyer : membres lies par `parent_id` (fragments SQL partages par les repositories)
       MailTemplate.php             # Template email personnalisable (11 refs : workflow, nouvelles seances moniteurs, digest quotidien moniteurs, seance ouverte avec moniteur, seance ouverte sans moniteur, digest hebdo membres, annulation inscrits/attente, promotion waitlist)
     Repository/
       Events.php                   # Liste evenements (filtrage par role)
@@ -247,7 +250,7 @@ galette-plugin-courses/
       SessionsList.php             # Filtres sessions
       RegistrationsList.php        # Filtres inscriptions
     Controllers/
-      CoursesAclGuard.php          # Trait : helpers denyUnlessStaffOrGroupManager / denyUnlessAdminOrStaff / denyUnlessSuperAdmin
+      CoursesAclGuard.php          # Trait : helpers denyUnlessStaffOrGroupManager / denyUnlessSuperAdmin / denyUnlessCanAuthorEvents / denyUnlessStaffOrInstructor / denyUnlessCanProxyRegister / denyUnlessSessionManager
       EventsController.php         # CRUD evenements + workflow validation + auto-creation session + generation recurrence + regeneration destructive (super admin)
       SessionsController.php       # Consultation sessions + instructeurs + liste d'attente + edition seance (staff) + suppression definitive (super admin)
       RegistrationsController.php  # Inscription / desinscription / desinscription par staff/moniteur / liste d'attente / mes inscriptions / proxy / parent
@@ -258,6 +261,7 @@ galette-plugin-courses/
       MemberPreferencesController.php  # Preferences membre (notifications, iCal)
       CronController.php           # Endpoints cron : generateSessions (sessions recurrentes + sweep digest moniteur + digest membre hebdo si jour J) + sendDigest (sweep moniteur seul) + sendWeeklyDigest (sweep membre seul)
       UnsubscribeController.php    # Desinscription en un clic (public, sans auth, via token)
+  webroot/galette_courses.css      # Feuille de style du plugin (servie via `plugin_res`, cache-buster `?v=` dans headers.html.twig)
   templates/default/
     headers.html.twig              # CSS/assets injectes dans <head>
     scripts.html.twig              # JS injectes en bas de page
