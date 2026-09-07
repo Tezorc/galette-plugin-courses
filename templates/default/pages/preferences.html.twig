@@ -146,23 +146,38 @@
         {{ _T('Schedule this URL with a cron job to automatically generate sessions for all validated recurring events.', 'courses') }}
     </p>
 
+    {# `url_for()` ne rend qu'un chemin. Colle tel quel dans un crontab, il
+       fait echouer curl sur une URL malformee, chaque nuit et sans un mot.
+       On prefixe donc par l'URL du site configuree dans Galette -- la meme
+       source que les liens de desinscription des courriels, jamais l'en-tete
+       Host. Si elle n'est pas renseignee, le chemin reste affiche mais un
+       avertissement dit quoi faire, plutot que de livrer une URL devinee. #}
+    {% set cron_url = cron_base_url ~ url_for('coursesCronGenerateSessions') ~ '?token=' ~ cron_token %}
+    {% set weekly_url = cron_base_url ~ url_for('coursesCronSendWeeklyDigest') ~ '?token=' ~ cron_token %}
+
     <div class="ui fluid action input">
         <input type="text" id="cron-url" name="cron-url" readonly
-            value="{{ url_for('coursesCronGenerateSessions')|replace({'http:': '', 'https:': ''}) ~ '?token=' ~ cron_token }}"
+            value="{{ cron_url }}"
             class="courses-cron-input"
         />
         <button type="button" class="ui small icon button" id="copy-cron-url" title="{{ _T('Copy', 'courses') }}">
             <i class="copy icon" aria-hidden="true"></i>
         </button>
     </div>
+    {% if cron_base_url is empty %}
+    <p class="ui tiny text courses-cron-note">
+        <i class="exclamation triangle icon" aria-hidden="true"></i>
+        {{ _T('Incomplete address: the site URL is not set in Galette general preferences. Add it in front of the path above, or set it once there — the unsubscribe links in emails need it too.', 'courses') }}
+    </p>
+    {% endif %}
     <p class="ui tiny text courses-cron-note">
         {{ _T('Example cron (every day at 1am):', 'courses') }}
-        <code>0 1 * * * curl -s "https://votre-site.fr{{ url_for('coursesCronGenerateSessions') }}?token={{ cron_token }}"</code>
+        <code>0 1 * * * curl -s "{{ cron_url }}"</code>
     </p>
     <p class="ui small grey text" style="margin-top:1em">
         <i class="info circle icon" aria-hidden="true"></i>
         {{ _T('The same cron also sends the daily manager digest, and runs the weekly member digest once a week on the day selected above. To trigger the weekly digest separately, schedule:', 'courses') }}
-        <code>{{ url_for('coursesCronSendWeeklyDigest') }}?token={{ cron_token }}</code>
+        <code>{{ weekly_url }}</code>
     </p>
 
     <div class="courses-cron-regenerate">

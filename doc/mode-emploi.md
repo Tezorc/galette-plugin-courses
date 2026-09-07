@@ -824,6 +824,10 @@ Sur un serveur Linux, ajouter une seule ligne dans la crontab :
 
 Remplacer `VOTRE_DOMAINE` et `VOTRE_TOKEN` par les valeurs affichees dans la section **Generation automatique des seances** des preferences. **Cette unique entree cron suffit** : elle declenche la generation des seances ET l'envoi du récapitulatif moniteur.
 
+Le champ de cette section contient l'**URL complete**, prete a coller : le bouton copier donne directement `https://.../plugins/courses/cron/generate-sessions?token=...`. Elle est construite sur l'**URL du site** des preferences generales de Galette (`pref_galette_url`), pas sur l'en-tete `Host` de la requete.
+
+> **Si cette URL du site n'est pas renseignee**, le champ n'affiche qu'un chemin (`/plugins/courses/...`) et un avertissement le signale. Un chemin **n'est pas une URL** : `curl "/plugins/..."` echoue sur « URL malformee », et dans une crontab avec `-s` et sans `MAILTO`, cet echec ne laisse aucune trace — la tache semble programmee et ne fait rien, toutes les nuits. Renseigner l'URL du site regle le probleme ici et retablit du meme coup les liens de desinscription en pied de courriel, qui dependent de la meme preference.
+
 **Horaire recommande** : tot le matin (6h-8h). Les responsables qui se sont portes volontaires la veille au soir (ou les nouvelles seances creees dans la nuit) sont visibles a leur prochaine consultation des emails. La latence maximum entre la creation d'une seance et la reception du courriel récapitulatif est de **24 heures** ; ce tradeoff a ete accepte pour atteindre l'objectif "1 mail/jour max" pour les responsables multi-groupes.
 
 #### Endpoint dédié au récapitulatif (optionnel, multi-creneaux)
@@ -850,6 +854,24 @@ Digest: 3 email(s) sent, 18 session(s) listed, 0 error(s).
 ```
 
 Le compte `Digest: N email(s) sent` (texte natif de sortie du cron) confirme l'envoi du récapitulatif moniteur. Si une seance est creee mais qu'aucun moniteur n'est responsable de son groupe (ou que tous se sont desinscrits des notifications), le compteur reste a 0 — c'est normal.
+
+#### Si rien ne semble partir
+
+Le premier geste est de **lancer l'URL a la main**, depuis n'importe quel poste : elle repond en texte clair, avec les compteurs. Ce que dit la reponse :
+
+| Reponse | Diagnostic |
+|---|---|
+| `403 Unauthorized` | Le token ne correspond pas. Typiquement : le bouton **Regenerer le jeton** a ete utilise et la crontab est restee sur l'ancienne URL. |
+| Un rapport avec des compteurs a 0 | Le cron fonctionne, il n'y a rien a envoyer. Voir les filtres ci-dessous. |
+| Un rapport avec des chiffres | Le cron fonctionne quand on l'appelle : c'est donc **la ligne de crontab** qui est en cause — verifier qu'elle commence bien par `https://`. |
+
+Si l'appel manuel envoie mais que le cron non, verifier dans l'ordre : l'URL de la crontab est **absolue** ; le token est le token courant ; les **notifications sont activees** dans les preferences du plugin ; aucune **adresse de test** n'y est renseignee (elle detourne tous les courriels vers elle, avec un objet prefixe `[TEST → ...]`).
+
+Le **jour du récapitulatif hebdomadaire** merite une mention a part : il est compare a `date('N')` **dans le fuseau horaire du serveur**, pas dans celui du club. Un cron programme peu apres minuit peut donc tomber la veille pour PHP, et l'hebdomadaire etre indefiniment « skipped ». La sortie de l'endpoint le dit explicitement (`today is day X, configured day is Y`), et `&force=1` permet de le declencher hors de son jour pour verifier.
+
+Enfin, des compteurs a 0 sont souvent legitimes. Au moment du balayage, une ligne en attente n'est retenue que si la seance est **ouverte**, **a venir**, **sans moniteur**, et si le membre est **actif**, a une **adresse de courriel** et n'est pas desabonne. Un moniteur qui se porte volontaire entre l'empilement et le balayage fait disparaitre la ligne sans courriel : c'est voulu.
+
+Trace cote Galette : le plugin ecrit dans l'historique `[Courses] Cron: sessions generated`, `[Courses] Email sent` et `[Courses] Email send failed`. Une absence totale d'entrees sur plusieurs jours signifie que la tache n'atteint jamais le site.
 
 ---
 
