@@ -395,14 +395,4 @@ class SessionInstructor
     {
         return $this->member_id;
     }
-
-    public function getAssignedDate(): string
-    {
-        return $this->assigned_date;
-    }
-
-    public function getAssignedBy(): ?int
-    {
-        return $this->assigned_by;
-    }
 }

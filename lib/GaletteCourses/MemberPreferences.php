@@ -95,26 +95,6 @@ class MemberPreferences
     }
 
     /**
-     * Filter a list of email recipients, keeping only those who opted in
-     *
-     * @param array<string, string> $recipients      [email => name]
-     * @param array<string, int>    $emailToMemberId [email => member_id]
-     * @return array<string, string> filtered recipients
-     */
-    public function filterOptedInRecipients(array $recipients, array $emailToMemberId): array
-    {
-        $filtered = [];
-        foreach ($recipients as $email => $name) {
-            $memberId = $emailToMemberId[$email] ?? null;
-            // If member is unknown or has notifications enabled (default = true), include them
-            if ($memberId === null || $this->isNotificationsEnabled($memberId)) {
-                $filtered[$email] = $name;
-            }
-        }
-        return $filtered;
-    }
-
-    /**
      * Get or create an unsubscribe token for a member.
      * If the member has no row yet, a row is created with notifications enabled.
      */
@@ -192,37 +172,5 @@ class MemberPreferences
             return false;
         }
         return $this->setNotificationsEnabled($memberId, false);
-    }
-
-    /**
-     * Get member IDs that have notifications enabled from a list
-     *
-     * @param int[] $memberIds
-     * @return int[] member IDs with notifications enabled
-     */
-    public function getOptedInMemberIds(array $memberIds): array
-    {
-        if (empty($memberIds)) {
-            return [];
-        }
-        try {
-            // Opt-out system: members with no row are opted in by default.
-            // Exclude only those who explicitly disabled notifications.
-            $select = $this->zdb->select(self::TABLE);
-            $select->where->in('member_id', $memberIds);
-            $select->where(['notifications_enabled' => 0]);
-            $results = $this->zdb->execute($select);
-            $optedOut = [];
-            foreach ($results as $r) {
-                $optedOut[] = (int)$r->member_id;
-            }
-            return array_values(array_diff($memberIds, $optedOut));
-        } catch (Throwable $e) {
-            Analog::log(
-                'Error getting opted-in members: ' . $e->getMessage(),
-                Analog::ERROR
-            );
-            return $memberIds; // fallback: include all on error
-        }
     }
 }

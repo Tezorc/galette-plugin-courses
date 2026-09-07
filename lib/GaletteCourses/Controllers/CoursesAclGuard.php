@@ -89,24 +89,6 @@ trait CoursesAclGuard
     }
 
     /**
-     * Deny unless the logged-in user is admin or staff.
-     */
-    protected function denyUnlessAdminOrStaff(
-        Response $response,
-        string $redirectUrl,
-        ?string $errorMessage = null
-    ): ?Response {
-        if ($this->login->isAdmin() || $this->login->isStaff()) {
-            return null;
-        }
-        $this->flash->addMessage(
-            'error_detected',
-            $errorMessage ?? _T('You do not have permission to perform this action.', 'courses')
-        );
-        return $response->withStatus(302)->withHeader('Location', $redirectUrl);
-    }
-
-    /**
      * Deny unless the logged-in user can author events: admin, staff, group
      * manager, or any member affected as instructor on at least one session
      * (Phase 46). Edit rights on a specific event are still gated downstream

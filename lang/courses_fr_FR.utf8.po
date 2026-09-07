@@ -36,12 +36,6 @@ msgstr "[Cours] Inscription par le staff"
 msgid "[Courses] Member joined waitlist"
 msgstr "[Cours] Ajout en liste d'attente"
 
-msgid "Warning: you are already registered for another session at the same time on this day."
-msgstr "Attention : vous êtes déjà inscrit(e) à une autre séance au même créneau horaire ce jour."
-
-msgid "Warning: this linked member is already registered for another session at the same time on this day."
-msgstr "Attention : ce membre rattaché est déjà inscrit à une autre séance au même créneau horaire ce jour."
-
 msgid "You are already registered for another session at the same time on this day. Registration is not allowed."
 msgstr "Vous êtes déjà inscrit(e) à une autre séance au même créneau horaire ce jour-là. Inscription impossible."
 
@@ -114,10 +108,6 @@ msgstr "[Cours] Courriel envoyé"
 msgid "[Courses] Email send failed"
 msgstr "[Cours] Échec d'envoi du courriel"
 
-# --- Menu & navigation ---
-msgid "Courses"
-msgstr "Cours"
-
 msgid "Events"
 msgstr "Événements"
 
@@ -174,9 +164,6 @@ msgstr "Mes notifications"
 
 msgid "Your created courses and events"
 msgstr "Vos cours et événements créés"
-
-msgid "View your bookings and book your upcoming classes"
-msgstr "Voir mes inscriptions et m'inscrire aux prochaines séances"
 
 msgid "Register for sessions and view your registrations"
 msgstr "S'inscrire aux séances et consulter mes inscriptions"
@@ -261,9 +248,6 @@ msgstr "Planification"
 msgid "Price"
 msgstr "Prix"
 
-msgid "Unregistration deadline (days before)"
-msgstr "Délai de désinscription (jours avant)"
-
 msgid "Registration closes (days before session)"
 msgstr "Inscription fermée (jours avant la séance)"
 
@@ -311,9 +295,6 @@ msgstr "Date de fin de récurrence (optionnelle)"
 
 msgid "Start date"
 msgstr "Date de début"
-
-msgid "Date of the session (only at creation)"
-msgstr "Date de la séance (uniquement à la création)"
 
 msgid "First occurrence date - defines the recurrence pattern"
 msgstr "Date de la première occurrence - définit le schéma de récurrence"
@@ -400,9 +381,6 @@ msgstr "Date"
 msgid "Created"
 msgstr "Créé le"
 
-msgid "Time"
-msgstr "Horaire"
-
 msgid "Actions"
 msgstr "Actions"
 
@@ -418,12 +396,6 @@ msgid "%1$s event"
 msgid_plural "%1$s events"
 msgstr[0] "%1$s événement"
 msgstr[1] "%1$s événements"
-
-msgid "Search"
-msgstr "Rechercher"
-
-msgid "Name, description, location..."
-msgstr "Nom, description, lieu..."
 
 msgid "All types"
 msgstr "Tous les types"
@@ -473,9 +445,6 @@ msgstr "Du"
 
 msgid "Until"
 msgstr "Au"
-
-msgid "yyyy-mm-dd format"
-msgstr "format aaaa-mm-jj"
 
 msgid "Event"
 msgstr "Événement"
@@ -551,21 +520,11 @@ msgstr "Tout exporter en iCal"
 msgid "You have no registrations yet."
 msgstr "Vous n'avez aucune inscription pour le moment."
 
-msgid "Browse available sessions"
-msgstr "Parcourir les séances disponibles"
-
 msgid "No registration"
 msgstr "Aucune inscription"
 
-# --- Statistics ---
-msgid "Active members"
-msgstr "Membres actifs"
-
 msgid "Active members by period"
 msgstr "Membres actifs sur une période"
-
-msgid "until"
-msgstr "au"
 
 msgid "members"
 msgstr "membres"
@@ -642,17 +601,11 @@ msgstr "Total des inscriptions"
 msgid "Registrations by month"
 msgstr "Inscriptions par mois"
 
-msgid "Month"
-msgstr "Mois"
-
 msgid "Recent member activity"
 msgstr "Activité récente des membres"
 
 msgid "Last participation"
 msgstr "Dernière participation"
-
-msgid "Total sessions"
-msgstr "Total des séances"
 
 # --- Controller messages ---
 msgid "Session not found."
@@ -750,17 +703,11 @@ msgstr "Une erreur est survenue lors de l'inscription."
 msgid "Registration not found."
 msgstr "Inscription introuvable."
 
-msgid "The unregistration deadline has passed."
-msgstr "Le délai de désinscription est dépassé."
-
 msgid "You have been unregistered successfully."
 msgstr "Votre désinscription a bien été prise en compte."
 
 msgid "An error occurred during unregistration."
 msgstr "Une erreur est survenue lors de la désinscription."
-
-msgid "Your membership must be up to date to join the waitlist."
-msgstr "Votre adhésion doit être à jour pour rejoindre la liste d'attente."
 
 msgid "You are already on the waitlist for this session."
 msgstr "Vous êtes déjà sur la liste d'attente pour cette séance."
@@ -815,74 +762,6 @@ msgstr "Membre inconnu"
 msgid "Administrator"
 msgstr "Administrateur"
 
-msgid "Unregistration deadline"
-msgstr "Délai de désinscription"
-
-#, php-format
-msgid "%d days before the session"
-msgstr "%d jours avant la séance"
-
-# --- Email notifications ---
-#, php-format
-msgid "[Courses] Event submitted for validation: "
-msgstr "[Cours] Événement soumis pour validation : "
-
-#, php-format
-msgid ""
-"The event \"%s\" has been submitted for validation by %s.\n"
-"\n"
-"Please review and validate or reject it from the event management page."
-msgstr ""
-"L'événement \"%s\" a été soumis pour validation par %s.\n"
-"\n"
-"Merci de le consulter et de le valider ou rejeter depuis la page de gestion des événements."
-
-#, php-format
-msgid "[Courses] Your event has been validated: "
-msgstr "[Cours] Votre événement a été validé : "
-
-#, php-format
-msgid "Your event \"%s\" has been validated and is now visible to members."
-msgstr "Votre événement \"%s\" a été validé et est maintenant visible par les membres."
-
-#, php-format
-msgid "[Courses] Your event has been rejected: "
-msgstr "[Cours] Votre événement a été rejeté : "
-
-#, php-format
-msgid "Your event \"%s\" has been rejected. It has been set back to draft status so you can modify and resubmit it."
-msgstr "Votre événement \"%s\" a été rejeté. Il a été remis en brouillon afin que vous puissiez le modifier et le resoumettre."
-
-#, php-format
-msgid "Location: "
-msgstr "Lieu : "
-
-#, php-format
-msgid "[Courses] You have been registered: "
-msgstr "[Cours] Vous avez été inscrit : "
-
-#, php-format
-msgid ""
-"A spot has opened up for the session \"%s\" on %s (%s).\n"
-"\n"
-"You have been automatically registered from the waitlist. Log in to Galette to view your registrations."
-msgstr ""
-"Une place s'est libérée pour la séance \"%s\" le %s (%s).\n"
-"\n"
-"Vous avez été automatiquement inscrit depuis la liste d'attente. Connectez-vous à Galette pour voir vos inscriptions."
-
-#, php-format
-msgid "[Courses] Session cancelled: "
-msgstr "[Cours] Séance annulée : "
-
-#, php-format
-msgid "The session for \"%s\" on %s (%s) has been cancelled."
-msgstr "La séance de \"%s\" le %s (%s) a été annulée."
-
-# --- UI improvements ---
-msgid "Your next session"
-msgstr "Votre prochaine séance"
-
 msgid "Upcoming"
 msgstr "À venir"
 
@@ -906,9 +785,6 @@ msgstr "Par date"
 
 msgid "By course"
 msgstr "Par cours"
-
-msgid "My courses only"
-msgstr "Mes cours uniquement"
 
 # --- Group restrictions ---
 msgid "Restrict to specific groups"
@@ -963,9 +839,6 @@ msgstr "Moniteur introuvable."
 msgid "Please select a member."
 msgstr "Veuillez sélectionner un membre."
 
-msgid "No instructor assigned"
-msgstr "Aucun moniteur assigné"
-
 msgid "Cancel session"
 msgstr "Annuler la séance"
 
@@ -1014,9 +887,6 @@ msgstr "Une erreur est survenue lors de l'annulation de la séance."
 msgid "This session cannot be cancelled."
 msgstr "Cette séance ne peut pas être annulée."
 
-msgid "Are you sure you want to cancel this session?"
-msgstr "Êtes-vous sûr de vouloir annuler cette séance ?"
-
 # --- Gestion liste d'attente (admin) ---
 msgid "Waitlist management"
 msgstr "Gestion de la liste d'attente"
@@ -1044,9 +914,6 @@ msgstr "La capacité ne peut pas être diminuée (actuelle : %d)."
 
 msgid "Session capacity updated."
 msgstr "Capacité de la séance mise à jour."
-
-msgid "%d session(s) were not updated: their current registrations exceed the new capacity."
-msgstr "%d séance(s) non mises à jour : le nombre d'inscrits dépasse la nouvelle capacité."
 
 msgid "Promote the next person on the waitlist"
 msgstr "Promouvoir la prochaine personne de la liste d'attente"
@@ -1099,20 +966,11 @@ msgstr "Ce membre est déjà inscrit à cette séance."
 msgid "No eligible member to register."
 msgstr "Aucun membre éligible à inscrire."
 
-msgid "Register for"
-msgstr "Inscrire"
-
 msgid "Myself"
 msgstr "Moi-même"
 
 msgid "Register a linked member"
 msgstr "Inscrire un membre lié"
-
-msgid "Select a linked member to register"
-msgstr "Sélectionner un membre lié à inscrire"
-
-msgid "No linked member eligible for this session (already registered or not in the required group)."
-msgstr "Aucun membre lié éligible pour cette séance (déjà inscrit ou n'appartenant pas au groupe requis)."
 
 msgid "You can only register your own linked members."
 msgstr "Vous ne pouvez inscrire que vos propres membres liés."
@@ -1194,9 +1052,6 @@ msgstr "Commentaire : "
 msgid "Nickname"
 msgstr "Surnom"
 
-msgid "Event type"
-msgstr "Type d'événement"
-
 #, php-format
 msgid "%1$s registration"
 msgid_plural "%1$s registrations"
@@ -1212,9 +1067,6 @@ msgstr "Absent (excusé)"
 
 msgid "Present (unregistered)"
 msgstr "Présent (non inscrit)"
-
-msgid "This member does not belong to a required group for this event."
-msgstr "Ce membre n'appartient pas à un groupe requis pour cet événement."
 
 msgid "You do not belong to a required group for this event."
 msgstr "Vous n'appartenez pas à un groupe requis pour cet événement."
@@ -1258,9 +1110,6 @@ msgstr "Lorsqu'elles sont activées, des notifications par courriel sont envoyé
 
 msgid "Club closure dates"
 msgstr "Périodes de fermeture du club"
-
-msgid "Sessions will not be generated automatically on these dates."
-msgstr "Les séances ne seront pas générées automatiquement sur ces périodes."
 
 msgid "Recurring sessions falling on these dates will be created as cancelled with the reason shown below (e.g. \"Annual closure\", \"Competition\", \"AGM\")."
 msgstr "Les séances récurrentes tombant sur ces dates seront créées en statut Annulé avec le motif indiqué ci-dessous (ex. « Fermeture annuelle », « Concours », « AG »)."
@@ -1325,9 +1174,6 @@ msgstr "Toutes les activités"
 msgid "No session matches your filters."
 msgstr "Aucune séance ne correspond à vos filtres."
 
-msgid "Description, location..."
-msgstr "Description, lieu..."
-
 # --- Préférences notifications membre ---
 msgid "Email notifications"
 msgstr "Notifications par courriel"
@@ -1352,9 +1198,6 @@ msgstr "Passée"
 
 msgid "Present"
 msgstr "Présences"
-
-msgid "Cancelled sessions"
-msgstr "Séances annulées"
 
 msgid "This session has been cancelled."
 msgstr "Cette séance a été annulée."
@@ -1481,9 +1324,6 @@ msgstr "Réinitialiser ce modèle au texte par défaut ?"
 
 msgid "See default text"
 msgstr "Voir le texte par défaut"
-
-msgid "or"
-msgstr "ou"
 
 msgid "Email template saved."
 msgstr "Modèle de courriel enregistré."
@@ -1706,17 +1546,8 @@ msgstr "Vous pouvez réactiver les notifications à tout moment depuis vos préf
 msgid "You receive this email because you are a member."
 msgstr "Vous recevez ce courriel car vous êtes adhérent."
 
-msgid "To stop receiving these notifications: "
-msgstr "Pour ne plus recevoir ces notifications : "
-
 msgid "Unsubscribe from notifications:"
 msgstr "Se désinscrire des notifications :"
-
-msgid "My courses"
-msgstr "Mes cours"
-
-msgid "Courses management"
-msgstr "Gestion des cours"
 
 msgid "Registrations management"
 msgstr "Gestion inscriptions"
@@ -1835,9 +1666,6 @@ msgstr "La capacité ne peut pas être modifiée sur une séance passée."
 msgid "Session open for registration (no instructor yet)"
 msgstr "Séance ouverte aux inscriptions (sans moniteur pour le moment)"
 
-msgid "Sent to eligible members when a session is created on an event that allows registration without an assigned instructor. Skipped when an instructor is already volunteering — REF_INSTRUCTOR_ASSIGNED is used instead."
-msgstr "Envoyé aux membres éligibles lorsqu'une séance est créée sur un événement qui autorise les inscriptions sans moniteur affecté. Ignoré lorsqu'un moniteur s'est déjà porté volontaire — REF_INSTRUCTOR_ASSIGNED est utilisé à la place."
-
 msgid "[Courses] Séance ouverte aux inscriptions : {event_name}"
 msgstr "[Cours] Séance ouverte aux inscriptions – {event_name}"
 
@@ -1890,16 +1718,6 @@ msgstr "[Cours] Inscription annulée par le staff/moniteur"
 
 msgid "You do not have permission to cancel this registration."
 msgstr "Vous n'avez pas la permission d'annuler cette inscription."
-
-# --- Phase 47 : avertissement cotisation sur "Mes inscriptions" ---
-
-#, php-format
-msgid "Membership not up to date for: %s. Registration will not be possible until the membership is renewed."
-msgstr "Cotisation non à jour pour : %s. L'inscription ne sera pas possible tant que la cotisation n'aura pas été renouvelée."
-
-#, php-format
-msgid "Membership not up to date for: %s. Registration will not be possible until the memberships are renewed."
-msgstr "Cotisation non à jour pour : %s. L'inscription ne sera pas possible tant que les cotisations n'auront pas été renouvelées."
 
 # --- Phase 48 : detection passive des inscriptions hors groupe ---
 

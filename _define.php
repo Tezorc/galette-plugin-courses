@@ -89,6 +89,8 @@ $this->register(
         'coursesDoProxyUnregister'   => 'member',
         'coursesDoParentRegister'    => 'member',
         'coursesDoParentUnregister'  => 'member',
+        'coursesDoParentWaitlist'    => 'member',
+        'coursesDoParentLeaveWaitlist' => 'member',
         'coursesSessionEdit'            => 'member',
         'coursesDoSessionEdit'          => 'member',
         'coursesDoSessionCapacity'      => 'member',

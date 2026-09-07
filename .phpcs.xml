@@ -2,21 +2,17 @@
 <ruleset>
     <description>Coding standard based on PSR12 with comments from PEAR for Galette</description>
 
-    <file>galette/lib/</file>
-    <file>galette/webroot/index.php</file>
-    <file>galette/webroot/installer.php</file>
-    <file>galette/webroot/compat_test.php</file>
-    <file>galette/includes/</file>
-    <file>galette/install/</file>
-    <file>tests/TestsBootstrap.php</file>
-    <file>tests/lib/</file>
-    <file>tests/Galette/</file>
-    <file>tests/GaletteDbFails/</file>
-    <file>tests/GaletteUpdate/</file>
-    <file>tests/plugins/</file>
+    <!-- Chemins du plugin. La CI passe deja `lib/ ./*.php` en argument, ce qui
+         prend le pas sur cette liste ; elle sert a rendre un `phpcs` nu, lance
+         depuis la racine du plugin, equivalent a ce que fait la CI. -->
+    <file>lib/</file>
+    <file>tests/</file>
+    <file>_config.inc.php</file>
+    <file>_define.php</file>
+    <file>_routes.php</file>
 
     <exclude-pattern>/.git/</exclude-pattern>
-    <exclude-pattern type="relative">^galette_tcpdf_config.php$</exclude-pattern>
+    <exclude-pattern>/vendor/</exclude-pattern>
 
     <arg name="warning-severity" value="0" /><!-- no warning -->
     <arg value="p" /><!-- show progress -->

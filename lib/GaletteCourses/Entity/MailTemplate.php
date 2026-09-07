@@ -142,10 +142,6 @@ class MailTemplate
 
     // --- Getters / Setters ---
 
-    public function getRef(): string
-    {
-        return $this->ref;
-    }
     public function getSubject(): string
     {
         return $this->subject;
@@ -153,10 +149,6 @@ class MailTemplate
     public function getBody(): string
     {
         return $this->body;
-    }
-    public function getLang(): string
-    {
-        return $this->lang;
     }
     public function isCustomized(): bool
     {
