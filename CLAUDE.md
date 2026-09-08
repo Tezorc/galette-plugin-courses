@@ -32,6 +32,17 @@ vers `origin` puis un `git pull` dans ce clone, suivi de deux gestes :
 - si `dbver` a bouge, verifier que la migration est passee :
   `docker exec galette-mysql-nightly mysql -ugalette -pgalette galette -e "SELECT * FROM galette_plugins"`.
 
+La stack porte aussi un service `cron-nightly` (conteneur
+`galette-cron-nightly`) : busybox crond dans une alpine, qui appelle
+`/plugins/courses/cron/generate-sessions?token=...` tous les jours a 03:15,
+heure de Paris. Un seul appel suffit, cet endpoint enchaine les trois etapes.
+Le crontab est dans `C:\dev\galette-nightly\cron\crontab` (monte en lecture
+seule) ; le modifier demande un `docker compose restart cron-nightly`. Deux
+pieges quand on relit les journaux : le conteneur cron est a l'heure de Paris
+alors que Galette journalise en **UTC**, donc une meme execution apparait a
+deux heures differentes ; et regenerer le jeton depuis les preferences
+invalide le crontab, qui le porte en dur.
+
 `dev-galette-1.3` = `main` + une couche d'adaptation 1.3 :
 `_routes.php` (`Authenticate::class` au lieu de `$authenticate`),
 `PluginGaletteCourses` (interfaces `*ProviderInterface` et methodes d'instance
