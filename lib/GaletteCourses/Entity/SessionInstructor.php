@@ -39,7 +39,6 @@ class SessionInstructor
     private int $id;
     private int $session_id;
     private int $member_id;
-    private string $assigned_date;
     private ?int $assigned_by = null;
 
     /**
@@ -81,7 +80,6 @@ class SessionInstructor
         $this->id = (int)$rs->{self::PK};
         $this->session_id = (int)$rs->session_id;
         $this->member_id = (int)$rs->member_id;
-        $this->assigned_date = (string)$rs->assigned_date;
         $this->assigned_by = $rs->assigned_by !== null ? (int)$rs->assigned_by : null;
     }
 
