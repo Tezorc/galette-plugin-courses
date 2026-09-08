@@ -19,8 +19,8 @@ La base de test est une stack Docker (`docker compose up -d` dans
 `C:\dev\galette-nightly`) : Galette sur <http://localhost:8090>, MySQL 8.4,
 phpMyAdmin sur 8091. Le plugin n'y est pas copie mais **monte en bind** depuis
 le clone `C:\dev\galette-plugin-courses` vers
-`/var/www/html/galette/plugins/courses`. Deployer s'y resume donc a un
-`git pull` dans ce clone, suivi de deux gestes :
+`/var/www/html/galette/plugins/courses`. Deployer s'y resume donc a un push
+vers `origin` puis un `git pull` dans ce clone, suivi de deux gestes :
 
 - vider le cache Twig, sinon la page peut servir un gabarit compile perime :
   `MSYS_NO_PATHCONV=1 docker exec galette-nightly rm -rf /var/www/html/galette/data/cache/v1.3-dev/templates` ;
@@ -68,8 +68,18 @@ git cherry -v dev-galette-1.3 main
 
 ### Deployer
 
-**Base de test (1.3)** : `git pull` dans `C:\dev\galette-plugin-courses`, qui
-est monte en bind dans le conteneur. Puis vider le cache Twig (voir plus haut).
+**Base de test (1.3)** : le clone `C:\dev\galette-plugin-courses` tire depuis
+GitHub, pas depuis ce depot-ci. **Pousser d'abord**, sinon le `git pull` ne
+ramene rien et le deploiement passe pour fait alors que le conteneur sert
+toujours le code de la veille :
+
+```sh
+git push origin main dev-galette-1.3
+git -C /c/dev/galette-plugin-courses pull --ff-only
+```
+
+Le clone reste sur `dev-galette-1.3` et est monte en bind dans le conteneur, il
+n'y a donc rien a copier. Puis vider le cache Twig (voir plus haut).
 
 **Production (1.2)** : produire une archive depuis `main` sans toucher a l'arbre
 de travail, et la transferer sur le serveur.
