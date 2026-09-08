@@ -23,7 +23,12 @@ le clone `C:\dev\galette-plugin-courses` vers
 `git pull` dans ce clone, suivi de deux gestes :
 
 - vider le cache Twig, sinon la page peut servir un gabarit compile perime :
-  `docker exec galette-nightly rm -rf /var/www/html/galette/data/cache/v1.3-dev/templates` ;
+  `MSYS_NO_PATHCONV=1 docker exec galette-nightly rm -rf /var/www/html/galette/data/cache/v1.3-dev/templates` ;
+  le prefixe n'est pas decoratif : sans lui, Git Bash reecrit `/var/www/...` en
+  `C:/Program Files/Git/var/www/...` avant de passer l'argument au conteneur, et
+  `rm -rf` supprime un chemin inexistant en sortant tranquillement en 0. Le cache
+  reste en place et rien ne le signale. Verifier apres coup que `templates/` a
+  bien disparu de `.../cache/v1.3-dev/`.
 - si `dbver` a bouge, verifier que la migration est passee :
   `docker exec galette-mysql-nightly mysql -ugalette -pgalette galette -e "SELECT * FROM galette_plugins"`.
 
