@@ -1113,6 +1113,80 @@ class RegistrationsController extends AbstractController
             }
         }
 
+        // Signalement passif des inscriptions hors groupe, pendant de ce qui
+        // existe sur "Mes inscriptions" (Phase 48) et sur la fiche de seance :
+        // une inscription n'est verifiee qu'a sa prise, et un changement de
+        // groupe ulterieur ne la remet pas en cause. Meme regle qu'a
+        // l'inscription : appartenance directe a groups_members, sans expansion
+        // foyer. Restreint aux lignes encore actionnables (seance a venir et non
+        // annulee, inscription non annulee) : le reste n'appelle aucun geste.
+        $out_of_group_regs = []; // [registration_id => true]
+        $event_groups_map = []; // [event_id => [group_id, ...]]
+        foreach ($events as $eid => $ev) {
+            $ev->loadGroups();
+            $groups = $ev->getGroups();
+            if (!empty($groups)) {
+                $event_groups_map[$eid] = $groups;
+            }
+        }
+        if (!empty($event_groups_map) && !empty($members)) {
+            $required_groups = [];
+            foreach ($event_groups_map as $groups) {
+                foreach ($groups as $gid) {
+                    $required_groups[$gid] = true;
+                }
+            }
+            $member_groups = []; // [member_id => [group_id => true]]
+            $group_check_ok = true;
+            try {
+                $sel = $this->zdb->select('groups_members');
+                $sel->columns(['id_adh', 'id_group']);
+                $sel->where->in('id_adh', array_keys($members));
+                $sel->where->in('id_group', array_keys($required_groups));
+                foreach ($this->zdb->execute($sel) as $r) {
+                    $member_groups[(int)$r->id_adh][(int)$r->id_group] = true;
+                }
+            } catch (\Throwable $e) {
+                // Sans reponse fiable, ne rien signaler : marquer tout le monde
+                // hors groupe serait pire que ne rien dire.
+                $group_check_ok = false;
+                Analog::log(
+                    'Error checking member groups for out-of-group flag on registrations list: '
+                        . $e->getMessage(),
+                    Analog::ERROR
+                );
+            }
+            $today = date('Y-m-d');
+            if ($group_check_ok) {
+                foreach ($registrations as $reg) {
+                    if ($reg->getId() === null || $reg->getStatus() === Registration::STATUS_CANCELLED) {
+                        continue;
+                    }
+                    $session = $sessions[$reg->getSessionId()] ?? null;
+                    if ($session === null
+                        || $session->getSessionDate() < $today
+                        || $session->getStatus() === Session::STATUS_CANCELLED
+                    ) {
+                        continue;
+                    }
+                    $groups = $event_groups_map[$session->getEventId()] ?? null;
+                    if ($groups === null) {
+                        continue; // evenement sans restriction de groupe
+                    }
+                    $in_any_group = false;
+                    foreach ($groups as $gid) {
+                        if (isset($member_groups[$reg->getMemberId()][$gid])) {
+                            $in_any_group = true;
+                            break;
+                        }
+                    }
+                    if (!$in_any_group) {
+                        $out_of_group_regs[$reg->getId()] = true;
+                    }
+                }
+            }
+        }
+
         $this->session->$filter_name = $filters;
 
         $this->view->render(
@@ -1125,6 +1199,7 @@ class RegistrationsController extends AbstractController
                 'events' => $events,
                 'members' => $members,
                 'nicknames' => $nicknames,
+                'out_of_group_regs' => $out_of_group_regs,
                 'event_types' => EventType::getList($this->zdb),
                 'available_names' => $available_names,
                 'nb' => $regs_repo->getCount(),

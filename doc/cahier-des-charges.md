@@ -741,6 +741,52 @@ l'affiche comme tout le monde. Celui qui pointe n'a aucun moyen de le voir.
   d'annulation deja present. Tests 113/113 verts, balances Twig stables
   (95/95 `if`, 21/21 `for`, 2/2 `block`).
 
+### Evolution - Inscrits hors groupe signales sur la liste des inscriptions
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : « idem sur cette vue pour la notification "hors groupe"
+  plugins/courses/registrations ». Troisieme et dernier ecran ou la liste des
+  inscrits se lit sans que le changement de groupe se voie : apres *Mes
+  inscriptions* (Phase 48) et la fiche de seance, la table **Gestion des
+  inscriptions**.
+
+#### Correction
+
+- `RegistrationsController::list` : construction de `$out_of_group_regs`
+  (`[registration_id => true]`) apres le chargement des seances, evenements et
+  noms. La page pouvant melanger plusieurs evenements, le calcul passe par une
+  map `[event_id => [group_id]]` (`loadGroups()` sur les evenements deja
+  charges), puis **une seule** requete `groups_members` bornee aux membres de la
+  page et aux groupes reellement exiges. Court-circuit si aucun evenement de la
+  page n'est restreint.
+- Regle de comparaison identique aux deux autres ecrans : appartenance
+  **directe**, sans expansion foyer — donc exactement ce que verifierait une
+  inscription prise aujourd'hui.
+- Contrairement a la fiche de seance, filtrage sur les lignes encore
+  actionnables : seance a venir, seance non annulee, inscription non annulee.
+  La fiche de seance ne filtre pas parce qu'on l'ouvre pour corriger un
+  pointage ; cette liste-ci balaie tout l'historique, et marquer une inscription
+  de l'an dernier n'appellerait aucun geste.
+- Echec SQL : `$group_check_ok = false`, aucun marquage. Meme choix qu'ailleurs —
+  se taire plutot que marquer tout le monde. Note : `myRegistrations` (Phase 48)
+  journalise l'erreur mais laisse `$member_groups` vide, ce qui marque tout le
+  monde ; ce comportement n'a pas ete aligne ici, il est signale pour memoire.
+- `registrations_list.html.twig` : badge orange « Hors groupe » (icone triangle
+  + tooltip) a cote du nom, bandeau orange avec compteur `_Tn` au-dessus du
+  tableau. Aucun gate de visibilite : la route `coursesRegistrations` est deja
+  `groupmanager` dans `_define.php`, tout lecteur de cette page gere des
+  inscriptions — contrairement a la fiche de seance, visible de tout membre
+  depuis la Phase 72 et qui a donc besoin de `can_see_out_of_group`.
+- Le compteur du bandeau porte sur la **page** affichee, la liste etant paginee ;
+  le libelle le dit explicitement (« sur cette page »), au lieu de laisser croire
+  a un total.
+
+- Une nouvelle chaine i18n plurielle (les deux autres, « Out of group » et le
+  tooltip, sont reutilisees telles quelles depuis la fiche de seance), `.po` +
+  `.mo` recompile. Aucune migration BDD, aucun courriel, aucune desinscription
+  automatique.
+
 ### Evolution - L'URL de la tache cron etait un chemin, pas une URL
 
 **Statut :** TERMINEE

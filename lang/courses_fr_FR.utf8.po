@@ -1747,6 +1747,14 @@ msgid_plural "%d registered members no longer belong to a required group for thi
 msgstr[0] "%d inscrit n'appartient plus à un groupe requis pour cet événement (signalé ci-dessous)."
 msgstr[1] "%d inscrits n'appartiennent plus à un groupe requis pour cet événement (signalés ci-dessous)."
 
+# --- Signalement hors groupe sur la liste des inscriptions ---
+
+#, php-format
+msgid "%d upcoming registration on this page involves a member who no longer belongs to a required group (marked below)."
+msgid_plural "%d upcoming registrations on this page involve members who no longer belong to a required group (marked below)."
+msgstr[0] "%d inscription à venir sur cette page concerne un membre qui n'appartient plus à un groupe requis (signalée ci-dessous)."
+msgstr[1] "%d inscriptions à venir sur cette page concernent des membres qui n'appartiennent plus à un groupe requis (signalées ci-dessous)."
+
 # --- Phase 49 : proxy-register bascule waitlist sur seance pleine ---
 
 msgid "This session is full and the member is already on the waitlist."
