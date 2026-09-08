@@ -1163,7 +1163,8 @@ class RegistrationsController extends AbstractController
                         continue;
                     }
                     $session = $sessions[$reg->getSessionId()] ?? null;
-                    if ($session === null
+                    if (
+                        $session === null
                         || $session->getSessionDate() < $today
                         || $session->getStatus() === Session::STATUS_CANCELLED
                     ) {
