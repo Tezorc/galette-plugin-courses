@@ -63,7 +63,6 @@ class Event
     private ?int $register_deadline_days = null;
     private int $creator_id = 0;
     private string $creation_date = '';
-    private ?string $modification_date = null;
 
     /** @var array<int> */
     private array $groups = [];
@@ -131,7 +130,6 @@ class Event
         $this->register_deadline_days = $rs->register_deadline_days !== null ? (int)$rs->register_deadline_days : null;
         $this->creator_id = (int)$rs->creator_id;
         $this->creation_date = (string)$rs->creation_date;
-        $this->modification_date = $rs->modification_date !== null ? (string)$rs->modification_date : null;
         $this->groups_loaded = false;
     }
 
