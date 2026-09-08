@@ -282,6 +282,48 @@ class SessionsController extends AbstractPluginController
             $instructor_members[$mid] = $memberDisplay[$mid]['sname'] ?? $unknown;
         }
 
+        // Detection passive des inscriptions hors groupe, pendant de la Phase 48
+        // cote adherent ("Mes inscriptions") : un membre inscrit avant d'avoir
+        // change de groupe reste dans la liste, et rien ne le signalait a celui
+        // qui fait le pointage. Meme regle qu'a l'inscription (appartenance
+        // directe a groups_members, sans expansion foyer) : c'est exactement ce
+        // que doRegister/doRegisterChild verifient, donc un membre marque ici
+        // n'obtiendrait plus l'inscription aujourd'hui.
+        $out_of_group_regs = [];
+        if (!empty($eventGroupIds) && !empty($registrations)) {
+            $reg_member_ids = [];
+            foreach ($registrations as $reg) {
+                $reg_member_ids[$reg->getMemberId()] = true;
+            }
+            $in_required_group = [];
+            $group_check_ok = true;
+            try {
+                $select = $this->zdb->select('groups_members');
+                $select->columns(['id_adh']);
+                $select->where->in('id_adh', array_keys($reg_member_ids));
+                $select->where->in('id_group', $eventGroupIds);
+                foreach ($this->zdb->execute($select) as $row) {
+                    $in_required_group[(int)$row->id_adh] = true;
+                }
+            } catch (\Throwable $e) {
+                // Sans reponse fiable, ne rien signaler : marquer tout le monde
+                // hors groupe serait pire que ne rien dire.
+                $group_check_ok = false;
+                Analog::log(
+                    'Error checking member groups for out-of-group flag on session #' . $id
+                        . ': ' . $e->getMessage(),
+                    Analog::ERROR
+                );
+            }
+            if ($group_check_ok) {
+                foreach ($registrations as $reg) {
+                    if ($reg->getId() !== null && !isset($in_required_group[$reg->getMemberId()])) {
+                        $out_of_group_regs[$reg->getId()] = true;
+                    }
+                }
+            }
+        }
+
         $has_instructor = SessionInstructor::hasInstructor($this->zdb, $id);
         $is_instructor = $is_instructor_for_load;
         $is_session_manager = $is_session_manager_load;
@@ -521,6 +563,7 @@ class SessionsController extends AbstractPluginController
                 'registrations' => $registrations,
                 'members' => $members,
                 'nicknames' => $nicknames,
+                'out_of_group_regs' => $out_of_group_regs,
                 'is_registered' => $is_registered,
                 'is_on_waitlist' => $is_on_waitlist,
                 'waitlist_position' => $waitlist_position,
