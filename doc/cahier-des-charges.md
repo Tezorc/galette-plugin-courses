@@ -681,6 +681,57 @@ Ces tests ont ete valides par mutation : casser le dedup par `session_id`, la br
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Evolution - Inscrits hors groupe signales sur la fiche seance (pointage)
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : « pour le controle des inscrits mais qui ont change de
+  groupe de la course/session dans la liste des Membres inscrits ». La Phase 48
+  avait pose ce signalement cote adherent (page *Mes inscriptions*) ; il
+  manquait cote gestion, la ou il sert au moment du pointage.
+
+#### Constat
+
+Une inscription est valide au moment ou elle est prise : `doRegister` /
+`doRegisterChild` / le proxy verifient l'appartenance directe du membre a l'un
+des groupes de l'evenement (`groups_members`). Rien ne revient sur cette
+verification ensuite. Un adherent qui change de groupe apres coup — passage de
+niveau, changement de section — reste inscrit, et la liste « Membres inscrits »
+l'affiche comme tout le monde. Celui qui pointe n'a aucun moyen de le voir.
+
+#### Correction
+
+- `SessionsController::show` : construction de `$out_of_group_regs`
+  (`[registration_id => true]`) apres le chargement des noms. Reutilise
+  `$eventGroupIds` deja charge pour le bloc Information, donc pas de
+  `loadGroups()` supplementaire. Une **unique** requete
+  `SELECT id_adh FROM galette_groups_members WHERE id_adh IN (inscrits) AND
+  id_group IN (groupes de l'evenement)` materialise l'ensemble des inscrits
+  encore dans un groupe requis ; le complement est marque. Court-circuit total
+  si l'evenement n'a aucun groupe ou la seance aucun inscrit.
+- Regle identique a celle appliquee a l'inscription : appartenance **directe**,
+  sans expansion foyer (contrairement a `canAccess()`). Un membre marque ici est
+  exactement un membre qui n'obtiendrait plus l'inscription aujourd'hui.
+- Pas de filtre sur la date ni le statut de la seance, contrairement a la Phase
+  48 qui ignorait le passe et l'annule : ici le signal sert precisement le jour
+  de la seance, et la fiche d'une seance passee est celle qu'on rouvre pour
+  corriger un pointage.
+- Echec SQL : `$group_check_ok = false` et **aucun** marquage. Marquer tout le
+  monde hors groupe sur une requete ratee serait pire que se taire.
+- `session_show.html.twig` : nouveau flag `can_see_out_of_group` =
+  `is_session_manager or login.isGroupManager()`. Depuis la Phase 72 la liste
+  des inscrits est visible a tout membre connecte ; l'appartenance de groupe
+  d'un tiers n'a pas a l'etre. Badge orange « Hors groupe » (icone triangle +
+  tooltip) a cote du nom dans les **deux** rendus de la liste — le tableau de
+  pointage et la liste en lecture seule — plus un bandeau orange en tete avec
+  compteur `_Tn`.
+
+- Deux nouvelles chaines i18n (une simple, une plurielle), `.po` + `.mo`
+  recompile. Aucune migration BDD. Signalement passif : aucune desinscription
+  automatique, aucun courriel — la regularisation passe par le bouton **X**
+  d'annulation deja present. Tests 113/113 verts, balances Twig stables
+  (95/95 `if`, 21/21 `for`, 2/2 `block`).
+
 ### Evolution - L'URL de la tache cron etait un chemin, pas une URL
 
 **Statut :** TERMINEE

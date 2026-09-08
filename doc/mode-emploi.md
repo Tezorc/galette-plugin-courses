@@ -654,6 +654,28 @@ Le pointage est disponible pour les **responsables de groupe**, le **staff** et 
 3. Modifier les statuts souhaites
 4. Cliquer sur **"Enregistrer le pointage"**
 
+#### Inscrits qui ont change de groupe
+
+Un adherent s'inscrit alors qu'il appartient au groupe requis par l'evenement,
+puis change de groupe : son inscription, elle, ne bouge pas. Au pointage, il est
+donc toujours dans la liste alors qu'il ne pourrait plus s'y inscrire aujourd'hui.
+
+Sur la fiche de la seance, ces inscriptions portent une etiquette orange **"Hors
+groupe"** a cote du nom, et un bandeau en tete de la liste en annonce le nombre.
+Le controle est le meme que celui applique a l'inscription : appartenance directe
+de l'adherent a l'un des groupes de l'evenement, sans elargissement au foyer. Un
+evenement ouvert a tous n'affiche jamais l'etiquette.
+
+C'est un **signalement, pas un blocage** : rien n'est annule automatiquement,
+personne n'est prevenu par courriel. A vous de decider — pointer la personne
+presente, ou annuler l'inscription avec le bouton rouge **X** (section 20). Le
+meme signalement existe cote adherent, sur sa page *Mes inscriptions*.
+
+L'etiquette n'est visible que par ceux qui gerent la seance (staff,
+administrateurs, responsables de groupe, moniteurs affectes) : l'appartenance de
+groupe d'un adherent n'a pas a s'afficher aux autres membres, qui voient pourtant
+la meme liste depuis la Phase 72.
+
 #### Presence hors inscription (walk-in)
 
 Pour marquer la presence d'un adherent qui n'etait pas inscrit a la seance :
@@ -1410,6 +1432,11 @@ Le pointage est disponible le jour de la seance et apres :
 2. Cliquer sur **"Ajouter"**
 
 L'ajout est **immediat** : il ne passe pas par le bouton *Enregistrer le pointage*. Le membre apparait aussitot dans la liste des inscrits au statut **Présent (non inscrit)**, distinct de *Présent* dans les statistiques, et le compteur d'inscrits augmente. La liste proposee ne contient que des adherents eligibles a la seance (compte actif, cotisation a jour, statut different de "Non membre", groupe requis si l'evenement est restreint) et exclut ceux qui y sont deja inscrits. Ni le pointage ni l'ajout hors inscription n'envoient de courriel.
+
+Une etiquette orange **"Hors groupe"** peut apparaitre a cote d'un nom : cet
+inscrit ne fait plus partie du groupe requis par l'evenement, il a change de
+groupe depuis son inscription. C'est un signalement, pas un blocage — pointez-le
+s'il est la, ou annulez son inscription avec le bouton **X**.
 
 Une ligne a laquelle on ne touche pas reste au statut **Inscrit** : ni presente, ni absente, elle ne compte pas dans le taux de participation. Le message de succes annonce le nombre de **lignes enregistrees**, pas de modifications — pointer deux personnes sur huit affiche « 8 pointage(s) enregistré(s) ».
 

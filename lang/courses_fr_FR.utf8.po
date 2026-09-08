@@ -1736,6 +1736,17 @@ msgid_plural "%d registrations are on events you no longer have access to (group
 msgstr[0] "%d inscription porte sur un événement auquel vous n'avez plus accès (votre appartenance au groupe a changé). Vous pouvez vous désinscrire depuis la carte signalée ci-dessous."
 msgstr[1] "%d inscriptions portent sur des événements auxquels vous n'avez plus accès (votre appartenance au groupe a changé). Vous pouvez vous désinscrire depuis les cartes signalées ci-dessous."
 
+# --- Signalement hors groupe sur la fiche seance (pointage) ---
+
+msgid "This member no longer belongs to a required group for this event."
+msgstr "Ce membre n'appartient plus à un groupe requis pour cet événement."
+
+#, php-format
+msgid "%d registered member no longer belongs to a required group for this event (marked below)."
+msgid_plural "%d registered members no longer belong to a required group for this event (marked below)."
+msgstr[0] "%d inscrit n'appartient plus à un groupe requis pour cet événement (signalé ci-dessous)."
+msgstr[1] "%d inscrits n'appartiennent plus à un groupe requis pour cet événement (signalés ci-dessous)."
+
 # --- Phase 49 : proxy-register bascule waitlist sur seance pleine ---
 
 msgid "This session is full and the member is already on the waitlist."

@@ -382,6 +382,7 @@ figcaption b { color: var(--ink); font-weight: 600; }
 }
 .ui-badge.green { background: var(--ui-green); }
 .ui-badge.teal { background: var(--ui-teal); }
+.ui-badge.orange { background: #F2711C; }
 
 /* Carte de seance */
 .ui-card {
@@ -544,6 +545,7 @@ footer a { color: var(--accent-ink); text-underline-offset: 3px; }
     <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3.2v9.6M3.2 8h9.6"/></symbol>
     <symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.4"/><path d="M10.3 10.3l3.2 3.2"/></symbol>
     <symbol id="i-tag" viewBox="0 0 16 16"><path d="M7.6 2.4H13a.6.6 0 0 1 .6.6v5.4L8.2 13.8a.8.8 0 0 1-1.2 0L2.2 9a.8.8 0 0 1 0-1.2z"/><circle cx="10.9" cy="5.1" r="1"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 16 16"><path d="M8 2.6L14.4 13H1.6z"/><path d="M8 6.4v3.1M8 11.2v.1"/></symbol>
     <symbol id="i-bell" viewBox="0 0 16 16"><path d="M8 2.4a3.6 3.6 0 0 0-3.6 3.6c0 3-1.2 4-1.2 4h9.6s-1.2-1-1.2-4A3.6 3.6 0 0 0 8 2.4z"/><path d="M6.5 12.4a1.6 1.6 0 0 0 3 0"/></symbol>
   </defs>
 </svg>
@@ -689,7 +691,7 @@ footer a { color: var(--accent-ink); text-underline-offset: 3px; }
               </div>
 
               <div class="att-row">
-                <div class="att-name">Sophie Vernet <span class="att-nick"><svg class="ic"><use href="#i-tag"/></svg> Nala</span></div>
+                <div class="att-name">Sophie Vernet <span class="att-nick"><svg class="ic"><use href="#i-tag"/></svg> Nala</span> <span class="ui-badge orange"><svg class="ic"><use href="#i-warn"/></svg> Hors groupe</span></div>
                 <div class="ui-select">Absent <svg class="ic"><use href="#i-caret"/></svg></div>
               </div>
 
@@ -706,8 +708,9 @@ footer a { color: var(--accent-ink); text-underline-offset: 3px; }
       <figcaption>Quatre choix&nbsp;: <b>Inscrit</b> (l'état de départ), <b>Présent</b>, <b>Absent</b>, <b>Absent (excusé)</b>. Le bouton du bas enregistre <b>toute la liste d'un coup</b> — inutile de valider après chaque personne.</figcaption>
     </figure>
 
-    <p>Trois choses à savoir, qui évitent les mauvaises surprises&nbsp;:</p>
+    <p>Quatre choses à savoir, qui évitent les mauvaises surprises&nbsp;:</p>
     <ul class="plain">
+      <li><b>Une étiquette orange «&nbsp;Hors groupe&nbsp;»</b> peut suivre un nom. Elle dit que cette personne ne fait plus partie du groupe auquel la séance est réservée&nbsp;: elle s'est inscrite avant de changer de groupe. Ce n'est <b>pas un blocage</b>. Si elle est là, pointez-la présente comme les autres, et signalez-le au bureau. Un bandeau en haut de la liste en annonce le nombre.</li>
       <li><b>Une ligne à laquelle vous ne touchez pas reste « Inscrit »</b>. Ce n'est ni présent, ni absent&nbsp;: la personne ne comptera pas dans la participation. Pointez toute la liste, y compris les absents.</li>
       <li><b>Absent</b> ou <b>Absent (excusé)</b>&nbsp;: la distinction ne déclenche rien automatiquement, c'est une trace pour le club. Excusé = prévenu à l'avance.</li>
       <li><b>Aucun courriel n'est envoyé</b> par le pointage. Personne n'est prévenu d'avoir été noté absent.</li>
