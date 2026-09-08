@@ -74,6 +74,13 @@
         </div>
     </div>
 
+    {% if out_of_group_regs|length > 0 %}
+        <div class="ui orange message">
+            <i class="exclamation triangle icon" aria-hidden="true"></i>
+            {{ _Tn("%d upcoming registration on this page involves a member who no longer belongs to a required group (marked below).", "%d upcoming registrations on this page involve members who no longer belong to a required group (marked below).", out_of_group_regs|length, "courses")|format(out_of_group_regs|length) }}
+        </div>
+    {% endif %}
+
     <div class="courses-table-scroll">
     <table class="listing ui celled striped table courses-responsive-table">
         <thead>
@@ -99,6 +106,12 @@
                             </a>
                         {% else %}
                             {{ _T("Unknown member", "courses") }}
+                        {% endif %}
+                        {% if out_of_group_regs[reg.getId()] is defined %}
+                            <span class="ui orange mini label" title="{{ _T("This member no longer belongs to a required group for this event.", "courses") }}">
+                                <i class="exclamation triangle icon" aria-hidden="true"></i>
+                                {{ _T("Out of group", "courses") }}
+                            </span>
                         {% endif %}
                     </td>
                     <td data-label="{{ _T("Nickname", "courses") }}" class="courses-mobile-hide">

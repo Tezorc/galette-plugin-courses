@@ -386,6 +386,25 @@ Sections du tableau de bord personnel :
 - **Filtre par statut** : Inscrit, Present, Absent, Absent (excuse), Present (non inscrit), Annule
 - Les inscriptions **annulees sont masquees par defaut** ; selectionner le statut "Annule" dans le filtre pour les afficher
 
+#### Inscrits qui ont change de groupe
+
+Comme sur la fiche de seance, une etiquette orange **"Hors groupe"** apparait a
+cote du nom quand l'adherent n'appartient plus a un groupe requis par
+l'evenement, et un bandeau en tete du tableau en annonce le nombre. Meme controle
+qu'a l'inscription : appartenance directe, sans elargissement au foyer.
+
+Deux differences avec la fiche de seance :
+
+- seules les lignes **encore actionnables** sont marquees, c'est-a-dire celles
+  dont la seance est a venir et non annulee, et dont l'inscription n'est pas
+  annulee. Sur une liste qui balaie tout l'historique, marquer le passe
+  n'apporterait que du bruit ;
+- le compteur du bandeau porte sur la **page affichee**, pas sur l'ensemble du
+  resultat filtre.
+
+Aucun filtre "hors groupe" : le signalement se lit, il ne se trie pas. Comme
+ailleurs, c'est un signalement et non un blocage.
+
 ### 8. Liste d'attente
 
 Quand une seance est pleine, un adherent peut rejoindre la liste d'attente :
@@ -1446,6 +1465,9 @@ Une ligne a laquelle on ne touche pas reste au statut **Inscrit** : ni presente,
 
 - **Gestion des inscriptions > Gestion inscriptions** : toutes les inscriptions aux seances de vos groupes
 - Filtres par type, evenement, statut
+- L'etiquette orange **"Hors groupe"** vue au pointage apparait aussi dans ce
+  tableau, sur les inscriptions a venir dont l'adherent ne fait plus partie du
+  groupe requis. Meme lecture : un signalement, pas un blocage.
 
 ### Consulter les statistiques
 
