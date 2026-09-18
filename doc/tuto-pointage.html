@@ -659,6 +659,8 @@ footer a { color: var(--accent-ink); text-underline-offset: 3px; }
 
     <p>Sur un écran de téléphone, chaque personne tient sur une ligne&nbsp;: son nom, le nom de son chien en petit à côté, et le menu de pointage à droite. La colonne <b>Chien</b> et la date d'inscription, visibles sur ordinateur, sont masquées&nbsp;: elles ne servent à rien sur le terrain.</p>
 
+    <p><b>Tout le monde arrive déjà sur «&nbsp;Présent&nbsp;»</b>, parce que c'est le cas courant. Vous n'avez donc à toucher que les lignes des absents, puis à enregistrer. Une séance déjà pointée, elle, réaffiche ce que vous aviez enregistré.</p>
+
     <figure class="fig">
       <p class="fig-label">Le pointage, un menu ouvert</p>
       <div class="phone">
@@ -679,12 +681,12 @@ footer a { color: var(--accent-ink); text-underline-offset: 3px; }
 
               <div class="att-row" style="margin-bottom:0">
                 <div class="att-name">Marc Delorme <span class="att-nick"><svg class="ic"><use href="#i-tag"/></svg> Filou</span></div>
-                <div class="ui-select open">Inscrit <svg class="ic"><use href="#i-caret"/></svg></div>
+                <div class="ui-select open">Présent <svg class="ic"><use href="#i-caret"/></svg></div>
               </div>
               <div class="ui-menu-row">
                 <div class="ui-menu">
-                  <div class="ui-item sel">Inscrit</div>
-                  <div class="ui-item">Présent</div>
+                  <div class="ui-item">Inscrit</div>
+                  <div class="ui-item sel">Présent</div>
                   <div class="ui-item">Absent</div>
                   <div class="ui-item">Absent (excusé)</div>
                 </div>
@@ -705,13 +707,13 @@ footer a { color: var(--accent-ink); text-underline-offset: 3px; }
           </div>
         </div>
       </div>
-      <figcaption>Quatre choix&nbsp;: <b>Inscrit</b> (l'état de départ), <b>Présent</b>, <b>Absent</b>, <b>Absent (excusé)</b>. Le bouton du bas enregistre <b>toute la liste d'un coup</b> — inutile de valider après chaque personne.</figcaption>
+      <figcaption>Quatre choix&nbsp;: <b>Présent</b> (déjà sélectionné partout), <b>Absent</b>, <b>Absent (excusé)</b>, et <b>Inscrit</b> pour laisser une ligne non pointée. Le bouton du bas enregistre <b>toute la liste d'un coup</b> — inutile de valider après chaque personne.</figcaption>
     </figure>
 
     <p>Quatre choses à savoir, qui évitent les mauvaises surprises&nbsp;:</p>
     <ul class="plain">
       <li><b>Une étiquette orange «&nbsp;Hors groupe&nbsp;»</b> peut suivre un nom. Elle dit que cette personne ne fait plus partie du groupe auquel la séance est réservée&nbsp;: elle s'est inscrite avant de changer de groupe. Ce n'est <b>pas un blocage</b>. Si elle est là, pointez-la présente comme les autres, et signalez-le au bureau. Un bandeau en haut de la liste en annonce le nombre.</li>
-      <li><b>Une ligne à laquelle vous ne touchez pas reste « Inscrit »</b>. Ce n'est ni présent, ni absent&nbsp;: la personne ne comptera pas dans la participation. Pointez toute la liste, y compris les absents.</li>
+      <li><b>Une ligne à laquelle vous ne touchez pas part présente</b>. C'est voulu&nbsp;: enregistrer sans rien changer note toute la séance présente. Le revers&nbsp;: n'enregistrez pas avant d'avoir marqué les absents. Pour sortir quelqu'un du pointage — ni venu, ni absent, donc hors des statistiques — choisissez <b>Inscrit</b> sur sa ligne.</li>
       <li><b>Absent</b> ou <b>Absent (excusé)</b>&nbsp;: la distinction ne déclenche rien automatiquement, c'est une trace pour le club. Excusé = prévenu à l'avance.</li>
       <li><b>Aucun courriel n'est envoyé</b> par le pointage. Personne n'est prévenu d'avoir été noté absent.</li>
     </ul>
@@ -824,7 +826,7 @@ footer a { color: var(--accent-ink); text-underline-offset: 3px; }
 
   <section class="callout">
     <h2>Pourquoi le club y tient</h2>
-    <p>Le pointage alimente <span class="path">Gestion inscriptions &rsaquo; Statistiques</span>&nbsp;: taux de participation, séances réellement suivies par chaque adhérent, et surtout la <b>liste des adhérents inactifs</b>, ceux qu'on ne voit plus. Une séance non pointée n'apparaît nulle part dans ces chiffres&nbsp;: ses inscrits restent «&nbsp;Inscrit&nbsp;», donc ni venus ni absents.</p>
+    <p>Le pointage alimente <span class="path">Gestion inscriptions &rsaquo; Statistiques</span>&nbsp;: taux de participation, séances réellement suivies par chaque adhérent, et surtout la <b>liste des adhérents inactifs</b>, ceux qu'on ne voit plus. Une séance jamais enregistrée n'apparaît nulle part dans ces chiffres&nbsp;: ses inscrits restent «&nbsp;Inscrit&nbsp;», donc ni venus ni absents.</p>
   </section>
 
   <footer>

@@ -732,6 +732,37 @@ l'affiche comme tout le monde. Celui qui pointe n'a aucun moyen de le voir.
   d'annulation deja present. Tests 113/113 verts, balances Twig stables
   (95/95 `if`, 21/21 `for`, 2/2 `block`).
 
+### Evolution - Pointage : « Present » preselectionne pour les inscrits
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : « pour lister les presents lors des cours, dans la liste
+  de choix prevoir par defaut present pour ceux qui etaient inscrits ». Le cas
+  courant sur le terrain est que les inscrits viennent ; le moniteur devait
+  malgre tout ouvrir chaque menu pour passer *Inscrit* a *Present*.
+
+#### Correction
+
+- `session_show.html.twig`, cellule de pointage : `att_status` vaut
+  `attended` quand l'inscription est encore au statut `registered`, et le
+  statut reel sinon. Les `selected` des options lisent `att_status` et non plus
+  `reg.getStatus()`. Le changement est **uniquement a l'affichage** :
+  `RegistrationsController::doMarkAttendance` est inchange, il continue de
+  n'accepter que les cinq statuts valides et d'appeler `updateStatus()` ligne
+  par ligne.
+- L'option *Inscrit* reste dans le menu : c'est desormais le geste explicite
+  pour laisser une ligne hors du pointage (ni presente, ni absente, donc hors
+  du taux de participation).
+- Une seance deja pointee est inchangee : la preselection ne s'applique qu'aux
+  lignes restees `registered`. `present_unregistered` (ajout hors inscription)
+  n'est pas touche, son option conditionnelle reste sur `reg.getStatus()`.
+- Contrepartie assumee : enregistrer sans rien toucher marque **toute la
+  seance presente**. Les trois documents qui decrivent le pointage le disent
+  explicitement (`mode-emploi.md` section 18 et annexe B, `tuto-pointage.html`,
+  `tuto-moniteur.html`), et la reconstitution d'ecran du tuto pointage a ete
+  redessinee avec le menu ouvert sur *Present*.
+- Aucune migration BDD, aucune chaine i18n nouvelle, aucun courriel.
+
 ### Evolution - Inscrits hors groupe signales sur la liste des inscriptions
 
 **Statut :** TERMINEE
