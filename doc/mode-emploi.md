@@ -701,12 +701,16 @@ Le pointage est disponible pour les **responsables de groupe**, le **staff** et 
 
 1. Aller sur la page de detail d'une seance passee ou du jour
 2. La liste des inscrits affiche un tableau avec un **select de statut** par membre :
-   - **Inscrit** : statut par defaut
-   - **Present** : l'adherent etait present
+   - **Present** : l'adherent etait present — c'est la valeur **preselectionnee** pour toute inscription pas encore pointee
    - **Absent** : l'adherent etait absent
    - **Absent (excuse)** : l'adherent etait absent mais excuse
-3. Modifier les statuts souhaites
+   - **Inscrit** : ni present ni absent, a choisir explicitement pour laisser une ligne non pointee
+3. Ne changer que les lignes des absents, les autres sont deja sur *Present*
 4. Cliquer sur **"Enregistrer le pointage"**
+
+Une seance deja pointee reaffiche les statuts enregistres : la preselection sur
+*Present* ne concerne que les lignes restees au statut *Inscrit*. Consequence a
+connaitre : enregistrer sans rien toucher marque **tout le monde present**.
 
 #### Inscrits qui ont change de groupe
 
@@ -1476,8 +1480,8 @@ Pour quelqu'un qui se presente sans avoir ete inscrit et que vous n'avez pas a i
 Le pointage est disponible le jour de la seance et apres :
 
 1. Aller sur la page de detail de la seance
-2. Dans la liste des inscrits, changer le statut de chaque membre :
-   - **Présent** / **Absent** / **Absent (excusé)**
+2. Dans la liste des inscrits, **tout le monde est deja sur *Présent*** : ne changer
+   que les absents, en **Absent** ou **Absent (excusé)**
 3. Cliquer sur **"Enregistrer le pointage"**
 
 **Présence hors inscription (walk-in)** : pour un participant present sans inscription prealable :
@@ -1492,7 +1496,7 @@ inscrit ne fait plus partie du groupe requis par l'evenement, il a change de
 groupe depuis son inscription. C'est un signalement, pas un blocage — pointez-le
 s'il est la, ou annulez son inscription avec le bouton **X**.
 
-Une ligne a laquelle on ne touche pas reste au statut **Inscrit** : ni presente, ni absente, elle ne compte pas dans le taux de participation. Le message de succes annonce le nombre de **lignes enregistrees**, pas de modifications — pointer deux personnes sur huit affiche « 8 pointage(s) enregistré(s) ».
+Une ligne a laquelle on ne touche pas part **presente** : le select est preselectionne sur *Présent* des qu'une inscription n'a pas encore ete pointee. Pour laisser quelqu'un hors du pointage — ni present, ni absent, donc hors du taux de participation — il faut choisir **Inscrit** explicitement. Le message de succes annonce le nombre de **lignes enregistrees**, pas de modifications — pointer deux absents sur huit affiche quand meme « 8 pointage(s) enregistré(s) ».
 
 > **Version diffusable** : [`doc/tuto-pointage.html`](tuto-pointage.html) (et son PDF) reprend ce parcours pour les moniteurs, ecran par ecran, **depuis un telephone** — c'est la que le pointage se fait en pratique. C'est la source a mettre a jour, avec la presente section, quand le pointage change.
 
