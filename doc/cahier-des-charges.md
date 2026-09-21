@@ -732,6 +732,88 @@ l'affiche comme tout le monde. Celui qui pointe n'a aucun moyen de le voir.
   d'annulation deja present. Tests 113/113 verts, balances Twig stables
   (95/95 `if`, 21/21 `for`, 2/2 `block`).
 
+### Evolution - Journal Galette : des descriptions lisibles et traduites
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : « pour les journaux la description n'est pas traduite et
+  pas tres comprehensible ».
+
+#### Constat
+
+Les 33 appels `$this->history->add()` du plugin passaient un intitule traduit
+(`_T('[Courses] ...', 'courses')`) mais une description construite a la main en
+anglais, a partir d'identifiants bruts : `session #128 — member #45`,
+`event #7 — Cours debutants — 12 session(s)`, `session #128: 12 → 20`. Aucune de
+ces chaines ne passait par `_T()`, donc rien n'etait traduisible ; et rien
+n'etait lisible sans aller interroger la base pour savoir a quoi correspondaient
+`#128` et `#45`.
+
+#### Solution
+
+Nouvelle classe utilitaire `lib/GaletteCourses/HistoryLabel.php` (statique, sans
+etat hormis un cache de noms valable pour la requete en cours) :
+
+- `session(Session $session)` -> `seance « Cours debutants » du samedi 14 mars
+  2026, 10:00-11:30 (n°128)`. Reutilise les formateurs `Intl` deja portes par
+  l'entite (`getFormattedDateLong`, `getFormattedStartTime`,
+  `getFormattedEndTime`), donc le rendu suit la locale active.
+- `event(Event $event)` -> `evenement « Cours debutants » (n°7)`.
+- `member(Db $zdb, ?int $id)` -> `adherent DUPONT Marie (n°45)`. Le nom est
+  resolu par un SELECT leger sur `nom_adh` / `prenom_adh` (pas de
+  `new Adherent()`, qui chargerait groupes, cotisations et champs dynamiques),
+  avec recomposition de `sname` et cache par requete. `id <= 0` ou `null` (le
+  super admin n'a pas de fiche adherent) rend `super-administrateur`, un id
+  inconnu rend `adherent n°45 (inconnu)`.
+- `join(?string ...)` assemble les segments non vides avec ` — `, ce qui rend
+  inoffensifs les segments optionnels quand ils sont vides (commentaire
+  d'annulation, libelle de periode de fermeture).
+
+Les 33 appels ont ete reecrits sur ces helpers, et les 18 fragments restants
+(`%d session(s) created`, `waitlist position %d`, `reason: %s`,
+`capacity: %1$s -> %2$s`, `club closure from %1$s to %2$s`...) passent desormais
+par `_T(..., 'courses')` et sont traduits dans le `.po`.
+
+#### Decisions
+
+- **Pas de mention de l'auteur dans la description.** Toutes les descriptions
+  qui portaient un `(by #%d)` designaient en fait l'utilisateur connecte, que
+  Galette enregistre deja dans la colonne *Utilisateur* du journal. Le segment a
+  ete supprime plutot que traduit. Consequence voulue : pour une inscription
+  parent -> enfant, la description nomme l'enfant, la colonne Utilisateur le
+  parent.
+- **Le motif d'annulation passe par `getCancellationReasonLabel()`** au lieu de
+  la cle brute (`instructor_absent`), donc il est traduit comme partout
+  ailleurs.
+- **`HistoryLabel::session()` prend l'entite, pas un id.** Les 28 appels
+  concernes l'avaient deja chargee ; accepter un id aurait ajoute une requete
+  par entree de journal et une branche « seance introuvable » non testee. Seul
+  `doSessionRemove` doit calculer son libelle *avant* la suppression, ce que le
+  code fait explicitement (variable `$human`, a cote du `$label` technique
+  conserve pour `Analog`).
+- Le libelle technique (`session #128 — 2026-03-14 10:00-11:30 — event #7`)
+  reste utilise pour les journaux `Analog`, ou les identifiants sont justement
+  ce qu'on cherche.
+
+#### Ce qui n'a pas change
+
+- Les intitules d'action (`[Courses] ...`) : ils etaient deja traduits, et les
+  modifier aurait casse la lecture des entrees existantes.
+- Les entrees deja en base gardent leur ancienne description : la traduction se
+  fait a l'ecriture, pas a l'affichage.
+- `CourseNotification::logHistory` (`[Courses] Email sent` /
+  `[Courses] Email send failed`) conserve sa description `sujet -> destinataires`,
+  deja lisible.
+
+#### Fichiers
+
+- Nouveau : `lib/GaletteCourses/HistoryLabel.php`
+- Modifies : `CronController`, `EventsController`, `PreferencesController`,
+  `RegistrationsController`, `SessionsController`
+- `lang/courses_fr_FR.utf8.po` : 18 nouvelles chaines, `.mo` recompile
+- `doc/mode-emploi.md` : nouvelle section « Journal des actions (Historique
+  Galette) »
+
 ### Evolution - Pointage : « Present » preselectionne pour les inscrits
 
 **Statut :** TERMINEE
