@@ -27,6 +27,7 @@ use Galette\Controllers\AbstractController;
 use Galette\Core\PluginControllerTrait;
 use GaletteCourses\Entity\Event;
 use GaletteCourses\Notification\CourseNotification;
+use GaletteCourses\HistoryLabel;
 use GaletteCourses\MemberPreferences;
 use GaletteCourses\PluginPreferences;
 use GaletteCourses\Recurrence\RecurrenceHandler;
@@ -149,7 +150,10 @@ class CronController extends AbstractController
 
                 $this->history->add(
                     _T('[Courses] Cron: sessions generated', 'courses'),
-                    sprintf('event #%d — %s — %d session(s)', $event->getId(), $event->getName(), $count)
+                    HistoryLabel::join(
+                        HistoryLabel::event($event),
+                        sprintf(_T('%d session(s) created', 'courses'), $count)
+                    )
                 );
 
                 // Notify members if notifications enabled

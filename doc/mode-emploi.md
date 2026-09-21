@@ -1228,6 +1228,35 @@ Toutes les routes sont prefixees par `/plugins/courses/`.
 
 ---
 
+## Journal des actions (Historique Galette)
+
+Toutes les actions de gestion du plugin sont tracees dans le journal standard de
+Galette (menu *Configuration > Historique*). L'intitule de l'action **et** sa
+description sont traduits et rediges en clair.
+
+La description nomme ce sur quoi l'action a porte plutot que des identifiants :
+la seance est designee par son evenement, son jour et son horaire, l'adherent
+par son nom. Le detail utile suit (position en liste d'attente, motif
+d'annulation, nombre de lignes de pointage enregistrees, capacite avant/apres).
+Les identifiants techniques restent indiques entre parentheses (`(n°42)`) pour
+retrouver la ligne en base en cas de besoin.
+
+Exemples :
+
+| Action | Description |
+| ------ | ----------- |
+| `[Cours] Inscription a la seance` | seance « Cours debutants » du samedi 14 mars 2026, 10:00-11:30 (n°128) — adherent DUPONT Marie (n°45) |
+| `[Cours] Seance annulee` | seance « Cours debutants » du samedi 14 mars 2026, 10:00-11:30 (n°128) — motif : Moniteur absent |
+| `[Cours] Pointage enregistre` | seance « Cours debutants » du samedi 14 mars 2026, 10:00-11:30 (n°128) — 12 ligne(s) enregistree(s) |
+
+La colonne *Utilisateur* du journal indique deja **qui** a effectue l'action : la
+description ne le repete pas. Quand un parent inscrit un membre rattache, c'est
+donc le nom de l'enfant qui figure dans la description, et celui du parent dans
+la colonne Utilisateur.
+
+Les descriptions sont ecrites dans la langue de la personne connectee au moment
+de l'action, et dans celle de l'association pour les entrees ecrites par le cron.
+
 ## Traductions
 
 Le plugin est entierement traduit en francais. Les traductions sont gerees via le systeme standard gettext de Galette.

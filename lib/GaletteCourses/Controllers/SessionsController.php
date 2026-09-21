@@ -32,6 +32,7 @@ use GaletteCourses\Entity\SessionInstructor;
 use GaletteCourses\Entity\Waitlist;
 use GaletteCourses\Entity\EventType;
 use GaletteCourses\Filters\SessionsList;
+use GaletteCourses\HistoryLabel;
 use GaletteCourses\MemberPreferences;
 use GaletteCourses\Notification\CourseNotification;
 use GaletteCourses\PluginPreferences;
@@ -665,7 +666,10 @@ class SessionsController extends AbstractPluginController
             if ($instructor->store()) {
                 $this->history->add(
                     _T('[Courses] Instructor assigned to session', 'courses'),
-                    sprintf('session #%d — member #%d', $id, $memberId)
+                    HistoryLabel::join(
+                        HistoryLabel::session($session),
+                        HistoryLabel::member($this->zdb, $memberId)
+                    )
                 );
                 $this->flash->addMessage('success_detected', _T('Instructor has been assigned.', 'courses'));
 
@@ -726,7 +730,10 @@ class SessionsController extends AbstractPluginController
         if ($entry->remove()) {
             $this->history->add(
                 _T('[Courses] Instructor removed from session', 'courses'),
-                sprintf('session #%d — member #%d', $id, $memberId)
+                HistoryLabel::join(
+                    HistoryLabel::session($session),
+                    HistoryLabel::member($this->zdb, $memberId)
+                )
             );
             $this->flash->addMessage('success_detected', _T('Instructor has been removed.', 'courses'));
         } else {
@@ -838,7 +845,10 @@ class SessionsController extends AbstractPluginController
             if ($instructor->store()) {
                 $this->history->add(
                     _T('[Courses] Instructor volunteered for session', 'courses'),
-                    sprintf('session #%d — member #%d', $id, $memberId)
+                    HistoryLabel::join(
+                        HistoryLabel::session($session),
+                        HistoryLabel::member($this->zdb, $memberId)
+                    )
                 );
                 $this->flash->addMessage('success_detected', _T('You have been assigned as instructor.', 'courses'));
 
@@ -899,7 +909,7 @@ class SessionsController extends AbstractPluginController
         if ($session->store()) {
             $this->history->add(
                 _T('[Courses] Session closed', 'courses'),
-                sprintf('session #%d', $id)
+                HistoryLabel::session($session)
             );
 
             // Purge waitlist silently (closing is temporary, no notification needed)
@@ -907,7 +917,10 @@ class SessionsController extends AbstractPluginController
             if (!empty($purged)) {
                 $this->history->add(
                     _T('[Courses] Waitlist purged after closing', 'courses'),
-                    sprintf('session #%d — %d member(s) removed', $id, count($purged))
+                    HistoryLabel::join(
+                        HistoryLabel::session($session),
+                        sprintf(_T('%d member(s) removed from the waitlist', 'courses'), count($purged))
+                    )
                 );
             }
 
@@ -952,7 +965,7 @@ class SessionsController extends AbstractPluginController
         if ($session->store()) {
             $this->history->add(
                 _T('[Courses] Session reopened', 'courses'),
-                sprintf('session #%d', $id)
+                HistoryLabel::session($session)
             );
             $this->flash->addMessage('success_detected', _T('Session has been reopened. Members can register again.', 'courses'));
         } else {
@@ -1001,7 +1014,11 @@ class SessionsController extends AbstractPluginController
         if ($session->store()) {
             $this->history->add(
                 _T('[Courses] Session cancelled', 'courses'),
-                sprintf('session #%d — reason: %s', $id, $reason ?? 'none')
+                HistoryLabel::join(
+                    HistoryLabel::session($session),
+                    sprintf(_T('reason: %s', 'courses'), $session->getCancellationReasonLabel()),
+                    $comment
+                )
             );
             $event = $session->getEvent();
             $notification = new CourseNotification($this->zdb, $this->preferences, new PluginPreferences($this->zdb), new MemberPreferences($this->zdb), $this->history);
@@ -1014,7 +1031,10 @@ class SessionsController extends AbstractPluginController
             if (!empty($waitlistMemberIds)) {
                 $this->history->add(
                     _T('[Courses] Waitlist purged after cancellation', 'courses'),
-                    sprintf('session #%d — %d member(s) removed', $id, count($waitlistMemberIds))
+                    HistoryLabel::join(
+                        HistoryLabel::session($session),
+                        sprintf(_T('%d member(s) removed from the waitlist', 'courses'), count($waitlistMemberIds))
+                    )
                 );
                 $notification->notifyWaitlistSessionCancellation($session, $event, $waitlistMemberIds, $reason, $comment);
             }
@@ -1065,7 +1085,7 @@ class SessionsController extends AbstractPluginController
         if ($session->store()) {
             $this->history->add(
                 _T('[Courses] Session reactivated', 'courses'),
-                sprintf('session #%d', $id)
+                HistoryLabel::session($session)
             );
 
             $event = $session->getEvent();
@@ -1146,6 +1166,9 @@ class SessionsController extends AbstractPluginController
             $session->getEndTime(),
             $eventId
         );
+        // Human-readable label for the history entry: the row is about to
+        // disappear, so it could not be resolved after the deletion.
+        $human = HistoryLabel::session($session);
         $registrations = $session->getCurrentRegistrations();
         $waiting = Waitlist::getCount($this->zdb, $id);
 
@@ -1159,7 +1182,14 @@ class SessionsController extends AbstractPluginController
         if ($removed) {
             $this->history->add(
                 _T('[Courses] Session deleted', 'courses'),
-                $label . sprintf(' — %d registration(s), %d waiting', $registrations, $waiting)
+                HistoryLabel::join(
+                    $human,
+                    sprintf(
+                        _T('%1$d registration(s), %2$d on the waitlist', 'courses'),
+                        $registrations,
+                        $waiting
+                    )
+                )
             );
             $this->flash->addMessage('success_detected', _T('Session has been deleted.', 'courses'));
         } else {
@@ -1233,7 +1263,14 @@ class SessionsController extends AbstractPluginController
 
         $this->history->add(
             _T('[Courses] Session capacity updated', 'courses'),
-            sprintf('session #%d: %s → %s', $id, $oldCapacity ?? '∞', $newCapacity ?? '∞')
+            HistoryLabel::join(
+                HistoryLabel::session($session),
+                sprintf(
+                    _T('capacity: %1$s -> %2$s', 'courses'),
+                    $oldCapacity ?? _T('Unlimited', 'courses'),
+                    $newCapacity ?? _T('Unlimited', 'courses')
+                )
+            )
         );
 
         // Auto-promote from waitlist if capacity increased
@@ -1314,7 +1351,10 @@ class SessionsController extends AbstractPluginController
             $notification->notifyWaitlistPromotion($session, $event, $memberId);
             $this->history->add(
                 _T('[Courses] Member promoted from waitlist', 'courses'),
-                sprintf('session #%d — member #%d', $id, $memberId)
+                HistoryLabel::join(
+                    HistoryLabel::session($session),
+                    HistoryLabel::member($this->zdb, $memberId)
+                )
             );
             $this->flash->addMessage('success_detected', _T('Member promoted from the waitlist.', 'courses'));
         }
@@ -1405,7 +1445,11 @@ class SessionsController extends AbstractPluginController
 
         $this->history->add(
             _T('[Courses] New session created for waitlist', 'courses'),
-            sprintf('source session #%d → new session #%d — %d member(s) registered', $id, $newId, $registered)
+            HistoryLabel::join(
+                sprintf(_T('source: %s', 'courses'), HistoryLabel::session($source)),
+                sprintf(_T('new session: %s', 'courses'), HistoryLabel::session($newSession)),
+                sprintf(_T('%d member(s) registered', 'courses'), $registered)
+            )
         );
         $this->flash->addMessage(
             'success_detected',

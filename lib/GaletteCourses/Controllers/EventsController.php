@@ -29,6 +29,7 @@ use GaletteCourses\Entity\EventType;
 use GaletteCourses\Entity\Session;
 use GaletteCourses\Entity\SessionInstructor;
 use GaletteCourses\Filters\EventsList;
+use GaletteCourses\HistoryLabel;
 use GaletteCourses\MemberPreferences;
 use GaletteCourses\Notification\CourseNotification;
 use GaletteCourses\PluginPreferences;
@@ -745,7 +746,7 @@ class EventsController extends AbstractPluginController
         if ($event->submit()) {
             $this->history->add(
                 _T('[Courses] Event submitted for validation', 'courses'),
-                sprintf('event #%d — %s', $event->getId(), $event->getName())
+                HistoryLabel::event($event)
             );
             $notification = new CourseNotification($this->zdb, $this->preferences, new PluginPreferences($this->zdb), new MemberPreferences($this->zdb), $this->history);
             $notification->notifySubmission($event);
@@ -779,7 +780,7 @@ class EventsController extends AbstractPluginController
         if ($event->validate()) {
             $this->history->add(
                 _T('[Courses] Event validated', 'courses'),
-                sprintf('event #%d — %s', $event->getId(), $event->getName())
+                HistoryLabel::event($event)
             );
             $notification = new CourseNotification($this->zdb, $this->preferences, new PluginPreferences($this->zdb), new MemberPreferences($this->zdb), $this->history);
             // notifyValidation : informe le createur (pas les moniteurs/membres).
@@ -836,7 +837,7 @@ class EventsController extends AbstractPluginController
         if ($event->reject()) {
             $this->history->add(
                 _T('[Courses] Event rejected', 'courses'),
-                sprintf('event #%d — %s', $event->getId(), $event->getName())
+                HistoryLabel::event($event)
             );
             $notification = new CourseNotification($this->zdb, $this->preferences, new PluginPreferences($this->zdb), new MemberPreferences($this->zdb), $this->history);
             $notification->notifyRejection($event);
@@ -880,7 +881,10 @@ class EventsController extends AbstractPluginController
         if (count($created) > 0) {
             $this->history->add(
                 _T('[Courses] Sessions generated', 'courses'),
-                sprintf('event #%d — %s — %d session(s)', $event->getId(), $event->getName(), count($created))
+                HistoryLabel::join(
+                    HistoryLabel::event($event),
+                    sprintf(_T('%d session(s) created', 'courses'), count($created))
+                )
             );
             // Notify eligible members of new sessions
             if ($event->getStatus() === Event::STATUS_VALIDATED) {
@@ -980,15 +984,19 @@ class EventsController extends AbstractPluginController
 
         $this->history->add(
             _T('[Courses] Sessions regenerated', 'courses'),
-            sprintf(
-                'event #%d — %s — %d session(s) deleted (%d registration(s), %d waiting, %d instructor assignment(s)), %d recreated',
-                $event->getId(),
-                $event->getName(),
-                $purged['sessions'],
-                $purged['registrations'],
-                $purged['waitlist'],
-                $purged['instructors'],
-                count($created)
+            HistoryLabel::join(
+                HistoryLabel::event($event),
+                sprintf(
+                    _T(
+                        '%1$d session(s) deleted (%2$d registration(s), %3$d waiting, %4$d instructor assignment(s)), %5$d recreated',
+                        'courses'
+                    ),
+                    $purged['sessions'],
+                    $purged['registrations'],
+                    $purged['waitlist'],
+                    $purged['instructors'],
+                    count($created)
+                )
             )
         );
 
