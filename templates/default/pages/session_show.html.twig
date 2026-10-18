@@ -903,11 +903,13 @@
                                             </td>
                                             <td data-label="{{ _T("Registration date", "courses") }}" class="courses-attlist-date">{{ reg.getRegistrationDate()|date("d/m/Y") }}</td>
                                             <td data-label="{{ _T("Attendance", "courses") }}" class="courses-attendance-cell">
+                                                {# Not marked yet: preselect "attended", so only absentees need a change. #}
+                                                {% set att_status = reg.getStatus() == 'registered' ? 'attended' : reg.getStatus() %}
                                                 <select name="attendance[{{ reg.getId() }}]" class="ui compact dropdown" aria-label="{{ _T("Attendance", "courses") }}">
-                                                    <option value="registered"{% if reg.getStatus() == 'registered' %} selected{% endif %}>{{ _T("Registered", "courses") }}</option>
-                                                    <option value="attended"{% if reg.getStatus() == 'attended' %} selected{% endif %}>{{ _T("Attended", "courses") }}</option>
-                                                    <option value="absent"{% if reg.getStatus() == 'absent' %} selected{% endif %}>{{ _T("Absent", "courses") }}</option>
-                                                    <option value="absent_excused"{% if reg.getStatus() == 'absent_excused' %} selected{% endif %}>{{ _T("Absent (excused)", "courses") }}</option>
+                                                    <option value="registered"{% if att_status == 'registered' %} selected{% endif %}>{{ _T("Registered", "courses") }}</option>
+                                                    <option value="attended"{% if att_status == 'attended' %} selected{% endif %}>{{ _T("Attended", "courses") }}</option>
+                                                    <option value="absent"{% if att_status == 'absent' %} selected{% endif %}>{{ _T("Absent", "courses") }}</option>
+                                                    <option value="absent_excused"{% if att_status == 'absent_excused' %} selected{% endif %}>{{ _T("Absent (excused)", "courses") }}</option>
                                                     {% if reg.getStatus() == 'present_unregistered' %}
                                                         <option value="present_unregistered" selected>{{ _T("Present (unregistered)", "courses") }}</option>
                                                     {% endif %}

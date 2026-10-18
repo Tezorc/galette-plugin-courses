@@ -35,6 +35,7 @@ use GaletteCourses\Entity\SessionInstructor;
 use GaletteCourses\Entity\Waitlist;
 use GaletteCourses\Filters\RegistrationsList;
 use GaletteCourses\Filters\SessionsList;
+use GaletteCourses\HistoryLabel;
 use GaletteCourses\MemberPreferences;
 use GaletteCourses\Notification\CourseNotification;
 use GaletteCourses\PluginPreferences;
@@ -181,7 +182,10 @@ class RegistrationsController extends AbstractController
         if ($registration->store($session)) {
             $this->history->add(
                 _T('[Courses] Member registered to session', 'courses'),
-                sprintf('session #%d — member #%d', $id, $member_id)
+                HistoryLabel::join(
+                    HistoryLabel::session($session),
+                    HistoryLabel::member($this->zdb, $member_id)
+                )
             );
             $this->flash->addMessage('success_detected', _T('You have been registered successfully.', 'courses'));
             return $response
@@ -251,7 +255,10 @@ class RegistrationsController extends AbstractController
         if ($result !== false) {
             $this->history->add(
                 _T('[Courses] Linked member unregistered from session', 'courses'),
-                sprintf('session #%d — member #%d (by household member #%d)', $id, $child_id, $parent_id)
+                HistoryLabel::join(
+                    HistoryLabel::session($session),
+                    HistoryLabel::member($this->zdb, $child_id)
+                )
             );
             $this->flash->addMessage('success_detected', _T('The linked member has been unregistered successfully.', 'courses'));
             if (is_int($result)) {
@@ -295,7 +302,10 @@ class RegistrationsController extends AbstractController
         if ($result !== false) {
             $this->history->add(
                 _T('[Courses] Member unregistered from session', 'courses'),
-                sprintf('session #%d — member #%d', $id, $member_id)
+                HistoryLabel::join(
+                    HistoryLabel::session($session),
+                    HistoryLabel::member($this->zdb, $member_id)
+                )
             );
             $this->flash->addMessage('success_detected', _T('You have been unregistered successfully.', 'courses'));
 
@@ -402,7 +412,11 @@ class RegistrationsController extends AbstractController
         if ($waitlist->store()) {
             $this->history->add(
                 _T('[Courses] Member joined waitlist', 'courses'),
-                sprintf('session #%d — member #%d — position %d', $id, $member_id, $waitlist->getPosition())
+                HistoryLabel::join(
+                    HistoryLabel::session($session),
+                    HistoryLabel::member($this->zdb, $member_id),
+                    sprintf(_T('waitlist position %d', 'courses'), $waitlist->getPosition())
+                )
             );
             $this->flash->addMessage(
                 'success_detected',
@@ -443,7 +457,10 @@ class RegistrationsController extends AbstractController
         if ($entry->remove()) {
             $this->history->add(
                 _T('[Courses] Member left waitlist', 'courses'),
-                sprintf('session #%d — member #%d', $id, $member_id)
+                HistoryLabel::join(
+                    HistoryLabel::session($session),
+                    HistoryLabel::member($this->zdb, $member_id)
+                )
             );
             $this->flash->addMessage('success_detected', _T('You have been removed from the waitlist.', 'courses'));
         } else {
@@ -512,7 +529,10 @@ class RegistrationsController extends AbstractController
         if ($entry->remove()) {
             $this->history->add(
                 _T('[Courses] Linked member left waitlist', 'courses'),
-                sprintf('session #%d — member #%d (by household member #%d)', $id, $child_id, $parent_id)
+                HistoryLabel::join(
+                    HistoryLabel::session($session),
+                    HistoryLabel::member($this->zdb, $child_id)
+                )
             );
             $this->flash->addMessage('success_detected', _T('The linked member has been removed from the waitlist.', 'courses'));
         } else {
@@ -1493,7 +1513,10 @@ class RegistrationsController extends AbstractController
         if ($registration->store($session)) {
             $this->history->add(
                 _T('[Courses] Linked member registered to session', 'courses'),
-                sprintf('session #%d — member #%d (by household member #%d)', $id, $child_id, $parent_id)
+                HistoryLabel::join(
+                    HistoryLabel::session($session),
+                    HistoryLabel::member($this->zdb, $child_id)
+                )
             );
             $this->flash->addMessage('success_detected', _T('The linked member has been registered successfully.', 'courses'));
             return $response
@@ -1654,7 +1677,11 @@ class RegistrationsController extends AbstractController
         if ($waitlist->store()) {
             $this->history->add(
                 _T('[Courses] Linked member joined waitlist', 'courses'),
-                sprintf('session #%d — member #%d (by household member #%d) — position %d', $id, $child_id, $parent_id, $waitlist->getPosition())
+                HistoryLabel::join(
+                    HistoryLabel::session($session),
+                    HistoryLabel::member($this->zdb, $child_id),
+                    sprintf(_T('waitlist position %d', 'courses'), $waitlist->getPosition())
+                )
             );
             $this->flash->addMessage(
                 'success_detected',
@@ -1768,7 +1795,11 @@ class RegistrationsController extends AbstractController
             if ($waitlist->store()) {
                 $this->history->add(
                     _T('[Courses] Member added to waitlist by staff', 'courses'),
-                    sprintf('session #%d — member #%d — position %d', $id, $member_id, $waitlist->getPosition())
+                    HistoryLabel::join(
+                        HistoryLabel::session($session),
+                        HistoryLabel::member($this->zdb, $member_id),
+                        sprintf(_T('waitlist position %d', 'courses'), $waitlist->getPosition())
+                    )
                 );
                 $this->flash->addMessage(
                     'success_detected',
@@ -1794,7 +1825,10 @@ class RegistrationsController extends AbstractController
             if ($registration->store($session)) {
                 $this->history->add(
                     _T('[Courses] Member registered by staff', 'courses'),
-                    sprintf('session #%d — member #%d', $id, $member_id)
+                    HistoryLabel::join(
+                        HistoryLabel::session($session),
+                        HistoryLabel::member($this->zdb, $member_id)
+                    )
                 );
                 $this->flash->addMessage('success_detected', _T('Member has been registered successfully.', 'courses'));
             } else {
@@ -1855,7 +1889,10 @@ class RegistrationsController extends AbstractController
         if ($result !== false) {
             $this->history->add(
                 _T('[Courses] Registration cancelled by staff/instructor', 'courses'),
-                sprintf('session #%d — member #%d (by #%d)', $id, $member_id, $actor_id)
+                HistoryLabel::join(
+                    HistoryLabel::session($session),
+                    HistoryLabel::member($this->zdb, $member_id)
+                )
             );
             $this->flash->addMessage('success_detected', _T('Registration cancelled successfully.', 'courses'));
             if (is_int($result)) {
@@ -1908,7 +1945,10 @@ class RegistrationsController extends AbstractController
         if ($updated > 0) {
             $this->history->add(
                 _T('[Courses] Attendance recorded', 'courses'),
-                sprintf('session #%d — %d update(s)', $id, $updated)
+                HistoryLabel::join(
+                    HistoryLabel::session($session),
+                    sprintf(_T('%d line(s) updated', 'courses'), $updated)
+                )
             );
         }
         $this->flash->addMessage('success_detected', sprintf(_T('%d attendance(s) recorded.', 'courses'), $updated));
@@ -1943,7 +1983,10 @@ class RegistrationsController extends AbstractController
             $session->incrementRegistrations();
             $this->history->add(
                 _T('[Courses] Walk-in attendance recorded', 'courses'),
-                sprintf('session #%d — member #%d', $id, $member_id)
+                HistoryLabel::join(
+                    HistoryLabel::session($session),
+                    HistoryLabel::member($this->zdb, $member_id)
+                )
             );
             $this->flash->addMessage('success_detected', _T('Walk-in attendance recorded.', 'courses'));
         } else {

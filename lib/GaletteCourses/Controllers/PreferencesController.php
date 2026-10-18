@@ -27,6 +27,7 @@ use Galette\Controllers\AbstractController;
 use Galette\Core\PluginControllerTrait;
 use GaletteCourses\Entity\Session;
 use GaletteCourses\Entity\Waitlist;
+use GaletteCourses\HistoryLabel;
 use GaletteCourses\MemberPreferences;
 use GaletteCourses\Notification\CourseNotification;
 use GaletteCourses\PluginPreferences;
@@ -237,12 +238,10 @@ class PreferencesController extends AbstractController
                     $event = $session->getEvent();
                     $this->history->add(
                         _T('[Courses] Session cancelled (club closure)', 'courses'),
-                        sprintf(
-                            'session #%d — closure %s..%s — label: %s',
-                            $sid,
-                            $from,
-                            $to,
-                            $label !== '' ? $label : '(none)'
+                        HistoryLabel::join(
+                            HistoryLabel::session($session),
+                            sprintf(_T('club closure from %1$s to %2$s', 'courses'), $from, $to),
+                            $label
                         )
                     );
 

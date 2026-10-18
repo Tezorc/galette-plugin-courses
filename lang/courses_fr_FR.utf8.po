@@ -2120,3 +2120,59 @@ msgstr "Ferme la veille de la séance"
 
 msgid "Registrations accepted until %s inclusive."
 msgstr "Inscriptions possibles jusqu'au %s inclus."
+
+# --- Journal Galette : segments de description ---
+
+msgid "session \"%1$s\" of %2$s, %3$s-%4$s (#%5$d)"
+msgstr "séance « %1$s » du %2$s, %3$s-%4$s (n°%5$d)"
+
+msgid "session #%d"
+msgstr "séance n°%d"
+
+msgid "event \"%1$s\" (#%2$d)"
+msgstr "événement « %1$s » (n°%2$d)"
+
+msgid "member %1$s (#%2$d)"
+msgstr "adhérent %1$s (n°%2$d)"
+
+msgid "member #%d (unknown)"
+msgstr "adhérent n°%d (inconnu)"
+
+msgid "super administrator"
+msgstr "super-administrateur"
+
+msgid "waitlist position %d"
+msgstr "liste d'attente, position %d"
+
+msgid "%d line(s) updated"
+msgstr "%d ligne(s) enregistrée(s)"
+
+msgid "%d member(s) removed from the waitlist"
+msgstr "%d adhérent(s) retiré(s) de la liste d'attente"
+
+msgid "reason: %s"
+msgstr "motif : %s"
+
+msgid "capacity: %1$s -> %2$s"
+msgstr "capacité : %1$s → %2$s"
+
+msgid "%1$d registration(s), %2$d on the waitlist"
+msgstr "%1$d inscription(s), %2$d en liste d'attente"
+
+msgid "source: %s"
+msgstr "séance d'origine : %s"
+
+msgid "new session: %s"
+msgstr "nouvelle séance : %s"
+
+msgid "%d member(s) registered"
+msgstr "%d adhérent(s) inscrit(s)"
+
+msgid "%d session(s) created"
+msgstr "%d séance(s) créée(s)"
+
+msgid "%1$d session(s) deleted (%2$d registration(s), %3$d waiting, %4$d instructor assignment(s)), %5$d recreated"
+msgstr "%1$d séance(s) supprimée(s) (%2$d inscription(s), %3$d en attente, %4$d affectation(s) de moniteur), %5$d recréée(s)"
+
+msgid "club closure from %1$s to %2$s"
+msgstr "fermeture du club du %1$s au %2$s"

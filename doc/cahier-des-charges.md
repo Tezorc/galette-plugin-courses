@@ -732,6 +732,119 @@ l'affiche comme tout le monde. Celui qui pointe n'a aucun moyen de le voir.
   d'annulation deja present. Tests 113/113 verts, balances Twig stables
   (95/95 `if`, 21/21 `for`, 2/2 `block`).
 
+### Evolution - Journal Galette : des descriptions lisibles et traduites
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : « pour les journaux la description n'est pas traduite et
+  pas tres comprehensible ».
+
+#### Constat
+
+Les 33 appels `$this->history->add()` du plugin passaient un intitule traduit
+(`_T('[Courses] ...', 'courses')`) mais une description construite a la main en
+anglais, a partir d'identifiants bruts : `session #128 — member #45`,
+`event #7 — Cours debutants — 12 session(s)`, `session #128: 12 → 20`. Aucune de
+ces chaines ne passait par `_T()`, donc rien n'etait traduisible ; et rien
+n'etait lisible sans aller interroger la base pour savoir a quoi correspondaient
+`#128` et `#45`.
+
+#### Solution
+
+Nouvelle classe utilitaire `lib/GaletteCourses/HistoryLabel.php` (statique, sans
+etat hormis un cache de noms valable pour la requete en cours) :
+
+- `session(Session $session)` -> `seance « Cours debutants » du samedi 14 mars
+  2026, 10:00-11:30 (n°128)`. Reutilise les formateurs `Intl` deja portes par
+  l'entite (`getFormattedDateLong`, `getFormattedStartTime`,
+  `getFormattedEndTime`), donc le rendu suit la locale active.
+- `event(Event $event)` -> `evenement « Cours debutants » (n°7)`.
+- `member(Db $zdb, ?int $id)` -> `adherent DUPONT Marie (n°45)`. Le nom est
+  resolu par un SELECT leger sur `nom_adh` / `prenom_adh` (pas de
+  `new Adherent()`, qui chargerait groupes, cotisations et champs dynamiques),
+  avec recomposition de `sname` et cache par requete. `id <= 0` ou `null` (le
+  super admin n'a pas de fiche adherent) rend `super-administrateur`, un id
+  inconnu rend `adherent n°45 (inconnu)`.
+- `join(?string ...)` assemble les segments non vides avec ` — `, ce qui rend
+  inoffensifs les segments optionnels quand ils sont vides (commentaire
+  d'annulation, libelle de periode de fermeture).
+
+Les 33 appels ont ete reecrits sur ces helpers, et les 18 fragments restants
+(`%d session(s) created`, `waitlist position %d`, `reason: %s`,
+`capacity: %1$s -> %2$s`, `club closure from %1$s to %2$s`...) passent desormais
+par `_T(..., 'courses')` et sont traduits dans le `.po`.
+
+#### Decisions
+
+- **Pas de mention de l'auteur dans la description.** Toutes les descriptions
+  qui portaient un `(by #%d)` designaient en fait l'utilisateur connecte, que
+  Galette enregistre deja dans la colonne *Utilisateur* du journal. Le segment a
+  ete supprime plutot que traduit. Consequence voulue : pour une inscription
+  parent -> enfant, la description nomme l'enfant, la colonne Utilisateur le
+  parent.
+- **Le motif d'annulation passe par `getCancellationReasonLabel()`** au lieu de
+  la cle brute (`instructor_absent`), donc il est traduit comme partout
+  ailleurs.
+- **`HistoryLabel::session()` prend l'entite, pas un id.** Les 28 appels
+  concernes l'avaient deja chargee ; accepter un id aurait ajoute une requete
+  par entree de journal et une branche « seance introuvable » non testee. Seul
+  `doSessionRemove` doit calculer son libelle *avant* la suppression, ce que le
+  code fait explicitement (variable `$human`, a cote du `$label` technique
+  conserve pour `Analog`).
+- Le libelle technique (`session #128 — 2026-03-14 10:00-11:30 — event #7`)
+  reste utilise pour les journaux `Analog`, ou les identifiants sont justement
+  ce qu'on cherche.
+
+#### Ce qui n'a pas change
+
+- Les intitules d'action (`[Courses] ...`) : ils etaient deja traduits, et les
+  modifier aurait casse la lecture des entrees existantes.
+- Les entrees deja en base gardent leur ancienne description : la traduction se
+  fait a l'ecriture, pas a l'affichage.
+- `CourseNotification::logHistory` (`[Courses] Email sent` /
+  `[Courses] Email send failed`) conserve sa description `sujet -> destinataires`,
+  deja lisible.
+
+#### Fichiers
+
+- Nouveau : `lib/GaletteCourses/HistoryLabel.php`
+- Modifies : `CronController`, `EventsController`, `PreferencesController`,
+  `RegistrationsController`, `SessionsController`
+- `lang/courses_fr_FR.utf8.po` : 18 nouvelles chaines, `.mo` recompile
+- `doc/mode-emploi.md` : nouvelle section « Journal des actions (Historique
+  Galette) »
+
+### Evolution - Pointage : « Present » preselectionne pour les inscrits
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : « pour lister les presents lors des cours, dans la liste
+  de choix prevoir par defaut present pour ceux qui etaient inscrits ». Le cas
+  courant sur le terrain est que les inscrits viennent ; le moniteur devait
+  malgre tout ouvrir chaque menu pour passer *Inscrit* a *Present*.
+
+#### Correction
+
+- `session_show.html.twig`, cellule de pointage : `att_status` vaut
+  `attended` quand l'inscription est encore au statut `registered`, et le
+  statut reel sinon. Les `selected` des options lisent `att_status` et non plus
+  `reg.getStatus()`. Le changement est **uniquement a l'affichage** :
+  `RegistrationsController::doMarkAttendance` est inchange, il continue de
+  n'accepter que les cinq statuts valides et d'appeler `updateStatus()` ligne
+  par ligne.
+- L'option *Inscrit* reste dans le menu : c'est desormais le geste explicite
+  pour laisser une ligne hors du pointage (ni presente, ni absente, donc hors
+  du taux de participation).
+- Une seance deja pointee est inchangee : la preselection ne s'applique qu'aux
+  lignes restees `registered`. `present_unregistered` (ajout hors inscription)
+  n'est pas touche, son option conditionnelle reste sur `reg.getStatus()`.
+- Contrepartie assumee : enregistrer sans rien toucher marque **toute la
+  seance presente**. Les trois documents qui decrivent le pointage le disent
+  explicitement (`mode-emploi.md` section 18 et annexe B, `tuto-pointage.html`,
+  `tuto-moniteur.html`), et la reconstitution d'ecran du tuto pointage a ete
+  redessinee avec le menu ouvert sur *Present*.
+- Aucune migration BDD, aucune chaine i18n nouvelle, aucun courriel.
+
 ### Evolution - Inscrits hors groupe signales sur la liste des inscriptions
 
 **Statut :** TERMINEE

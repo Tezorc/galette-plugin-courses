@@ -418,5 +418,4 @@ final class EventTest extends TestCase
         self::assertTrue(Event::slotAppliesOn($slot, '2030-03-31'));
         self::assertFalse(Event::slotAppliesOn($slot, '2030-04-01'));
     }
-
 }

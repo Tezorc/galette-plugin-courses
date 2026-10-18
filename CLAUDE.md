@@ -254,6 +254,7 @@ galette-plugin-courses/
     PluginGaletteCourses.php       # Classe principale (menus, dashboard)
     PluginPreferences.php          # Preferences globales du plugin
     MemberPreferences.php          # Preferences par membre (notifications, iCal, token desinscription)
+    HistoryLabel.php               # Libelles traduits des descriptions du journal Galette
     Entity/
       EventType.php                # Type d'evenement
       Event.php                    # Evenement (CRUD, acces, slots, groupes)
