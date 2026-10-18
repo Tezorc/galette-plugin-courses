@@ -452,7 +452,6 @@ final class SessionTest extends TestCase
     {
         $ref = new \ReflectionClass(Session::class);
         $prop = $ref->getProperty($name);
-        $prop->setAccessible(true);
         $prop->setValue($session, $value);
     }
 }
