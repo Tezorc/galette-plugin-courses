@@ -213,7 +213,6 @@ final class EventTest extends TestCase
     {
         $ref = new \ReflectionClass(Event::class);
         $prop = $ref->getProperty($name);
-        $prop->setAccessible(true);
         $prop->setValue($event, $value);
     }
 
