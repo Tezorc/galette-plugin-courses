@@ -23,7 +23,7 @@ jobs:
     outputs:
       matrix: ${{ steps.gen.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - id: gen
         uses: galette/.github/actions/matrix-generator@main
         with:
@@ -34,7 +34,7 @@ jobs:
     outputs:
       matrix: ${{ steps.gen.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - id: gen
         uses: galette/.github/actions/matrix-generator@main
         with:
@@ -64,7 +64,7 @@ jobs:
       # (API plugin statique + methodes *Contents(), pas de dbver) contre
       # laquelle le plugin ne peut pas se charger.
       - name: Checkout Galette core
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: galette/galette
           path: galette-core
@@ -72,7 +72,7 @@ jobs:
           ref: develop
 
       - name: Checkout plugin
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           path: galette-core/galette/plugins/plugin-courses
 
@@ -82,7 +82,7 @@ jobs:
           echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
       - name: Cache dependencies
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
@@ -200,7 +200,7 @@ jobs:
           galette-ref: develop
 
       - name: Checkout plugin
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           path: galette-core/galette/plugins/plugin-courses
 
