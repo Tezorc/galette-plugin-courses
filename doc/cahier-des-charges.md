@@ -854,6 +854,62 @@ par `_T(..., 'courses')` et sont traduits dans le `.po`.
   redessinee avec le menu ouvert sur *Present*.
 - Aucune migration BDD, aucune chaine i18n nouvelle, aucun courriel.
 
+### Evolution - Statistiques : toute la page suit la periode selectionnee
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : « pour la vue statistique des inscriptions, il faut que
+  l'ensemble des statistiques dependent de la periode de date selectionnees ».
+  Seules les sections membres actifs / inactifs et moniteurs suivaient le
+  filtre ; les compteurs etaient tous temps confondus, le graphique mensuel
+  sur 12 mois glissants, top evenements / remplissage / activite recente sans
+  borne.
+
+#### Correction
+
+- `StatsController` : `getSummary`, `getRegistrationsByMonth`, `getTopEvents`,
+  `getAverageFillRates` et `getRecentActivity` recoivent `$dateFrom` /
+  `$dateTo` et filtrent `s.session_date BETWEEN`. **Une seule base de
+  rattachement, la date de seance** (comme les sections membres et moniteurs
+  existantes) : le graphique mensuel ne groupe plus sur `registration_date`
+  mais sur le mois de la seance, de sorte que la somme des barres egale le
+  compteur *Presences*.
+- Precision utilisateur : « c'est la presence des adherents que l'on veut
+  suivre dans present ou present non inscrit ». Ce qui est compte est donc une
+  **presence** = statut dans `PRESENCE_STATUSES` (`attended`,
+  `present_unregistered`). Avant, seul `registered` comptait, c'est-a-dire
+  justement les lignes **non pointees**. S'applique au compteur (libelle
+  *Inscriptions* -> *Presences*), au graphique mensuel (*Presences par mois*),
+  au top evenements, aux membres les plus assidus et a la partition membres actifs /
+  inactifs (`getMemberActivityByPeriod` : jointure sur `status IN (attended,
+  present_unregistered)` au lieu de `!= cancelled`). Consequence assumee : un
+  adherent seulement inscrit, absent ou non pointe sur la periode passe dans
+  les *inactifs*, et le taux de participation baisse d'autant. La colonne
+  *Seances* des actifs vaut desormais le total des presences.
+- Exception : le **taux de remplissage** reste base sur
+  `current_registrations / max_capacity` (inscriptions), il mesure la demande
+  et non la frequentation.
+- Compteurs : *Evenements* = evenements ayant au moins une seance sur la
+  periode ; *Seances a venir* = seances ouvertes entre `max(du, aujourd'hui)`
+  et `au`, donc 0 pour une periode passee.
+- *Activite recente des membres* (20 derniers venus) devient **Membres les
+  plus assidus** (demande utilisateur : « les membres presents les plus
+  assidus sur la periode, le top 10 ») : `getRecentActivity` renomme
+  `getTopMembers`, tri `total_sessions DESC, last_date DESC, nom, prenom`,
+  `LIMIT 10`, colonnes Membre / Presences / Derniere presence. Bornee a
+  `min(au, aujourd'hui)`, comme la presence des moniteurs. L'id
+  `recent-activity-table` est garde pour ne pas toucher aux regles mobiles de
+  `galette_courses.css`.
+- `stats.html.twig` : le formulaire de periode quitte la section *Membres
+  actifs* pour un bandeau en tete de page ; le sous-titre du graphique mensuel
+  affiche la periode au lieu de « 12 derniers mois ».
+- i18n : `Attendances`, `Attendances by month`, `Top events by attendance`,
+  `Total attendances` remplacent les trois chaines d'inscription devenues
+  orphelines (`Attendance` existe deja et vaut « Pointage », d'ou le pluriel) ;
+  `Most regular members` remplace `Recent member activity` ; « Last 12
+  months », « Last 20 active members » et « Total » retirees. `.mo` recompile. Aucune migration BDD. Tests
+  113/113 verts.
+
 ### Evolution - Inscrits hors groupe signales sur la liste des inscriptions
 
 **Statut :** TERMINEE
@@ -3701,7 +3757,7 @@ La barre laterale contient **deux groupes de menus** distincts :
 | Formulaire inscription procuration | Select recherchable des membres eligibles, lien retour vers la seance (staff/responsable) |
 | Mes inscriptions | Prochaine seance mise en avant, sections a venir / passees (accordeon), bouton export iCal global |
 | Toutes les inscriptions | Tableau scrollable (mobile), colonnes membre, pseudo, evenement, seance, date inscription, statut |
-| Statistiques | Compteurs globaux (2 par ligne sur mobile), graphiques Chart.js, taux de remplissage, activite recente |
+| Statistiques | Compteurs globaux (2 par ligne sur mobile), graphiques Chart.js, taux de remplissage, membres les plus assidus (top 10) |
 
 ### 4.4 Composants visuels
 

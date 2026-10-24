@@ -12,8 +12,8 @@ fatales (`$authenticate` indefini, menus muets, `csrf.html.twig` absent).
 
 | Branche | Coeur Galette | Cible de deploiement |
 |---|---|---|
-| `main` | 1.2 | serveur du club (production) |
-| `dev-galette-1.3` | 1.3 | base de test locale, stack Docker `C:\dev\galette-nightly` |
+| `dev-galette-1.3` | 1.3 | serveur du club (production, Galette 1.3.1 depuis octobre 2026) et base de test locale, stack Docker `C:\dev\galette-nightly` |
+| `main` | 1.2 | aucune : ligne 1.2 abandonnee, gelee |
 
 La base de test est une stack Docker (`docker compose up -d` dans
 `C:\dev\galette-nightly`) : Galette sur <http://localhost:8090>, MySQL 8.4,
@@ -52,30 +52,10 @@ migration `upgrade-to-0.2-*` / `manual-catchup-0.2-*`.
 
 ### Ou commiter
 
-- Correction fonctionnelle ou nouvelle fonctionnalite : **toujours sur `main`
-  d'abord**, c'est la ligne en production.
-- Adaptation propre a la 1.3 : directement sur `dev-galette-1.3`.
-
-### Propager main vers dev-galette-1.3
-
-Par **fusion**, pas par cherry-pick (le cherry-pick duplique les commits et fait
-diverger l'historique) :
-
-```sh
-git checkout dev-galette-1.3
-git merge main
-git checkout main
-```
-
-Seul `templates/default/headers.html.twig` conflit en pratique (fichier d'une
-ligne portant un en-tete de licence sur dev) : garder la version dev, en
-reportant la valeur du cache-buster `?v=` venue de main.
-
-Verifier qu'aucun commit de `main` ne manque sur dev (`+` = absent) :
-
-```sh
-git cherry -v dev-galette-1.3 main
-```
+Le support de Galette 1.2 est abandonne : la production est passee en 1.3.1.
+**Tout se commite sur `dev-galette-1.3`**, corrections comme nouvelles
+fonctionnalites. `main` ne recoit plus rien et ne se fusionne plus vers dev ;
+l'ancienne regle (« `main` d'abord, puis fusion vers dev ») est caduque.
 
 ### Deployer
 
@@ -85,23 +65,27 @@ ramene rien et le deploiement passe pour fait alors que le conteneur sert
 toujours le code de la veille :
 
 ```sh
-git push origin main dev-galette-1.3
+git push origin dev-galette-1.3
 git -C /c/dev/galette-plugin-courses pull --ff-only
 ```
 
 Le clone reste sur `dev-galette-1.3` et est monte en bind dans le conteneur, il
 n'y a donc rien a copier. Puis vider le cache Twig (voir plus haut).
 
-**Production (1.2)** : produire une archive depuis `main` sans toucher a l'arbre
-de travail, et la transferer sur le serveur.
+**Production (1.3)** : produire une archive depuis `dev-galette-1.3` sans
+toucher a l'arbre de travail, et la transferer sur le serveur.
 
 ```sh
-git archive --format=zip --prefix=galette-plugin-courses/     -o ../galette-plugin-courses-$(git rev-parse --short main).zip main     _config.inc.php _define.php _routes.php LICENSE README.md     doc lang lib scripts templates webroot
+git archive --format=zip --prefix=galette-plugin-courses/ \
+    -o ../galette-plugin-courses-$(git rev-parse --short dev-galette-1.3).zip dev-galette-1.3 \
+    _config.inc.php _define.php _routes.php LICENSE README.md \
+    doc lang lib scripts templates webroot
 ```
 
 Les fichiers de developpement (`tests/`, `.github/`, `composer.*`,
 `phpstan.neon`, `phpunit.xml.dist`) sont volontairement hors de la liste, tout
-comme `CLAUDE.md`.
+comme `CLAUDE.md`. Si `dbver` a bouge, verifier apres deploiement que la
+migration est passee (ligne `galette_plugins` du plugin).
 
 ### Travailler sur les deux en parallele
 

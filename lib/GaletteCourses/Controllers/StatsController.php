@@ -50,6 +50,19 @@ class StatsController extends AbstractController
     #[Inject("Plugin Galette Courses")]
     protected array $module_info;
 
+    /**
+     * Statuses counted as a presence: what the statistics track is who
+     * actually came, registered beforehand (`attended`) or not
+     * (`present_unregistered`). Registered-but-unmarked, absent and
+     * cancelled rows are left out.
+     *
+     * @var array<int, string>
+     */
+    private const PRESENCE_STATUSES = [
+        Registration::STATUS_ATTENDED,
+        Registration::STATUS_PRESENT_UNREGISTERED,
+    ];
+
     public function show(Request $request, Response $response): Response
     {
         // Route ACL is 'member' on purpose: a moniteur is neither staff nor
@@ -82,12 +95,15 @@ class StatsController extends AbstractController
             ? round($activeCount * 100 / $totalAdherents, 1)
             : 0.0;
 
+        // Every figure on the page is scoped to the selected period, on the
+        // session date (not the registration date) so the counters, charts
+        // and member lists all describe the same set of sessions.
         $stats = [
-            'fill_rates'             => $this->getAverageFillRates(),
-            'registrations_by_month' => $this->getRegistrationsByMonth(),
-            'top_events'             => $this->getTopEvents(),
-            'recent_activity'        => $this->getRecentActivity(),
-            'summary'                => $this->getSummary(),
+            'fill_rates'             => $this->getAverageFillRates($dateFrom, $dateTo),
+            'registrations_by_month' => $this->getRegistrationsByMonth($dateFrom, $dateTo),
+            'top_events'             => $this->getTopEvents($dateFrom, $dateTo),
+            'top_members'            => $this->getTopMembers($dateFrom, $dateTo),
+            'summary'                => $this->getSummary($dateFrom, $dateTo),
             'active_members'         => $memberActivity['active'],
             'inactive_members'       => $memberActivity['inactive'],
             'participation_rate'     => $participationRate,
@@ -113,11 +129,11 @@ class StatsController extends AbstractController
     }
 
     /**
-     * Get average fill rate per event (events with capacity)
+     * Get average fill rate per event (events with capacity) over the sessions of the period
      *
      * @return array<int, array{name: string, avg_fill: float, session_count: int}>
      */
-    private function getAverageFillRates(): array
+    private function getAverageFillRates(string $dateFrom, string $dateTo): array
     {
         $rates = [];
         try {
@@ -134,6 +150,7 @@ class StatsController extends AbstractController
             ]);
             $select->where->isNotNull('s.max_capacity');
             $select->where->greaterThan('s.max_capacity', 0);
+            $select->where->between('s.session_date', $dateFrom, $dateTo);
             $select->group(['s.event_id', 'e.name']);
             $select->order('avg_fill DESC');
             $select->limit(10);
@@ -153,30 +170,32 @@ class StatsController extends AbstractController
     }
 
     /**
-     * Get registrations count grouped by month (last 12 months)
+     * Get presences count grouped by session month over the period
      *
      * @return array<string, int>
      */
-    private function getRegistrationsByMonth(): array
+    private function getRegistrationsByMonth(string $dateFrom, string $dateTo): array
     {
         $data = [];
         try {
             // DATE_FORMAT is MySQL-only; TO_CHAR is the PostgreSQL equivalent.
             // Built once and reused for SELECT and GROUP BY so the two stay aligned.
             $monthExpr = $this->zdb->isPostgres()
-                ? "TO_CHAR(registration_date, 'YYYY-MM')"
-                : "DATE_FORMAT(registration_date, '%Y-%m')";
+                ? "TO_CHAR(s.session_date, 'YYYY-MM')"
+                : "DATE_FORMAT(s.session_date, '%Y-%m')";
 
-            $select = $this->zdb->select(Registration::TABLE);
+            $select = $this->zdb->select(Registration::TABLE, 'r');
+            $select->join(
+                ['s' => PREFIX_DB . Session::TABLE],
+                'r.session_id = s.' . Session::PK,
+                []
+            );
             $select->columns([
                 'month' => new Expression($monthExpr),
                 'count' => new Expression('COUNT(*)'),
             ]);
-            $select->where->equalTo('status', Registration::STATUS_REGISTERED);
-            $select->where->greaterThanOrEqualTo(
-                'registration_date',
-                date('Y-m-d', strtotime('-12 months'))
-            );
+            $select->where->in('r.status', self::PRESENCE_STATUSES);
+            $select->where->between('s.session_date', $dateFrom, $dateTo);
             $select->group([new Expression($monthExpr)]);
             $select->order('month ASC');
 
@@ -185,17 +204,17 @@ class StatsController extends AbstractController
                 $data[(string)$r->month] = (int)$r->count;
             }
         } catch (Throwable $e) {
-            Analog::log('Error getting registrations by month: ' . $e->getMessage(), Analog::ERROR);
+            Analog::log('Error getting presences by month: ' . $e->getMessage(), Analog::ERROR);
         }
         return $data;
     }
 
     /**
-     * Get top events by total registrations
+     * Get top events by presences on the sessions of the period
      *
-     * @return array<int, array{name: string, total_registrations: int}>
+     * @return array<int, array{name: string, total_presences: int}>
      */
-    private function getTopEvents(): array
+    private function getTopEvents(string $dateFrom, string $dateTo): array
     {
         $events = [];
         try {
@@ -211,18 +230,19 @@ class StatsController extends AbstractController
                 ['name']
             );
             $select->columns([
-                'total_registrations' => new Expression('COUNT(*)'),
+                'total_presences' => new Expression('COUNT(*)'),
             ]);
-            $select->where->equalTo('r.status', Registration::STATUS_REGISTERED);
+            $select->where->in('r.status', self::PRESENCE_STATUSES);
+            $select->where->between('s.session_date', $dateFrom, $dateTo);
             $select->group(['s.event_id', 'e.name']);
-            $select->order('total_registrations DESC');
+            $select->order('total_presences DESC');
             $select->limit(10);
 
             $results = $this->zdb->execute($select);
             foreach ($results as $r) {
                 $events[(int)$r->event_id] = [
                     'name' => (string)$r->name,
-                    'total_registrations' => (int)$r->total_registrations,
+                    'total_presences' => (int)$r->total_presences,
                 ];
             }
         } catch (Throwable $e) {
@@ -232,13 +252,14 @@ class StatsController extends AbstractController
     }
 
     /**
-     * Get recent member activity (last participation date per member)
+     * Get the 10 most regular members over the period: most presences first,
+     * then the most recent presence to break ties
      *
      * @return array<int, array{member_id: int, member_name: string, last_date: string, total_sessions: int}>
      */
-    private function getRecentActivity(): array
+    private function getTopMembers(string $dateFrom, string $dateTo): array
     {
-        $activity = [];
+        $members = [];
         try {
             $select = $this->zdb->select(Registration::TABLE, 'r');
             $select->join(
@@ -256,16 +277,19 @@ class StatsController extends AbstractController
                 'last_date' => new Expression('MAX(s.session_date)'),
                 'total_sessions' => new Expression('COUNT(DISTINCT r.session_id)'),
             ]);
-            $select->where->equalTo('r.status', Registration::STATUS_REGISTERED);
-            $select->where->lessThanOrEqualTo('s.session_date', date('Y-m-d'));
+            // Upper bound = min(dateTo, today): a participation is a session
+            // that already took place, even if the period runs into the future.
+            $today = date('Y-m-d');
+            $select->where->in('r.status', self::PRESENCE_STATUSES);
+            $select->where->between('s.session_date', $dateFrom, $dateTo < $today ? $dateTo : $today);
             $select->group(['r.member_id', 'a.nom_adh', 'a.prenom_adh']);
-            $select->order('last_date DESC');
-            $select->limit(20);
+            $select->order(['total_sessions DESC', 'last_date DESC', 'a.nom_adh ASC', 'a.prenom_adh ASC']);
+            $select->limit(10);
 
             $results = $this->zdb->execute($select);
             foreach ($results as $r) {
                 $name = trim(($r->prenom_adh ?? '') . ' ' . ($r->nom_adh ?? ''));
-                $activity[] = [
+                $members[] = [
                     'member_id' => (int)$r->member_id,
                     'member_name' => $name ?: _T('Unknown member', 'courses'),
                     'last_date' => (string)$r->last_date,
@@ -273,17 +297,18 @@ class StatsController extends AbstractController
                 ];
             }
         } catch (Throwable $e) {
-            Analog::log('Error getting recent activity: ' . $e->getMessage(), Analog::ERROR);
+            Analog::log('Error getting top members: ' . $e->getMessage(), Analog::ERROR);
         }
-        return $activity;
+        return $members;
     }
 
     /**
      * Get all active adherents split into active/inactive for the given period.
      * A single LEFT JOIN query guarantees every active adherent appears in exactly one list.
      *
-     * Active  = at least one non-cancelled registration on a session in the period.
-     * Inactive = no such registration.
+     * Active  = at least one presence (attended or present_unregistered) on a
+     *           session in the period; session_count = sessions attended.
+     * Inactive = no such presence, even if registered (absent, not marked).
      *
      * @return array{active: array<int, array{member_id: int, member_name: string, nickname: string, session_count: int, attended_count: int, present_unregistered_count: int, events: string}>, inactive: array<int, array{member_id: int, member_name: string, nickname: string}>}
      */
@@ -321,7 +346,7 @@ class StatsController extends AbstractController
                     FROM $tAdh a
                     LEFT JOIN $tReg r
                         ON r.member_id = a.id_adh
-                        AND r.status != ?
+                        AND r.status IN (?, ?)
                     LEFT JOIN $tSess s
                         ON s.$pkSess = r.session_id
                         AND s.session_date BETWEEN ? AND ?
@@ -332,7 +357,7 @@ class StatsController extends AbstractController
                     ORDER BY a.nom_adh ASC, a.prenom_adh ASC";
 
             $rows = $this->zdb->db->query($sql, [
-                Registration::STATUS_CANCELLED,
+                ...self::PRESENCE_STATUSES,
                 $dateFrom,
                 $dateTo,
             ]);
@@ -446,41 +471,55 @@ class StatsController extends AbstractController
     }
 
     /**
-     * Get global summary stats
+     * Get summary stats over the period
      *
-     * @return array{total_events: int, total_sessions: int, total_registrations: int, upcoming_sessions: int}
+     * Events = events with at least one session in the period. Upcoming =
+     * open sessions between max(dateFrom, today) and dateTo, hence 0 for a
+     * period entirely in the past.
+     *
+     * @return array{total_events: int, total_sessions: int, total_presences: int, upcoming_sessions: int}
      */
-    private function getSummary(): array
+    private function getSummary(string $dateFrom, string $dateTo): array
     {
         $summary = [
             'total_events' => 0,
             'total_sessions' => 0,
-            'total_registrations' => 0,
+            'total_presences' => 0,
             'upcoming_sessions' => 0,
         ];
         try {
-            $select = $this->zdb->select(Event::TABLE);
-            $select->columns(['count' => new Expression('COUNT(*)')]);
-            $results = $this->zdb->execute($select);
-            $summary['total_events'] = (int)$results->current()->count;
-
             $select = $this->zdb->select(Session::TABLE);
-            $select->columns(['count' => new Expression('COUNT(*)')]);
-            $results = $this->zdb->execute($select);
-            $summary['total_sessions'] = (int)$results->current()->count;
+            $select->columns([
+                'events' => new Expression('COUNT(DISTINCT event_id)'),
+                'sessions' => new Expression('COUNT(*)'),
+            ]);
+            $select->where->between('session_date', $dateFrom, $dateTo);
+            $row = $this->zdb->execute($select)->current();
+            $summary['total_events'] = (int)$row->events;
+            $summary['total_sessions'] = (int)$row->sessions;
 
-            $select = $this->zdb->select(Registration::TABLE);
+            $select = $this->zdb->select(Registration::TABLE, 'r');
+            $select->join(
+                ['s' => PREFIX_DB . Session::TABLE],
+                'r.session_id = s.' . Session::PK,
+                []
+            );
             $select->columns(['count' => new Expression('COUNT(*)')]);
-            $select->where->equalTo('status', Registration::STATUS_REGISTERED);
+            $select->where->in('r.status', self::PRESENCE_STATUSES);
+            $select->where->between('s.session_date', $dateFrom, $dateTo);
             $results = $this->zdb->execute($select);
-            $summary['total_registrations'] = (int)$results->current()->count;
+            $summary['total_presences'] = (int)$results->current()->count;
 
-            $select = $this->zdb->select(Session::TABLE);
-            $select->columns(['count' => new Expression('COUNT(*)')]);
-            $select->where->greaterThanOrEqualTo('session_date', date('Y-m-d'));
-            $select->where->equalTo('status', 'open');
-            $results = $this->zdb->execute($select);
-            $summary['upcoming_sessions'] = (int)$results->current()->count;
+            $today = date('Y-m-d');
+            $upcomingFrom = $dateFrom > $today ? $dateFrom : $today;
+            if ($upcomingFrom <= $dateTo) {
+                $select = $this->zdb->select(Session::TABLE);
+                $select->columns(['count' => new Expression('COUNT(*)')]);
+                $select->where->between('session_date', $upcomingFrom, $dateTo);
+                $select->where->equalTo('status', Session::STATUS_OPEN);
+                $results = $this->zdb->execute($select);
+                $summary['upcoming_sessions'] = (int)$results->current()->count;
+            }
         } catch (Throwable $e) {
             Analog::log('Error getting summary stats: ' . $e->getMessage(), Analog::ERROR);
         }

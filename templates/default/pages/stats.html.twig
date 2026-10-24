@@ -21,6 +21,37 @@
 
 {% block content %}
 
+    {# ===== PÉRIODE — pilote toutes les statistiques de la page (compteurs,
+       graphiques, tableaux), d'ou sa place en tete. ===== #}
+    <form action="{{ url_for('coursesStats') }}" method="get" class="ui form" id="stats-period-form">
+        <div class="ui secondary segment">
+            <div class="fields courses-filter-row">
+                <div class="field">
+                    <label class="courses-filter-label">{{ _T("From", "courses") }}</label>
+                    <input type="date" name="stats_from" id="stats_from" value="{{ stats_from }}" class="ui small input"/>
+                </div>
+                <div class="field">
+                    <label class="courses-filter-label">{{ _T("Until", "courses") }}</label>
+                    <input type="date" name="stats_to" id="stats_to" value="{{ stats_to }}" class="ui small input"/>
+                </div>
+                <div class="field">
+                    <button type="submit" class="ui small labeled icon primary button">
+                        <i class="search icon" aria-hidden="true"></i>
+                        {{ _T("Filter", "courses") }}
+                    </button>
+                </div>
+            </div>
+            <div class="courses-filter-shortcuts">
+                <span class="ui small grey text">{{ _T("Quick select:", "courses") }}</span>
+                <button type="button" class="ui mini basic button period-shortcut" data-from="{{ "now"|date("Y-m-01") }}" data-to="{{ "now"|date("Y-m-d") }}">{{ _T("This month", "courses") }}</button>
+                <button type="button" class="ui mini basic button period-shortcut" data-from="{{ ("now -3 months")|date("Y-m-01") }}" data-to="{{ "now"|date("Y-m-d") }}">{{ _T("Last 3 months", "courses") }}</button>
+                <button type="button" class="ui mini basic button period-shortcut" data-from="{{ ("now -6 months")|date("Y-m-01") }}" data-to="{{ "now"|date("Y-m-d") }}">{{ _T("Last 6 months", "courses") }}</button>
+                <button type="button" class="ui mini basic button period-shortcut" data-from="{{ "now"|date("Y") }}-01-01" data-to="{{ "now"|date("Y-m-d") }}">{{ _T("This year", "courses") }}</button>
+                <button type="button" class="ui mini basic button period-shortcut" data-from="{{ ("now -1 year")|date("Y") }}-01-01" data-to="{{ ("now -1 year")|date("Y") }}-12-31">{{ _T("Last year", "courses") }}</button>
+            </div>
+        </div>
+    </form>
+
     {# ===== COMPTEURS RÉSUMÉ — une ligne de 4 cards ===== #}
     <div class="ui four cards stackable courses-stats-cards">
 
@@ -43,8 +74,8 @@
         <div class="ui orange card">
             <div class="content courses-stat-content">
                 <i class="large orange users icon" aria-hidden="true"></i>
-                <div class="courses-stat-num orange">{{ stats.summary.total_registrations }}</div>
-                <div class="courses-stat-sub">{{ _T("Registrations", "courses") }}</div>
+                <div class="courses-stat-num orange">{{ stats.summary.total_presences }}</div>
+                <div class="courses-stat-sub">{{ _T("Attendances", "courses") }}</div>
             </div>
         </div>
 
@@ -65,8 +96,8 @@
             <div class="ui segment">
                 <div class="ui small header courses-segment-hdr">
                     <i class="chart bar icon" aria-hidden="true"></i>
-                    {{ _T("Registrations by month", "courses") }}
-                    <span class="sub header">{{ _T("Last 12 months", "courses") }}</span>
+                    {{ _T("Attendances by month", "courses") }}
+                    <span class="sub header">{{ stats_from }} → {{ stats_to }}</span>
                 </div>
                 {% if stats.registrations_by_month|length > 0 %}
                     <div class="courses-chart-container"><canvas id="registrationsByMonthChart"></canvas></div>
@@ -82,7 +113,7 @@
             <div class="ui segment">
                 <div class="ui small header courses-segment-hdr">
                     <i class="trophy icon" aria-hidden="true"></i>
-                    {{ _T("Top events by registrations", "courses") }}
+                    {{ _T("Top events by attendance", "courses") }}
                     <span class="sub header">{{ _T("Top 10", "courses") }}</span>
                 </div>
                 {% if stats.top_events|length > 0 %}
@@ -143,25 +174,25 @@
         <div class="column">
             <div class="ui segment">
                 <div class="ui small header courses-segment-hdr">
-                    <i class="history icon" aria-hidden="true"></i>
-                    {{ _T("Recent member activity", "courses") }}
-                    <span class="sub header">{{ _T("Last 20 active members", "courses") }}</span>
+                    <i class="star icon" aria-hidden="true"></i>
+                    {{ _T("Most regular members", "courses") }}
+                    <span class="sub header">{{ _T("Top 10", "courses") }}</span>
                 </div>
-                {% if stats.recent_activity|length > 0 %}
+                {% if stats.top_members|length > 0 %}
                     <table class="ui very basic compact small table courses-responsive-table" id="recent-activity-table">
                         <thead>
                             <tr>
                                 <th scope="col">{{ _T("Member", "courses") }}</th>
+                                <th scope="col" class="collapsing center aligned">{{ _T("Attendances", "courses") }}</th>
                                 <th scope="col">{{ _T("Last participation", "courses") }}</th>
-                                <th scope="col" class="collapsing center aligned">{{ _T("Total", "courses") }}</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for member in stats.recent_activity %}
+                            {% for member in stats.top_members %}
                             <tr>
                                 <td data-label="{{ _T("Member", "courses") }}">{% if can_view_members %}<a href="{{ url_for("member", {"id": member.member_id}) }}">{{ member.member_name }}</a>{% else %}{{ member.member_name }}{% endif %}</td>
+                                <td data-label="{{ _T("Attendances", "courses") }}" class="center aligned"><span class="ui mini blue label">{{ member.total_sessions }}</span></td>
                                 <td data-label="{{ _T("Last participation", "courses") }}" class="courses-activity-date">{{ member.last_date }}</td>
-                                <td data-label="{{ _T("Total", "courses") }}" class="center aligned"><span class="ui mini blue label">{{ member.total_sessions }}</span></td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -208,38 +239,6 @@
                 </div>
             </div>
         {% endif %}
-
-        {# Filtre + raccourcis — HORS du fold pour rester accessibles meme quand
-           le tableau de resultats est replie (l'utilisateur doit pouvoir changer
-           la periode sans avoir a deplier d'abord). #}
-        <form action="{{ url_for('coursesStats') }}" method="get" class="ui form" id="stats-period-form">
-            <div class="ui secondary segment">
-                <div class="fields courses-filter-row">
-                    <div class="field">
-                        <label class="courses-filter-label">{{ _T("From", "courses") }}</label>
-                        <input type="date" name="stats_from" id="stats_from" value="{{ stats_from }}" class="ui small input"/>
-                    </div>
-                    <div class="field">
-                        <label class="courses-filter-label">{{ _T("Until", "courses") }}</label>
-                        <input type="date" name="stats_to" id="stats_to" value="{{ stats_to }}" class="ui small input"/>
-                    </div>
-                    <div class="field">
-                        <button type="submit" class="ui small labeled icon primary button">
-                            <i class="search icon" aria-hidden="true"></i>
-                            {{ _T("Filter", "courses") }}
-                        </button>
-                    </div>
-                </div>
-                <div class="courses-filter-shortcuts">
-                    <span class="ui small grey text">{{ _T("Quick select:", "courses") }}</span>
-                    <button type="button" class="ui mini basic button period-shortcut" data-from="{{ "now"|date("Y-m-01") }}" data-to="{{ "now"|date("Y-m-d") }}">{{ _T("This month", "courses") }}</button>
-                    <button type="button" class="ui mini basic button period-shortcut" data-from="{{ ("now -3 months")|date("Y-m-01") }}" data-to="{{ "now"|date("Y-m-d") }}">{{ _T("Last 3 months", "courses") }}</button>
-                    <button type="button" class="ui mini basic button period-shortcut" data-from="{{ ("now -6 months")|date("Y-m-01") }}" data-to="{{ "now"|date("Y-m-d") }}">{{ _T("Last 6 months", "courses") }}</button>
-                    <button type="button" class="ui mini basic button period-shortcut" data-from="{{ "now"|date("Y") }}-01-01" data-to="{{ "now"|date("Y-m-d") }}">{{ _T("This year", "courses") }}</button>
-                    <button type="button" class="ui mini basic button period-shortcut" data-from="{{ ("now -1 year")|date("Y") }}-01-01" data-to="{{ ("now -1 year")|date("Y") }}-12-31">{{ _T("Last year", "courses") }}</button>
-                </div>
-            </div>
-        </form>
 
         <div class="courses-fold-content">
 
@@ -504,7 +503,7 @@ if (ctxMonth) {
         type: 'bar',
         data: {
             labels: [{% for month, count in stats.registrations_by_month %}'{{ month }}'{% if not loop.last %},{% endif %}{% endfor %}],
-            datasets: [{ label:'{{ _T("Registrations", "courses") }}',
+            datasets: [{ label:'{{ _T("Attendances", "courses") }}',
                 data: [{% for month, count in stats.registrations_by_month %}{{ count }}{% if not loop.last %},{% endif %}{% endfor %}],
                 backgroundColor:'rgba(33,186,69,0.7)', borderColor:'rgba(33,186,69,1)', borderWidth:1 }]
         },
@@ -521,8 +520,8 @@ if (ctxTop) {
         type: 'bar',
         data: {
             labels: [{% for evt in stats.top_events %}'{{ evt.name|e('js') }}'{% if not loop.last %},{% endif %}{% endfor %}],
-            datasets: [{ label:'{{ _T("Total registrations", "courses") }}',
-                data: [{% for evt in stats.top_events %}{{ evt.total_registrations }}{% if not loop.last %},{% endif %}{% endfor %}],
+            datasets: [{ label:'{{ _T("Total attendances", "courses") }}',
+                data: [{% for evt in stats.top_events %}{{ evt.total_presences }}{% if not loop.last %},{% endif %}{% endfor %}],
                 backgroundColor:'rgba(33,133,208,0.7)', borderColor:'rgba(33,133,208,1)', borderWidth:1 }]
         },
         options: { indexAxis:'y', responsive:true, maintainAspectRatio:false,

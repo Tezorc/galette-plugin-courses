@@ -547,17 +547,8 @@ msgstr "membres inactifs du"
 msgid "All active members participated during this period."
 msgstr "Tous les membres actifs ont participé à au moins une séance sur cette période."
 
-msgid "Last 12 months"
-msgstr "12 derniers mois"
-
 msgid "Top 10"
 msgstr "Top 10"
-
-msgid "Last 20 active members"
-msgstr "20 derniers membres actifs"
-
-msgid "Total"
-msgstr "Total"
 
 msgid "Quick select:"
 msgstr "Raccourci :"
@@ -592,17 +583,20 @@ msgstr "Taux de remplissage moyen par événement"
 msgid "Fill rate"
 msgstr "Taux de remplissage"
 
-msgid "Top events by registrations"
-msgstr "Événements les plus populaires"
+msgid "Top events by attendance"
+msgstr "Événements les plus fréquentés"
 
-msgid "Total registrations"
-msgstr "Total des inscriptions"
+msgid "Total attendances"
+msgstr "Total des présences"
 
-msgid "Registrations by month"
-msgstr "Inscriptions par mois"
+msgid "Attendances by month"
+msgstr "Présences par mois"
 
-msgid "Recent member activity"
-msgstr "Activité récente des membres"
+msgid "Attendances"
+msgstr "Présences"
+
+msgid "Most regular members"
+msgstr "Membres les plus assidus"
 
 msgid "Last participation"
 msgstr "Dernière participation"

@@ -479,14 +479,16 @@ Le fichier .ics genere contient les informations de la seance (nom, date, horair
 
 ### 11. Statistiques (moniteur / staff / admin)
 
-Le menu **Gestion des inscriptions > Statistiques** affiche un tableau de bord complet avec :
+Le menu **Gestion des inscriptions > Statistiques** affiche un tableau de bord complet. **Toute la page depend de la periode** choisie dans le bandeau en tete (dates **Du** / **Au**, par defaut du 1er janvier a aujourd'hui, avec les raccourcis Ce mois-ci, 3 derniers mois, 6 derniers mois, Cette annee, L'annee derniere) : compteurs, graphiques et tableaux portent tous sur les **seances datees dans cette periode**. Le rattachement se fait sur la date de la seance, pas sur la date a laquelle l'adherent s'est inscrit.
 
-- **Compteurs globaux** : 4 cards colorees en ligne avec grand chiffre et icone (vert=evenements, teal=seances, orange=inscriptions, bleu=seances a venir)
-- **Inscriptions par mois** : graphique en barres Chart.js (barres vertes, 12 derniers mois)
-- **Top evenements** : graphique en barres horizontales Chart.js (barres bleues, top 10 par nombre d'inscriptions)
-- **Taux de remplissage moyen** : tableau compact des 10 evenements les plus remplis avec barres de progression colorees
-- **Activite recente** : tableau des 20 derniers membres actifs avec date de derniere participation et nombre total de seances
-- **Membres actifs sur une periode** : section filtrable avec selecteur de dates (debut / fin), raccourcis rapides (Ce mois-ci, 3 derniers mois, 6 derniers mois, Cette annee, L'annee derniere), compteur de membres actifs, tableau exportable en CSV
+Ce que la page suit, c'est la **presence** des adherents : est comptee comme **presence** une ligne pointee **Present** (inscrit et venu) ou **Present (non inscrit)** (venu sans inscription). Une inscription non pointee, une absence (excusee ou non) ou une annulation ne comptent pas. Les statistiques ne valent donc que si le pointage est fait.
+
+- **Compteurs** : 4 cards colorees en ligne avec grand chiffre et icone — vert = evenements ayant au moins une seance sur la periode, teal = seances de la periode, orange = **presences** sur ces seances, bleu = seances ouvertes **a venir** dans la periode (entre aujourd'hui et la date de fin, donc 0 pour une periode entierement passee)
+- **Presences par mois** : graphique en barres Chart.js (barres vertes), un mois par barre sur la periode, selon le mois de la seance
+- **Top evenements** : graphique en barres horizontales Chart.js (barres bleues, top 10 par nombre de presences sur la periode)
+- **Taux de remplissage moyen** : tableau compact des 10 evenements les plus remplis sur les seances de la periode, avec barres de progression colorees. Seul indicateur base sur les **inscriptions** (inscrits / capacite) et non sur les presences : il mesure la demande au moment de l'inscription
+- **Membres les plus assidus** : top 10 des adherents ayant le plus de presences sur la periode, avec leur nombre de presences et la date de leur derniere presence (a egalite, le plus recemment venu passe devant)
+- **Membres actifs sur une periode** : compteur de membres actifs (au moins une presence sur la periode), tableau exportable en CSV
   - **Taux de participation (Phase 62)** : encart bleu en haut de la section affichant le **pourcentage d'adherents actifs ayant participe sur la periode** (`actifs / (actifs + inactifs)`), avec une jauge progress coloree selon le seuil (rouge < 20 %, jaune 20-39 %, teal 40-74 %, vert ≥ 75 %) et la ligne `N / M adhérents actifs ont participé sur la période`. Le pourcentage se recalcule automatiquement a chaque changement de periode.
 - **Presence des moniteurs sur la periode (Phase 64)** : section separee (encadre teal) listant chaque moniteur ayant assure au moins une seance non annulee sur la periode, triee par nombre de seances decroissant. Colonnes : Moniteur, Pseudo, **Seances assurees**, **Mois actifs** (nombre de mois distincts ou il a encadre une seance — indicateur de regularite sur l'annee, badge vert ≥ 6 mois / jaune 3-5 / gris < 3), Evenements. Tableau exportable en CSV. Permet d'identifier les moniteurs reguliers et ceux ponctuels.
 - **Membres inactifs sur la periode** : section separee (encadre rouge) listant tous les adherents actifs n'ayant participe a aucune seance sur la periode, avec compteur et export CSV
@@ -495,10 +497,10 @@ Le menu **Gestion des inscriptions > Statistiques** affiche un tableau de bord c
 
 #### Filtrer les membres actifs et inactifs par periode
 
-1. Saisir les dates **Du** et **Au** (format `aaaa-mm-jj`) via les champs de date natifs ou utiliser les boutons de raccourci (les raccourcis remplissent les champs, cliquer ensuite sur **Filtrer**)
-2. Cliquer sur **Filtrer** : la page se recharge avec deux sections :
-   - **Membres actifs** : membres ayant au moins une seance sur la periode (colonnes : Membre, Pseudo, Seances, **Presents**, **Presents (non-inscrits)**, Evenements)
-   - **Membres inactifs** : membres actifs de l'association sans aucune participation sur la periode
+1. Saisir les dates **Du** et **Au** (format `aaaa-mm-jj`) dans le bandeau en tete de page, via les champs de date natifs ou les boutons de raccourci (les raccourcis remplissent les champs, cliquer ensuite sur **Filtrer**)
+2. Cliquer sur **Filtrer** : la page entiere se recharge sur la nouvelle periode, dont deux sections :
+   - **Membres actifs** : membres ayant au moins une **presence** sur la periode (colonnes : Membre, Pseudo, Seances = total des presences, **Presents**, **Presents (non-inscrits)**, Evenements)
+   - **Membres inactifs** : membres actifs de l'association sans aucune presence sur la periode — y compris ceux qui etaient inscrits mais absents ou non pointes
 3. Cliquer sur **Export CSV** de la section souhaitee pour telecharger la liste au format CSV (UTF-8 avec BOM pour Excel)
 
 Les deux colonnes de presence (Phase 64) distinguent desormais :
@@ -1541,7 +1543,7 @@ Une ligne a laquelle on ne touche pas part **presente** : le select est preselec
 
 **Gestion des inscriptions > Statistiques** vous est ouvert des lors que vous etes affecte comme moniteur sur **au moins une seance** — passee ou a venir, peu importe laquelle. Le simple fait d'etre responsable de groupe ne suffit pas : tant que vous ne vous etes jamais porte volontaire, l'entree de menu n'apparait pas.
 
-Vous y voyez exactement les memes chiffres que le staff, **a l'echelle du club entier** et non de vos seules seances : compteurs globaux, inscriptions par mois, top evenements, taux de remplissage, taux de participation, presence des moniteurs sur la periode, et la liste nominative des adherents actifs et inactifs. La section **Presence des moniteurs** vous situe par rapport aux autres encadrants (seances assurees, mois actifs).
+Vous y voyez exactement les memes chiffres que le staff, **a l'echelle du club entier** et non de vos seules seances, tous calcules sur la periode choisie en tete de page : compteurs, presences par mois, top evenements, taux de remplissage, taux de participation, presence des moniteurs, et la liste nominative des adherents actifs et inactifs. La section **Presence des moniteurs** vous situe par rapport aux autres encadrants (seances assurees, mois actifs).
 
 Seule difference avec la vue du staff : les noms d'adherents ne sont pas cliquables, car les fiches adherents restent reservees au staff par Galette lui-meme.
 
@@ -1634,15 +1636,15 @@ Les deux operations sont tracees dans le journal Galette avec le detail de ce qu
 
 ### Statistiques
 
-**Gestion des inscriptions > Statistiques** offre une vue complete, accessible aux **moniteurs** comme au staff et aux admins :
+**Gestion des inscriptions > Statistiques** offre une vue complete, accessible aux **moniteurs** comme au staff et aux admins. Tous les chiffres portent sur la periode choisie en tete de page :
 
-- Compteurs globaux (evenements, seances, inscriptions, seances a venir)
+- Compteurs (evenements, seances, inscriptions, seances a venir)
 - Graphiques mensuels et top evenements
 - Taux de remplissage par evenement
-- Activite recente des membres
+- Top 10 des membres les plus assidus sur la periode
 - **Taux de participation** sur la periode : pourcentage d'adherents actifs ayant participe, avec une jauge coloree selon le seuil
 
-**Filtrer par periode** (membres actifs / inactifs) :
+**Choisir la periode** (s'applique a toute la page) :
 
 1. Renseigner les dates **Du** et **Au** (ou utiliser les raccourcis : Ce mois-ci, 3 mois, 6 mois, Cette annee...)
 2. Cliquer sur **Filtrer**
