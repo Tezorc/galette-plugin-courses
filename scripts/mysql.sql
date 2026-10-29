@@ -19,6 +19,7 @@
 
 -- Schema for Galette Courses plugin
 
+DROP TABLE IF EXISTS galette_courses_instructor_availability;
 DROP TABLE IF EXISTS galette_courses_pending_notifications;
 DROP TABLE IF EXISTS galette_courses_mail_templates;
 DROP TABLE IF EXISTS galette_courses_member_preferences;
@@ -213,4 +214,22 @@ CREATE TABLE galette_courses_pending_notifications (
     CONSTRAINT fk_courses_pn_member FOREIGN KEY (member_id) REFERENCES galette_adherents (id_adh) ON DELETE CASCADE,
     CONSTRAINT fk_courses_pn_event FOREIGN KEY (event_id) REFERENCES galette_courses_events (id_event) ON DELETE CASCADE,
     CONSTRAINT fk_courses_pn_session FOREIGN KEY (session_id) REFERENCES galette_courses_sessions (id_session) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Instructor availability periods (dbver 0.5):
+-- whole days, bounds included, kind = 'available' or 'absent' (absent wins
+-- when periods overlap). Informs the group managers looking for an
+-- instructor, never blocks anything.
+CREATE TABLE galette_courses_instructor_availability (
+    id_availability int unsigned NOT NULL auto_increment,
+    member_id int unsigned NOT NULL,
+    date_from date NOT NULL,
+    date_to date NOT NULL,
+    kind varchar(10) NOT NULL,
+    comment varchar(255) DEFAULT NULL,
+    created_date datetime NOT NULL,
+    PRIMARY KEY (id_availability),
+    KEY idx_courses_ia_member (member_id),
+    KEY idx_courses_ia_dates (date_from, date_to),
+    CONSTRAINT fk_courses_ia_member FOREIGN KEY (member_id) REFERENCES galette_adherents (id_adh) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

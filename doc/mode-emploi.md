@@ -573,6 +573,24 @@ L'absence peut etre declaree jusqu'au jour meme de la seance ; elle est refusee 
 
 A la difference du bouton **"Retirer le moniteur"** de la fiche seance (un gestionnaire retire quelqu'un, sans aucun courriel), **"Je serai absent"** est le moniteur qui se retire lui-meme et declenche l'alerte.
 
+#### Disponibilites des moniteurs
+
+Chaque moniteur potentiel (responsable de groupe, ou membre deja affecte a au moins une seance) declare ses periodes dans **Mes seances comme moniteur**, onglet **Mes disponibilites** :
+
+- une periode = **du … au …** (jours entiers, bornes incluses ; une seule date suffit pour un jour), **Disponible** ou **Absent**, et un commentaire facultatif (« samedi matin seulement ») ;
+- rien de declare = etat inconnu, **sans aucun blocage** : la declaration informe, elle n'interdit ni volontariat ni affectation ;
+- si deux periodes se chevauchent, **Absent l'emporte** ;
+- les periodes passees disparaissent de la liste ; une periode se supprime avec la corbeille, seul son auteur peut la supprimer ;
+- une periode d'absence qui couvre des seances que le moniteur encadre encore est signalee (pastille orange sur l'onglet, liste des seances concernees). Declarer la periode **ne retire pas** le moniteur : il utilise **"Je serai absent"** sur chaque seance ;
+- **"Je serai absent"** sur une seance enregistre de lui-meme une journee d'absence a cette date.
+
+Sur la **fiche d'une seance a venir** (non annulee, evenement qui requiert un moniteur), l'encadre **Moniteurs disponibles ce jour** de la section Moniteurs liste, parmi les moniteurs eligibles non encore affectes, ceux qui se sont declares disponibles ce jour-la (avec leur commentaire), puis une ligne **Absents ce jour**. Un moniteur disponible qui encadre deja une seance qui chevauche porte l'etiquette *Encadre deja une seance a cette heure*.
+
+- **Staff, administrateurs et moniteurs de la seance** : bouton **"Affecter"** a cote de chaque moniteur disponible ; le menu *Affecter un moniteur* suffixe aussi chaque nom de *— disponible* ou *— absent*.
+- **Responsables de groupe** : meme liste en lecture seule, pour savoir qui contacter.
+
+L'encadre n'apparait que si au moins un moniteur eligible a declare quelque chose pour ce jour.
+
 #### Indicateur dans la liste des seances
 
 Dans la liste des seances, un badge orange (triangle d'exclamation) s'affiche a cote du bouton "Details" pour les seances sans moniteur assigne.
@@ -1506,6 +1524,10 @@ Etre affecte comme moniteur d'une seance vous y donne les memes leviers que le s
 - gerer la liste d'attente (augmenter la capacite, promouvoir, creer une seance supplementaire)
 
 Sur les autres seances, vous restez un membre ou un responsable de groupe ordinaire.
+
+### Declarer vos disponibilites
+
+Onglet **Mes disponibilites** de **Mes seances comme moniteur** : saisir une periode (du … au …, une seule date pour un jour), choisir **Disponible** ou **Absent**, ajouter un commentaire si utile, puis **"Ajouter cette periode"**. Les responsables de groupe voient votre disponibilite sur la fiche des seances de ces jours-la quand ils cherchent un moniteur. Ne rien declarer ne bloque rien. Une periode d'absence ne vous retire pas des seances que vous encadrez deja : l'onglet vous les signale, et vous utilisez **"Je serai absent"** sur chacune.
 
 ### Si vous ne pouvez pas venir
 

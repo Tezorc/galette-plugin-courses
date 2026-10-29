@@ -195,8 +195,8 @@ galette-plugin-courses/
   _define.php                      # Enregistrement plugin + ACLs
   _routes.php                      # Routes Slim (60 routes)
   scripts/build-pdf.py             # HTML -> PDF imprimable (polices inlinees + controle d'embarquement)
-  scripts/mysql.sql                # Schema BDD MySQL/MariaDB (12 tables)
-  scripts/pgsql.sql                # Schema BDD PostgreSQL (12 tables, equivalent au mysql)
+  scripts/mysql.sql                # Schema BDD MySQL/MariaDB (13 tables)
+  scripts/pgsql.sql                # Schema BDD PostgreSQL (13 tables, equivalent au mysql)
   scripts/upgrade-to-0.2-mysql.sql # Migration MySQL vers dbver 0.2 (jouee par Galette)
   scripts/upgrade-to-0.2-pgsql.sql # Migration pgsql vers dbver 0.2 (jouee par Galette)
   scripts/manual-catchup-0.2-mysql.sql # Rattrapage manuel idempotent MySQL (installs sans ligne galette_plugins)
@@ -205,6 +205,8 @@ galette-plugin-courses/
   scripts/upgrade-to-0.3-pgsql.sql # Migration pgsql vers dbver 0.3 (idem)
   scripts/upgrade-to-0.4-mysql.sql # Migration MySQL vers dbver 0.4 : pref_value varchar(255) -> TEXT (les periodes de fermeture debordaient)
   scripts/upgrade-to-0.4-pgsql.sql # Migration pgsql vers dbver 0.4 (idem)
+  scripts/upgrade-to-0.5-mysql.sql # Migration MySQL vers dbver 0.5 : table instructor_availability (disponibilites des moniteurs)
+  scripts/upgrade-to-0.5-pgsql.sql # Migration pgsql vers dbver 0.5 (idem)
   lang/courses_fr_FR.utf8.po       # Traductions FR generiques (source PO)
   lang/fr_FR.utf8/LC_MESSAGES/courses.mo # Traductions FR generiques (compilees)
   lang/courses_fr_FR.utf8_local_lang.php # Surcharges locales propres au club (URL, signature, terminologie) — Phase 60
@@ -234,6 +236,7 @@ galette-plugin-courses/
       Waitlist.php                 # Liste d'attente (position, promotion, FIFO)
       SessionInstructor.php        # Instructeur affecte a une session
       Household.php                # Foyer : membres lies par `parent_id` (fragments SQL partages par les repositories)
+      InstructorAvailability.php   # Periode disponible / absent d'un moniteur (jours entiers, absent l'emporte)
       MailTemplate.php             # Template email personnalisable (12 refs : workflow, nouvelles seances moniteurs, digest quotidien moniteurs, seance ouverte avec moniteur, seance ouverte sans moniteur, digest hebdo membres, annulation inscrits/attente, promotion waitlist, absence moniteur)
     Repository/
       Events.php                   # Liste evenements (filtrage par role)
@@ -257,6 +260,7 @@ galette-plugin-courses/
       MailTemplatesController.php  # Gestion des templates email (CRUD)
       PreferencesController.php    # Preferences globales du plugin (admin)
       MemberPreferencesController.php  # Preferences membre (notifications, iCal)
+      InstructorAvailabilityController.php # Ajout / suppression des periodes de disponibilite d'un moniteur
       CronController.php           # Endpoints cron : generateSessions (sessions recurrentes + sweep digest moniteur + digest membre hebdo si jour J) + sendDigest (sweep moniteur seul) + sendWeeklyDigest (sweep membre seul)
       UnsubscribeController.php    # Desinscription en un clic (public, sans auth, via token)
   webroot/galette_courses.css      # Feuille de style du plugin (servie via `plugin_res`, cache-buster `?v=` dans headers.html.twig)
@@ -285,7 +289,7 @@ galette-plugin-courses/
 
 - Serveur : MySQL, user `galette`, password `galette`, database `galette`
 - PREFIX_DB : `galette_`
-- 12 tables : types, events, events_groups, slots, sessions, session_instructors, registrations, waitlist, preferences, mail_templates, member_preferences, pending_notifications
+- 13 tables : types, events, events_groups, slots, sessions, session_instructors, registrations, waitlist, preferences, mail_templates, member_preferences, pending_notifications, instructor_availability
 - `creator_id` est nullable (le superadmin n'a pas d'enregistrement adherent)
 - Les FK CASCADE sont sur les suppressions d'events et sessions
 

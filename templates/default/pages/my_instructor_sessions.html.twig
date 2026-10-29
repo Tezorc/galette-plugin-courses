@@ -53,6 +53,15 @@
                 <span class="ui green circular label" style="margin-left:.4em">{{ upcoming|length }}</span>
             {% endif %}
         </a>
+        {% if can_declare_availability %}
+            <a class="item" data-tab="availability">
+                <i class="calendar check outline icon" aria-hidden="true"></i>
+                <span class="courses-tab-text">{{ _T("My availability", "courses") }}</span>
+                {% if absence_sessions|length > 0 %}
+                    <span class="ui orange circular label" style="margin-left:.4em" title="{{ _T("Absence periods covering sessions you still lead", "courses") }}">!</span>
+                {% endif %}
+            </a>
+        {% endif %}
     </div>
 </div>
 
@@ -443,6 +452,91 @@
     {% endif %}
 </div>
 
+{# =========================================================
+   ONGLET 3 — Mes disponibilites : periodes disponible / absent
+   ========================================================= #}
+{% if can_declare_availability %}
+<div class="ui bottom attached tab segment" data-tab="availability" style="padding:1em 0; border:none; box-shadow:none;">
+
+    <p class="courses-help-text">{{ _T("Tell the group managers when you are available to lead a session, or when you will be away. They see it on the session page when they look for an instructor. Nothing declared blocks nothing.", "courses") }}</p>
+
+    <form action="{{ url_for("coursesDoAddAvailability") }}" method="post" class="ui form segment">
+        <div class="three fields">
+            <div class="required field">
+                <label for="availability_from">{{ _T("From", "courses") }}</label>
+                <input type="date" name="date_from" id="availability_from" min="{{ "now"|date("Y-m-d") }}" required/>
+            </div>
+            <div class="field">
+                <label for="availability_to">{{ _T("To (included)", "courses") }}</label>
+                <input type="date" name="date_to" id="availability_to" min="{{ "now"|date("Y-m-d") }}"/>
+            </div>
+            <div class="required field">
+                <label for="availability_kind">{{ _T("I am", "courses") }}</label>
+                <select name="kind" id="availability_kind" class="ui dropdown">
+                    <option value="available">{{ _T("Available", "courses") }}</option>
+                    <option value="absent">{{ _T("Absent", "courses") }}</option>
+                </select>
+            </div>
+        </div>
+        <div class="field">
+            <label for="availability_comment">{{ _T("Comment (optional)", "courses") }}</label>
+            <input type="text" name="comment" id="availability_comment" maxlength="255" placeholder="{{ _T("e.g. Saturday mornings only", "courses") }}"/>
+        </div>
+        <button type="submit" class="ui small primary labeled icon button">
+            <i class="plus icon" aria-hidden="true"></i>
+            {{ _T("Add this period", "courses") }}
+        </button>
+    </form>
+
+    {% if availabilities|length == 0 %}
+        <div class="ui info message">
+            <i class="info circle icon" aria-hidden="true"></i>
+            {{ _T("No period declared.", "courses") }}
+        </div>
+    {% else %}
+        <div class="ui relaxed divided list">
+            {% for a in availabilities %}
+                <div class="item">
+                    <div class="right floated content">
+                        <form action="{{ url_for("coursesDoRemoveAvailability", {"id": a.getId()}) }}" method="post" class="ui form courses-inline-form">
+                            <button type="submit" class="ui mini red basic icon button" title="{{ _T("Remove this period", "courses") }}" aria-label="{{ _T("Remove this period", "courses") }}">
+                                <i class="trash alternate icon" aria-hidden="true"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="content">
+                        {% if a.isAbsent() %}
+                            <span class="ui orange label">{{ _T("Absent", "courses") }}</span>
+                        {% else %}
+                            <span class="ui green label">{{ _T("Available", "courses") }}</span>
+                        {% endif %}
+                        {% if a.getDateFrom() == a.getDateTo() %}
+                            <strong>{{ a.getDateFrom()|date("d/m/Y") }}</strong>
+                        {% else %}
+                            <strong>{{ a.getDateFrom()|date("d/m/Y") }} &rarr; {{ a.getDateTo()|date("d/m/Y") }}</strong>
+                        {% endif %}
+                        {% if a.getComment() %}
+                            &middot; <em>{{ a.getComment() }}</em>
+                        {% endif %}
+                        {% if absence_sessions[a.getId()] is defined %}
+                            <div class="ui small orange message">
+                                <i class="exclamation triangle icon" aria-hidden="true"></i>
+                                {{ _T("You still lead these sessions during this period. If you will not come, use \"I will be absent\" on each of them in the My instructor sessions tab:", "courses") }}
+                                <ul class="list">
+                                    {% for label in absence_sessions[a.getId()] %}
+                                        <li>{{ label }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endif %}
+
 {# Modale unique "Je serai absent" : l'action du formulaire est posee en JS
    depuis le bouton de la carte. #}
 <div class="ui small modal" id="absence-modal">
@@ -483,6 +577,16 @@ $(function() {
         $('#absence-modal-session').text($(this).data('session'));
         $('#absence_reason').val('');
         $('#absence-modal').modal('show');
+    });
+
+    // ----- Mes disponibilites : la fin ne peut preceder le debut -----
+    $('#availability_from').on('change', function() {
+        var from = $(this).val();
+        var $to = $('#availability_to');
+        $to.attr('min', from || $(this).attr('min'));
+        if ($to.val() && from && $to.val() < from) {
+            $to.val(from);
+        }
     });
 
     // ----- Browse filters (client-side, plain HTML <select>s) -----

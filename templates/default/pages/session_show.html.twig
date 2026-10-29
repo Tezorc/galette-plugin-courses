@@ -193,6 +193,51 @@
                         {% endif %}
                     {% endif %}
 
+                    {# Disponibilites declarees ce jour par les moniteurs eligibles.
+                       Affecter en un clic reserve aux gestionnaires de la seance ;
+                       les responsables de groupe voient la liste en lecture. #}
+                    {% if available_instructors|length > 0 or absent_instructors|length > 0 %}
+                        <div class="ui divider"></div>
+                        <h4 class="ui small header">
+                            <i class="calendar check outline icon" aria-hidden="true"></i>
+                            {{ _T("Instructors available that day", "courses") }}
+                        </h4>
+                        {% if available_instructors|length > 0 %}
+                            <div class="ui relaxed list">
+                                {% for mid, a in available_instructors %}
+                                    <div class="item">
+                                        <div class="content courses-member-inline">
+                                            <span class="ui green tiny label">{{ _T("Available", "courses") }}</span>
+                                            {{ a.name }}
+                                            {% if a.comment %}<em>&middot; {{ a.comment }}</em>{% endif %}
+                                            {% if a.busy %}
+                                                <span class="ui orange basic tiny label">{{ _T("Already leads a session at that time", "courses") }}</span>
+                                            {% elseif is_session_manager %}
+                                                <form action="{{ url_for("coursesDoAssignInstructor", {"id": session.getId()}) }}" method="post" class="ui form courses-inline-form">
+                                                    <input type="hidden" name="member_id" value="{{ mid }}">
+                                                    <button type="submit" class="ui mini primary button">
+                                                        <i class="plus icon" aria-hidden="true"></i>
+                                                        {{ _T("Assign", "courses") }}
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="courses-help-text">{{ _T("Nobody has declared themselves available that day.", "courses") }}</p>
+                        {% endif %}
+                        {% if absent_instructors|length > 0 %}
+                            <p class="courses-help-text">
+                                <strong>{{ _T("Absent that day:", "courses") }}</strong>
+                                {% for mid, a in absent_instructors %}
+                                    {{ a.name }}{% if a.comment %} ({{ a.comment }}){% endif %}{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            </p>
+                        {% endif %}
+                    {% endif %}
+
                     {# Session manager (staff or session instructor): assign another instructor #}
                     {% if is_session_manager and eligible_instructors|length > 0 and session.getStatus() != 'cancelled' and session.getSessionDate() >= "now"|date("Y-m-d") %}
                         <div class="ui divider"></div>
@@ -202,7 +247,7 @@
                                     <select name="member_id" class="ui search dropdown" aria-label="{{ _T("Assign instructor", "courses") }}">
                                         <option value="">{{ _T("Assign instructor", "courses") }}</option>
                                         {% for mid, mname in eligible_instructors %}
-                                            <option value="{{ mid }}">{{ mname }}</option>
+                                            <option value="{{ mid }}">{{ mname }}{% if absent_instructors[mid] is defined %} — {{ _T("absent", "courses") }}{% elseif available_instructors[mid] is defined %} — {{ _T("available", "courses") }}{% endif %}</option>
                                         {% endfor %}
                                     </select>
                                 </div>

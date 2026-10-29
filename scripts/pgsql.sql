@@ -19,6 +19,7 @@
 
 -- Schema for Galette Courses plugin (PostgreSQL)
 
+DROP TABLE IF EXISTS galette_courses_instructor_availability CASCADE;
 DROP TABLE IF EXISTS galette_courses_pending_notifications CASCADE;
 DROP TABLE IF EXISTS galette_courses_mail_templates CASCADE;
 DROP TABLE IF EXISTS galette_courses_member_preferences CASCADE;
@@ -201,3 +202,20 @@ CREATE TABLE galette_courses_pending_notifications (
 );
 CREATE INDEX idx_courses_pn_member ON galette_courses_pending_notifications (member_id);
 CREATE INDEX idx_courses_pn_ref ON galette_courses_pending_notifications (ref);
+
+-- Instructor availability periods (dbver 0.5):
+-- whole days, bounds included, kind = 'available' or 'absent' (absent wins
+-- when periods overlap). Informs the group managers looking for an
+-- instructor, never blocks anything.
+CREATE TABLE galette_courses_instructor_availability (
+    id_availability serial PRIMARY KEY,
+    member_id integer NOT NULL,
+    date_from date NOT NULL,
+    date_to date NOT NULL,
+    kind varchar(10) NOT NULL,
+    comment varchar(255) DEFAULT NULL,
+    created_date timestamp NOT NULL,
+    CONSTRAINT fk_courses_ia_member FOREIGN KEY (member_id) REFERENCES galette_adherents (id_adh) ON DELETE CASCADE
+);
+CREATE INDEX idx_courses_ia_member ON galette_courses_instructor_availability (member_id);
+CREATE INDEX idx_courses_ia_dates ON galette_courses_instructor_availability (date_from, date_to);

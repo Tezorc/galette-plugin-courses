@@ -33,6 +33,7 @@ use GaletteCourses\Controllers\ICalController;
 use GaletteCourses\Controllers\StatsController;
 use GaletteCourses\Controllers\MailTemplatesController;
 use GaletteCourses\Controllers\UnsubscribeController;
+use GaletteCourses\Controllers\InstructorAvailabilityController;
 
 // Events
 $app->get(
@@ -281,6 +282,16 @@ $app->get(
     '/my-instructor-sessions',
     [SessionsController::class, 'myInstructorSessions']
 )->setName('coursesMyInstructorSessions')->add(Authenticate::class);
+
+$app->post(
+    '/my-availability/add',
+    [InstructorAvailabilityController::class, 'doAdd']
+)->setName('coursesDoAddAvailability')->add(Authenticate::class);
+
+$app->post(
+    '/my-availability/{id:[0-9]+}/remove',
+    [InstructorAvailabilityController::class, 'doRemove']
+)->setName('coursesDoRemoveAvailability')->add(Authenticate::class);
 
 $app->get(
     '/registrations[/{option}/{value}]',

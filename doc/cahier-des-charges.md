@@ -690,6 +690,45 @@ Ces tests ont ete valides par mutation : casser le dedup par `session_id`, la br
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Evolution - Les moniteurs declarent leurs disponibilites
+
+**Statut :** TERMINEE (lot 2 sur 3 du chantier disponibilites moniteurs)
+
+- Precision utilisateur : « des periodes de dates suffisent » (pas de jours
+  de la semaine).
+- Nouvelle table `galette_courses_instructor_availability` (`id_availability`,
+  `member_id` FK adherents `ON DELETE CASCADE`, `date_from`, `date_to`,
+  `kind` = `available` | `absent`, `comment` varchar(255), `created_date`).
+  `dbver` 0.4 -> **0.5**, migrations `upgrade-to-0.5-mysql.sql` /
+  `upgrade-to-0.5-pgsql.sql` (`CREATE TABLE IF NOT EXISTS`), schemas
+  d'installation a jour (13 tables).
+- `Entity\InstructorAvailability` : `check()` (dates `Y-m-d` valides, fin >=
+  debut, periode pas deja passee, type connu), `getUpcomingForMember()`,
+  `getStatusOn($memberIds, $date)` et la regle pure
+  `resolveStatus()` : **absent l'emporte** sur disponible quand des periodes
+  se chevauchent. `recordAbsence()` pose une journee d'absence sauf si une
+  absence couvre deja le jour.
+- `InstructorAvailabilityController` (`coursesDoAddAvailability`,
+  `coursesDoRemoveAvailability`, ACL `member`) : reserve aux responsables de
+  groupe et aux membres deja affectes a une seance (`canDeclare()`), chacun ne
+  supprime que ses propres periodes.
+- *Mes seances comme moniteur* : troisieme onglet **Mes disponibilites**
+  (formulaire + liste des periodes non passees). Une periode d'absence qui
+  couvre des seances encore encadrees les liste et pose une pastille orange
+  sur l'onglet ; elle ne retire pas le moniteur (choix : le retrait reste un
+  geste explicite par seance, qui declenche l'alerte du lot 1).
+- Lot 1 relie : `doDeclareInstructorAbsence` enregistre une journee
+  d'absence a la date de la seance.
+- Fiche seance : la liste des moniteurs eligibles est desormais calculee aussi
+  pour les responsables de groupe. Encadre **Moniteurs disponibles ce jour**
+  (disponibles avec commentaire et etiquette *Encadre deja une seance a cette
+  heure* via `hasOverlappingSession`, puis *Absents ce jour*), bouton
+  **Affecter** pour les gestionnaires de la seance, lecture seule pour les
+  responsables ; suffixes *— disponible* / *— absent* dans le menu
+  d'affectation.
+- i18n : 27 chaines, `.mo` recompile. Tests : `InstructorAvailabilityTest`
+  (precedence, validation, commentaire, bornes) ; 131/131 verts.
+
 ### Evolution - Un moniteur peut se declarer absent
 
 **Statut :** TERMINEE (lot 1 sur 3 du chantier disponibilites moniteurs)

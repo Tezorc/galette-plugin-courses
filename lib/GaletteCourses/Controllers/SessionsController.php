@@ -26,6 +26,7 @@ namespace GaletteCourses\Controllers;
 use Galette\Controllers\Crud\AbstractPluginController;
 use GaletteCourses\Entity\Event;
 use GaletteCourses\Entity\Household;
+use GaletteCourses\Entity\InstructorAvailability;
 use GaletteCourses\Entity\Registration;
 use GaletteCourses\Entity\Session;
 use GaletteCourses\Entity\SessionInstructor;
@@ -343,9 +344,10 @@ class SessionsController extends AbstractPluginController
 
         // For session managers (staff or session instructors): load eligible
         // instructors (group managers of the event's groups) so they can
-        // assign/replace co-instructors.
+        // assign/replace co-instructors. Group managers get the list too, read
+        // only, to see who declared themselves available on that day.
         $eligible_instructors = [];
-        if ($is_session_manager) {
+        if ($is_session_manager || $this->login->isGroupManager()) {
             $event->loadGroups();
             $eventGroups = $event->getGroups();
             if (!empty($eventGroups)) {
@@ -389,6 +391,45 @@ class SessionsController extends AbstractPluginController
             foreach ($instructors as $instr) {
                 unset($eligible_instructors[$instr->getMemberId()]);
             }
+        }
+
+        // Declared availability of the eligible instructors on the session day,
+        // for an upcoming session that needs an instructor. "busy" = already
+        // leading another session at an overlapping time that day.
+        $available_instructors = [];
+        $absent_instructors = [];
+        if (
+            !empty($eligible_instructors)
+            && !$event->isInstructorNotNeeded()
+            && $session->getStatus() !== Session::STATUS_CANCELLED
+            && $session->getSessionDate() >= date('Y-m-d')
+        ) {
+            $statuses = InstructorAvailability::getStatusOn(
+                $this->zdb,
+                array_keys($eligible_instructors),
+                $session->getSessionDate()
+            );
+            foreach ($statuses as $mid => $status) {
+                if (!isset($eligible_instructors[$mid])) {
+                    continue;
+                }
+                $entry = ['name' => $eligible_instructors[$mid], 'comment' => $status['comment']];
+                if ($status['kind'] === InstructorAvailability::KIND_ABSENT) {
+                    $absent_instructors[$mid] = $entry;
+                } else {
+                    $entry['busy'] = SessionInstructor::hasOverlappingSession(
+                        $this->zdb,
+                        $mid,
+                        $session->getSessionDate(),
+                        $session->getStartTime(),
+                        $session->getEndTime(),
+                        (int)$session->getId()
+                    );
+                    $available_instructors[$mid] = $entry;
+                }
+            }
+            uasort($available_instructors, static fn(array $a, array $b): int => strcmp($a['name'], $b['name']));
+            uasort($absent_instructors, static fn(array $a, array $b): int => strcmp($a['name'], $b['name']));
         }
 
         // Load the current user's household (for the linked-member picker).
@@ -576,6 +617,8 @@ class SessionsController extends AbstractPluginController
                 'is_instructor' => $is_instructor,
                 'is_session_manager' => $is_session_manager,
                 'eligible_instructors' => $eligible_instructors,
+                'available_instructors' => $available_instructors,
+                'absent_instructors' => $absent_instructors,
                 'children' => $children,
                 'children_registered' => $children_registered,
                 'parent_eligible' => $parent_eligible,
@@ -928,6 +971,10 @@ class SessionsController extends AbstractPluginController
             $this->flash->addMessage('error_detected', _T('An error occurred.', 'courses'));
             return $response->withStatus(302)->withHeader('Location', $returnUrl);
         }
+
+        // Mark the whole day absent, so the managers looking for a replacement
+        // do not see this instructor among the available ones.
+        InstructorAvailability::recordAbsence($this->zdb, $memberId, $session->getSessionDate(), $reason !== '' ? $reason : null);
 
         $this->history->add(
             _T('[Courses] Instructor declared absent', 'courses'),
@@ -2323,6 +2370,39 @@ class SessionsController extends AbstractPluginController
             }
         }
 
+        // ============================================================
+        // Tab 3 : my availability periods
+        // ============================================================
+        // An absence period that covers sessions I still lead is flagged with
+        // those sessions: declaring the period does not withdraw me, the
+        // "I will be absent" button on each card does.
+        $can_declare_availability = InstructorAvailabilityController::canDeclare($this->zdb, $this->login);
+        $availabilities = $can_declare_availability
+            ? InstructorAvailability::getUpcomingForMember($this->zdb, $member_id)
+            : [];
+        $absence_sessions = [];
+        foreach ($availabilities as $availability) {
+            if (!$availability->isAbsent()) {
+                continue;
+            }
+            $labels = [];
+            foreach ($sessions as $s) {
+                if (
+                    $s->getStatus() === Session::STATUS_CANCELLED
+                    || $s->getSessionDate() < date('Y-m-d')
+                    || !$availability->covers($s->getSessionDate())
+                ) {
+                    continue;
+                }
+                $ev = $events[$s->getEventId()] ?? null;
+                $labels[] = ($ev !== null ? $ev->getName() . ' — ' : '')
+                    . $s->getFormattedDateShort() . ' ' . $s->getFormattedStartTime();
+            }
+            if (!empty($labels)) {
+                $absence_sessions[(int)$availability->getId()] = $labels;
+            }
+        }
+
         $this->view->render(
             $response,
             $this->getTemplate('pages/my_instructor_sessions'),
@@ -2344,6 +2424,9 @@ class SessionsController extends AbstractPluginController
                 'volunteer_available_names' => $volunteer_available_names,
                 'instr_conflicts'           => $instr_conflicts,
                 'volunteer_conflicts'       => $volunteer_conflicts,
+                'can_declare_availability'  => $can_declare_availability,
+                'availabilities'            => $availabilities,
+                'absence_sessions'          => $absence_sessions,
             ]
         );
         return $response;

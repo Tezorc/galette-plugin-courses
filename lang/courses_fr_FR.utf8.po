@@ -2214,3 +2214,86 @@ msgstr "[Cours] Moniteur recherché : {event_name} le {session_date}"
 
 msgid "Hello,\n\n{instructor_name} will not be able to lead the session \"{event_name}\" on {session_date} ({session_time}) and has withdrawn as instructor.{reason_block}\n\nThis session has no instructor any more. If you can lead it, log in and volunteer from the session detail page. Otherwise, a replacement will have to be found or the session cancelled.\n\nThank you!"
 msgstr "Bonjour,\n\n{instructor_name} ne pourra pas encadrer la séance « {event_name} » du {session_date} ({session_time}) et s'est retiré.{reason_block}\n\nCette séance n'a plus de moniteur. Si vous pouvez l'encadrer, connectez-vous et portez-vous volontaire depuis la fiche de la séance. Sinon, il faudra trouver un remplaçant ou annuler la séance.\n\nMerci !"
+
+# --- Disponibilites des moniteurs ---
+
+msgid "Please enter valid dates."
+msgstr "Veuillez saisir des dates valides."
+
+msgid "The end date must be on or after the start date."
+msgstr "La date de fin doit être égale ou postérieure à la date de début."
+
+msgid "This period is already over."
+msgstr "Cette période est déjà passée."
+
+msgid "Please choose available or absent."
+msgstr "Veuillez choisir disponible ou absent."
+
+msgid "You do not have the right to declare availability."
+msgstr "Vous n'avez pas le droit de déclarer des disponibilités."
+
+msgid "Your availability has been recorded."
+msgstr "Votre disponibilité est enregistrée."
+
+msgid "Period not found."
+msgstr "Période introuvable."
+
+msgid "The period has been removed."
+msgstr "La période a été supprimée."
+
+msgid "My availability"
+msgstr "Mes disponibilités"
+
+msgid "Absence periods covering sessions you still lead"
+msgstr "Des périodes d'absence couvrent des séances que vous encadrez encore"
+
+msgid "Tell the group managers when you are available to lead a session, or when you will be away. They see it on the session page when they look for an instructor. Nothing declared blocks nothing."
+msgstr "Indiquez aux responsables de groupe quand vous êtes disponible pour encadrer une séance, ou quand vous serez absent. Ils le voient sur la fiche de la séance quand ils cherchent un moniteur. Ne rien déclarer ne bloque rien."
+
+msgid "To (included)"
+msgstr "Au (inclus)"
+
+msgid "I am"
+msgstr "Je suis"
+
+msgid "Available"
+msgstr "Disponible"
+
+msgid "Comment (optional)"
+msgstr "Commentaire (facultatif)"
+
+msgid "e.g. Saturday mornings only"
+msgstr "ex. : samedi matin seulement"
+
+msgid "Add this period"
+msgstr "Ajouter cette période"
+
+msgid "No period declared."
+msgstr "Aucune période déclarée."
+
+msgid "Remove this period"
+msgstr "Supprimer cette période"
+
+msgid "You still lead these sessions during this period. If you will not come, use \"I will be absent\" on each of them in the My instructor sessions tab:"
+msgstr "Vous encadrez encore ces séances pendant cette période. Si vous ne venez pas, utilisez « Je serai absent » sur chacune d'elles, dans l'onglet Mes séances comme moniteur :"
+
+msgid "Instructors available that day"
+msgstr "Moniteurs disponibles ce jour"
+
+msgid "Already leads a session at that time"
+msgstr "Encadre déjà une séance à cette heure"
+
+msgid "Assign"
+msgstr "Affecter"
+
+msgid "Nobody has declared themselves available that day."
+msgstr "Personne ne s'est déclaré disponible ce jour."
+
+msgid "Absent that day:"
+msgstr "Absents ce jour :"
+
+msgid "absent"
+msgstr "absent"
+
+msgid "available"
+msgstr "disponible"

@@ -34,7 +34,7 @@ $this->register(
     compver: '1.3.0',
     route: 'courses',
     date: '2026-06-07',
-    dbver: 0.4,
+    dbver: 0.5,
     acls: [
         // Event authorship: routes are 'member' but each handler enforces
         // denyUnlessCanAuthorEvents() (admin/staff/group manager/instructor on
@@ -69,6 +69,10 @@ $this->register(
         'coursesMyRegistrations'    => 'member',
         'coursesMyRegistrationsIcal' => 'member',
         'coursesMyInstructorSessions' => 'member',
+        // Instructor availability: the handler checks the member is a group
+        // manager or an assigned instructor, and only touches their own rows.
+        'coursesDoAddAvailability'    => 'member',
+        'coursesDoRemoveAvailability' => 'member',
         'coursesSessionIcal'        => 'member',
         'coursesRegistrations'      => 'groupmanager',
         'coursesRegistrationsFilter' => 'groupmanager',
