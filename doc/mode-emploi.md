@@ -555,6 +555,24 @@ Les moniteurs eligibles sont les responsables des groupes associes a l'evenement
 4. Le bouton n'apparait pas (et l'action est refusee cote serveur) sur une **seance annulee** : une seance annulee n'aura pas lieu, aucun moniteur ne peut s'y porter volontaire
 5. **Conflit horaire (Phase 61)** : le volontariat est refuse cote serveur si l'utilisateur anime deja une autre seance sur la meme plage. Le badge `Conflit horaire` apparait aussi en prevention sur la carte de l'onglet "Se proposer moniteur" pour eviter le clic en vain
 
+#### Se declarer absent (moniteur affecte)
+
+Un moniteur affecte qui ne pourra pas venir le signale lui-meme, sans passer par le staff :
+
+1. **Mes seances comme moniteur**, onglet *Mes seances comme moniteur* : sur la carte de la seance, bouton orange **"Je serai absent"**
+2. Une fenetre de confirmation propose un **motif facultatif** (255 caracteres max), puis **"Confirmer mon absence"**
+
+Effets :
+
+- le moniteur est **retire** de la seance (entree *[Cours] Moniteur declare absent* dans l'historique Galette, motif compris) ;
+- **s'il ne reste plus aucun moniteur**, les responsables de groupe de l'evenement recoivent **immediatement** le courriel *Moniteur absent — seance sans moniteur* (pas de passage par le recapitulatif quotidien : l'absence est souvent signalee peu avant la seance). A defaut de responsable joignable, ce sont les administrateurs. Le moniteur absent n'est jamais destinataire, meme s'il est lui-meme responsable d'un des groupes. La seance revient dans l'onglet *Se proposer moniteur* des responsables ;
+- s'il reste un co-moniteur, ou si l'evenement est marque *sans moniteur necessaire*, aucun courriel ne part ;
+- **les adherents inscrits ne sont pas prevenus** : le responsable trouve un remplacant ou annule la seance, et l'annulation previent deja les inscrits.
+
+L'absence peut etre declaree jusqu'au jour meme de la seance ; elle est refusee sur une seance annulee ou passee, et pour qui n'est pas moniteur de la seance (route `coursesDoDeclareInstructorAbsence`, ACL `member`, controle dans `SessionsController::doDeclareInstructorAbsence`).
+
+A la difference du bouton **"Retirer le moniteur"** de la fiche seance (un gestionnaire retire quelqu'un, sans aucun courriel), **"Je serai absent"** est le moniteur qui se retire lui-meme et declenche l'alerte.
+
 #### Indicateur dans la liste des seances
 
 Dans la liste des seances, un badge orange (triangle d'exclamation) s'affiche a cote du bouton "Details" pour les seances sans moniteur assigne.
@@ -963,7 +981,7 @@ Trace cote Galette : le plugin ecrit dans l'historique `[Courses] Cron: sessions
 
 Le menu **Gestion des inscriptions > Modeles de courriels** (accessible aux **administrateurs uniquement**) permet de personnaliser les textes des emails automatiques du plugin.
 
-11 modeles sont disponibles :
+12 modeles sont disponibles :
 
 | Modele | Destinataires | Declencheur |
 | ------ | ------------ | ----------- |
@@ -978,6 +996,7 @@ Le menu **Gestion des inscriptions > Modeles de courriels** (accessible aux **ad
 | Promotion de la liste d'attente | Membre promu + parent | Place liberee → promotion auto (immediat) |
 | Seance annulee (inscrits) | Membres inscrits + parents | Annulation d'une seance (immediat) |
 | Seance annulee (liste d'attente) | Membres en liste d'attente + parents | Annulation d'une seance (immediat) |
+| Moniteur absent — seance sans moniteur | Responsables de groupe de l'evenement (a defaut : administrateurs), sauf le moniteur absent | Un moniteur se declare absent et la seance n'a plus aucun moniteur (immediat) |
 
 **Regroupement parent/enfants (Phase 59)** : pour tous les courriels destines a un membre, le parent (lien `parent_id` dans la fiche Galette) reçoit aussi le mail. Si l'enfant a son propre email **distinct** du parent, il reçoit egalement son propre mail. Si l'enfant n'a pas d'email ou partage celui du parent, seul le parent est notifie (pas de doublon).
 
@@ -986,7 +1005,7 @@ Chaque modele dispose :
 - D'un **sujet** (objet de l'email)
 - D'un **corps** (contenu de l'email, avec variables disponibles affichees sous forme de pastilles cliquables)
 
-La variable `{event_description}` est disponible dans tous les modeles lies a un evenement ou une seance. Elle est inseree automatiquement apres les informations principales (nom, lieu, date/heure) et est vide si l'evenement n'a pas de descriptif.
+La variable `{event_description}` est disponible dans tous les modeles lies a un evenement ou une seance, sauf *Moniteur absent* (alerte interne, qui propose `{instructor_name}` et `{reason_block}`). Elle est inseree automatiquement apres les informations principales (nom, lieu, date/heure) et est vide si l'evenement n'a pas de descriptif.
 
 Cliquer sur **Reinitialiser** pour revenir au modele par defaut.
 
@@ -1487,6 +1506,10 @@ Etre affecte comme moniteur d'une seance vous y donne les memes leviers que le s
 - gerer la liste d'attente (augmenter la capacite, promouvoir, creer une seance supplementaire)
 
 Sur les autres seances, vous restez un membre ou un responsable de groupe ordinaire.
+
+### Si vous ne pouvez pas venir
+
+Sur **Mes seances comme moniteur**, cliquer sur **"Je serai absent"** sur la carte de la seance, indiquer un motif si vous le souhaitez, puis **"Confirmer mon absence"**. Vous etes retire de la seance. Si personne d'autre ne l'encadre, les responsables de groupe sont prevenus aussitot par courriel pour trouver un remplacant ; les adherents inscrits, eux, ne recoivent rien. Possible jusqu'au jour meme de la seance.
 
 ### Inscrire un membre par procuration
 

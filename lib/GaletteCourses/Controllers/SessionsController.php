@@ -878,6 +878,82 @@ class SessionsController extends AbstractPluginController
             ->withHeader('Location', $returnUrl);
     }
 
+    /**
+     * An assigned instructor declares they will not be able to lead the session.
+     *
+     * Unlike doRemoveInstructor (a manager removing someone, silently), this is
+     * the instructor withdrawing themselves: they leave the session and, when
+     * nobody else leads it, the group managers are alerted at once so they can
+     * find a replacement or cancel. Registered members are not told — the
+     * manager decides, and a cancellation already notifies them.
+     */
+    public function doDeclareInstructorAbsence(Request $request, Response $response, int $id): Response
+    {
+        $returnUrl = $this->routeparser->urlFor('coursesMyInstructorSessions');
+
+        $memberId = (int)$this->login->id;
+        if ($memberId <= 0) {
+            return $response->withStatus(302)->withHeader('Location', $returnUrl);
+        }
+
+        $session = new Session($this->zdb, $id);
+        if ($session->getId() === null) {
+            $this->flash->addMessage('error_detected', _T('Session not found.', 'courses'));
+            return $response->withStatus(302)->withHeader('Location', $returnUrl);
+        }
+
+        $entry = SessionInstructor::findEntry($this->zdb, $id, $memberId);
+        if ($entry === null) {
+            $this->flash->addMessage('error_detected', _T('You are not an instructor for this session.', 'courses'));
+            return $response->withStatus(302)->withHeader('Location', $returnUrl);
+        }
+
+        if ($session->getStatus() === Session::STATUS_CANCELLED) {
+            $this->flash->addMessage('error_detected', _T('This session has been cancelled.', 'courses'));
+            return $response->withStatus(302)->withHeader('Location', $returnUrl);
+        }
+
+        // Declaring an absence the day before, or on the day itself, is allowed:
+        // that is precisely when the managers most need to know.
+        if ($session->getSessionDate() < date('Y-m-d')) {
+            $this->flash->addMessage('error_detected', _T('This session is already over.', 'courses'));
+            return $response->withStatus(302)->withHeader('Location', $returnUrl);
+        }
+
+        $post = $request->getParsedBody();
+        $reason = trim((string)(is_array($post) ? ($post['absence_reason'] ?? '') : ''));
+        $reason = mb_substr($reason, 0, 255);
+
+        if (!$entry->remove()) {
+            $this->flash->addMessage('error_detected', _T('An error occurred.', 'courses'));
+            return $response->withStatus(302)->withHeader('Location', $returnUrl);
+        }
+
+        $this->history->add(
+            _T('[Courses] Instructor declared absent', 'courses'),
+            HistoryLabel::join(
+                HistoryLabel::session($session),
+                HistoryLabel::member($this->zdb, $memberId),
+                $reason
+            )
+        );
+
+        $event = $session->getEvent();
+        if (!SessionInstructor::hasInstructor($this->zdb, $id) && !$event->isInstructorNotNeeded()) {
+            $instructorMember = new \Galette\Entity\Adherent($this->zdb, $memberId);
+            $notification = new CourseNotification($this->zdb, $this->preferences, new PluginPreferences($this->zdb), new MemberPreferences($this->zdb), $this->history);
+            $notification->notifyInstructorAbsence($session, $event, $memberId, (string)$instructorMember->sname, $reason !== '' ? $reason : null);
+            $this->flash->addMessage(
+                'success_detected',
+                _T('Your absence has been recorded. The session has no instructor any more: the group managers have been informed.', 'courses')
+            );
+        } else {
+            $this->flash->addMessage('success_detected', _T('Your absence has been recorded.', 'courses'));
+        }
+
+        return $response->withStatus(302)->withHeader('Location', $returnUrl . '#tab=mine');
+    }
+
     public function doClose(Request $request, Response $response, int $id): Response
     {
         $deny = $this->denyUnlessSessionManager(

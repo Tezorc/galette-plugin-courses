@@ -1000,6 +1000,50 @@ class CourseNotification
         $this->sendMail($recipients, $subject, $message);
     }
 
+    /**
+     * Tell the group managers that an instructor withdrew and left the session
+     * without any instructor.
+     *
+     * Sent immediately, not queued for the daily digest: an absence is often
+     * declared a few days, or hours, before the session. Falls back to the
+     * admins when the event has no reachable group manager, so the alert is
+     * never lost. The absent instructor is never a recipient, even if they
+     * manage one of the event's groups.
+     */
+    public function notifyInstructorAbsence(
+        Session $session,
+        Event $event,
+        int $absentMemberId,
+        string $instructorName,
+        ?string $reason = null
+    ): void {
+        $recipients = $this->getGroupManagerEmails($event);
+        if (empty($recipients)) {
+            $recipients = $this->getAdminEmails();
+        }
+        $recipients = array_filter(
+            $recipients,
+            static fn(array $info): bool => $info['member_id'] !== $absentMemberId
+        );
+        if (empty($recipients)) {
+            return;
+        }
+
+        $reasonBlock = !empty($reason)
+            ? "\n\n" . $this->tr('Reason: ') . $reason
+            : '';
+
+        [$subject, $message] = $this->renderTemplate(MailTemplate::REF_INSTRUCTOR_ABSENCE, [
+            'event_name'      => $event->getName(),
+            'session_date'    => $session->getFormattedDateShort(),
+            'session_time'    => $session->getStartTime() . ' - ' . $session->getEndTime(),
+            'instructor_name' => $instructorName,
+            'reason_block'    => $reasonBlock,
+        ]);
+
+        $this->sendMail($recipients, $subject, $message);
+    }
+
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
@@ -1068,9 +1112,11 @@ class CourseNotification
     /**
      * Get email addresses of admin members.
      *
+     * Protected (not private) so unit tests can substitute the DB round-trip.
+     *
      * @return array<string, array{name: string, member_id: int}> [email => ['name' => ..., 'member_id' => ...]]
      */
-    private function getAdminEmails(): array
+    protected function getAdminEmails(): array
     {
         $emails = [];
         try {
@@ -1393,9 +1439,11 @@ class CourseNotification
      * For an unrestricted event, all group managers are returned.
      * Members who have opted out of notifications are excluded.
      *
+     * Protected (not private) so unit tests can substitute the DB round-trip.
+     *
      * @return array<string, array{name: string, member_id: int}> [email => ['name' => ..., 'member_id' => ...]]
      */
-    private function getGroupManagerEmails(Event $event): array
+    protected function getGroupManagerEmails(Event $event): array
     {
         $emails = [];
         try {

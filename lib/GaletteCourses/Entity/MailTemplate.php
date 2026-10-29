@@ -50,6 +50,7 @@ class MailTemplate
     public const REF_WEEKLY_DIGEST_MEMBER    = 'weekly_digest_member';
     public const REF_CANCELLATION            = 'cancellation';
     public const REF_WAITLIST_CANCELLATION   = 'waitlist_cancellation';
+    public const REF_INSTRUCTOR_ABSENCE      = 'instructor_absence';
 
     private ?int $id      = null;
     private string $ref     = '';
@@ -218,6 +219,7 @@ class MailTemplate
             self::REF_WEEKLY_DIGEST_MEMBER,
             self::REF_CANCELLATION,
             self::REF_WAITLIST_CANCELLATION,
+            self::REF_INSTRUCTOR_ABSENCE,
         ];
     }
 
@@ -240,6 +242,7 @@ class MailTemplate
             self::REF_WEEKLY_DIGEST_MEMBER => ['events_block'],
             self::REF_CANCELLATION            => ['event_name', 'event_description', 'session_date', 'session_time', 'reason_block', 'comment_block'],
             self::REF_WAITLIST_CANCELLATION   => ['event_name', 'event_description', 'session_date', 'session_time', 'reason_block', 'comment_block'],
+            self::REF_INSTRUCTOR_ABSENCE      => ['event_name', 'session_date', 'session_time', 'instructor_name', 'reason_block'],
             default                           => ['event_name'],
         };
     }
@@ -258,6 +261,7 @@ class MailTemplate
             self::REF_WEEKLY_DIGEST_MEMBER => _T('Weekly digest — upcoming sessions', 'courses'),
             self::REF_CANCELLATION            => _T('Session cancelled', 'courses'),
             self::REF_WAITLIST_CANCELLATION   => _T('Session cancelled (waitlist)', 'courses'),
+            self::REF_INSTRUCTOR_ABSENCE      => _T('Instructor absent — session without instructor', 'courses'),
             default                           => $ref,
         };
     }
@@ -276,6 +280,7 @@ class MailTemplate
             self::REF_WEEKLY_DIGEST_MEMBER => _T('Weekly consolidated email sent by the cron to each eligible member, listing upcoming sessions open for registration. Replaces the per-session "instructor assigned" / "session open" emails to cap the inbox at one mail per week. Parents receive a single mail covering themselves and their children; a child with their own distinct email also receives their own copy.', 'courses'),
             self::REF_CANCELLATION            => _T('Sent to all registered members when a session is cancelled.', 'courses'),
             self::REF_WAITLIST_CANCELLATION   => _T('Sent to members on the waitlist when a session is cancelled.', 'courses'),
+            self::REF_INSTRUCTOR_ABSENCE      => _T('Sent immediately to the group managers of the event when an instructor declares they will be absent and the session is left without any instructor.', 'courses'),
             default                           => '',
         };
     }
@@ -294,6 +299,7 @@ class MailTemplate
             self::REF_WEEKLY_DIGEST_MEMBER => _T('[Courses] Vos prochaines séances', 'courses'),
             self::REF_CANCELLATION            => _T('[Courses] Session cancelled: {event_name}', 'courses'),
             self::REF_WAITLIST_CANCELLATION   => _T('[Courses] Session cancelled: {event_name}', 'courses'),
+            self::REF_INSTRUCTOR_ABSENCE      => _T('[Courses] Instructor needed: {event_name} on {session_date}', 'courses'),
             default                           => '{event_name}',
         };
     }
@@ -312,6 +318,7 @@ class MailTemplate
             self::REF_WEEKLY_DIGEST_MEMBER => _T("Bonjour,\n\nVoici les prochaines séances ouvertes aux inscriptions :\n\n{events_block}\nConnectez-vous pour vous inscrire dès que possible — les places sont limitées.\n\nÀ bientôt !", 'courses'),
             self::REF_CANCELLATION            => _T("Hello,\n\nUnfortunately the session \"{event_name}\" scheduled for {session_date} ({session_time}) has been cancelled.{reason_block}{comment_block}{event_description}\n\nWe apologize for the inconvenience and look forward to seeing you at a future session.", 'courses'),
             self::REF_WAITLIST_CANCELLATION   => _T("Hello,\n\nThe session \"{event_name}\" scheduled for {session_date} ({session_time}) has been cancelled.{reason_block}{comment_block}{event_description}\n\nYou were on the waitlist for this session. Your registration request has been removed.\n\nWe apologize for the inconvenience and look forward to seeing you at a future session.", 'courses'),
+            self::REF_INSTRUCTOR_ABSENCE      => _T("Hello,\n\n{instructor_name} will not be able to lead the session \"{event_name}\" on {session_date} ({session_time}) and has withdrawn as instructor.{reason_block}\n\nThis session has no instructor any more. If you can lead it, log in and volunteer from the session detail page. Otherwise, a replacement will have to be found or the session cancelled.\n\nThank you!", 'courses'),
             default                           => '',
         };
     }

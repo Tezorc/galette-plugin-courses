@@ -78,6 +78,9 @@ $this->register(
         'coursesDoAssignInstructor'  => 'member',
         'coursesDoRemoveInstructor'  => 'member',
         'coursesDoVolunteerInstructor' => 'groupmanager',
+        // Any assigned instructor, staff-appointed ones included; the handler
+        // checks they actually lead this session.
+        'coursesDoDeclareInstructorAbsence' => 'member',
         'coursesDoSessionClose'      => 'member',
         'coursesDoSessionReopen'     => 'member',
         'coursesDoSessionCancel'     => 'member',

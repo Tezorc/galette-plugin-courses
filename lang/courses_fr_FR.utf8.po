@@ -2173,3 +2173,44 @@ msgstr "%1$d séance(s) supprimée(s) (%2$d inscription(s), %3$d en attente, %4$
 
 msgid "club closure from %1$s to %2$s"
 msgstr "fermeture du club du %1$s au %2$s"
+
+# --- Absence d'un moniteur ---
+
+msgid "I will be absent"
+msgstr "Je serai absent"
+
+msgid "Confirm my absence"
+msgstr "Confirmer mon absence"
+
+msgid "Reason (optional)"
+msgstr "Motif (facultatif)"
+
+msgid "You will be removed from this session. If nobody else leads it, the group managers will be informed at once so they can find a replacement. Registered members are not notified."
+msgstr "Vous serez retiré de cette séance. Si personne d'autre ne l'encadre, les responsables de groupe sont prévenus immédiatement pour trouver un remplaçant. Les adhérents inscrits ne sont pas prévenus."
+
+msgid "You are not an instructor for this session."
+msgstr "Vous n'êtes pas moniteur de cette séance."
+
+msgid "This session is already over."
+msgstr "Cette séance est déjà passée."
+
+msgid "[Courses] Instructor declared absent"
+msgstr "[Cours] Moniteur déclaré absent"
+
+msgid "Your absence has been recorded."
+msgstr "Votre absence est enregistrée."
+
+msgid "Your absence has been recorded. The session has no instructor any more: the group managers have been informed."
+msgstr "Votre absence est enregistrée. La séance n'a plus de moniteur : les responsables de groupe ont été prévenus."
+
+msgid "Instructor absent — session without instructor"
+msgstr "Moniteur absent — séance sans moniteur"
+
+msgid "Sent immediately to the group managers of the event when an instructor declares they will be absent and the session is left without any instructor."
+msgstr "Envoyé immédiatement aux responsables de groupe de l'événement quand un moniteur se déclare absent et que la séance se retrouve sans moniteur."
+
+msgid "[Courses] Instructor needed: {event_name} on {session_date}"
+msgstr "[Cours] Moniteur recherché : {event_name} le {session_date}"
+
+msgid "Hello,\n\n{instructor_name} will not be able to lead the session \"{event_name}\" on {session_date} ({session_time}) and has withdrawn as instructor.{reason_block}\n\nThis session has no instructor any more. If you can lead it, log in and volunteer from the session detail page. Otherwise, a replacement will have to be found or the session cancelled.\n\nThank you!"
+msgstr "Bonjour,\n\n{instructor_name} ne pourra pas encadrer la séance « {event_name} » du {session_date} ({session_time}) et s'est retiré.{reason_block}\n\nCette séance n'a plus de moniteur. Si vous pouvez l'encadrer, connectez-vous et portez-vous volontaire depuis la fiche de la séance. Sinon, il faudra trouver un remplaçant ou annuler la séance.\n\nMerci !"

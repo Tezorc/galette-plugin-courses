@@ -690,6 +690,42 @@ Ces tests ont ete valides par mutation : casser le dedup par `session_id`, la br
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Evolution - Un moniteur peut se declarer absent
+
+**Statut :** TERMINEE (lot 1 sur 3 du chantier disponibilites moniteurs)
+
+- Demande utilisateur : des moniteurs disponibles ou absents, sans cours
+  attribue, « n'osent pas s'inscrire sur un cours ». Organisation retenue en
+  trois lots : (1) se declarer absent, (2) declarer ses disponibilites et les
+  montrer aux responsables sur la fiche seance, (3) solliciter un moniteur
+  disponible par courriel. Les pistes « venir en renfort » et « appel explicite
+  sur les seances sans moniteur » sont ecartees par l'utilisateur.
+- Constat : un moniteur pouvait deja se retirer d'une seance
+  (`doRemoveInstructor`), mais **sans aucune notification** — personne ne
+  savait que la seance n'avait plus de moniteur.
+- `SessionsController::doDeclareInstructorAbsence` (POST
+  `/session/{id}/declare-absence`, route `coursesDoDeclareInstructorAbsence`,
+  ACL `member`) : reserve au moniteur affecte de la seance, refuse sur une
+  seance annulee ou passee, accepte jusqu'au jour meme. Retire l'affectation,
+  journalise `[Courses] Instructor declared absent` avec le motif facultatif
+  (255 caracteres).
+- Si plus aucun moniteur ne reste et que l'evenement en requiert un :
+  `CourseNotification::notifyInstructorAbsence()` envoie **immediatement** le
+  nouveau modele `REF_INSTRUCTOR_ABSENCE` (`instructor_absence`, variables
+  `event_name`, `session_date`, `session_time`, `instructor_name`,
+  `reason_block`) aux responsables de groupe de l'evenement, a defaut aux
+  administrateurs, jamais au moniteur absent. Pas de file d'attente : le
+  recapitulatif quotidien arriverait trop tard. `getGroupManagerEmails` et
+  `getAdminEmails` passent en `protected` pour les tests.
+- Choix assumes : le moniteur est **retire** (pas garde avec un statut
+  « absent ») ; les **adherents inscrits ne sont pas prevenus** — le
+  responsable remplace ou annule, et l'annulation les previent deja.
+- `my_instructor_sessions.html.twig` : bouton orange **Je serai absent** sur
+  les cartes a venir non annulees, modale unique avec motif.
+- i18n : 13 chaines (`.mo` recompile). Tests : `InstructorAbsenceTest`
+  (destinataires, exclusion du moniteur absent, repli administrateurs, motif),
+  `MailTemplateTest` passe a 12 refs ; 118/118 verts. Aucune migration BDD.
+
 ### Evolution - Etat d'inscription explicite sur les cartes de seance
 
 **Statut :** TERMINEE

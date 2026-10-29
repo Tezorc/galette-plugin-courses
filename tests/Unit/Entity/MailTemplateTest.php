@@ -101,11 +101,13 @@ final class MailTemplateTest extends TestCase
         );
     }
 
-    public function testGetAvailableRefsReturnsAllElevenCanonicalRefs(): void
+    public function testGetAvailableRefsReturnsAllTwelveCanonicalRefs(): void
     {
         $refs = MailTemplate::getAvailableRefs();
 
-        self::assertCount(11, $refs);
+        self::assertCount(12, $refs);
+        // Instructor absence: immediate alert to the group managers.
+        self::assertContains(MailTemplate::REF_INSTRUCTOR_ABSENCE, $refs);
         self::assertContains(MailTemplate::REF_INSTRUCTOR_ASSIGNED, $refs);
         self::assertContains(MailTemplate::REF_WAITLIST_PROMOTION, $refs);
         self::assertContains(MailTemplate::REF_CANCELLATION, $refs);

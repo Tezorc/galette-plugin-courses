@@ -149,6 +149,11 @@ $app->post(
     [SessionsController::class, 'doVolunteerInstructor']
 )->setName('coursesDoVolunteerInstructor')->add(Authenticate::class);
 
+$app->post(
+    '/session/{id:[0-9]+}/declare-absence',
+    [SessionsController::class, 'doDeclareInstructorAbsence']
+)->setName('coursesDoDeclareInstructorAbsence')->add(Authenticate::class);
+
 // Session deletion, for good (super admin only). Sits beside the cancellation
 // below, which is the non-destructive option every session manager has.
 $app->post(
