@@ -65,9 +65,14 @@ Pour un evenement ponctuel, une seance unique est creee automatiquement a la cre
 Le plugin declare desormais une version de schema (`dbver`) que Galette suit dans
 sa table `galette_plugins`. Deux cas se presentent.
 
-**Cas 1 — l'installation a deja une ligne de version.** Galette detecte l'ecart
-et joue tout seul `scripts/upgrade-to-0.2-mysql.sql` (ou `-pgsql`) lors de la mise
-a jour. Il n'y a rien a faire a la main.
+**Cas 1 — l'installation a deja une ligne de version.** Galette detecte l'ecart,
+marque le plugin **« mise a jour necessaire »** et le **desactive** : ses menus
+disparaissent et ses pages repondent 404. Un administrateur se rend dans
+**Configuration › Plugins** et lance la mise a jour de la base de *Galette
+Courses* ; Galette joue alors les scripts `scripts/upgrade-to-<version>-mysql.sql`
+(ou `-pgsql`) manquants, et le plugin se reactive. A faire apres chaque
+deploiement qui change la version de schema (par exemple 0.4 -> 0.5,
+disponibilites des moniteurs).
 
 **Cas 2 — l'installation est anterieure a l'introduction de `dbver`** (pas de
 ligne dans `galette_plugins`). C'est le cas de toutes les installations mises a

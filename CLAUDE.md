@@ -29,7 +29,12 @@ vers `origin` puis un `git pull` dans ce clone, suivi de deux gestes :
   `rm -rf` supprime un chemin inexistant en sortant tranquillement en 0. Le cache
   reste en place et rien ne le signale. Verifier apres coup que `templates/` a
   bien disparu de `.../cache/v1.3-dev/`.
-- si `dbver` a bouge, verifier que la migration est passee :
+- si `dbver` a bouge, **la migration ne part pas toute seule** : Galette met
+  le plugin en *Need update* (`DISABLED_NOT_UP2DATE`), le desactive, et toutes
+  ses routes repondent 404. Un administrateur doit lancer la mise a jour de la
+  base depuis **Configuration › Plugins**. L'image `galette-nightly` n'embarque
+  pas la console Galette (`galette:plugins:install-db`), c'est donc la seule
+  voie. Verifier ensuite :
   `docker exec galette-mysql-nightly mysql -ugalette -pgalette galette -e "SELECT * FROM galette_plugins"`.
 
 La stack porte aussi un service `cron-nightly` (conteneur
@@ -84,8 +89,10 @@ git archive --format=zip --prefix=galette-plugin-courses/ \
 
 Les fichiers de developpement (`tests/`, `.github/`, `composer.*`,
 `phpstan.neon`, `phpunit.xml.dist`) sont volontairement hors de la liste, tout
-comme `CLAUDE.md`. Si `dbver` a bouge, verifier apres deploiement que la
-migration est passee (ligne `galette_plugins` du plugin).
+comme `CLAUDE.md`. Si `dbver` a bouge, le plugin reste desactive (*Need
+update*) tant qu'un administrateur n'a pas lance la mise a jour de la base
+depuis **Configuration › Plugins** ; verifier ensuite la ligne
+`galette_plugins` du plugin.
 
 ### Travailler sur les deux en parallele
 
@@ -295,9 +302,9 @@ galette-plugin-courses/
 
 ## Points d'attention
 
-- Migrations de schema : Galette n'execute QUE les scripts nommes `scripts/upgrade-to-<version>-<db_type>.sql` (ou `.php`), cf. `Install::getUpdateScripts()`. Tout autre nom est ignore — c'est pourquoi les anciens `upgrade-*.sql` du plugin devaient etre appliques a la main. `executeSql()` fait un `str_replace('galette_', PREFIX_DB)` **textuel** sur tout le fichier (chaines quotees comprises, donc les tests sur `information_schema` fonctionnent), puis decoupe sur `;` : **pas de `DELIMITER` ni de procedure stockee** dans ces scripts. Une installation neuve n'execute que `mysql.sql` / `pgsql.sql`, jamais les `upgrade-to-*`.
+- Migrations de schema : Galette n'execute QUE les scripts nommes `scripts/upgrade-to-<version>-<db_type>.sql` (ou `.php`), cf. `Install::getUpdateScripts()`. Tout autre nom est ignore — c'est pourquoi les anciens `upgrade-*.sql` du plugin devaient etre appliques a la main. `executeSql()` fait un `str_replace('galette_', PREFIX_DB)` **textuel** sur tout le fichier (chaines quotees comprises, donc les tests sur `information_schema` fonctionnent), puis decoupe sur `;` : **pas de `DELIMITER` ni de procedure stockee** dans ces scripts. Une installation neuve n'execute que `mysql.sql` / `pgsql.sql`, jamais les `upgrade-to-*`. **Ces scripts ne sont pas joues au chargement** : quand `dbver` depasse la version enregistree, `Plugins.php` desactive le plugin avec `DISABLED_NOT_UP2DATE` (*Need update*, routes en 404) jusqu'a ce qu'un administrateur lance la mise a jour depuis **Configuration › Plugins** (ou `galette:plugins:install-db` en console, absente de l'image nightly). Constate au passage a `dbver: 0.5`.
 - **Piege `dbver` sur les installations existantes** : sans `dbver` dans `_define.php`, Galette 1.3 desactive le plugin (`DISABLED_DBVERSION`, `Plugins.php`) — il est donc obligatoire. Mais si le plugin a ses tables et **aucune ligne dans `galette_plugins`** (cas de toute installation anterieure a l'introduction de `dbver`), `Plugins::autoMigratePluginVersion()` inscrit la version courante **sans jouer la moindre migration**. La base est alors declaree a jour avec un schema qui ne l'est pas : les pages en lecture repondent normalement, et la premiere ecriture echoue en 500 (`Unknown column ...`). Comme la version enregistree est deja la bonne, `upgrade-to-0.2-*.sql` ne sera jamais joue. D'ou `manual-catchup-0.2-*.sql`, idempotent, a appliquer une fois a la main sur ces installations.
-- `manual-catchup-0.2-*.sql` reste a la version 0.2 malgre le passage a `dbver: 0.3`, et c'est voulu : il remet la ligne `galette_plugins` a 0.2, ce qui amene Galette a jouer `upgrade-to-0.3-*` au chargement suivant. Rattrapage et migration se composent, il n'y a donc pas de catchup a maintenir par version.
+- `manual-catchup-0.2-*.sql` reste a la version 0.2 malgre le passage a `dbver: 0.3`, et c'est voulu : il remet la ligne `galette_plugins` a 0.2, ce qui amene Galette a proposer puis jouer `upgrade-to-0.3-*` et suivants (mise a jour lancee depuis **Configuration › Plugins**). Rattrapage et migration se composent, il n'y a donc pas de catchup a maintenir par version.
 - Ne pas durcir `PluginGaletteCourses::isInstalled()` pour tester la presence d'une colonne recente : renvoyer `false` envoie le coeur dans la branche de reinstallation, donc dans les 12 `DROP TABLE IF EXISTS` de `mysql.sql`. Le coeur porte d'ailleurs un `FIXME` explicite a cet endroit (`Plugins.php` : *creation script may remove existing tables!*).
 - Le superadmin n'a pas de fiche adherent : `$login->id` retourne `0` (pas `null`) — toujours verifier `> 0` avant toute operation DB utilisant cet id comme `member_id` ou `creator_id` (FK vers adherents). Corollaire : les setters d'entite recevant cet id doivent accepter `?int` (cf. `Event::setCreatorId()`, qui normalise `null` vers la sentinelle interne `0`)
 - `$login->isUp2Date()` depend de `date_echeance` dans la table adherents (pas `date_fin_cotis`)
