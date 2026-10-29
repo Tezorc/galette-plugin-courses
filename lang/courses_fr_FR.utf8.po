@@ -201,6 +201,9 @@ msgstr "Fermée"
 msgid "Registered"
 msgstr "Inscrit"
 
+msgid "Not registered"
+msgstr "Non inscrit"
+
 msgid "Attended"
 msgstr "Présent"
 

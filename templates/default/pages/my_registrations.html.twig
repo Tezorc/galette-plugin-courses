@@ -219,6 +219,11 @@
                                 {% else %}
                                     <span class="ui tiny green label">{{ _T("Open", "courses") }}</span>
                                 {% endif %}
+                                {% if ms_sid in registered_session_ids %}
+                                    <span class="ui tiny green label"><i class="check icon" aria-hidden="true"></i>{{ _T("Registered", "courses") }}</span>
+                                {% elseif ms_slot.getStatus() != 'cancelled' and not browse_on_waitlist[ms_sid] %}
+                                    <span class="ui tiny orange label"><i class="times icon" aria-hidden="true"></i>{{ _T("Not registered", "courses") }}</span>
+                                {% endif %}
                                 {% if ms_slot.getMaxCapacity() and ms_slot.getStatus() != 'cancelled' %}
                                     <small class="courses-multislot-cap">({{ ms_slot.getCurrentRegistrations() }}/{{ ms_slot.getMaxCapacity() }})</small>
                                 {% endif %}
@@ -243,7 +248,7 @@
                             {% endfor %}
 
                             {% if ms_has_items and member_is_up2date %}
-                                <div class="ui simple dropdown tiny labeled icon green button">
+                                <div class="ui simple dropdown tiny labeled icon primary button">
                                     <i class="user plus icon" aria-hidden="true"></i>
                                     <span class="text">{{ _T("Register", "courses") }}</span>
                                     <i class="dropdown icon" aria-hidden="true"></i>
@@ -387,6 +392,19 @@
                                 <span class="ui orange label">{{ _T("Full", "courses") }}</span>
                             {% else %}
                                 <span class="ui green label">{{ _T("Open", "courses") }}</span>
+                            {% endif %}
+                            {# Etat d'inscription explicite : le vert "Ouverte" et le bouton
+                               au nom du chien laissaient croire a une inscription deja faite. #}
+                            {% if already %}
+                                <span class="ui green label">
+                                    <i class="check icon" aria-hidden="true"></i>
+                                    {{ _T("Registered", "courses") }}
+                                </span>
+                            {% elseif not on_wl %}
+                                <span class="ui orange label">
+                                    <i class="times icon" aria-hidden="true"></i>
+                                    {{ _T("Not registered", "courses") }}
+                                </span>
                             {% endif %}
                             {% if browse_conflicts[sid] is defined %}
                                 <span class="ui orange basic label" title="{{ _T("Schedule conflict with:", "courses") }} {{ browse_conflicts[sid]|join(' ; ') }}">
@@ -564,9 +582,9 @@
                                 {% set self_nick = (reg_members[login.id] is defined and reg_members[login.id].nickname) ? reg_members[login.id].nickname : '' %}
                                 <form action="{{ url_for("coursesDoRegister", {"id": sid}) }}" method="post" class="ui form courses-inline-form">
                                     <input type="hidden" name="redirect_to" value="my_registrations"/>
-                                    <button type="submit" class="ui tiny labeled icon green button">
+                                    <button type="submit" class="ui tiny labeled icon primary button">
                                         <i class="user plus icon" aria-hidden="true"></i>
-                                        {{ self_nick ? self_nick : _T("Register", "courses") }}
+                                        {{ _T("Register", "courses") }}{% if self_nick %} : {{ self_nick }}{% endif %}
                                     </button>
                                 </form>
                             {% elseif total_options == 1 %}
@@ -576,14 +594,14 @@
                                 <form action="{{ url_for("coursesDoParentRegister", {"id": sid}) }}" method="post" class="ui form courses-inline-form">
                                     <input type="hidden" name="redirect_to" value="my_registrations"/>
                                     <input type="hidden" name="member_id" value="{{ only_child_id }}"/>
-                                    <button type="submit" class="ui tiny labeled icon teal button">
+                                    <button type="submit" class="ui tiny labeled icon primary button">
                                         <i class="user plus icon" aria-hidden="true"></i>
-                                        {{ only_child_info.nickname ? only_child_info.nickname : only_child_info.name }}
+                                        {{ _T("Register", "courses") }} : {{ only_child_info.nickname ? only_child_info.nickname : only_child_info.name }}
                                     </button>
                                 </form>
                             {% elseif total_options >= 2 %}
                                 {# Plusieurs options : un seul bouton dropdown qui liste les choix #}
-                                <div class="ui simple dropdown tiny labeled icon teal button">
+                                <div class="ui simple dropdown tiny labeled icon primary button">
                                     <i class="user plus icon" aria-hidden="true"></i>
                                     <span class="text">{{ _T("Register", "courses") }}</span>
                                     <i class="dropdown icon" aria-hidden="true"></i>

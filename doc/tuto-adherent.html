@@ -805,7 +805,7 @@ footer {
       <h2>Une fois connecté, en trois clics</h2>
       <ol>
         <li>Menu <strong>Mes inscriptions</strong>, onglet <strong>M'inscrire à une prochaine séance</strong>.</li>
-        <li>Sur la séance qui vous intéresse, bouton vert <strong>S'inscrire</strong>.</li>
+        <li>Sur la séance qui vous intéresse, bouton orangé <strong>S'inscrire</strong>.</li>
         <li>Dans le menu qui s'ouvre, cliquez sur le <strong>nom du chien</strong> à inscrire.</li>
       </ol>
       <p style="margin: 16px 0 0; color: var(--ink-2); font-size: 15px;"><strong>Au plus tard la veille</strong>&nbsp;: on ne s'inscrit pas le jour même d'une séance.</p>
@@ -924,13 +924,14 @@ footer {
     <h2 class="section"><span class="num">4.</span> Trouver une séance</h2>
     <p class="deck">Le catalogue ne montre que ce qu'il vous reste à faire.</p>
 
-    <p>Chaque séance est une carte&nbsp;: le nom du cours, la date, le lieu, le moniteur s'il est déjà connu, et le nombre de places restantes. La barre passe à l'orange quand il ne reste presque plus de place.</p>
+    <p>Chaque séance est une carte&nbsp;: le nom du cours, la date, le lieu, le moniteur s'il est déjà connu, et le nombre de places restantes. Une étiquette orange <b>Non inscrit</b> rappelle que vous n'y êtes pas encore inscrit&nbsp;; elle devient verte, <b>Inscrit</b>, une fois l'inscription faite. La barre passe à l'orange quand il ne reste presque plus de place.</p>
 
     <figure class="fig">
       <p class="fig-label">Une carte de séance</p>
       <div class="ui-scope">
         <div class="ui-card" style="max-width: 420px;">
           <div class="ui-card-content">
+            <div class="ui-row" style="justify-content: flex-end; gap: 4px;"><span class="ui-label green">Ouverte</span> <span class="ui-label orange">Non inscrit</span></div>
             <div class="ui-header">Agility &mdash; Débutants</div>
             <div class="ui-meta"><svg class="ic" aria-hidden="true"><use href="#i-calendar"/></svg> samedi 12 septembre &middot; 10:00 &ndash; 11:30</div>
             <div class="ui-meta"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg> Terrain principal</div>
@@ -939,7 +940,7 @@ footer {
           </div>
           <div class="ui-card-content extra">
             <div class="ui-row">
-              <span class="ui-btn green"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg> S'inscrire <svg class="ic ui-caret" aria-hidden="true"><use href="#i-caret"/></svg></span>
+              <span class="ui-btn amber"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg> S'inscrire <svg class="ic ui-caret" aria-hidden="true"><use href="#i-caret"/></svg></span>
               <span class="ui-btn basic">Détails</span>
             </div>
           </div>
@@ -966,7 +967,7 @@ footer {
           </div>
         </div>
       </div>
-      <figcaption>Le message <b>donne la date</b> plutôt qu'un nombre de jours, et il dit laquelle des deux règles s'applique&nbsp;: la veille par défaut, ou le délai plus long propre à ce cours. Le bouton vert a disparu, seul <span class="chip chip-ghost">Détails</span> reste.</figcaption>
+      <figcaption>Le message <b>donne la date</b> plutôt qu'un nombre de jours, et il dit laquelle des deux règles s'applique&nbsp;: la veille par défaut, ou le délai plus long propre à ce cours. Le bouton <b>S'inscrire</b> a disparu, seul <span class="chip chip-ghost">Détails</span> reste.</figcaption>
     </figure>
 
     <div class="note">
@@ -977,7 +978,7 @@ footer {
     <p class="deck">Un seul bouton, qui s'adapte à ce que vous pouvez faire.</p>
 
     <ul class="plain">
-      <li><b>Une seule option possible</b> — le bouton porte <b>directement le nom</b> de la personne ou du chien concerné. Un clic inscrit immédiatement, sans page intermédiaire.</li>
+      <li><b>Une seule option possible</b> — le bouton affiche <b>S'inscrire&nbsp;: suivi du nom</b> de la personne ou du chien concerné. Un clic inscrit immédiatement, sans page intermédiaire.</li>
       <li><b>Deux options ou plus</b> — le bouton s'appelle <b>S'inscrire</b> et ouvre un menu. Chaque ligne est un chien.</li>
     </ul>
 
@@ -985,7 +986,7 @@ footer {
       <p class="fig-label">Le menu ouvert &mdash; plusieurs chiens</p>
       <div class="ui-scope">
         <div class="ui-dd">
-          <div><span class="ui-btn green"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg> S'inscrire <svg class="ic ui-caret" aria-hidden="true"><use href="#i-caret"/></svg></span></div>
+          <div><span class="ui-btn amber"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg> S'inscrire <svg class="ic ui-caret" aria-hidden="true"><use href="#i-caret"/></svg></span></div>
           <div class="ui-menu">
             <div class="ui-item"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg> <span class="dog">Gribouille</span></div>
             <div class="ui-item"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg> <span class="dog">Vodka</span></div>
@@ -1039,15 +1040,15 @@ footer {
           </div>
           <div class="ui-card-content">
             <div class="ui-row" style="justify-content: flex-start;">
-              <b>09:00 &ndash; 10:30</b> <span class="ui-label green">Ouverte</span> <span style="font-size:12px;color:var(--ui-ink-3);">(6/10)</span>
+              <b>09:00 &ndash; 10:30</b> <span class="ui-label green">Ouverte</span> <span class="ui-label orange">Non inscrit</span> <span style="font-size:12px;color:var(--ui-ink-3);">(6/10)</span>
             </div>
             <div class="ui-row" style="justify-content: flex-start;">
-              <b>10:30 &ndash; 12:00</b> <span class="ui-label orange">Complet</span> <span style="font-size:12px;color:var(--ui-ink-3);">(10/10)</span>
+              <b>10:30 &ndash; 12:00</b> <span class="ui-label orange">Complet</span> <span class="ui-label orange">Non inscrit</span> <span style="font-size:12px;color:var(--ui-ink-3);">(10/10)</span>
             </div>
           </div>
           <div class="ui-card-content extra">
             <div class="ui-dd">
-              <div><span class="ui-btn green"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg> S'inscrire <svg class="ic ui-caret" aria-hidden="true"><use href="#i-caret"/></svg></span></div>
+              <div><span class="ui-btn amber"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg> S'inscrire <svg class="ic ui-caret" aria-hidden="true"><use href="#i-caret"/></svg></span></div>
               <div class="ui-menu" style="min-width: 240px;">
                 <div class="ui-item"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg> <span class="dog">09:00 &mdash; Gribouille</span></div>
                 <div class="ui-item"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg> <span class="dog">09:00 &mdash; Vodka</span></div>
@@ -1067,7 +1068,7 @@ footer {
     <h2 class="section"><span class="num">7.</span> Si la séance est complète</h2>
     <p class="deck">La liste d'attente vous garde une priorité.</p>
 
-    <p>Le bouton vert devient un bouton bleu <span class="chip chip-blue">Rejoindre la liste d'attente</span>. Il fonctionne pareil&nbsp;: un menu, un nom de chien, un clic.</p>
+    <p>Le bouton orangé <b>S'inscrire</b> devient un bouton bleu <span class="chip chip-blue">Rejoindre la liste d'attente</span>. Il fonctionne pareil&nbsp;: un menu, un nom de chien, un clic.</p>
 
     <figure class="fig">
       <p class="fig-label">Séance complète</p>
@@ -1200,7 +1201,7 @@ footer {
         </thead>
         <tbody>
           <tr>
-            <td>Un bandeau orange, et aucun bouton vert nulle part</td>
+            <td>Un bandeau orange, et aucun bouton <b>S'inscrire</b> nulle part</td>
             <td>Une cotisation n'est pas à jour, ou un compte est inactif. Le bandeau précise qui est concerné — vous, ou l'un de vos chiens. Voyez le secrétariat.</td>
           </tr>
           <tr>

@@ -690,6 +690,27 @@ Ces tests ont ete valides par mutation : casser le dedup par `session_id`, la br
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Evolution - Etat d'inscription explicite sur les cartes de seance
+
+**Statut :** TERMINEE
+
+- Demande utilisateur : « certains membres n'ont pas bien compris s'ils sont
+  bien ou pas inscrits ». Sur l'onglet *M'inscrire à une prochaine séance*, le
+  bouton d'inscription a option unique etait **vert et portait le nom du
+  chien** (pseudo) : il se lisait comme une confirmation, a cote d'une
+  etiquette verte *Ouverte*.
+- `my_registrations.html.twig` et `session_show.html.twig` : tous les boutons
+  d'inscription (direct et dropdown, soi-meme et membre rattache) passent de
+  `green` / `teal` a `primary` (ambre dans le theme Galette, distinct du vert
+  *Inscrit* et du bleu *liste d'attente*). Le bouton direct affiche
+  « S'inscrire : <pseudo> » au lieu du seul pseudo.
+- Cartes du catalogue : etiquette d'etat orange **Non inscrit** (icone croix)
+  ou verte **Inscrit** (icone coche, cas ou la carte reste visible pour un
+  membre rattache). Cartes multi-creneaux : une etiquette par creneau, omise
+  pour un creneau annule ou en liste d'attente.
+- i18n : `Not registered` -> « Non inscrit ». `.mo` recompile. Tutoriels
+  adherent (`.md`, `.html`, condense) mis a jour. Aucune migration BDD.
+
 ### Evolution - Inscrits hors groupe signales sur la fiche seance (pointage)
 
 **Statut :** TERMINEE

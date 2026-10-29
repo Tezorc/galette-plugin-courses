@@ -60,6 +60,7 @@
    reste vert, c'est le signal que l'adherent doit reconnaitre a l'ecran. */
 :root {
   --ui-green: #21ba45;
+  --ui-amber: #ffb619;
   --ui-blue: #2185d0;
   --ui-red: #db2828;
   --ui-orange: #f2711c;
@@ -258,6 +259,7 @@ ol.steps p { font-size: 16px; }
   vertical-align: baseline;
 }
 .btn-green  { background: var(--ui-green); }
+.btn-amber  { background: var(--ui-amber); }
 .btn-blue   { background: var(--ui-blue); }
 .btn-red    { background: var(--ui-red); }
 .btn-orange { background: var(--ui-orange); }
@@ -432,7 +434,7 @@ a:focus-visible,
 
       <li>
         <h3>Choisir le chien</h3>
-        <p>Un seul choix possible : le bouton <span class="btn btn-green">porte le nom</span> et un clic suffit. Plusieurs choix : le bouton <span class="btn btn-green">S'inscrire</span> ouvre un menu, une ligne par personne ou par chien. <strong>Une inscription à la fois</strong> — rouvrez le menu pour le chien suivant.</p>
+        <p>Un seul choix possible : le bouton <span class="btn btn-amber">S'inscrire : nom</span> et un clic suffit. Plusieurs choix : le bouton <span class="btn btn-amber">S'inscrire</span> ouvre un menu, une ligne par personne ou par chien. <strong>Une inscription à la fois</strong> — rouvrez le menu pour le chien suivant.</p>
         <p>Séance complète : le bouton devient <span class="btn btn-blue">Rejoindre la liste d'attente</span>. Si une place se libère, le premier de la file est inscrit automatiquement et prévenu par courriel. Rien à surveiller.</p>
       </li>
 
@@ -504,7 +506,7 @@ a:focus-visible,
         </thead>
         <tbody>
           <tr>
-            <td>Un bandeau orange, aucun bouton vert</td>
+            <td>Un bandeau orange, aucun bouton S'inscrire</td>
             <td>Une cotisation n'est pas à jour, ou un compte est inactif. Le bandeau nomme la personne — voir le secrétariat.</td>
           </tr>
           <tr>

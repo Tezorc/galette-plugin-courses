@@ -153,8 +153,14 @@ seul bouton**, dont l'apparence depend du nombre d'options possibles.
 > d'un enfant on inscrit le parent ou un frere aussi bien que l'inverse. Un
 > seul niveau de rattachement est pris en compte.
 
-**Une seule option possible** — le bouton porte **directement le nom** de la
-personne concernee. Un clic inscrit immediatement, sans page intermediaire.
+**Une seule option possible** — le bouton affiche **« S'inscrire : »** suivi
+du nom de la personne concernee. Un clic inscrit immediatement, sans page
+intermediaire.
+
+> **Suis-je inscrit ?** Chaque carte porte une etiquette : orange
+> **« Non inscrit »** tant que l'inscription n'est pas faite, verte
+> **« Inscrit »** ensuite. Le bouton d'inscription, lui, est orange : il
+> designe une action a faire, pas un etat.
 
 **Deux options ou plus** — le bouton s'appelle **« S'inscrire »** et ouvre un
 menu. Chaque ligne est une personne : **Moi-même** si vous etes eligible, puis
@@ -213,7 +219,7 @@ cote.
 
 ## 7. Si la seance est complete : la liste d'attente
 
-Le bouton vert est alors remplace par un bouton bleu **« Rejoindre la liste
+Le bouton orange **« S'inscrire »** est alors remplace par un bouton bleu **« Rejoindre la liste
 d'attente »**, avec exactement la meme logique de choix.
 
 - Votre position dans la file s'affiche ensuite sur la carte
@@ -301,7 +307,7 @@ sans se connecter.
 
 | Ce que vous voyez | Ce que cela veut dire |
 | ----------------- | --------------------- |
-| Un bandeau orange en haut de la page, aucun bouton vert | Une cotisation n'est pas a jour, ou un compte est inactif. Le bandeau nomme la personne concernee — voir le secretariat. |
+| Un bandeau orange en haut de la page, aucun bouton « S'inscrire » | Une cotisation n'est pas a jour, ou un compte est inactif. Le bandeau nomme la personne concernee — voir le secretariat. |
 | Une etiquette orange **« Aucun moniteur »** a la place du bouton | Aucun moniteur ne s'est encore propose. Les inscriptions ouvriront des qu'il y en aura un, et vous serez prevenu. |
 | Le bouton existe, mais il manque quelqu'un dans le menu | Cette personne est deja inscrite a cette seance, ou n'appartient pas au groupe demande par ce cours. |
 | La seance n'apparait nulle part | Elle est reservee a un groupe auquel personne de votre foyer n'appartient, ou elle est deja passee. |

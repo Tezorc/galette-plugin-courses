@@ -385,7 +385,7 @@ Le bandeau detaille le nom de chaque membre concerne et la raison precise (cotis
   - Selectionner une valeur applique le filtre automatiquement
   - Bouton **"Filtrer"** disponible pour declencher explicitement le filtre (utile en cas de doute)
   - Bouton **"Effacer les filtres"** : reinitialise tous les filtres aux valeurs par defaut (date du jour)
-- Bouton unique sur chaque carte (Phase 42) : **"S'inscrire"**. Une seule option eligible -> bouton direct portant le nom de la personne (vert pour soi-meme, teal pour un membre rattache) ; deux options ou plus -> menu deroulant listant **Moi-même** puis chaque membre rattache eligible. Le bouton **"Inscrire un enfant"** et sa page intermediaire n'existent plus.
+- Bouton unique sur chaque carte (Phase 42) : **"S'inscrire"**. Une seule option eligible -> bouton direct **"S'inscrire : <nom>"** (couleur primaire du theme, ambre ; plus de vert, qui se confondait avec l'etat inscrit) ; deux options ou plus -> menu deroulant listant **Moi-même** puis chaque membre rattache eligible. Le bouton **"Inscrire un enfant"** et sa page intermediaire n'existent plus.
 - **Section "Seances annulees"** : en bas de l'onglet, une section rouge distincte liste les seances futures **annulees** correspondant aux groupes de l'adherent (et des membres de son foyer), pour l'informer qu'un creneau existe mais qu'il n'aura pas lieu. Chaque carte affiche le motif et le commentaire d'annulation et un bouton **"Details"** (pas de bouton d'inscription). Les seances ou l'adherent (ou un membre rattache) est deja inscrit n'apparaissent pas ici — elles figurent deja dans l'onglet "Mes inscriptions". Les filtres Type / Activite / Date s'appliquent aussi a cette section.
 
 #### Onglet "Mes inscriptions"
@@ -653,10 +653,12 @@ Appartenir au meme foyer ne donne aucun droit en soi : cela dit seulement **pour
 
 L'auto-inscription et l'inscription des membres rattaches sont regroupees derriere un bouton **"S'inscrire"** unique, a la fois sur les cards de l'onglet "M'inscrire à une prochaine séance", sur les cards "Mes inscriptions" et sur la page de detail d'une seance. Le rendu s'adapte au nombre d'options eligibles :
 
-- **1 seule option (soi-meme OU un seul membre rattache)** : bouton vert direct portant le nom de la personne (`Moi-même` pour soi, ou le pseudo / nom du membre rattache). Un clic poste immediatement l'inscription, sans page intermediaire.
-- **2 options ou plus** : bouton vert dropdown libelle **"S'inscrire"**. Le menu liste **Moi-même** (si l'on est eligible) puis chaque membre rattache eligible non deja inscrit (avec son pseudo a defaut, sinon son nom). Selectionner une ligne poste l'inscription correspondante.
+- **1 seule option (soi-meme OU un seul membre rattache)** : bouton direct **"S'inscrire : <nom>"** (pseudo du membre ou du membre rattache, a defaut son nom ; simplement **"S'inscrire"** pour soi sans pseudo). Un clic poste immediatement l'inscription, sans page intermediaire.
+- **2 options ou plus** : bouton dropdown libelle **"S'inscrire"**. Le menu liste **Moi-même** (si l'on est eligible) puis chaque membre rattache eligible non deja inscrit (avec son pseudo a defaut, sinon son nom). Selectionner une ligne poste l'inscription correspondante.
 
 Les membres rattaches deja inscrits sont exclus du menu (et un bouton de desinscription dedie est visible ailleurs sur la card / la page).
+
+Les boutons d'inscription utilisent la couleur **primaire** du theme Galette (ambre), et non plus le vert : des adherents prenaient le bouton vert portant le nom de leur chien pour une confirmation d'inscription. Le vert est reserve a l'etat. Chaque card de l'onglet "M'inscrire à une prochaine séance" porte une etiquette d'etat explicite, a cote de *Ouverte* / *Complet* : orange **"Non inscrit"**, ou verte **"Inscrit"** quand le membre connecte est deja inscrit (card encore visible parce qu'un membre rattache peut s'inscrire). Sur une card multi-creneaux, l'etiquette est donnee par creneau ; elle est omise pour un creneau annule ou sur lequel on est en liste d'attente (etiquette *Liste d'attente* deja affichee).
 
 La page intermediaire "Inscrire un membre rattache" n'existe plus : le choix se fait directement depuis le bouton.
 
