@@ -27,6 +27,7 @@ use Galette\Controllers\Crud\AbstractPluginController;
 use GaletteCourses\Entity\Event;
 use GaletteCourses\Entity\Household;
 use GaletteCourses\Entity\InstructorAvailability;
+use GaletteCourses\Entity\InstructorSolicitation;
 use GaletteCourses\Entity\Registration;
 use GaletteCourses\Entity\Session;
 use GaletteCourses\Entity\SessionInstructor;
@@ -348,45 +349,7 @@ class SessionsController extends AbstractPluginController
         // only, to see who declared themselves available on that day.
         $eligible_instructors = [];
         if ($is_session_manager || $this->login->isGroupManager()) {
-            $event->loadGroups();
-            $eventGroups = $event->getGroups();
-            if (!empty($eventGroups)) {
-                try {
-                    $select = $this->zdb->select(\Galette\Entity\Adherent::TABLE, 'a');
-                    $select->columns(['id_adh', 'nom_adh', 'prenom_adh']);
-                    $select->join(
-                        ['gm' => PREFIX_DB . 'groups_managers'],
-                        'a.id_adh = gm.id_adh',
-                        []
-                    );
-                    $select->where->in('gm.id_group', $eventGroups);
-                    $select->quantifier('DISTINCT');
-                    $results = $this->zdb->execute($select);
-                    foreach ($results as $r) {
-                        $eligible_instructors[(int)$r->id_adh] = trim(($r->prenom_adh ?? '') . ' ' . ($r->nom_adh ?? ''));
-                    }
-                } catch (\Throwable $e) {
-                    // Silently fail - no eligible instructors
-                }
-            } else {
-                // No group restrictions: all group managers are eligible
-                try {
-                    $select = $this->zdb->select(\Galette\Entity\Adherent::TABLE, 'a');
-                    $select->columns(['id_adh', 'nom_adh', 'prenom_adh']);
-                    $select->join(
-                        ['gm' => PREFIX_DB . 'groups_managers'],
-                        'a.id_adh = gm.id_adh',
-                        []
-                    );
-                    $select->quantifier('DISTINCT');
-                    $results = $this->zdb->execute($select);
-                    foreach ($results as $r) {
-                        $eligible_instructors[(int)$r->id_adh] = trim(($r->prenom_adh ?? '') . ' ' . ($r->nom_adh ?? ''));
-                    }
-                } catch (\Throwable $e) {
-                    // Silently fail
-                }
-            }
+            $eligible_instructors = SessionInstructor::getEligibleInstructors($this->zdb, $event);
             // Remove already assigned instructors
             foreach ($instructors as $instr) {
                 unset($eligible_instructors[$instr->getMemberId()]);
@@ -431,6 +394,18 @@ class SessionsController extends AbstractPluginController
             uasort($available_instructors, static fn(array $a, array $b): int => strcmp($a['name'], $b['name']));
             uasort($absent_instructors, static fn(array $a, array $b): int => strcmp($a['name'], $b['name']));
         }
+
+        // Soliciting an instructor: same upcoming-session conditions, and the
+        // status of the requests already made so the page does not offer to
+        // ask twice.
+        $can_solicit = !empty($eligible_instructors)
+            && !$event->isInstructorNotNeeded()
+            && $session->getStatus() !== Session::STATUS_CANCELLED
+            && $session->getSessionDate() >= date('Y-m-d')
+            && InstructorSolicitationController::canSolicit($this->zdb, $this->login, $session, $event);
+        $solicitation_statuses = $can_solicit
+            ? InstructorSolicitation::getStatusesForSession($this->zdb, $id)
+            : [];
 
         // Load the current user's household (for the linked-member picker).
         // `$children` / `$children_registered` keep their names: the template
@@ -619,6 +594,8 @@ class SessionsController extends AbstractPluginController
                 'eligible_instructors' => $eligible_instructors,
                 'available_instructors' => $available_instructors,
                 'absent_instructors' => $absent_instructors,
+                'can_solicit' => $can_solicit,
+                'solicitation_statuses' => $solicitation_statuses,
                 'children' => $children,
                 'children_registered' => $children_registered,
                 'parent_eligible' => $parent_eligible,
@@ -2403,6 +2380,32 @@ class SessionsController extends AbstractPluginController
             }
         }
 
+        // Requests to lead a session, still awaiting my answer.
+        $solicitations = [];
+        foreach (InstructorSolicitation::getPendingForMember($this->zdb, $member_id) as $solicitation) {
+            $s = new Session($this->zdb, $solicitation->getSessionId());
+            if ($s->getId() === null) {
+                continue;
+            }
+            $requesterId = $solicitation->getRequestedBy();
+            $solicitations[] = [
+                'id'        => (int)$solicitation->getId(),
+                'session'   => $s,
+                'event'     => $s->getEvent(),
+                'requester' => $requesterId !== null
+                    ? HistoryLabel::member($this->zdb, $requesterId)
+                    : '',
+                'conflict'  => SessionInstructor::hasOverlappingSession(
+                    $this->zdb,
+                    $member_id,
+                    $s->getSessionDate(),
+                    $s->getStartTime(),
+                    $s->getEndTime(),
+                    (int)$s->getId()
+                ),
+            ];
+        }
+
         $this->view->render(
             $response,
             $this->getTemplate('pages/my_instructor_sessions'),
@@ -2427,6 +2430,7 @@ class SessionsController extends AbstractPluginController
                 'can_declare_availability'  => $can_declare_availability,
                 'availabilities'            => $availabilities,
                 'absence_sessions'          => $absence_sessions,
+                'solicitations'             => $solicitations,
             ]
         );
         return $response;

@@ -339,6 +339,41 @@ class SessionInstructor
     }
 
     /**
+     * Members who may lead a session of this event: the managers of the
+     * event's groups, or every group manager when the event is not restricted.
+     *
+     * @return array<int, string> member id => "First Last"
+     */
+    public static function getEligibleInstructors(Db $zdb, Event $event): array
+    {
+        $eligible = [];
+        $event->loadGroups();
+        $eventGroups = $event->getGroups();
+        try {
+            $select = $zdb->select(\Galette\Entity\Adherent::TABLE, 'a');
+            $select->columns(['id_adh', 'nom_adh', 'prenom_adh']);
+            $select->join(
+                ['gm' => PREFIX_DB . 'groups_managers'],
+                'a.id_adh = gm.id_adh',
+                []
+            );
+            if (!empty($eventGroups)) {
+                $select->where->in('gm.id_group', $eventGroups);
+            }
+            $select->quantifier('DISTINCT');
+            foreach ($zdb->execute($select) as $r) {
+                $eligible[(int)$r->id_adh] = trim(($r->prenom_adh ?? '') . ' ' . ($r->nom_adh ?? ''));
+            }
+        } catch (Throwable $e) {
+            Analog::log(
+                'Error loading eligible instructors of event #' . $event->getId() . ': ' . $e->getMessage(),
+                Analog::ERROR
+            );
+        }
+        return $eligible;
+    }
+
+    /**
      * Find instructor entry by session and member
      */
     public static function findEntry(Db $zdb, int $sessionId, int $memberId): ?self

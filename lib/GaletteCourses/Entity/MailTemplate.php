@@ -51,6 +51,8 @@ class MailTemplate
     public const REF_CANCELLATION            = 'cancellation';
     public const REF_WAITLIST_CANCELLATION   = 'waitlist_cancellation';
     public const REF_INSTRUCTOR_ABSENCE      = 'instructor_absence';
+    public const REF_INSTRUCTOR_SOLICITATION = 'instructor_solicitation';
+    public const REF_SOLICITATION_ANSWER     = 'solicitation_answer';
 
     private ?int $id      = null;
     private string $ref     = '';
@@ -220,6 +222,8 @@ class MailTemplate
             self::REF_CANCELLATION,
             self::REF_WAITLIST_CANCELLATION,
             self::REF_INSTRUCTOR_ABSENCE,
+            self::REF_INSTRUCTOR_SOLICITATION,
+            self::REF_SOLICITATION_ANSWER,
         ];
     }
 
@@ -243,6 +247,8 @@ class MailTemplate
             self::REF_CANCELLATION            => ['event_name', 'event_description', 'session_date', 'session_time', 'reason_block', 'comment_block'],
             self::REF_WAITLIST_CANCELLATION   => ['event_name', 'event_description', 'session_date', 'session_time', 'reason_block', 'comment_block'],
             self::REF_INSTRUCTOR_ABSENCE      => ['event_name', 'session_date', 'session_time', 'instructor_name', 'reason_block'],
+            self::REF_INSTRUCTOR_SOLICITATION => ['event_name', 'event_description', 'session_date', 'session_time', 'requester_name'],
+            self::REF_SOLICITATION_ANSWER     => ['event_name', 'session_date', 'session_time', 'instructor_name', 'answer'],
             default                           => ['event_name'],
         };
     }
@@ -262,6 +268,8 @@ class MailTemplate
             self::REF_CANCELLATION            => _T('Session cancelled', 'courses'),
             self::REF_WAITLIST_CANCELLATION   => _T('Session cancelled (waitlist)', 'courses'),
             self::REF_INSTRUCTOR_ABSENCE      => _T('Instructor absent — session without instructor', 'courses'),
+            self::REF_INSTRUCTOR_SOLICITATION => _T('Request to lead a session (instructor)', 'courses'),
+            self::REF_SOLICITATION_ANSWER     => _T('Answer to a request to lead a session', 'courses'),
             default                           => $ref,
         };
     }
@@ -281,6 +289,8 @@ class MailTemplate
             self::REF_CANCELLATION            => _T('Sent to all registered members when a session is cancelled.', 'courses'),
             self::REF_WAITLIST_CANCELLATION   => _T('Sent to members on the waitlist when a session is cancelled.', 'courses'),
             self::REF_INSTRUCTOR_ABSENCE      => _T('Sent immediately to the group managers of the event when an instructor declares they will be absent and the session is left without any instructor.', 'courses'),
+            self::REF_INSTRUCTOR_SOLICITATION => _T('Sent immediately to an instructor when a group manager or a session manager asks them to lead a session. The instructor answers from the My instructor sessions page.', 'courses'),
+            self::REF_SOLICITATION_ANSWER     => _T('Sent immediately to the person who made a request to lead a session, when the instructor accepts or declines it.', 'courses'),
             default                           => '',
         };
     }
@@ -300,6 +310,8 @@ class MailTemplate
             self::REF_CANCELLATION            => _T('[Courses] Session cancelled: {event_name}', 'courses'),
             self::REF_WAITLIST_CANCELLATION   => _T('[Courses] Session cancelled: {event_name}', 'courses'),
             self::REF_INSTRUCTOR_ABSENCE      => _T('[Courses] Instructor needed: {event_name} on {session_date}', 'courses'),
+            self::REF_INSTRUCTOR_SOLICITATION => _T('[Courses] Could you lead {event_name} on {session_date}?', 'courses'),
+            self::REF_SOLICITATION_ANSWER     => _T('[Courses] {instructor_name} {answer}: {event_name} on {session_date}', 'courses'),
             default                           => '{event_name}',
         };
     }
@@ -319,6 +331,8 @@ class MailTemplate
             self::REF_CANCELLATION            => _T("Hello,\n\nUnfortunately the session \"{event_name}\" scheduled for {session_date} ({session_time}) has been cancelled.{reason_block}{comment_block}{event_description}\n\nWe apologize for the inconvenience and look forward to seeing you at a future session.", 'courses'),
             self::REF_WAITLIST_CANCELLATION   => _T("Hello,\n\nThe session \"{event_name}\" scheduled for {session_date} ({session_time}) has been cancelled.{reason_block}{comment_block}{event_description}\n\nYou were on the waitlist for this session. Your registration request has been removed.\n\nWe apologize for the inconvenience and look forward to seeing you at a future session.", 'courses'),
             self::REF_INSTRUCTOR_ABSENCE      => _T("Hello,\n\n{instructor_name} will not be able to lead the session \"{event_name}\" on {session_date} ({session_time}) and has withdrawn as instructor.{reason_block}\n\nThis session has no instructor any more. If you can lead it, log in and volunteer from the session detail page. Otherwise, a replacement will have to be found or the session cancelled.\n\nThank you!", 'courses'),
+            self::REF_INSTRUCTOR_SOLICITATION => _T("Hello,\n\n{requester_name} would like you to lead the following session:\n\n\"{event_name}\" — {session_date} ({session_time}){event_description}\n\nLog in and answer from My instructor sessions, tab \"Volunteer for a session\": accept, and you are assigned at once, or decline.\n\nThank you!", 'courses'),
+            self::REF_SOLICITATION_ANSWER     => _T("Hello,\n\n{instructor_name} {answer} your request to lead the session \"{event_name}\" on {session_date} ({session_time}).\n\nThank you!", 'courses'),
             default                           => '',
         };
     }

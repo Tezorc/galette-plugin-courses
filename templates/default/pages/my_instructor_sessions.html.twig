@@ -45,6 +45,9 @@
             <i class="search icon" aria-hidden="true"></i>
             <span class="courses-tab-text">{{ _T("Volunteer for a session", "courses") }}</span>
             <span id="instructor-browse-badge" class="ui teal circular label" style="margin-left:.4em;{% if volunteer_sessions|length == 0 %}display:none;{% endif %}">{{ volunteer_sessions|length }}</span>
+            {% if solicitations|length > 0 %}
+                <span class="ui orange circular label" style="margin-left:.4em" title="{{ _T("Requests awaiting your answer", "courses") }}">{{ solicitations|length }}</span>
+            {% endif %}
         </a>
         <a class="item active" data-tab="mine">
             <i class="chalkboard teacher icon" aria-hidden="true"></i>
@@ -69,6 +72,75 @@
    ONGLET 1 — Trouver une seance pour devenir moniteur
    ========================================================= #}
 <div class="ui bottom attached tab segment" data-tab="browse" style="padding:1em 0; border:none; box-shadow:none;">
+
+    {# Demandes recues : un responsable propose de mener une seance #}
+    {% if solicitations|length > 0 %}
+        <h3 class="ui small dividing header">
+            <i class="envelope open outline icon" aria-hidden="true"></i>
+            <div class="content">
+                {{ _T("Requests awaiting your answer", "courses") }}
+                <span class="ui orange circular label">{{ solicitations|length }}</span>
+            </div>
+        </h3>
+        <div class="ui stackable three column grid courses-cards-grid">
+            {% for sol in solicitations %}
+                {% set s = sol.session %}
+                {% set ev = sol.event %}
+                <div class="column">
+                    <div class="ui fluid card courses-card">
+                        <div class="content">
+                            <div class="right floated meta">
+                                <span class="ui orange label">{{ _T("Request", "courses") }}</span>
+                                {% if sol.conflict %}
+                                    <span class="ui orange basic label">
+                                        <i class="exclamation triangle icon" aria-hidden="true"></i>
+                                        {{ _T("Schedule conflict", "courses") }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <div class="header">{{ ev.getName() }}</div>
+                            <div class="meta">
+                                <i class="calendar icon" aria-hidden="true"></i>
+                                <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
+                                <span class="courses-date-month">{{ s.getMonthYear() }}</span>
+                                &nbsp;&middot;&nbsp;
+                                <span class="courses-time-range">{{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}</span>
+                            </div>
+                            {% if ev.getLocation() %}
+                                <div class="meta">
+                                    <i class="map pin icon" aria-hidden="true"></i>
+                                    {{ ev.getLocation() }}
+                                </div>
+                            {% endif %}
+                            {% if sol.requester %}
+                                <div class="description">
+                                    {{ _T("Asked by", "courses") }} <strong>{{ sol.requester }}</strong>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="extra content">
+                            <form action="{{ url_for("coursesDoAcceptSolicitation", {"id": sol.id}) }}" method="post" class="ui form courses-inline-form">
+                                <button type="submit" class="ui small green labeled icon button"{% if sol.conflict %} disabled{% endif %}>
+                                    <i class="check icon" aria-hidden="true"></i>
+                                    {{ _T("Accept", "courses") }}
+                                </button>
+                            </form>
+                            <form action="{{ url_for("coursesDoDeclineSolicitation", {"id": sol.id}) }}" method="post" class="ui form courses-inline-form">
+                                <button type="submit" class="ui small basic labeled icon button">
+                                    <i class="times icon" aria-hidden="true"></i>
+                                    {{ _T("Decline", "courses") }}
+                                </button>
+                            </form>
+                            <a href="{{ url_for("coursesSessionShow", {"id": s.getId()}) }}" class="ui small basic button">
+                                {{ _T("Details", "courses") }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="ui hidden divider"></div>
+    {% endif %}
 
     {% if not can_volunteer %}
         <div class="ui info message">
@@ -695,7 +767,9 @@ $(function() {
         history.replaceState(null, '', window.location.pathname + window.location.search);
     }
 
-    var savedTab = hashTab || localStorage.getItem('my_instructor_tab') || 'mine';
+    // Une demande en attente l'emporte sur l'onglet memorise : c'est elle qu'on vient voir.
+    var hasRequests = {{ solicitations|length > 0 ? 'true' : 'false' }};
+    var savedTab = hashTab || (hasRequests ? 'browse' : null) || localStorage.getItem('my_instructor_tab') || 'mine';
     if (savedTab !== 'mine') {
         $('#my-instructor-tabs .item[data-tab="' + savedTab + '"]').trigger('click');
     }

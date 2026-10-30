@@ -690,6 +690,49 @@ Ces tests ont ete valides par mutation : casser le dedup par `session_id`, la br
 
 - Aucune migration BDD, aucune nouvelle chaine i18n (les 5 libelles `From / Until / Reason / Duration / Status` etaient deja traduits dans le thead). Aucun changement desktop (toutes les regles sont sous `max-width:767px`). Pas de regression sur la regle tablet `≤1024px` qui continue de cacher Duration sur les tailles intermediaires (la table reste tabulaire entre 768 et 1024 px).
 
+### Evolution - Solliciter un moniteur pour une seance
+
+**Statut :** TERMINEE (lot 3 sur 3 du chantier disponibilites moniteurs)
+
+- Objectif : le responsable qui cherche un moniteur fait la demarche, le
+  moniteur n'a plus a « oser » se proposer.
+- Nouvelle table `galette_courses_instructor_solicitations` (`session_id` FK
+  `ON DELETE CASCADE`, `member_id` FK `CASCADE`, `requested_by` FK
+  `SET NULL`, `status` = `pending` | `accepted` | `declined` | `cancelled`,
+  `created_date`, `answered_date`, unique `(session_id, member_id)` :
+  resolliciter remet la ligne en attente). `dbver` 0.5 -> **0.6**,
+  `upgrade-to-0.6-mysql.sql` / `-pgsql.sql`, schemas a jour (14 tables).
+- `InstructorSolicitationController` : `doSolicit` (route
+  `coursesDoSolicitInstructor`), `doAccept` / `doDecline`
+  (`coursesDoAcceptSolicitation`, `coursesDoDeclineSolicitation`), ACL
+  `member`. `canSolicit()` : admin, staff, moniteur de la seance, ou
+  responsable d'un des groupes de l'evenement (tous si non restreint) — les
+  memes personnes que celles alertees par le lot 1. Cible : moniteur eligible,
+  pas deja affecte, pas soi-meme. Seule la personne sollicitee repond.
+- Acceptation : affectation immediate (`assigned_by` = demandeur),
+  `notifyInstructorAssigned` comme un volontariat, refus si chevauchement
+  horaire, et **demande close (`cancelled`)** si la seance a trouve un autre
+  moniteur entre-temps — les demandes devenues sans objet sont filtrees a la
+  lecture (`getPendingForMember` exclut les seances qui ont un moniteur), sans
+  crochet sur les autres chemins d'affectation.
+- Deux modeles immediats : `REF_INSTRUCTOR_SOLICITATION`
+  (`instructor_solicitation`, `{requester_name}`) au moniteur, et
+  `REF_SOLICITATION_ANSWER` (`solicitation_answer`, `{instructor_name}`,
+  `{answer}`) au demandeur. Opt-out respecte (`getMemberEmailsByIds`, passe en
+  `protected`) : la demande reste visible sur la page, et le message de
+  confirmation dit si aucun courriel n'est parti.
+- `SessionInstructor::getEligibleInstructors()` factorise la requete des
+  moniteurs eligibles (auparavant en double dans `SessionsController::show`).
+- Fiche seance : boutons **Solliciter** sur les disponibles, menu **Solliciter
+  un autre moniteur**, etiquettes *Sollicite, en attente* / *A decline*.
+  *Mes seances comme moniteur* : bloc **Demandes en attente de votre reponse**
+  en tete de *Se proposer moniteur* (Accepter / Decliner / Details), pastille
+  orange, onglet ouvert d'office. Menu et tuile du tableau de bord affiches
+  aussi a qui a une demande en attente (staff compris).
+- i18n : 33 chaines, `.mo` recompile. Tests : `InstructorSolicitationTest`
+  (destinataire, variables, reponse acceptee / declinee, variables des corps
+  par defaut), `MailTemplateTest` a 14 refs et `tref` <= 30 ; 136/136 verts.
+
 ### Evolution - Les moniteurs declarent leurs disponibilites
 
 **Statut :** TERMINEE (lot 2 sur 3 du chantier disponibilites moniteurs)

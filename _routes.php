@@ -34,6 +34,7 @@ use GaletteCourses\Controllers\StatsController;
 use GaletteCourses\Controllers\MailTemplatesController;
 use GaletteCourses\Controllers\UnsubscribeController;
 use GaletteCourses\Controllers\InstructorAvailabilityController;
+use GaletteCourses\Controllers\InstructorSolicitationController;
 
 // Events
 $app->get(
@@ -292,6 +293,21 @@ $app->post(
     '/my-availability/{id:[0-9]+}/remove',
     [InstructorAvailabilityController::class, 'doRemove']
 )->setName('coursesDoRemoveAvailability')->add(Authenticate::class);
+
+$app->post(
+    '/session/{id:[0-9]+}/solicit-instructor',
+    [InstructorSolicitationController::class, 'doSolicit']
+)->setName('coursesDoSolicitInstructor')->add(Authenticate::class);
+
+$app->post(
+    '/solicitation/{id:[0-9]+}/accept',
+    [InstructorSolicitationController::class, 'doAccept']
+)->setName('coursesDoAcceptSolicitation')->add(Authenticate::class);
+
+$app->post(
+    '/solicitation/{id:[0-9]+}/decline',
+    [InstructorSolicitationController::class, 'doDecline']
+)->setName('coursesDoDeclineSolicitation')->add(Authenticate::class);
 
 $app->get(
     '/registrations[/{option}/{value}]',

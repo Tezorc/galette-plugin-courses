@@ -2297,3 +2297,104 @@ msgstr "absent"
 
 msgid "available"
 msgstr "disponible"
+
+# --- Sollicitation des moniteurs ---
+
+msgid "This member cannot lead this session."
+msgstr "Ce membre ne peut pas encadrer cette séance."
+
+msgid "To lead this session yourself, volunteer as instructor."
+msgstr "Pour encadrer vous-même cette séance, portez-vous volontaire."
+
+msgid "[Courses] Instructor solicited for session"
+msgstr "[Cours] Moniteur sollicité pour la séance"
+
+msgid "The club"
+msgstr "Le club"
+
+msgid "%s has been asked by email to lead this session."
+msgstr "%s a été sollicité par courriel pour encadrer cette séance."
+
+msgid "The request has been recorded for %s, who will see it on their page (no email could be sent)."
+msgstr "La demande est enregistrée pour %s, qui la verra sur sa page (aucun courriel n'a pu être envoyé)."
+
+msgid "Another instructor has been found for this session in the meantime."
+msgstr "Un autre moniteur a été trouvé pour cette séance entre-temps."
+
+msgid "[Courses] Instructor accepted to lead session"
+msgstr "[Cours] Moniteur a accepté d'encadrer la séance"
+
+msgid "[Courses] Instructor declined to lead session"
+msgstr "[Cours] Moniteur a décliné la séance"
+
+msgid "You declined the request. Whoever asked has been told."
+msgstr "Vous avez décliné la demande. La personne qui l'a faite est prévenue."
+
+msgid "Request not found."
+msgstr "Demande introuvable."
+
+msgid "You have already answered this request."
+msgstr "Vous avez déjà répondu à cette demande."
+
+msgid "has accepted"
+msgstr "a accepté"
+
+msgid "has declined"
+msgstr "a décliné"
+
+msgid "Request to lead a session (instructor)"
+msgstr "Demande d'encadrer une séance (moniteur)"
+
+msgid "Answer to a request to lead a session"
+msgstr "Réponse à une demande d'encadrer une séance"
+
+msgid "Sent immediately to an instructor when a group manager or a session manager asks them to lead a session. The instructor answers from the My instructor sessions page."
+msgstr "Envoyé immédiatement à un moniteur quand un responsable de groupe ou un gestionnaire de la séance lui demande de l'encadrer. Le moniteur répond depuis la page Mes séances comme moniteur."
+
+msgid "Sent immediately to the person who made a request to lead a session, when the instructor accepts or declines it."
+msgstr "Envoyé immédiatement à la personne qui a sollicité un moniteur, quand celui-ci accepte ou décline."
+
+msgid "[Courses] Could you lead {event_name} on {session_date}?"
+msgstr "[Cours] Pourriez-vous encadrer {event_name} le {session_date} ?"
+
+msgid "[Courses] {instructor_name} {answer}: {event_name} on {session_date}"
+msgstr "[Cours] {instructor_name} {answer} : {event_name} le {session_date}"
+
+msgid "Hello,\n\n{requester_name} would like you to lead the following session:\n\n\"{event_name}\" — {session_date} ({session_time}){event_description}\n\nLog in and answer from My instructor sessions, tab \"Volunteer for a session\": accept, and you are assigned at once, or decline.\n\nThank you!"
+msgstr "Bonjour,\n\n{requester_name} vous propose d'encadrer la séance suivante :\n\n« {event_name} » — {session_date} ({session_time}){event_description}\n\nConnectez-vous et répondez depuis Mes séances comme moniteur, onglet « Se proposer moniteur » : acceptez, et vous êtes affecté aussitôt, ou déclinez.\n\nMerci !"
+
+msgid "Hello,\n\n{instructor_name} {answer} your request to lead the session \"{event_name}\" on {session_date} ({session_time}).\n\nThank you!"
+msgstr "Bonjour,\n\n{instructor_name} {answer} votre demande d'encadrer la séance « {event_name} » du {session_date} ({session_time}).\n\nMerci !"
+
+msgid "Requests awaiting your answer"
+msgstr "Demandes en attente de votre réponse"
+
+msgid "Request"
+msgstr "Demande"
+
+msgid "Asked by"
+msgstr "Demandé par"
+
+msgid "Accept"
+msgstr "Accepter"
+
+msgid "Decline"
+msgstr "Décliner"
+
+msgid "Asked, awaiting answer"
+msgstr "Sollicité, en attente"
+
+msgid "Declined"
+msgstr "A décliné"
+
+msgid "Ask"
+msgstr "Solliciter"
+
+msgid "Asked, awaiting answer:"
+msgstr "Sollicités, en attente :"
+
+msgid "Ask another instructor"
+msgstr "Solliciter un autre moniteur"
+
+msgid "declined"
+msgstr "a décliné"

@@ -34,7 +34,7 @@ $this->register(
     compver: '1.3.0',
     route: 'courses',
     date: '2026-06-07',
-    dbver: 0.5,
+    dbver: 0.6,
     acls: [
         // Event authorship: routes are 'member' but each handler enforces
         // denyUnlessCanAuthorEvents() (admin/staff/group manager/instructor on
@@ -73,6 +73,12 @@ $this->register(
         // manager or an assigned instructor, and only touches their own rows.
         'coursesDoAddAvailability'    => 'member',
         'coursesDoRemoveAvailability' => 'member',
+        // Instructor solicitations: soliciting is checked by canSolicit()
+        // (admin/staff/session instructor/manager of the event's groups);
+        // answering is reserved to the solicited member.
+        'coursesDoSolicitInstructor'   => 'member',
+        'coursesDoAcceptSolicitation'  => 'member',
+        'coursesDoDeclineSolicitation' => 'member',
         'coursesSessionIcal'        => 'member',
         'coursesRegistrations'      => 'groupmanager',
         'coursesRegistrationsFilter' => 'groupmanager',

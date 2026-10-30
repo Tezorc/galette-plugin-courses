@@ -594,7 +594,23 @@ Sur la **fiche d'une seance a venir** (non annulee, evenement qui requiert un mo
 - **Staff, administrateurs et moniteurs de la seance** : bouton **"Affecter"** a cote de chaque moniteur disponible ; le menu *Affecter un moniteur* suffixe aussi chaque nom de *— disponible* ou *— absent*.
 - **Responsables de groupe** : meme liste en lecture seule, pour savoir qui contacter.
 
-L'encadre n'apparait que si au moins un moniteur eligible a declare quelque chose pour ce jour.
+L'encadre apparait si au moins un moniteur eligible a declare quelque chose pour ce jour, ou si l'utilisateur peut solliciter un moniteur (ci-dessous).
+
+#### Solliciter un moniteur
+
+Plutot que d'attendre un volontaire, la personne qui cherche un moniteur le **sollicite** depuis la fiche de la seance :
+
+- **Qui peut solliciter** : staff, administrateurs, moniteurs de la seance, et **responsables d'un des groupes de l'evenement** (de tout groupe si l'evenement n'est pas restreint) — c'est-a-dire aussi les destinataires de l'alerte *Moniteur absent* (`InstructorSolicitationController::canSolicit`).
+- **Qui peut etre sollicite** : un moniteur eligible (responsable d'un des groupes de l'evenement), pas deja moniteur de la seance, pas soi-meme (pour soi, *Se porter volontaire*).
+- **Comment** : bouton **"Solliciter"** a cote de chaque moniteur disponible ce jour, ou menu **"Solliciter un autre moniteur"** listant les autres moniteurs eligibles qui ne sont ni absents ni deja sollicites. Seance a venir, non annulee, d'un evenement qui requiert un moniteur.
+- Le moniteur recoit **immediatement** le courriel *Demande d'encadrer une seance* (sauf s'il a coupe ses notifications : la demande reste visible sur sa page, et le message de confirmation le signale).
+- Sur la fiche, chaque moniteur sollicite porte l'etiquette *Sollicite, en attente* ou *A decline* ; un moniteur qui a decline peut etre sollicite de nouveau. Une seule demande par seance et par moniteur.
+
+Cote moniteur, la demande apparait en tete de l'onglet **Se proposer moniteur** de *Mes seances comme moniteur* (pastille orange sur l'onglet, qui s'ouvre de lui-meme tant qu'une demande attend). Le menu *Mes seances comme moniteur* est affiche a toute personne ayant une demande en attente, staff compris.
+
+- **"Accepter"** : le moniteur est **affecte aussitot** a la seance, le demandeur recoit *Reponse a une demande d'encadrer une seance* (« a accepte »), et les membres sont prevenus dans le recapitulatif hebdomadaire comme pour un volontariat. Refuse si le moniteur encadre deja une seance qui chevauche (bouton grise, etiquette *Conflit horaire*).
+- **"Decliner"** : le demandeur recoit le meme courriel (« a decline »).
+- Une demande dont la seance a **trouve un autre moniteur entre-temps** disparait de la liste ; si le moniteur l'accepte malgre tout depuis un onglet reste ouvert, l'acceptation est refusee et la demande close.
 
 #### Indicateur dans la liste des seances
 
@@ -1004,7 +1020,7 @@ Trace cote Galette : le plugin ecrit dans l'historique `[Courses] Cron: sessions
 
 Le menu **Gestion des inscriptions > Modeles de courriels** (accessible aux **administrateurs uniquement**) permet de personnaliser les textes des emails automatiques du plugin.
 
-12 modeles sont disponibles :
+14 modeles sont disponibles :
 
 | Modele | Destinataires | Declencheur |
 | ------ | ------------ | ----------- |
@@ -1020,6 +1036,8 @@ Le menu **Gestion des inscriptions > Modeles de courriels** (accessible aux **ad
 | Seance annulee (inscrits) | Membres inscrits + parents | Annulation d'une seance (immediat) |
 | Seance annulee (liste d'attente) | Membres en liste d'attente + parents | Annulation d'une seance (immediat) |
 | Moniteur absent — seance sans moniteur | Responsables de groupe de l'evenement (a defaut : administrateurs), sauf le moniteur absent | Un moniteur se declare absent et la seance n'a plus aucun moniteur (immediat) |
+| Demande d'encadrer une seance (moniteur) | Moniteur sollicite | Un responsable ou un gestionnaire de la seance le sollicite (immediat) |
+| Reponse a une demande d'encadrer une seance | Personne qui a sollicite | Le moniteur accepte ou decline (immediat) |
 
 **Regroupement parent/enfants (Phase 59)** : pour tous les courriels destines a un membre, le parent (lien `parent_id` dans la fiche Galette) reçoit aussi le mail. Si l'enfant a son propre email **distinct** du parent, il reçoit egalement son propre mail. Si l'enfant n'a pas d'email ou partage celui du parent, seul le parent est notifie (pas de doublon).
 
@@ -1028,7 +1046,7 @@ Chaque modele dispose :
 - D'un **sujet** (objet de l'email)
 - D'un **corps** (contenu de l'email, avec variables disponibles affichees sous forme de pastilles cliquables)
 
-La variable `{event_description}` est disponible dans tous les modeles lies a un evenement ou une seance, sauf *Moniteur absent* (alerte interne, qui propose `{instructor_name}` et `{reason_block}`). Elle est inseree automatiquement apres les informations principales (nom, lieu, date/heure) et est vide si l'evenement n'a pas de descriptif.
+La variable `{event_description}` est disponible dans tous les modeles lies a un evenement ou une seance, sauf *Moniteur absent* (alerte interne, qui propose `{instructor_name}` et `{reason_block}`) et *Reponse a une demande* (`{instructor_name}`, `{answer}` = « a accepte » / « a decline »). *Demande d'encadrer une seance* propose `{requester_name}`. Elle est inseree automatiquement apres les informations principales (nom, lieu, date/heure) et est vide si l'evenement n'a pas de descriptif.
 
 Cliquer sur **Reinitialiser** pour revenir au modele par defaut.
 
@@ -1533,6 +1551,10 @@ Sur les autres seances, vous restez un membre ou un responsable de groupe ordina
 ### Declarer vos disponibilites
 
 Onglet **Mes disponibilites** de **Mes seances comme moniteur** : saisir une periode (du … au …, une seule date pour un jour), choisir **Disponible** ou **Absent**, ajouter un commentaire si utile, puis **"Ajouter cette periode"**. Les responsables de groupe voient votre disponibilite sur la fiche des seances de ces jours-la quand ils cherchent un moniteur. Ne rien declarer ne bloque rien. Une periode d'absence ne vous retire pas des seances que vous encadrez deja : l'onglet vous les signale, et vous utilisez **"Je serai absent"** sur chacune.
+
+### Repondre a une demande
+
+Un responsable peut vous **solliciter** pour une seance : vous recevez un courriel, et la demande s'affiche en tete de l'onglet **Se proposer moniteur**. **"Accepter"** vous affecte aussitot a la seance ; **"Decliner"** previent simplement la personne qui a demande. Dans les deux cas, elle est informee par courriel.
 
 ### Si vous ne pouvez pas venir
 

@@ -28,6 +28,7 @@ use Galette\Core\Plugins\MenuProviderInterface;
 use Galette\Core\Plugins\DashboardProviderInterface;
 use Galette\Core\Plugins\MemberActionProviderInterface;
 use Galette\Entity\Adherent;
+use GaletteCourses\Entity\InstructorSolicitation;
 use GaletteCourses\Entity\SessionInstructor;
 
 /**
@@ -78,7 +79,8 @@ class PluginGaletteCourses extends GalettePlugin implements
             && !$login->isAdmin()
             && !$login->isStaff();
         $canSeeInstructorPage = $isPureGroupManager
-            || ($memberId > 0 && SessionInstructor::countSessionsForMember($zdb, $memberId) > 0);
+            || ($memberId > 0 && SessionInstructor::countSessionsForMember($zdb, $memberId) > 0)
+            || ($memberId > 0 && !empty(InstructorSolicitation::getPendingForMember($zdb, $memberId)));
         if ($canSeeInstructorPage) {
             $memberItems[] = [
                 'label' => _T('My instructor sessions', 'courses'),
@@ -227,7 +229,8 @@ class PluginGaletteCourses extends GalettePlugin implements
                 && !$login->isAdmin()
                 && !$login->isStaff();
             $canSeeInstructorPage = $isPureGroupManager
-                || ($memberId > 0 && SessionInstructor::countSessionsForMember($zdb, $memberId) > 0);
+                || ($memberId > 0 && SessionInstructor::countSessionsForMember($zdb, $memberId) > 0)
+                || ($memberId > 0 && !empty(InstructorSolicitation::getPendingForMember($zdb, $memberId)));
             if ($canSeeInstructorPage) {
                 $tiles[] = [
                     'label' => _T('My instructor sessions', 'courses'),

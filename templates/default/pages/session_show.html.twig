@@ -193,10 +193,11 @@
                         {% endif %}
                     {% endif %}
 
-                    {# Disponibilites declarees ce jour par les moniteurs eligibles.
-                       Affecter en un clic reserve aux gestionnaires de la seance ;
-                       les responsables de groupe voient la liste en lecture. #}
-                    {% if available_instructors|length > 0 or absent_instructors|length > 0 %}
+                    {# Trouver un moniteur : disponibilites declarees ce jour (lot 2) et
+                       sollicitations (lot 3). Affecter en un clic reserve aux
+                       gestionnaires de la seance ; solliciter ouvert aussi aux
+                       responsables des groupes de l'evenement (can_solicit). #}
+                    {% if available_instructors|length > 0 or absent_instructors|length > 0 or can_solicit %}
                         <div class="ui divider"></div>
                         <h4 class="ui small header">
                             <i class="calendar check outline icon" aria-hidden="true"></i>
@@ -205,21 +206,38 @@
                         {% if available_instructors|length > 0 %}
                             <div class="ui relaxed list">
                                 {% for mid, a in available_instructors %}
+                                    {% set sol_status = solicitation_statuses[mid] ?? null %}
                                     <div class="item">
                                         <div class="content courses-member-inline">
                                             <span class="ui green tiny label">{{ _T("Available", "courses") }}</span>
                                             {{ a.name }}
                                             {% if a.comment %}<em>&middot; {{ a.comment }}</em>{% endif %}
+                                            {% if sol_status == 'pending' %}
+                                                <span class="ui blue basic tiny label">{{ _T("Asked, awaiting answer", "courses") }}</span>
+                                            {% elseif sol_status == 'declined' %}
+                                                <span class="ui grey basic tiny label">{{ _T("Declined", "courses") }}</span>
+                                            {% endif %}
                                             {% if a.busy %}
                                                 <span class="ui orange basic tiny label">{{ _T("Already leads a session at that time", "courses") }}</span>
-                                            {% elseif is_session_manager %}
-                                                <form action="{{ url_for("coursesDoAssignInstructor", {"id": session.getId()}) }}" method="post" class="ui form courses-inline-form">
-                                                    <input type="hidden" name="member_id" value="{{ mid }}">
-                                                    <button type="submit" class="ui mini primary button">
-                                                        <i class="plus icon" aria-hidden="true"></i>
-                                                        {{ _T("Assign", "courses") }}
-                                                    </button>
-                                                </form>
+                                            {% else %}
+                                                {% if is_session_manager %}
+                                                    <form action="{{ url_for("coursesDoAssignInstructor", {"id": session.getId()}) }}" method="post" class="ui form courses-inline-form">
+                                                        <input type="hidden" name="member_id" value="{{ mid }}">
+                                                        <button type="submit" class="ui mini primary button">
+                                                            <i class="plus icon" aria-hidden="true"></i>
+                                                            {{ _T("Assign", "courses") }}
+                                                        </button>
+                                                    </form>
+                                                {% endif %}
+                                                {% if can_solicit and sol_status != 'pending' and mid != login.id %}
+                                                    <form action="{{ url_for("coursesDoSolicitInstructor", {"id": session.getId()}) }}" method="post" class="ui form courses-inline-form">
+                                                        <input type="hidden" name="member_id" value="{{ mid }}">
+                                                        <button type="submit" class="ui mini teal basic button">
+                                                            <i class="envelope outline icon" aria-hidden="true"></i>
+                                                            {{ _T("Ask", "courses") }}
+                                                        </button>
+                                                    </form>
+                                                {% endif %}
                                             {% endif %}
                                         </div>
                                     </div>
@@ -235,6 +253,47 @@
                                     {{ a.name }}{% if a.comment %} ({{ a.comment }}){% endif %}{% if not loop.last %}, {% endif %}
                                 {% endfor %}
                             </p>
+                        {% endif %}
+
+                        {# Solliciter n'importe quel autre moniteur eligible : ni absent,
+                           ni deja sollicite en attente, ni soi-meme. #}
+                        {% if can_solicit %}
+                            {% set others = [] %}
+                            {% for mid, mname in eligible_instructors %}
+                                {% if available_instructors[mid] is not defined and absent_instructors[mid] is not defined and (solicitation_statuses[mid] ?? null) != 'pending' and mid != login.id %}
+                                    {% set others = others|merge([{id: mid, name: mname}]) %}
+                                {% endif %}
+                            {% endfor %}
+                            {% set pending_others = [] %}
+                            {% for mid, mname in eligible_instructors %}
+                                {% if available_instructors[mid] is not defined and (solicitation_statuses[mid] ?? null) == 'pending' %}
+                                    {% set pending_others = pending_others|merge([mname]) %}
+                                {% endif %}
+                            {% endfor %}
+                            {% if pending_others|length > 0 %}
+                                <p class="courses-help-text">
+                                    <strong>{{ _T("Asked, awaiting answer:", "courses") }}</strong>
+                                    {{ pending_others|join(', ') }}
+                                </p>
+                            {% endif %}
+                            {% if others|length > 0 %}
+                                <form action="{{ url_for("coursesDoSolicitInstructor", {"id": session.getId()}) }}" method="post" class="ui form">
+                                    <div class="inline fields">
+                                        <div class="field">
+                                            <select name="member_id" class="ui search dropdown" aria-label="{{ _T("Ask another instructor", "courses") }}">
+                                                <option value="">{{ _T("Ask another instructor", "courses") }}</option>
+                                                {% for o in others %}
+                                                    <option value="{{ o.id }}">{{ o.name }}{% if (solicitation_statuses[o.id] ?? null) == 'declined' %} — {{ _T("declined", "courses") }}{% endif %}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="ui small teal basic button">
+                                            <i class="envelope outline icon" aria-hidden="true"></i>
+                                            {{ _T("Ask", "courses") }}
+                                        </button>
+                                    </div>
+                                </form>
+                            {% endif %}
                         {% endif %}
                     {% endif %}
 

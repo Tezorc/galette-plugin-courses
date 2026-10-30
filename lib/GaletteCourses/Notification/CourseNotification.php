@@ -1044,6 +1044,61 @@ class CourseNotification
         $this->sendMail($recipients, $subject, $message);
     }
 
+    /**
+     * Ask an instructor to lead a session. Sent immediately: it is a personal
+     * request, often for a session coming soon. An instructor who opted out of
+     * notifications still finds the request on their page.
+     *
+     * @return bool true when a mail was actually sent
+     */
+    public function notifyInstructorSolicitation(
+        Session $session,
+        Event $event,
+        int $instructorId,
+        string $requesterName
+    ): bool {
+        $recipients = $this->getMemberEmailsByIds([$instructorId]);
+        if (empty($recipients)) {
+            return false;
+        }
+
+        [$subject, $message] = $this->renderTemplate(MailTemplate::REF_INSTRUCTOR_SOLICITATION, [
+            'event_name'        => $event->getName(),
+            'event_description' => $this->buildDescriptionBlock($event->getDescription()),
+            'session_date'      => $session->getFormattedDateShort(),
+            'session_time'      => $session->getStartTime() . ' - ' . $session->getEndTime(),
+            'requester_name'    => $requesterName,
+        ]);
+
+        return $this->sendMail($recipients, $subject, $message);
+    }
+
+    /**
+     * Tell whoever made the request that the instructor accepted or declined.
+     */
+    public function notifySolicitationAnswer(
+        Session $session,
+        Event $event,
+        int $requesterId,
+        string $instructorName,
+        bool $accepted
+    ): void {
+        $recipients = $this->getMemberEmailsByIds([$requesterId]);
+        if (empty($recipients)) {
+            return;
+        }
+
+        [$subject, $message] = $this->renderTemplate(MailTemplate::REF_SOLICITATION_ANSWER, [
+            'event_name'      => $event->getName(),
+            'session_date'    => $session->getFormattedDateShort(),
+            'session_time'    => $session->getStartTime() . ' - ' . $session->getEndTime(),
+            'instructor_name' => $instructorName,
+            'answer'          => $accepted ? $this->tr('has accepted') : $this->tr('has declined'),
+        ]);
+
+        $this->sendMail($recipients, $subject, $message);
+    }
+
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
@@ -1378,7 +1433,7 @@ class CourseNotification
      * @param int[] $memberIds
      * @return array<string, array{name: string, member_id: int}> [email => ['name' => ..., 'member_id' => ...]]
      */
-    private function getMemberEmailsByIds(array $memberIds): array
+    protected function getMemberEmailsByIds(array $memberIds): array
     {
         if (empty($memberIds)) {
             return [];

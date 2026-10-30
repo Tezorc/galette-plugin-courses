@@ -101,13 +101,20 @@ final class MailTemplateTest extends TestCase
         );
     }
 
-    public function testGetAvailableRefsReturnsAllTwelveCanonicalRefs(): void
+    public function testGetAvailableRefsReturnsAllFourteenCanonicalRefs(): void
     {
         $refs = MailTemplate::getAvailableRefs();
 
-        self::assertCount(12, $refs);
+        self::assertCount(14, $refs);
         // Instructor absence: immediate alert to the group managers.
         self::assertContains(MailTemplate::REF_INSTRUCTOR_ABSENCE, $refs);
+        // Instructor solicitation: the request, then the answer to whoever asked.
+        self::assertContains(MailTemplate::REF_INSTRUCTOR_SOLICITATION, $refs);
+        self::assertContains(MailTemplate::REF_SOLICITATION_ANSWER, $refs);
+        // tref is a varchar(30).
+        foreach ($refs as $ref) {
+            self::assertLessThanOrEqual(30, strlen($ref), $ref);
+        }
         self::assertContains(MailTemplate::REF_INSTRUCTOR_ASSIGNED, $refs);
         self::assertContains(MailTemplate::REF_WAITLIST_PROMOTION, $refs);
         self::assertContains(MailTemplate::REF_CANCELLATION, $refs);

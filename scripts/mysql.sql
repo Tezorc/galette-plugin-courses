@@ -19,6 +19,7 @@
 
 -- Schema for Galette Courses plugin
 
+DROP TABLE IF EXISTS galette_courses_instructor_solicitations;
 DROP TABLE IF EXISTS galette_courses_instructor_availability;
 DROP TABLE IF EXISTS galette_courses_pending_notifications;
 DROP TABLE IF EXISTS galette_courses_mail_templates;
@@ -232,4 +233,25 @@ CREATE TABLE galette_courses_instructor_availability (
     KEY idx_courses_ia_member (member_id),
     KEY idx_courses_ia_dates (date_from, date_to),
     CONSTRAINT fk_courses_ia_member FOREIGN KEY (member_id) REFERENCES galette_adherents (id_adh) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Instructor solicitations (dbver 0.6):
+-- a group manager or a session manager asks an instructor to lead a session.
+-- status = 'pending', 'accepted', 'declined' or 'cancelled' (the session found
+-- another instructor first). One row per (session, instructor), soliciting
+-- again resets it to pending.
+CREATE TABLE galette_courses_instructor_solicitations (
+    id_solicitation int unsigned NOT NULL auto_increment,
+    session_id int unsigned NOT NULL,
+    member_id int unsigned NOT NULL,
+    requested_by int unsigned DEFAULT NULL,
+    status varchar(10) NOT NULL DEFAULT 'pending',
+    created_date datetime NOT NULL,
+    answered_date datetime DEFAULT NULL,
+    PRIMARY KEY (id_solicitation),
+    UNIQUE KEY uk_courses_sol_session_member (session_id, member_id),
+    KEY idx_courses_sol_member (member_id),
+    CONSTRAINT fk_courses_sol_session FOREIGN KEY (session_id) REFERENCES galette_courses_sessions (id_session) ON DELETE CASCADE,
+    CONSTRAINT fk_courses_sol_member FOREIGN KEY (member_id) REFERENCES galette_adherents (id_adh) ON DELETE CASCADE,
+    CONSTRAINT fk_courses_sol_requested_by FOREIGN KEY (requested_by) REFERENCES galette_adherents (id_adh) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
