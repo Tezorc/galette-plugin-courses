@@ -55,7 +55,7 @@ class InstructorAvailability
     private ?string $comment = null;
 
     /**
-     * @param int|ArrayObject<string, int|string|null>|null $args
+     * @param int|ArrayObject<string, int|string>|null $args
      */
     public function __construct(private Db $zdb, int|ArrayObject|null $args = null)
     {
@@ -72,7 +72,7 @@ class InstructorAvailability
             $select = $this->zdb->select(self::TABLE);
             $select->limit(1)->where([self::PK => $id]);
             $results = $this->zdb->execute($select);
-            /** @var ArrayObject<string, int|string|null>|null $res */
+            /** @var ArrayObject<string, int|string>|null $res */
             $res = $results->current();
             if ($res) {
                 $this->loadFromRS($res);
@@ -86,7 +86,7 @@ class InstructorAvailability
     }
 
     /**
-     * @param ArrayObject<string, int|string|null> $rs
+     * @param ArrayObject<string, int|string> $rs
      */
     private function loadFromRS(ArrayObject $rs): void
     {
