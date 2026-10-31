@@ -21,6 +21,25 @@
 --
 -- Equivalent de `upgrade-to-0.6-mysql.sql` : nouvelle table des
 -- sollicitations de moniteurs.
+--
+-- Filet de securite : la table des disponibilites (0.5) est recreee si absente.
+-- L'assistant de mise a jour demande la version precedente et ne joue que les
+-- scripts au-dessus : choisir 0.5 au lieu de 0.4 sautait upgrade-to-0.5 (vu en
+-- prod le 2026-10-31).
+
+-- Instructor availability (dbver 0.5), repeated from upgrade-to-0.5-pgsql.sql.
+CREATE TABLE IF NOT EXISTS galette_courses_instructor_availability (
+    id_availability serial PRIMARY KEY,
+    member_id integer NOT NULL,
+    date_from date NOT NULL,
+    date_to date NOT NULL,
+    kind varchar(10) NOT NULL,
+    comment varchar(255) DEFAULT NULL,
+    created_date timestamp NOT NULL,
+    CONSTRAINT fk_courses_ia_member FOREIGN KEY (member_id) REFERENCES galette_adherents (id_adh) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_courses_ia_member ON galette_courses_instructor_availability (member_id);
+CREATE INDEX IF NOT EXISTS idx_courses_ia_dates ON galette_courses_instructor_availability (date_from, date_to);
 
 -- Instructor solicitations (dbver 0.6):
 -- a group manager or a session manager asks an instructor to lead a session.

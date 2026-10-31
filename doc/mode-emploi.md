@@ -74,6 +74,15 @@ Courses* ; Galette joue alors les scripts `scripts/upgrade-to-<version>-mysql.sq
 deploiement qui change la version de schema (par exemple 0.4 -> 0.5,
 disponibilites des moniteurs).
 
+> **Attention au choix de la version precedente.** L'assistant demande quelle
+> version etait installee et ne joue **que les scripts au-dessus**. Choisir la
+> version reellement en place (celle de la ligne `galette_plugins`, a noter
+> avant la mise a jour), jamais une plus recente : choisir 0.5 alors que la base
+> etait en 0.4 saute `upgrade-to-0.5` et la table des disponibilites manque
+> (« Une erreur est survenue » en declarant une disponibilite). En cas de
+> doute, rejouer le script manquant depuis phpMyAdmin : les scripts utilisent
+> `IF NOT EXISTS` et sont rejouables.
+
 **Cas 2 — l'installation est anterieure a l'introduction de `dbver`** (pas de
 ligne dans `galette_plugins`). C'est le cas de toutes les installations mises a
 jour depuis une version anterieure du plugin. Galette inscrit alors la version

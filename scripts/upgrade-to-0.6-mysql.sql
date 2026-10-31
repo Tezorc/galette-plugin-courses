@@ -27,6 +27,26 @@
 -- d'encadrer une seance, le moniteur accepte ou decline.
 --
 -- IF NOT EXISTS rend le script rejouable sans erreur.
+--
+-- Filet de securite : la table des disponibilites (0.5) est recreee si absente.
+-- L'assistant de mise a jour demande la version precedente et ne joue que les
+-- scripts au-dessus : choisir 0.5 au lieu de 0.4 sautait upgrade-to-0.5 (vu en
+-- prod le 2026-10-31).
+
+-- Instructor availability (dbver 0.5), repeated from upgrade-to-0.5-mysql.sql.
+CREATE TABLE IF NOT EXISTS galette_courses_instructor_availability (
+    id_availability int unsigned NOT NULL auto_increment,
+    member_id int unsigned NOT NULL,
+    date_from date NOT NULL,
+    date_to date NOT NULL,
+    kind varchar(10) NOT NULL,
+    comment varchar(255) DEFAULT NULL,
+    created_date datetime NOT NULL,
+    PRIMARY KEY (id_availability),
+    KEY idx_courses_ia_member (member_id),
+    KEY idx_courses_ia_dates (date_from, date_to),
+    CONSTRAINT fk_courses_ia_member FOREIGN KEY (member_id) REFERENCES galette_adherents (id_adh) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Instructor solicitations (dbver 0.6):
 -- a group manager or a session manager asks an instructor to lead a session.
