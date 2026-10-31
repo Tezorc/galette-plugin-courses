@@ -126,6 +126,7 @@ class InstructorAvailabilityController extends AbstractController
         $withdrawal = new InstructorWithdrawal($this->zdb, $this->preferences, $this->history);
         $withdrawn = 0;
         $alerted = 0;
+        $alertFailed = 0;
         $failed = 0;
         foreach (SessionInstructor::getSessionIdsForMember($this->zdb, $memberId) as $sessionId) {
             $session = new Session($this->zdb, $sessionId);
@@ -149,6 +150,8 @@ class InstructorAvailabilityController extends AbstractController
             $withdrawn++;
             if ($outcome === InstructorWithdrawal::MANAGERS_ALERTED) {
                 $alerted++;
+            } elseif ($outcome === InstructorWithdrawal::ALERT_FAILED) {
+                $alertFailed++;
             }
         }
 
@@ -158,6 +161,12 @@ class InstructorAvailabilityController extends AbstractController
                 $alerted > 0
                     ? sprintf(_T('You have been withdrawn from %1$d session(s) during this period; %2$d of them have no instructor any more: the group managers have been informed.', 'courses'), $withdrawn, $alerted)
                     : sprintf(_T('You have been withdrawn from %d session(s) during this period.', 'courses'), $withdrawn)
+            );
+        }
+        if ($alertFailed > 0) {
+            $this->flash->addMessage(
+                'warning_detected',
+                sprintf(_T('%d session(s) of this period have no instructor any more, but the group managers could not be informed: please warn them yourself.', 'courses'), $alertFailed)
             );
         }
         if ($failed > 0) {

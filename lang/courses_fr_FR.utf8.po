@@ -2413,3 +2413,9 @@ msgstr "Vous avez été retiré de %d séance(s) pendant cette période."
 
 msgid "Some sessions of this period could not be updated: use \"I will be absent\" on each of them."
 msgstr "Certaines séances de cette période n'ont pas pu être mises à jour : utilisez « Je serai absent » sur chacune d'elles."
+
+msgid "Your absence has been recorded, but the group managers could not be informed: please warn them yourself, the session has no instructor any more."
+msgstr "Votre absence est enregistrée, mais les responsables de groupe n'ont pas pu être prévenus : merci de les avertir vous-même, la séance n'a plus de moniteur."
+
+msgid "%d session(s) of this period have no instructor any more, but the group managers could not be informed: please warn them yourself."
+msgstr "%d séance(s) de cette période n'ont plus de moniteur, mais les responsables de groupe n'ont pas pu être prévenus : merci de les avertir vous-même."

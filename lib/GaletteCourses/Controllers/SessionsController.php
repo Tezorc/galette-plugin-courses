@@ -973,6 +973,11 @@ class SessionsController extends AbstractPluginController
                 'success_detected',
                 _T('Your absence has been recorded. The session has no instructor any more: the group managers have been informed.', 'courses')
             );
+        } elseif ($outcome === InstructorWithdrawal::ALERT_FAILED) {
+            $this->flash->addMessage(
+                'warning_detected',
+                _T('Your absence has been recorded, but the group managers could not be informed: please warn them yourself, the session has no instructor any more.', 'courses')
+            );
         } else {
             $this->flash->addMessage('success_detected', _T('Your absence has been recorded.', 'courses'));
         }

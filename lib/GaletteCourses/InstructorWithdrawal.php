@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace GaletteCourses;
 
+use Analog\Analog;
 use Galette\Core\Db;
 use Galette\Core\History;
 use Galette\Core\Preferences;
@@ -30,6 +31,7 @@ use Galette\Entity\Adherent;
 use GaletteCourses\Entity\Session;
 use GaletteCourses\Entity\SessionInstructor;
 use GaletteCourses\Notification\CourseNotification;
+use Throwable;
 
 /**
  * An instructor leaves a session they will not lead, on their own: from the
@@ -49,6 +51,8 @@ final class InstructorWithdrawal
     public const WITHDRAWN = 'withdrawn';
     /** Withdrawn, and the session is left without instructor: managers alerted. */
     public const MANAGERS_ALERTED = 'alerted';
+    /** Withdrawn and left without instructor, but the alert could not be sent. */
+    public const ALERT_FAILED = 'alert_failed';
 
     public function __construct(
         private Db $zdb,
@@ -58,7 +62,10 @@ final class InstructorWithdrawal
     }
 
     /**
-     * @return self::FAILED|self::WITHDRAWN|self::MANAGERS_ALERTED
+     * The withdrawal stands even if the alert fails: the instructor is told
+     * to warn the managers themselves rather than shown an error page.
+     *
+     * @return self::FAILED|self::WITHDRAWN|self::MANAGERS_ALERTED|self::ALERT_FAILED
      */
     public function withdraw(SessionInstructor $entry, Session $session, ?string $reason): string
     {
@@ -81,15 +88,24 @@ final class InstructorWithdrawal
             return self::WITHDRAWN;
         }
 
-        $instructorMember = new Adherent($this->zdb, $memberId);
-        $notification = new CourseNotification(
-            $this->zdb,
-            $this->preferences,
-            new PluginPreferences($this->zdb),
-            new MemberPreferences($this->zdb),
-            $this->history
-        );
-        $notification->notifyInstructorAbsence($session, $event, $memberId, (string)$instructorMember->sname, $reason);
+        try {
+            $instructorMember = new Adherent($this->zdb, $memberId);
+            $notification = new CourseNotification(
+                $this->zdb,
+                $this->preferences,
+                new PluginPreferences($this->zdb),
+                new MemberPreferences($this->zdb),
+                $this->history
+            );
+            $notification->notifyInstructorAbsence($session, $event, $memberId, (string)$instructorMember->sname, $reason);
+        } catch (Throwable $e) {
+            Analog::log(
+                'Instructor #' . $memberId . ' withdrawn from session #' . (int)$session->getId()
+                    . ', but the managers could not be alerted: ' . $e->getMessage(),
+                Analog::ERROR
+            );
+            return self::ALERT_FAILED;
+        }
         return self::MANAGERS_ALERTED;
     }
 }
