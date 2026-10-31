@@ -28,7 +28,9 @@ use Galette\Core\Db;
 use Galette\Core\Login;
 use Galette\Core\PluginControllerTrait;
 use GaletteCourses\Entity\InstructorAvailability;
+use GaletteCourses\Entity\Session;
 use GaletteCourses\Entity\SessionInstructor;
+use GaletteCourses\InstructorWithdrawal;
 use Slim\Psr7\Request;
 use Slim\Psr7\Response;
 use DI\Attribute\Inject;
@@ -103,11 +105,67 @@ class InstructorAvailabilityController extends AbstractController
                     ? _T('Your absence has been recorded.', 'courses')
                     : _T('Your availability has been recorded.', 'courses')
             );
+            if ($availability->isAbsent()) {
+                $this->withdrawFromCoveredSessions($availability);
+            }
         } else {
             $this->flash->addMessage('error_detected', _T('An error occurred.', 'courses'));
         }
 
         return $response->withStatus(302)->withHeader('Location', $returnUrl);
+    }
+
+    /**
+     * An absence period takes the instructor off the upcoming sessions they
+     * lead in it, each alerting the managers when left without instructor —
+     * as the "I will be absent" button does for one session.
+     */
+    private function withdrawFromCoveredSessions(InstructorAvailability $absence): void
+    {
+        $memberId = $absence->getMemberId();
+        $withdrawal = new InstructorWithdrawal($this->zdb, $this->preferences, $this->history);
+        $withdrawn = 0;
+        $alerted = 0;
+        $failed = 0;
+        foreach (SessionInstructor::getSessionIdsForMember($this->zdb, $memberId) as $sessionId) {
+            $session = new Session($this->zdb, $sessionId);
+            if (
+                $session->getId() === null
+                || $session->getStatus() === Session::STATUS_CANCELLED
+                || $session->getSessionDate() < date('Y-m-d')
+                || !$absence->covers($session->getSessionDate())
+            ) {
+                continue;
+            }
+            $entry = SessionInstructor::findEntry($this->zdb, $sessionId, $memberId);
+            if ($entry === null) {
+                continue;
+            }
+            $outcome = $withdrawal->withdraw($entry, $session, $absence->getComment());
+            if ($outcome === InstructorWithdrawal::FAILED) {
+                $failed++;
+                continue;
+            }
+            $withdrawn++;
+            if ($outcome === InstructorWithdrawal::MANAGERS_ALERTED) {
+                $alerted++;
+            }
+        }
+
+        if ($withdrawn > 0) {
+            $this->flash->addMessage(
+                'success_detected',
+                $alerted > 0
+                    ? sprintf(_T('You have been withdrawn from %1$d session(s) during this period; %2$d of them have no instructor any more: the group managers have been informed.', 'courses'), $withdrawn, $alerted)
+                    : sprintf(_T('You have been withdrawn from %d session(s) during this period.', 'courses'), $withdrawn)
+            );
+        }
+        if ($failed > 0) {
+            $this->flash->addMessage(
+                'error_detected',
+                _T('Some sessions of this period could not be updated: use "I will be absent" on each of them.', 'courses')
+            );
+        }
     }
 
     public function doRemove(Request $request, Response $response, int $id): Response

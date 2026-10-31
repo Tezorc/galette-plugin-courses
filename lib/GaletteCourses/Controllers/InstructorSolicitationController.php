@@ -27,6 +27,7 @@ use Galette\Controllers\AbstractController;
 use Galette\Core\PluginControllerTrait;
 use Galette\Entity\Adherent;
 use GaletteCourses\Entity\Event;
+use GaletteCourses\Entity\InstructorAvailability;
 use GaletteCourses\Entity\InstructorSolicitation;
 use GaletteCourses\Entity\Session;
 use GaletteCourses\Entity\SessionInstructor;
@@ -123,6 +124,11 @@ class InstructorSolicitationController extends AbstractController
             $this->flash->addMessage('warning_detected', _T('This member is already an instructor for this session.', 'courses'));
             return $response->withStatus(302)->withHeader('Location', $returnUrl);
         }
+        // The page offers no request for an absent member; the post is checked too.
+        if (InstructorAvailability::isAbsentOn($this->zdb, $memberId, $session->getSessionDate())) {
+            $this->flash->addMessage('error_detected', _T('This member is declared absent on that day.', 'courses'));
+            return $response->withStatus(302)->withHeader('Location', $returnUrl);
+        }
 
         if (!InstructorSolicitation::solicit($this->zdb, $id, $memberId, (int)$this->login->id)) {
             $this->flash->addMessage('error_detected', _T('An error occurred.', 'courses'));
@@ -211,6 +217,10 @@ class InstructorSolicitationController extends AbstractController
         }
 
         $this->flash->addMessage('success_detected', _T('You have been assigned as instructor.', 'courses'));
+        // Accepting, like volunteering, means being available that day after all.
+        if (InstructorAvailability::liftAbsenceOn($this->zdb, $memberId, $session->getSessionDate())) {
+            $this->flash->addMessage('success_detected', _T('Your absence on that day has been lifted.', 'courses'));
+        }
         return $response->withStatus(302)->withHeader('Location', $returnUrl . '#tab=mine');
     }
 

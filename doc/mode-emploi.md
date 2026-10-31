@@ -595,12 +595,14 @@ Chaque moniteur potentiel (responsable de groupe, ou membre deja affecte a au mo
 - rien de declare = etat inconnu, **sans aucun blocage** : la declaration informe, elle n'interdit ni volontariat ni affectation ;
 - si deux periodes se chevauchent, **Absent l'emporte** ;
 - les periodes passees disparaissent de la liste ; une periode se supprime avec la corbeille, seul son auteur peut la supprimer ;
-- une periode d'absence qui couvre des seances que le moniteur encadre encore est signalee (pastille orange sur l'onglet, liste des seances concernees). Declarer la periode **ne retire pas** le moniteur : il utilise **"Je serai absent"** sur chaque seance ;
-- **"Je serai absent"** sur une seance enregistre de lui-meme une journee d'absence a cette date.
+- declarer une periode d'absence **retire le moniteur** des seances a venir (non annulees) qu'il encadre pendant cette periode, exactement comme **"Je serai absent"** sur chacune : entree d'historique, et alerte immediate aux responsables pour chaque seance laissee sans moniteur (le commentaire de la periode sert de motif). Si une seance n'a pas pu etre mise a jour, elle reste signalee (pastille orange sur l'onglet, liste des seances concernees) et le moniteur utilise **"Je serai absent"** dessus ;
+- **"Je serai absent"** sur une seance enregistre de lui-meme une journee d'absence a cette date ;
+- un moniteur absent un jour **peut quand meme se proposer** sur une seance de ce jour-la, ou accepter une sollicitation : il est affecte et son absence est **levee pour ce jour** (une periode d'un jour disparait, une periode qui commence ou finit ce jour-la est raccourcie, une periode qui l'entoure est coupee en deux) ;
+- en revanche, un gestionnaire **ne peut pas affecter** ni **solliciter** un moniteur declare absent ce jour-la (*Ce membre est declare absent ce jour-la*) : c'est au moniteur de lever son absence.
 
 Sur la **fiche d'une seance a venir** (non annulee, evenement qui requiert un moniteur), l'encadre **Moniteurs disponibles ce jour** de la section Moniteurs liste, parmi les moniteurs eligibles non encore affectes, ceux qui se sont declares disponibles ce jour-la (avec leur commentaire), puis une ligne **Absents ce jour**. Un moniteur disponible qui encadre deja une seance qui chevauche porte l'etiquette *Encadre deja une seance a cette heure*.
 
-- **Staff, administrateurs et moniteurs de la seance** : bouton **"Affecter"** a cote de chaque moniteur disponible ; le menu *Affecter un moniteur* suffixe aussi chaque nom de *— disponible* ou *— absent*.
+- **Staff, administrateurs et moniteurs de la seance** : bouton **"Affecter"** a cote de chaque moniteur disponible ; le menu *Affecter un moniteur* suffixe aussi chaque nom de *— disponible* ou *— absent* (un moniteur *— absent* ne peut pas etre affecte).
 - **Responsables de groupe** : meme liste en lecture seule, pour savoir qui contacter.
 
 L'encadre apparait si au moins un moniteur eligible a declare quelque chose pour ce jour, ou si l'utilisateur peut solliciter un moniteur (ci-dessous).

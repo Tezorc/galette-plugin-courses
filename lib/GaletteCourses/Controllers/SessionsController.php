@@ -35,6 +35,7 @@ use GaletteCourses\Entity\Waitlist;
 use GaletteCourses\Entity\EventType;
 use GaletteCourses\Filters\SessionsList;
 use GaletteCourses\HistoryLabel;
+use GaletteCourses\InstructorWithdrawal;
 use GaletteCourses\MemberPreferences;
 use GaletteCourses\Notification\CourseNotification;
 use GaletteCourses\PluginPreferences;
@@ -675,6 +676,15 @@ class SessionsController extends AbstractPluginController
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
         }
 
+        // A manager cannot overrule a declared absence: the instructor lifts
+        // it by volunteering, or removes the period.
+        if (InstructorAvailability::isAbsentOn($this->zdb, $memberId, $session->getSessionDate())) {
+            $this->flash->addMessage('error_detected', _T('This member is declared absent on that day.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+        }
+
         $wasWithoutInstructor = !SessionInstructor::hasInstructor($this->zdb, $id);
 
         $instructor = new SessionInstructor($this->zdb);
@@ -872,6 +882,12 @@ class SessionsController extends AbstractPluginController
                 );
                 $this->flash->addMessage('success_detected', _T('You have been assigned as instructor.', 'courses'));
 
+                // Volunteering on a day declared absent means being available
+                // after all: that day leaves the absence periods.
+                if (InstructorAvailability::liftAbsenceOn($this->zdb, $memberId, $session->getSessionDate())) {
+                    $this->flash->addMessage('success_detected', _T('Your absence on that day has been lifted.', 'courses'));
+                }
+
                 if ($wasWithoutInstructor) {
                     $instructorMember = new \Galette\Entity\Adherent($this->zdb, $memberId);
                     $notification = new CourseNotification($this->zdb, $this->preferences, new PluginPreferences($this->zdb), new MemberPreferences($this->zdb), $this->history);
@@ -902,10 +918,7 @@ class SessionsController extends AbstractPluginController
      * An assigned instructor declares they will not be able to lead the session.
      *
      * Unlike doRemoveInstructor (a manager removing someone, silently), this is
-     * the instructor withdrawing themselves: they leave the session and, when
-     * nobody else leads it, the group managers are alerted at once so they can
-     * find a replacement or cancel. Registered members are not told — the
-     * manager decides, and a cancellation already notifies them.
+     * the instructor withdrawing themselves, see InstructorWithdrawal.
      */
     public function doDeclareInstructorAbsence(Request $request, Response $response, int $id): Response
     {
@@ -944,7 +957,9 @@ class SessionsController extends AbstractPluginController
         $reason = trim((string)(is_array($post) ? ($post['absence_reason'] ?? '') : ''));
         $reason = mb_substr($reason, 0, 255);
 
-        if (!$entry->remove()) {
+        $withdrawal = new InstructorWithdrawal($this->zdb, $this->preferences, $this->history);
+        $outcome = $withdrawal->withdraw($entry, $session, $reason !== '' ? $reason : null);
+        if ($outcome === InstructorWithdrawal::FAILED) {
             $this->flash->addMessage('error_detected', _T('An error occurred.', 'courses'));
             return $response->withStatus(302)->withHeader('Location', $returnUrl);
         }
@@ -953,20 +968,7 @@ class SessionsController extends AbstractPluginController
         // do not see this instructor among the available ones.
         InstructorAvailability::recordAbsence($this->zdb, $memberId, $session->getSessionDate(), $reason !== '' ? $reason : null);
 
-        $this->history->add(
-            _T('[Courses] Instructor declared absent', 'courses'),
-            HistoryLabel::join(
-                HistoryLabel::session($session),
-                HistoryLabel::member($this->zdb, $memberId),
-                $reason
-            )
-        );
-
-        $event = $session->getEvent();
-        if (!SessionInstructor::hasInstructor($this->zdb, $id) && !$event->isInstructorNotNeeded()) {
-            $instructorMember = new \Galette\Entity\Adherent($this->zdb, $memberId);
-            $notification = new CourseNotification($this->zdb, $this->preferences, new PluginPreferences($this->zdb), new MemberPreferences($this->zdb), $this->history);
-            $notification->notifyInstructorAbsence($session, $event, $memberId, (string)$instructorMember->sname, $reason !== '' ? $reason : null);
+        if ($outcome === InstructorWithdrawal::MANAGERS_ALERTED) {
             $this->flash->addMessage(
                 'success_detected',
                 _T('Your absence has been recorded. The session has no instructor any more: the group managers have been informed.', 'courses')
@@ -2351,8 +2353,8 @@ class SessionsController extends AbstractPluginController
         // Tab 3 : my availability periods
         // ============================================================
         // An absence period that covers sessions I still lead is flagged with
-        // those sessions: declaring the period does not withdraw me, the
-        // "I will be absent" button on each card does.
+        // those sessions. Declaring the period withdraws me from them, so this
+        // only lists the ones that withdrawal could not update.
         $can_declare_availability = InstructorAvailabilityController::canDeclare($this->zdb, $this->login);
         $availabilities = $can_declare_availability
             ? InstructorAvailability::getUpcomingForMember($this->zdb, $member_id)

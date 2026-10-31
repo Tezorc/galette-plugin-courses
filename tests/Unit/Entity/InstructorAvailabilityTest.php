@@ -138,6 +138,45 @@ final class InstructorAvailabilityTest extends TestCase
         self::assertFalse($period->covers('2026-11-17'));
     }
 
+    // ------------------------------------------------------- lifting one day
+
+    public function testLiftingTheOnlyDayLeavesNothing(): void
+    {
+        self::assertSame([], Availability::splitAround('2026-11-07', '2026-11-07', '2026-11-07'));
+    }
+
+    public function testLiftingTheFirstDayShiftsTheStart(): void
+    {
+        self::assertSame(
+            [['2026-11-08', '2026-11-10']],
+            Availability::splitAround('2026-11-07', '2026-11-10', '2026-11-07')
+        );
+    }
+
+    public function testLiftingTheLastDayShortensTheEnd(): void
+    {
+        self::assertSame(
+            [['2026-11-07', '2026-11-09']],
+            Availability::splitAround('2026-11-07', '2026-11-10', '2026-11-10')
+        );
+    }
+
+    public function testLiftingAMiddleDaySplitsThePeriod(): void
+    {
+        self::assertSame(
+            [['2026-11-07', '2026-11-08'], ['2026-11-10', '2026-11-12']],
+            Availability::splitAround('2026-11-07', '2026-11-12', '2026-11-09')
+        );
+    }
+
+    public function testLiftingADayAcrossAMonthEnd(): void
+    {
+        self::assertSame(
+            [['2026-11-28', '2026-11-30'], ['2026-12-02', '2026-12-05']],
+            Availability::splitAround('2026-11-28', '2026-12-05', '2026-12-01')
+        );
+    }
+
     private function period(string $from, string $to, string $kind = Availability::KIND_AVAILABLE): Availability
     {
         $period = new Availability($this->createMock(Db::class));

@@ -2398,3 +2398,18 @@ msgstr "Solliciter un autre moniteur"
 
 msgid "declined"
 msgstr "a décliné"
+
+msgid "This member is declared absent on that day."
+msgstr "Ce membre est déclaré absent ce jour-là."
+
+msgid "Your absence on that day has been lifted."
+msgstr "Votre absence ce jour-là a été levée."
+
+msgid "You have been withdrawn from %1$d session(s) during this period; %2$d of them have no instructor any more: the group managers have been informed."
+msgstr "Vous avez été retiré de %1$d séance(s) pendant cette période ; %2$d n'ont plus de moniteur : les responsables de groupe ont été prévenus."
+
+msgid "You have been withdrawn from %d session(s) during this period."
+msgstr "Vous avez été retiré de %d séance(s) pendant cette période."
+
+msgid "Some sessions of this period could not be updated: use \"I will be absent\" on each of them."
+msgstr "Certaines séances de cette période n'ont pas pu être mises à jour : utilisez « Je serai absent » sur chacune d'elles."

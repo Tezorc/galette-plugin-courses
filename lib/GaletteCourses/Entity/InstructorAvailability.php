@@ -273,6 +273,109 @@ class InstructorAvailability
         return $absence->store();
     }
 
+    /**
+     * Is the member declared absent on that day?
+     */
+    public static function isAbsentOn(Db $zdb, int $memberId, string $date): bool
+    {
+        $status = self::getStatusOn($zdb, [$memberId], $date);
+        return ($status[$memberId]['kind'] ?? null) === self::KIND_ABSENT;
+    }
+
+    /**
+     * Take one day out of the member's absence periods: an instructor who
+     * leads a session that day is available after all.
+     *
+     * A one-day period goes, a period starting or ending that day shrinks, a
+     * period around it is split in two keeping its comment.
+     *
+     * @return bool Whether an absence covered that day
+     */
+    public static function liftAbsenceOn(Db $zdb, int $memberId, string $date): bool
+    {
+        try {
+            $select = $zdb->select(self::TABLE);
+            $select->where(['member_id' => $memberId, 'kind' => self::KIND_ABSENT]);
+            $select->where->lessThanOrEqualTo('date_from', $date);
+            $select->where->greaterThanOrEqualTo('date_to', $date);
+            $periods = [];
+            foreach ($zdb->execute($select) as $row) {
+                $periods[] = new self($zdb, $row);
+            }
+        } catch (Throwable $e) {
+            Analog::log(
+                'Error loading absences of member #' . $memberId . ' on ' . $date . ': ' . $e->getMessage(),
+                Analog::ERROR
+            );
+            return false;
+        }
+
+        foreach ($periods as $period) {
+            $parts = self::splitAround($period->date_from, $period->date_to, $date);
+            if (empty($parts)) {
+                $period->remove();
+                continue;
+            }
+            $period->updateDates($parts[0][0], $parts[0][1]);
+            if (isset($parts[1])) {
+                $rest = new self($zdb);
+                $rest->setMemberId($memberId);
+                $rest->setDateFrom($parts[1][0]);
+                $rest->setDateTo($parts[1][1]);
+                $rest->setKind(self::KIND_ABSENT);
+                $rest->setComment($period->comment);
+                $rest->store();
+            }
+        }
+        return !empty($periods);
+    }
+
+    /**
+     * What remains of a period once one day is taken out: nothing, one
+     * shorter period, or two periods when the day falls inside.
+     *
+     * Static and pure so the split is testable without a database.
+     *
+     * @return list<array{0: string, 1: string}>
+     */
+    public static function splitAround(string $from, string $to, string $date): array
+    {
+        $day = new \DateTimeImmutable($date);
+        $before = $day->modify('-1 day')->format('Y-m-d');
+        $after = $day->modify('+1 day')->format('Y-m-d');
+
+        $parts = [];
+        if ($from <= $before) {
+            $parts[] = [$from, min($to, $before)];
+        }
+        if ($after <= $to) {
+            $parts[] = [max($from, $after), $to];
+        }
+        return $parts;
+    }
+
+    private function updateDates(string $from, string $to): bool
+    {
+        if ($this->id === null) {
+            return false;
+        }
+        try {
+            $update = $this->zdb->update(self::TABLE);
+            $update->set(['date_from' => $from, 'date_to' => $to]);
+            $update->where([self::PK => $this->id]);
+            $this->zdb->execute($update);
+            $this->date_from = $from;
+            $this->date_to = $to;
+            return true;
+        } catch (Throwable $e) {
+            Analog::log(
+                'Error updating availability #' . $this->id . ': ' . $e->getMessage(),
+                Analog::ERROR
+            );
+            return false;
+        }
+    }
+
     public static function isValidDate(string $date): bool
     {
         $d = \DateTime::createFromFormat('Y-m-d', $date);
