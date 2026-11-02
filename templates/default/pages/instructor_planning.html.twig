@@ -51,8 +51,8 @@
     <span class="ui mini orange label">{{ _T("Absent", "courses") }}</span>
     <span class="courses-planning-none">&middot;</span> {{ _T("Nothing declared", "courses") }}
     &nbsp;&nbsp;
-    <span class="ui mini red label"><i class="exclamation triangle icon" aria-hidden="true"></i>{{ _T("No instructor", "courses") }}</span>
-    <span class="ui mini yellow label"><i class="users icon" aria-hidden="true"></i>{{ _T("Few registrations", "courses") }}</span>
+    <span class="courses-planning-session is-missing courses-planning-legend-chip"><i class="exclamation triangle red icon" aria-hidden="true"></i><span class="courses-planning-session-name">{{ _T("No instructor", "courses") }}</span></span>
+    <span class="courses-planning-session is-low courses-planning-legend-chip"><span class="courses-planning-session-name">{{ _T("Few registrations", "courses") }}</span><span class="courses-planning-count">2/12</span></span>
 </div>
 
 {% if days|length == 0 %}
@@ -67,22 +67,26 @@
             <tr>
                 <th class="courses-planning-name">{{ _T("Instructor", "courses") }}</th>
                 {% for date, day in days %}
-                    <th class="courses-planning-day{% if day.missing %} courses-planning-missing{% endif %}">
+                    <th class="courses-planning-day">
                         <div class="courses-planning-date">
-                            {{ _T(date|date("l"), "courses")|slice(0, 3) }} {{ date|date("d/m") }}
+                            <span class="courses-planning-dow">{{ _T(date|date("l"), "courses")|slice(0, 3) }}</span>
+                            <span class="courses-planning-dm">{{ date|date("d/m") }}</span>
+                            {% if day.missing %}
+                                {% set missing_count = day.sessions|filter(s => s.missing)|length %}
+                                <span class="ui mini red circular label" title="{{ _T("No instructor", "courses") }}">{{ missing_count }}</span>
+                            {% endif %}
                         </div>
+                        {# Une puce par seance : heure, nom tronque, inscrits. Le detail
+                           complet (horaires, motifs des signaux) est dans le title. #}
                         {% for s in day.sessions %}
-                            <a class="courses-planning-session{% if s.cancelled %} courses-planning-cancelled{% endif %}"
+                            <a class="courses-planning-session{% if s.cancelled %} is-cancelled{% elseif s.missing %} is-missing{% endif %}{% if s.low %} is-low{% endif %}"
                                href="{{ url_for("coursesSessionShow", {"id": s.id}) }}"
-                               title="{{ s.event_name }} {{ s.start|slice(0, 5) }}-{{ s.end|slice(0, 5) }} · {{ s.registrations }}{% if s.capacity %}/{{ s.capacity }}{% endif %} {{ _T("registered", "courses") }}{% if s.cancelled %} · {{ _T("Cancelled", "courses") }}{% endif %}">
-                                <span class="courses-planning-session-name">{{ s.event_name }} {{ s.start|slice(0, 5) }}</span>
-                                {% if s.missing %}
-                                    <span class="ui mini red label" title="{{ _T("No instructor", "courses") }}"><i class="exclamation triangle icon" aria-hidden="true"></i></span>
-                                {% endif %}
+                               title="{{ s.event_name }} · {{ s.start|slice(0, 5) }}-{{ s.end|slice(0, 5) }} · {{ s.registrations }}{% if s.capacity %}/{{ s.capacity }}{% endif %} {{ _T("registered", "courses") }}{% if s.cancelled %} · {{ _T("Cancelled", "courses") }}{% endif %}{% if s.missing %} · {{ _T("No instructor", "courses") }}{% endif %}{% if s.low %} · {{ _T("Few registrations", "courses") }}{% endif %}">
+                                <span class="courses-planning-time">{{ s.start|slice(0, 5) }}</span>
+                                <span class="courses-planning-session-name">{{ s.event_name }}</span>
+                                {% if s.missing %}<i class="exclamation triangle red icon" aria-hidden="true"></i>{% endif %}
                                 {% if not s.cancelled %}
-                                    <span class="ui mini {% if s.low %}yellow{% else %}basic{% endif %} label" title="{{ _T("Registrations", "courses") }}">
-                                        <i class="users icon" aria-hidden="true"></i>{{ s.registrations }}{% if s.capacity %}/{{ s.capacity }}{% endif %}
-                                    </span>
+                                    <span class="courses-planning-count">{{ s.registrations }}{% if s.capacity %}/{{ s.capacity }}{% endif %}</span>
                                 {% endif %}
                             </a>
                         {% endfor %}

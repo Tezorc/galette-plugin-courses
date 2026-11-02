@@ -1172,23 +1172,45 @@ tr.courses-pending { background-color: #fffde7 !important; }
 /* Planning moniteurs : une ligne par moniteur, une colonne par jour de cours */
 .courses-planning-nav { display: flex; flex-wrap: wrap; align-items: center; gap: .5em; margin-bottom: .5em; }
 .courses-planning-range { margin: 0 .5em; }
-.courses-planning-legend { margin: .5em 0 1em; line-height: 2.2em; }
-.courses-planning-scroll { overflow-x: auto; max-width: 100%; }
-.ui.table.courses-planning { width: auto; min-width: 100%; }
+.courses-planning-legend { display: flex; flex-wrap: wrap; align-items: center; gap: .4em; margin: .5em 0 1em; }
+.courses-planning-legend .ui.label { margin: 0; }
+/* Defilement dans les deux sens : l'en-tete des jours et la colonne des
+   noms restent visibles (sticky relatif a ce conteneur). */
+.courses-planning-scroll { overflow: auto; max-width: 100%; max-height: 75vh; border: 1px solid rgba(34, 36, 38, .15); border-radius: .28rem; }
+.ui.table.courses-planning { width: auto; min-width: 100%; margin: 0; border: none; border-collapse: separate; border-spacing: 0; }
 .ui.table.courses-planning th,
-.ui.table.courses-planning td { vertical-align: top; min-width: 8.5em; }
-.ui.table.courses-planning .courses-planning-name {
-    position: sticky; left: 0; z-index: 2; min-width: 10em; white-space: nowrap;
-    background: #f9fafb; box-shadow: 2px 0 2px -1px rgba(34, 36, 38, .15);
+.ui.table.courses-planning td { vertical-align: top; width: 10.5em; min-width: 10.5em; max-width: 10.5em; }
+.ui.table.courses-planning thead th {
+    position: sticky; top: 0; z-index: 2; padding: .45em .4em; background: #f9fafb;
+    box-shadow: 0 2px 2px -1px rgba(34, 36, 38, .15);
 }
-.ui.table.courses-planning tbody .courses-planning-name { background: #fff; font-weight: bold; }
-.ui.table.courses-planning thead th.courses-planning-missing { background: #fff6f6; }
-.courses-planning-date { font-weight: bold; text-transform: capitalize; margin-bottom: .3em; }
-.courses-planning-session { display: block; font-weight: normal; font-size: .85em; margin-bottom: .25em; color: inherit; }
-.courses-planning-session .ui.mini.label { padding: .25em .4em; margin: 0 0 0 .15em; }
-.courses-planning-session .ui.mini.label .icon { margin: 0 .15em 0 0; }
-.courses-planning-cancelled .courses-planning-session-name { text-decoration: line-through; color: #999; }
-.courses-planning-cell .ui.mini.label { margin: 0 .2em .2em 0; }
+.ui.table.courses-planning .courses-planning-name {
+    position: sticky; left: 0; z-index: 1; width: 11em; min-width: 11em; max-width: 11em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    background: #fff; font-weight: bold; box-shadow: 2px 0 2px -1px rgba(34, 36, 38, .15);
+}
+.ui.table.courses-planning thead th.courses-planning-name { z-index: 3; vertical-align: bottom; }
+.courses-planning-date .ui.circular.label { margin-left: auto; }
+.courses-planning-date { display: flex; align-items: baseline; gap: .35em; margin-bottom: .35em; }
+.courses-planning-dow { text-transform: capitalize; font-weight: bold; }
+.courses-planning-dm { color: #767676; font-weight: normal; }
+/* Puce de seance : heure | nom (tronque) | inscrits, sur une ligne */
+.courses-planning-session {
+    display: flex; align-items: center; gap: .3em; margin-bottom: .2em; padding: .15em .35em;
+    font-size: .8em; font-weight: normal; line-height: 1.4; color: #333;
+    background: #f3f4f5; border-left: 3px solid #a0a0a0; border-radius: 3px;
+}
+a.courses-planning-session:hover { background: #e8e8e8; color: #000; }
+.courses-planning-session .icon { margin: 0; font-size: .9em; }
+.courses-planning-time { font-weight: bold; font-variant-numeric: tabular-nums; }
+.courses-planning-session-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.courses-planning-count { font-variant-numeric: tabular-nums; color: #767676; }
+.courses-planning-session.is-missing { border-left-color: #db2828; background: #ffe8e6; }
+.courses-planning-session.is-low .courses-planning-count { color: #7a5a00; background: #fbe48a; border-radius: 3px; padding: 0 .25em; }
+.courses-planning-session.is-cancelled { opacity: .55; border-left-color: #ccc; }
+.courses-planning-session.is-cancelled .courses-planning-session-name { text-decoration: line-through; }
+.courses-planning-legend-chip { display: inline-flex; margin: 0; font-size: .75em; }
+.courses-planning-cell .ui.mini.label { margin: 0 .2em .2em 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .courses-planning-none { color: #bbb; font-weight: bold; }
 .ui.table.courses-planning tr.courses-planning-me td { background: #f4f9ff; }
 .ui.table.courses-planning tr.courses-planning-me td.courses-planning-name { background: #eaf3fd; }
