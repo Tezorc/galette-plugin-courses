@@ -109,6 +109,7 @@
                                 data-date="{{ date }}"
                                 data-label="{{ _T(date|date("l"), "courses") }} {{ date|date("d/m/Y") }}"
                                 data-kind="{{ cell.kind }}"
+                                data-comment="{{ cell.comment }}"
                                 data-leads="{{ cell.leads|map(l => l.label)|join(", ") }}"
                                 data-volunteer="{{ days[date].sessions|filter(s => s.can_volunteer)|map(s => {"action": url_for("coursesDoVolunteerInstructor", {"id": s.id}), "label": s.event_name ~ " " ~ s.start|slice(0, 5) ~ (s.missing ? " ⚠" : "")})|json_encode }}"
                             {% endif %}>
@@ -189,7 +190,8 @@ $(function() {
         var volunteer = $cell.data('volunteer') || [];
         $('#planning-day-label').text($cell.data('label'));
         $('#planning-day-date').val($cell.data('date'));
-        $('#planning-day-comment').val('');
+        // attr() et non data() : un commentaire numerique resterait une chaine.
+        $('#planning-day-comment').val($cell.attr('data-comment') || '');
         $('#planning-day-leads').text(leads ? leadsLabel + ' ' + leads : '').toggle(!!leads);
         $('#planning-day-absent-warning').toggle(!!leads);
         $('#planning-day-clear').toggle(kind !== '');

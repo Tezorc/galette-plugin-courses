@@ -164,16 +164,10 @@ class InstructorAvailabilityController extends AbstractController
             return $response->withStatus(302)->withHeader('Location', $returnUrl);
         }
 
-        // The opposite kind gives way; a period of the same kind already
-        // covering the day is kept as it is, comment included.
-        InstructorAvailability::clearDayOn(
-            $this->zdb,
-            $memberId,
-            $date,
-            $day->isAbsent() ? InstructorAvailability::KIND_AVAILABLE : InstructorAvailability::KIND_ABSENT
-        );
-        $status = InstructorAvailability::getStatusOn($this->zdb, [$memberId], $date);
-        if (($status[$memberId]['kind'] ?? null) !== $kind && !$day->store()) {
+        // The day leaves every period covering it and gets its own, so the
+        // comment shown in the dialog is the one saved, edited or not.
+        InstructorAvailability::clearDayOn($this->zdb, $memberId, $date);
+        if (!$day->store()) {
             $this->flash->addMessage('error_detected', _T('An error occurred.', 'courses'));
             return $response->withStatus(302)->withHeader('Location', $returnUrl);
         }

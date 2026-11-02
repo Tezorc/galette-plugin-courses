@@ -618,7 +618,7 @@ Menu **Gestion inscriptions > Planning moniteurs**, ou bouton **Planning moniteu
 
 Un moniteur **clique sur un jour de sa ligne** (aujourd'hui ou plus tard) :
 
-- **Je suis disponible** / **Je suis absent** pour ce jour, avec un commentaire facultatif : le jour est retire des periodes contraires, puis une periode d'un jour est ajoutee. **Je suis absent** applique les memes regles qu'une periode d'absence : retrait des seances encadrees ce jour-la et alerte aux responsables si l'une reste sans moniteur ;
+- **Je suis disponible** / **Je suis absent** pour ce jour, avec un commentaire facultatif (celui deja saisi pour ce jour est pre-rempli et peut etre modifie) : le jour est retire de ses periodes, puis une periode d'un jour est ajoutee. **Je suis absent** applique les memes regles qu'une periode d'absence : retrait des seances encadrees ce jour-la et alerte aux responsables si l'une reste sans moniteur ;
 - **Rien d'indique** retire ce jour de toutes ses periodes ;
 - **Encadrer une seance ce jour-la** : un bouton par seance du jour qu'il peut mener (memes regles que *Se porter volontaire* ; reserve aux responsables de groupe, au staff et aux administrateurs) ; une absence ce jour-la est alors levee.
 
