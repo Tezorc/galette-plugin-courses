@@ -794,10 +794,19 @@ class SessionsController extends AbstractPluginController
         // redirect_to=my_instructor_sessions so the page reloads with fresh
         // data (the volunteered session leaves the "Find a session" tab and
         // appears under "My instructor sessions"). Default: session detail page.
+        // The instructor planning sends redirect_to=instructor_planning, with
+        // the first day it showed.
         $post = $request->getParsedBody();
-        $returnUrl = (is_array($post) && ($post['redirect_to'] ?? '') === 'my_instructor_sessions')
-            ? $this->routeparser->urlFor('coursesMyInstructorSessions')
-            : $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]);
+        $redirectTo = is_array($post) ? (string)($post['redirect_to'] ?? '') : '';
+        if ($redirectTo === 'my_instructor_sessions') {
+            $returnUrl = $this->routeparser->urlFor('coursesMyInstructorSessions');
+        } elseif ($redirectTo === 'instructor_planning') {
+            $from = (string)($post['from'] ?? '');
+            $returnUrl = $this->routeparser->urlFor('coursesInstructorPlanning')
+                . (InstructorAvailability::isValidDate($from) ? '?from=' . $from : '');
+        } else {
+            $returnUrl = $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]);
+        }
 
         // A cancelled session will not happen — no instructor can be assigned to it.
         if ($session->getStatus() === Session::STATUS_CANCELLED) {
@@ -897,7 +906,7 @@ class SessionsController extends AbstractPluginController
                 // Phase 71: append #tab=mine when returning to the My-instructor page,
                 // so the JS auto-switches and pulses the "Mes seances moniteur" tab
                 // to surface that the volunteered session is now listed there.
-                $successUrl = (is_array($post) && ($post['redirect_to'] ?? '') === 'my_instructor_sessions')
+                $successUrl = $redirectTo === 'my_instructor_sessions'
                     ? $this->routeparser->urlFor('coursesMyInstructorSessions') . '#tab=mine'
                     : $returnUrl;
                 return $response

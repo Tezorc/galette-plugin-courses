@@ -73,6 +73,9 @@ $this->register(
         // manager or an assigned instructor, and only touches their own rows.
         'coursesDoAddAvailability'    => 'member',
         'coursesDoRemoveAvailability' => 'member',
+        'coursesDoSetAvailabilityDay' => 'member',
+        // Same audience plus admin/staff, checked by canView().
+        'coursesInstructorPlanning'   => 'member',
         // Instructor solicitations: soliciting is checked by canSolicit()
         // (admin/staff/session instructor/manager of the event's groups);
         // answering is reserved to the solicited member.

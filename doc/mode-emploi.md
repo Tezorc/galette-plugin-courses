@@ -607,6 +607,23 @@ Sur la **fiche d'une seance a venir** (non annulee, evenement qui requiert un mo
 
 L'encadre apparait si au moins un moniteur eligible a declare quelque chose pour ce jour, ou si l'utilisateur peut solliciter un moniteur (ci-dessous).
 
+#### Planning moniteurs
+
+Menu **Gestion inscriptions > Planning moniteurs**, ou bouton **Planning moniteurs** de l'onglet *Mes disponibilites*. La page est ouverte a tous les moniteurs (responsables de groupe, membres affectes a au moins une seance), au staff et aux administrateurs.
+
+- **Une ligne par moniteur** : tous les responsables de groupe, plus les membres affectes a une seance de la periode. La ligne de l'utilisateur (*Moi*) vient en premier, les autres par ordre alphabetique.
+- **Une colonne par jour de cours**, sur **8 semaines** a partir d'aujourd'hui, avec les boutons *Semaines precedentes / suivantes*. Les jours sans seance n'apparaissent pas.
+- **En-tete de chaque jour** : les seances (lien vers la fiche), avec un **⚠ rouge** pour une seance sans moniteur (si l'evenement en requiert un) et le nombre d'inscrits, **en jaune quand il y a peu d'inscrits** (moins d'un tiers de la capacite, ou personne quand la capacite est illimitee). Les seances annulees sont barrees.
+- **Case d'un moniteur** : *Encadre* + seance(s) menee(s) ce jour-la, sinon *Disponible*, *Absent* (commentaire au survol) ou *·* (rien d'indique).
+
+Un moniteur **clique sur un jour de sa ligne** (aujourd'hui ou plus tard) :
+
+- **Je suis disponible** / **Je suis absent** pour ce jour, avec un commentaire facultatif : le jour est retire des periodes contraires, puis une periode d'un jour est ajoutee. **Je suis absent** applique les memes regles qu'une periode d'absence : retrait des seances encadrees ce jour-la et alerte aux responsables si l'une reste sans moniteur ;
+- **Rien d'indique** retire ce jour de toutes ses periodes ;
+- **Encadrer une seance ce jour-la** : un bouton par seance du jour qu'il peut mener (memes regles que *Se porter volontaire* ; reserve aux responsables de groupe, au staff et aux administrateurs) ; une absence ce jour-la est alors levee.
+
+Le staff sans affectation ni groupe a gerer voit le planning en lecture seule.
+
 #### Solliciter un moniteur
 
 Plutot que d'attendre un volontaire, la personne qui cherche un moniteur le **sollicite** depuis la fiche de la seance :

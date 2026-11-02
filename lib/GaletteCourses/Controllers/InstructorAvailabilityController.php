@@ -116,6 +116,81 @@ class InstructorAvailabilityController extends AbstractController
     }
 
     /**
+     * One day set from the instructor planning: available, absent, or
+     * nothing declared. The day is taken out of the periods that say
+     * otherwise, so the planning shows exactly what was chosen.
+     */
+    public function doSetDay(Request $request, Response $response): Response
+    {
+        $post = $request->getParsedBody();
+        $post = is_array($post) ? $post : [];
+        $from = trim((string)($post['from'] ?? ''));
+        $returnUrl = $this->routeparser->urlFor('coursesInstructorPlanning')
+            . (InstructorAvailability::isValidDate($from) ? '?from=' . $from : '');
+        if (!self::canDeclare($this->zdb, $this->login)) {
+            $this->flash->addMessage('error_detected', _T('You do not have the right to declare availability.', 'courses'));
+            return $response->withStatus(302)->withHeader('Location', $returnUrl);
+        }
+
+        $memberId = (int)$this->login->id;
+        $date = trim((string)($post['date'] ?? ''));
+        $kind = (string)($post['kind'] ?? '');
+        if (!InstructorAvailability::isValidDate($date)) {
+            $this->flash->addMessage('error_detected', _T('Please enter valid dates.', 'courses'));
+            return $response->withStatus(302)->withHeader('Location', $returnUrl);
+        }
+        if ($date < date('Y-m-d')) {
+            $this->flash->addMessage('error_detected', _T('This period is already over.', 'courses'));
+            return $response->withStatus(302)->withHeader('Location', $returnUrl);
+        }
+
+        if ($kind === 'clear') {
+            InstructorAvailability::clearDayOn($this->zdb, $memberId, $date);
+            $this->flash->addMessage('success_detected', _T('Nothing is declared on that day any more.', 'courses'));
+            return $response->withStatus(302)->withHeader('Location', $returnUrl);
+        }
+
+        $day = new InstructorAvailability($this->zdb);
+        $day->setMemberId($memberId);
+        $day->setDateFrom($date);
+        $day->setDateTo($date);
+        $day->setKind($kind);
+        $day->setComment((string)($post['comment'] ?? ''));
+        $errors = $day->check();
+        if (!empty($errors)) {
+            foreach ($errors as $error) {
+                $this->flash->addMessage('error_detected', $error);
+            }
+            return $response->withStatus(302)->withHeader('Location', $returnUrl);
+        }
+
+        // The opposite kind gives way; a period of the same kind already
+        // covering the day is kept as it is, comment included.
+        InstructorAvailability::clearDayOn(
+            $this->zdb,
+            $memberId,
+            $date,
+            $day->isAbsent() ? InstructorAvailability::KIND_AVAILABLE : InstructorAvailability::KIND_ABSENT
+        );
+        $status = InstructorAvailability::getStatusOn($this->zdb, [$memberId], $date);
+        if (($status[$memberId]['kind'] ?? null) !== $kind && !$day->store()) {
+            $this->flash->addMessage('error_detected', _T('An error occurred.', 'courses'));
+            return $response->withStatus(302)->withHeader('Location', $returnUrl);
+        }
+
+        $this->flash->addMessage(
+            'success_detected',
+            $day->isAbsent()
+                ? _T('Your absence has been recorded.', 'courses')
+                : _T('Your availability has been recorded.', 'courses')
+        );
+        if ($day->isAbsent()) {
+            $this->withdrawFromCoveredSessions($day);
+        }
+        return $response->withStatus(302)->withHeader('Location', $returnUrl);
+    }
+
+    /**
      * An absence period takes the instructor off the upcoming sessions they
      * lead in it, each alerting the managers when left without instructor —
      * as the "I will be absent" button does for one session.

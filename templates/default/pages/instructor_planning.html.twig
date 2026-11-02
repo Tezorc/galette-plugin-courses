@@ -1,0 +1,216 @@
+{#
+ # Copyright © 2026-2026 The Galette Team && The CCAG42 Team
+ #
+ # This file is part of Galette Courses plugin (https://github.com/Tezorc/galette-plugin-courses).
+ #
+ # Galette Courses Plugin is free software: you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation, either version 3 of the License, or
+ # (at your option) any later version.
+ #
+ # Galette Courses Plugin is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ #  GNU General Public License for more details.
+ #
+ # You should have received a copy of the GNU General Public License
+ # along with Galette Courses Plugin. If not, see <http://www.gnu.org/licenses/>.
+ #}
+
+{% extends "page.html.twig" %}
+
+{% block content %}
+
+<div class="courses-planning-nav">
+    {% if previous %}
+        <a class="ui small basic labeled icon button" href="{{ url_for("coursesInstructorPlanning") }}?from={{ previous }}">
+            <i class="chevron left icon" aria-hidden="true"></i>
+            {{ _T("Previous weeks", "courses") }}
+        </a>
+    {% endif %}
+    <strong class="courses-planning-range">{{ from|date("d/m/Y") }} &rarr; {{ to|date("d/m/Y") }}</strong>
+    {% if from != today %}
+        <a class="ui small basic button" href="{{ url_for("coursesInstructorPlanning") }}">{{ _T("Today", "courses") }}</a>
+    {% endif %}
+    <a class="ui small basic right labeled icon button" href="{{ url_for("coursesInstructorPlanning") }}?from={{ next }}">
+        {{ _T("Next weeks", "courses") }}
+        <i class="chevron right icon" aria-hidden="true"></i>
+    </a>
+</div>
+
+<p class="courses-help-text">
+    {{ _T("Who leads what, who is available and who is away, day by day.", "courses") }}
+    {% if can_declare %}
+        {{ _T("Click a day on your own line to say whether you are available, or to lead a session.", "courses") }}
+    {% endif %}
+</p>
+
+<div class="courses-planning-legend">
+    <span class="ui mini teal label"><i class="chalkboard teacher icon" aria-hidden="true"></i>{{ _T("Leads", "courses") }}</span>
+    <span class="ui mini green label">{{ _T("Available", "courses") }}</span>
+    <span class="ui mini orange label">{{ _T("Absent", "courses") }}</span>
+    <span class="courses-planning-none">&middot;</span> {{ _T("Nothing declared", "courses") }}
+    &nbsp;&nbsp;
+    <span class="ui mini red label"><i class="exclamation triangle icon" aria-hidden="true"></i>{{ _T("No instructor", "courses") }}</span>
+    <span class="ui mini yellow label"><i class="users icon" aria-hidden="true"></i>{{ _T("Few registrations", "courses") }}</span>
+</div>
+
+{% if days|length == 0 %}
+    <div class="ui info message">
+        <i class="info circle icon" aria-hidden="true"></i>
+        {{ _T("No session over these weeks.", "courses") }}
+    </div>
+{% else %}
+<div class="courses-planning-scroll">
+    <table class="ui celled compact unstackable table courses-planning">
+        <thead>
+            <tr>
+                <th class="courses-planning-name">{{ _T("Instructor", "courses") }}</th>
+                {% for date, day in days %}
+                    <th class="courses-planning-day{% if day.missing %} courses-planning-missing{% endif %}">
+                        <div class="courses-planning-date">
+                            {{ _T(date|date("l"), "courses")|slice(0, 3) }} {{ date|date("d/m") }}
+                        </div>
+                        {% for s in day.sessions %}
+                            <a class="courses-planning-session{% if s.cancelled %} courses-planning-cancelled{% endif %}"
+                               href="{{ url_for("coursesSessionShow", {"id": s.id}) }}"
+                               title="{{ s.event_name }} {{ s.start|slice(0, 5) }}-{{ s.end|slice(0, 5) }} · {{ s.registrations }}{% if s.capacity %}/{{ s.capacity }}{% endif %} {{ _T("registered", "courses") }}{% if s.cancelled %} · {{ _T("Cancelled", "courses") }}{% endif %}">
+                                <span class="courses-planning-session-name">{{ s.event_name }} {{ s.start|slice(0, 5) }}</span>
+                                {% if s.missing %}
+                                    <span class="ui mini red label" title="{{ _T("No instructor", "courses") }}"><i class="exclamation triangle icon" aria-hidden="true"></i></span>
+                                {% endif %}
+                                {% if not s.cancelled %}
+                                    <span class="ui mini {% if s.low %}yellow{% else %}basic{% endif %} label" title="{{ _T("Registrations", "courses") }}">
+                                        <i class="users icon" aria-hidden="true"></i>{{ s.registrations }}{% if s.capacity %}/{{ s.capacity }}{% endif %}
+                                    </span>
+                                {% endif %}
+                            </a>
+                        {% endfor %}
+                    </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for mid, row in rows %}
+                <tr{% if row.is_me %} class="courses-planning-me"{% endif %}>
+                    <td class="courses-planning-name">
+                        {{ row.name }}
+                        {% if row.is_me %}<span class="ui mini blue label">{{ _T("Me", "courses") }}</span>{% endif %}
+                    </td>
+                    {% for date, cell in row.cells %}
+                        {% set editable = row.is_me and can_declare and date >= today %}
+                        <td class="courses-planning-cell{% if editable %} courses-planning-editable{% endif %}"
+                            {% if editable %}
+                                tabindex="0" role="button"
+                                data-date="{{ date }}"
+                                data-label="{{ _T(date|date("l"), "courses") }} {{ date|date("d/m/Y") }}"
+                                data-kind="{{ cell.kind }}"
+                                data-leads="{{ cell.leads|map(l => l.label)|join(", ") }}"
+                                data-volunteer="{{ days[date].sessions|filter(s => s.can_volunteer)|map(s => {"action": url_for("coursesDoVolunteerInstructor", {"id": s.id}), "label": s.event_name ~ " " ~ s.start|slice(0, 5) ~ (s.missing ? " ⚠" : "")})|json_encode }}"
+                            {% endif %}>
+                            {% if cell.leads|length > 0 %}
+                                {% for l in cell.leads %}
+                                    <span class="ui mini teal label"><i class="chalkboard teacher icon" aria-hidden="true"></i>{{ l.label }}</span>
+                                {% endfor %}
+                            {% elseif cell.kind == "absent" %}
+                                <span class="ui mini orange label"{% if cell.comment %} title="{{ cell.comment }}"{% endif %}>{{ _T("Absent", "courses") }}{% if cell.comment %} <i class="comment outline icon" aria-hidden="true"></i>{% endif %}</span>
+                            {% elseif cell.kind == "available" %}
+                                <span class="ui mini green label"{% if cell.comment %} title="{{ cell.comment }}"{% endif %}>{{ _T("Available", "courses") }}{% if cell.comment %} <i class="comment outline icon" aria-hidden="true"></i>{% endif %}</span>
+                            {% else %}
+                                <span class="courses-planning-none">&middot;</span>
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if can_declare %}
+{# Modale unique "Ma journee" : remplie en JS depuis la case cliquee. #}
+<div class="ui small modal" id="planning-day-modal">
+    <div class="header">
+        <i class="calendar check outline icon" aria-hidden="true"></i>
+        <span id="planning-day-label"></span>
+    </div>
+    <div class="content">
+        <p id="planning-day-leads" class="courses-help-text"></p>
+        <form action="{{ url_for("coursesDoSetAvailabilityDay") }}" method="post" class="ui form" id="planning-day-form">
+            <input type="hidden" name="date" id="planning-day-date"/>
+            <input type="hidden" name="from" value="{{ from }}"/>
+            <div class="field">
+                <label for="planning-day-comment">{{ _T("Comment (optional)", "courses") }}</label>
+                <input type="text" name="comment" id="planning-day-comment" maxlength="255"/>
+            </div>
+            <p class="courses-help-text" id="planning-day-absent-warning">
+                {{ _T("Absent: you will be removed from the sessions you lead that day, and the group managers will be informed if one is left without instructor.", "courses") }}
+            </p>
+            <button type="submit" name="kind" value="available" class="ui small green button">
+                <i class="check icon" aria-hidden="true"></i>{{ _T("I am available", "courses") }}
+            </button>
+            <button type="submit" name="kind" value="absent" class="ui small orange button">
+                <i class="user times icon" aria-hidden="true"></i>{{ _T("I am absent", "courses") }}
+            </button>
+            <button type="submit" name="kind" value="clear" class="ui small basic button" id="planning-day-clear">
+                <i class="eraser icon" aria-hidden="true"></i>{{ _T("Nothing declared", "courses") }}
+            </button>
+        </form>
+        <form method="post" class="ui form" id="planning-volunteer-form">
+            <input type="hidden" name="redirect_to" value="instructor_planning"/>
+            <input type="hidden" name="from" value="{{ from }}"/>
+            <h4 class="ui small dividing header">{{ _T("Lead a session that day", "courses") }}</h4>
+            <div id="planning-volunteer-buttons"></div>
+        </form>
+    </div>
+    <div class="actions">
+        <button type="button" class="ui small cancel button">{{ _T("Close", "courses") }}</button>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block javascripts %}
+{% if can_declare %}
+<script>
+$(function() {
+    var leadsLabel = {{ _T("You lead:", "courses")|json_encode|raw }};
+    $('#planning-day-modal').modal({ closable: true });
+
+    function openDay($cell) {
+        var leads = $cell.data('leads') || '';
+        var kind = $cell.data('kind') || '';
+        var volunteer = $cell.data('volunteer') || [];
+        $('#planning-day-label').text($cell.data('label'));
+        $('#planning-day-date').val($cell.data('date'));
+        $('#planning-day-comment').val('');
+        $('#planning-day-leads').text(leads ? leadsLabel + ' ' + leads : '').toggle(!!leads);
+        $('#planning-day-absent-warning').toggle(!!leads);
+        $('#planning-day-clear').toggle(kind !== '');
+
+        var $buttons = $('#planning-volunteer-buttons').empty();
+        $.each(volunteer, function(i, s) {
+            $('<button type="submit" class="ui small teal basic button"></button>')
+                .attr('formaction', s.action)
+                .append($('<i class="chalkboard teacher icon" aria-hidden="true"></i>'))
+                .append(document.createTextNode(s.label))
+                .appendTo($buttons);
+        });
+        $('#planning-volunteer-form').toggle(volunteer.length > 0);
+        $('#planning-day-modal').modal('show');
+    }
+
+    $('.courses-planning-editable').on('click', function(e) {
+        openDay($(this));
+    }).on('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openDay($(this));
+        }
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

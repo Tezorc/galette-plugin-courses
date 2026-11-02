@@ -2419,3 +2419,57 @@ msgstr "Votre absence est enregistrée, mais les responsables de groupe n'ont pa
 
 msgid "%d session(s) of this period have no instructor any more, but the group managers could not be informed: please warn them yourself."
 msgstr "%d séance(s) de cette période n'ont plus de moniteur, mais les responsables de groupe n'ont pas pu être prévenus : merci de les avertir vous-même."
+
+msgid "Instructor planning"
+msgstr "Planning moniteurs"
+
+msgid "Previous weeks"
+msgstr "Semaines précédentes"
+
+msgid "Next weeks"
+msgstr "Semaines suivantes"
+
+msgid "Today"
+msgstr "Aujourd'hui"
+
+msgid "Who leads what, who is available and who is away, day by day."
+msgstr "Qui encadre quoi, qui est disponible et qui est absent, jour par jour."
+
+msgid "Click a day on your own line to say whether you are available, or to lead a session."
+msgstr "Cliquez sur un jour de votre ligne pour indiquer si vous êtes disponible, ou pour encadrer une séance."
+
+msgid "Leads"
+msgstr "Encadre"
+
+msgid "Nothing declared"
+msgstr "Rien d'indiqué"
+
+msgid "Few registrations"
+msgstr "Peu d'inscrits"
+
+msgid "No session over these weeks."
+msgstr "Aucune séance sur ces semaines."
+
+msgid "Me"
+msgstr "Moi"
+
+msgid "Absent: you will be removed from the sessions you lead that day, and the group managers will be informed if one is left without instructor."
+msgstr "Absent : vous serez retiré des séances que vous encadrez ce jour-là, et les responsables seront prévenus si l'une d'elles n'a plus de moniteur."
+
+msgid "I am available"
+msgstr "Je suis disponible"
+
+msgid "I am absent"
+msgstr "Je suis absent"
+
+msgid "Lead a session that day"
+msgstr "Encadrer une séance ce jour-là"
+
+msgid "You lead:"
+msgstr "Vous encadrez :"
+
+msgid "Every instructor over eight weeks; you can set your days there too."
+msgstr "Tous les moniteurs sur huit semaines ; vous pouvez aussi y indiquer vos jours."
+
+msgid "Nothing is declared on that day any more."
+msgstr "Plus rien n'est indiqué pour ce jour-là."

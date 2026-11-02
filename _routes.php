@@ -35,6 +35,7 @@ use GaletteCourses\Controllers\MailTemplatesController;
 use GaletteCourses\Controllers\UnsubscribeController;
 use GaletteCourses\Controllers\InstructorAvailabilityController;
 use GaletteCourses\Controllers\InstructorSolicitationController;
+use GaletteCourses\Controllers\InstructorPlanningController;
 
 // Events
 $app->get(
@@ -293,6 +294,17 @@ $app->post(
     '/my-availability/{id:[0-9]+}/remove',
     [InstructorAvailabilityController::class, 'doRemove']
 )->setName('coursesDoRemoveAvailability')->add(Authenticate::class);
+
+// Instructor planning: every instructor over several weeks
+$app->get(
+    '/instructor-planning',
+    [InstructorPlanningController::class, 'show']
+)->setName('coursesInstructorPlanning')->add(Authenticate::class);
+
+$app->post(
+    '/instructor-planning/day',
+    [InstructorAvailabilityController::class, 'doSetDay']
+)->setName('coursesDoSetAvailabilityDay')->add(Authenticate::class);
 
 $app->post(
     '/session/{id:[0-9]+}/solicit-instructor',

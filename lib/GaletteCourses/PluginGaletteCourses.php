@@ -124,6 +124,11 @@ class PluginGaletteCourses extends GalettePlugin implements
                 'route' => ['name' => 'coursesSessions'],
                 'icon'  => 'clock',
             ];
+            $mgmtItems[] = [
+                'label' => _T('Instructor planning', 'courses'),
+                'route' => ['name' => 'coursesInstructorPlanning'],
+                'icon'  => 'calendar alternate outline',
+            ];
             // Registrations management requires groupmanager+ (route ACL).
             // Pure instructors do not have access.
             if ($login->isAdmin() || $login->isStaff() || $login->isGroupManager()) {

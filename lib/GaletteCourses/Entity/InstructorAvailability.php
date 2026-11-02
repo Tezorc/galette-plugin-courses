@@ -232,6 +232,62 @@ class InstructorAvailability
     }
 
     /**
+     * Declared status of each member on each of the given days, in one query.
+     *
+     * @param int[]    $memberIds
+     * @param string[] $dates Y-m-d
+     * @return array<string, array<int, array{kind: string, comment: ?string}>> date => member id => status
+     */
+    public static function getStatusOnDays(Db $zdb, array $memberIds, array $dates): array
+    {
+        if (empty($memberIds) || empty($dates)) {
+            return [];
+        }
+        $rows = [];
+        try {
+            $select = $zdb->select(self::TABLE);
+            $select->where->in('member_id', array_values($memberIds));
+            $select->where->lessThanOrEqualTo('date_from', max($dates));
+            $select->where->greaterThanOrEqualTo('date_to', min($dates));
+            foreach ($zdb->execute($select) as $row) {
+                $rows[] = [
+                    'member_id' => (int)$row->member_id,
+                    'date_from' => (string)$row->date_from,
+                    'date_to'   => (string)$row->date_to,
+                    'kind'      => (string)$row->kind,
+                    'comment'   => $row->comment !== null && $row->comment !== '' ? (string)$row->comment : null,
+                ];
+            }
+        } catch (Throwable $e) {
+            Analog::log(
+                'Error loading availabilities from ' . min($dates) . ' to ' . max($dates) . ': ' . $e->getMessage(),
+                Analog::ERROR
+            );
+        }
+        return self::resolveStatusOnDays($rows, $dates);
+    }
+
+    /**
+     * The periods spread over the given days, each day resolved as resolveStatus() does.
+     *
+     * @param list<array{member_id: int, date_from: string, date_to: string, kind: string, comment: ?string}> $rows
+     * @param string[] $dates Y-m-d
+     * @return array<string, array<int, array{kind: string, comment: ?string}>>
+     */
+    public static function resolveStatusOnDays(array $rows, array $dates): array
+    {
+        $status = [];
+        foreach ($dates as $date) {
+            $covering = array_values(array_filter(
+                $rows,
+                static fn(array $row): bool => $row['date_from'] <= $date && $row['date_to'] >= $date
+            ));
+            $status[$date] = self::resolveStatus($covering);
+        }
+        return $status;
+    }
+
+    /**
      * Collapse the periods covering one day into one status per member:
      * absent wins over available, and the comment follows the winning kind.
      *
@@ -293,9 +349,23 @@ class InstructorAvailability
      */
     public static function liftAbsenceOn(Db $zdb, int $memberId, string $date): bool
     {
+        return self::clearDayOn($zdb, $memberId, $date, self::KIND_ABSENT);
+    }
+
+    /**
+     * Take one day out of the member's periods of a kind, or of every kind
+     * when none is given, the same way liftAbsenceOn() does.
+     *
+     * @return bool Whether a period covered that day
+     */
+    public static function clearDayOn(Db $zdb, int $memberId, string $date, ?string $kind = null): bool
+    {
         try {
             $select = $zdb->select(self::TABLE);
-            $select->where(['member_id' => $memberId, 'kind' => self::KIND_ABSENT]);
+            $select->where(['member_id' => $memberId]);
+            if ($kind !== null) {
+                $select->where(['kind' => $kind]);
+            }
             $select->where->lessThanOrEqualTo('date_from', $date);
             $select->where->greaterThanOrEqualTo('date_to', $date);
             $periods = [];
@@ -304,7 +374,7 @@ class InstructorAvailability
             }
         } catch (Throwable $e) {
             Analog::log(
-                'Error loading absences of member #' . $memberId . ' on ' . $date . ': ' . $e->getMessage(),
+                'Error loading periods of member #' . $memberId . ' on ' . $date . ': ' . $e->getMessage(),
                 Analog::ERROR
             );
             return false;
@@ -322,7 +392,7 @@ class InstructorAvailability
                 $rest->setMemberId($memberId);
                 $rest->setDateFrom($parts[1][0]);
                 $rest->setDateTo($parts[1][1]);
-                $rest->setKind(self::KIND_ABSENT);
+                $rest->setKind($period->kind);
                 $rest->setComment($period->comment);
                 $rest->store();
             }

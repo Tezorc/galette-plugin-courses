@@ -531,6 +531,13 @@
 <div class="ui bottom attached tab segment" data-tab="availability" style="padding:1em 0; border:none; box-shadow:none;">
 
     <p class="courses-help-text">{{ _T("Tell the group managers when you are available to lead a session, or when you will be away. They see it on the session page when they look for an instructor. Nothing declared blocks nothing.", "courses") }}</p>
+    <p>
+        <a class="ui small basic labeled icon button" href="{{ url_for("coursesInstructorPlanning") }}">
+            <i class="calendar alternate outline icon" aria-hidden="true"></i>
+            {{ _T("Instructor planning", "courses") }}
+        </a>
+        <span class="courses-help-text">{{ _T("Every instructor over eight weeks; you can set your days there too.", "courses") }}</span>
+    </p>
 
     <form action="{{ url_for("coursesDoAddAvailability") }}" method="post" class="ui form segment">
         <div class="three fields">
