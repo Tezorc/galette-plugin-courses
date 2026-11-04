@@ -622,7 +622,12 @@ Un moniteur **clique sur un jour de sa ligne** (aujourd'hui ou plus tard) :
 - **Rien d'indique** retire ce jour de toutes ses periodes ;
 - **Encadrer une seance ce jour-la** : un bouton par seance du jour qu'il peut mener (memes regles que *Se porter volontaire* ; reserve aux responsables de groupe, au staff et aux administrateurs) ; une absence ce jour-la est alors levee.
 
-Le staff sans affectation ni groupe a gerer voit le planning en lecture seule.
+Le **staff et les administrateurs** remplissent le planning **a la place des moniteurs** : ils cliquent sur un jour de **n'importe quelle ligne** (aujourd'hui ou plus tard). La fenetre porte le nom du moniteur et propose :
+
+- **Disponible** / **Absent** / **Rien d'indique**, avec les memes effets que pour le moniteur lui-meme : une absence le retire des seances qu'il encadre ce jour-la et alerte les responsables si l'une reste sans moniteur ;
+- **Affecter a une seance ce jour-la** : un bouton par seance ouverte du jour (non annulee, qui requiert un moniteur) que ce moniteur n'encadre pas encore. C'est la meme affectation que depuis la fiche de la seance : refusee en cas de chevauchement horaire, et **refusee si le moniteur est declare absent** ce jour-la — dans ce cas la fenetre ne propose aucune seance ; repasser d'abord le jour en *Disponible*.
+
+Les responsables de groupe et les moniteurs ne modifient que leur propre ligne.
 
 #### Solliciter un moniteur
 

@@ -43,6 +43,9 @@
     {% if can_declare %}
         {{ _T("Click a day on your own line to say whether you are available, or to lead a session.", "courses") }}
     {% endif %}
+    {% if can_fill_in %}
+        {{ _T("As staff, you can also click a day on any instructor's line to fill it in for them.", "courses") }}
+    {% endif %}
 </p>
 
 <div class="courses-planning-legend">
@@ -102,16 +105,25 @@
                         {% if row.is_me %}<span class="ui mini blue label">{{ _T("Me", "courses") }}</span>{% endif %}
                     </td>
                     {% for date, cell in row.cells %}
-                        {% set editable = row.is_me and can_declare and date >= today %}
+                        {% set mine = row.is_me and can_declare %}
+                        {% set editable = date >= today and (mine or can_fill_in) %}
                         <td class="courses-planning-cell{% if editable %} courses-planning-editable{% endif %}"
                             {% if editable %}
                                 tabindex="0" role="button"
                                 data-date="{{ date }}"
-                                data-label="{{ _T(date|date("l"), "courses") }} {{ date|date("d/m/Y") }}"
+                                data-member="{{ mid }}"
+                                data-other="{{ mine ? 0 : 1 }}"
+                                data-label="{{ _T(date|date("l"), "courses") }} {{ date|date("d/m/Y") }}{% if not mine %} · {{ row.name }}{% endif %}"
                                 data-kind="{{ cell.kind }}"
                                 data-comment="{{ cell.comment }}"
                                 data-leads="{{ cell.leads|map(l => l.label)|join(", ") }}"
-                                data-volunteer="{{ days[date].sessions|filter(s => s.can_volunteer)|map(s => {"action": url_for("coursesDoVolunteerInstructor", {"id": s.id}), "label": s.event_name ~ " " ~ s.start|slice(0, 5) ~ (s.missing ? " ⚠" : "")})|json_encode }}"
+                                {% if mine %}
+                                    data-volunteer="{{ days[date].sessions|filter(s => s.can_volunteer)|map(s => {"action": url_for("coursesDoVolunteerInstructor", {"id": s.id}), "label": s.event_name ~ " " ~ s.start|slice(0, 5) ~ (s.missing ? " ⚠" : "")})|json_encode }}"
+                                {% elseif cell.kind != "absent" %}
+                                    {# Une absence declaree bloque l'affectation (doAssignInstructor) :
+                                       on ne propose rien tant que le jour n'est pas repasse en disponible. #}
+                                    data-volunteer="{{ cell.assignable|map(s => {"action": url_for("coursesDoAssignInstructor", {"id": s.id}), "label": s.label ~ (s.missing ? " ⚠" : "")})|json_encode }}"
+                                {% endif %}
                             {% endif %}>
                             {% if cell.leads|length > 0 %}
                                 {% for l in cell.leads %}
@@ -133,8 +145,10 @@
 </div>
 {% endif %}
 
-{% if can_declare %}
-{# Modale unique "Ma journee" : remplie en JS depuis la case cliquee. #}
+{% if can_declare or can_fill_in %}
+{# Modale unique "Ma journee" : remplie en JS depuis la case cliquee. Les
+   libelles .planning-self / .planning-other basculent selon que l'on remplit
+   sa propre ligne ou, pour le staff, celle d'un autre moniteur. #}
 <div class="ui small modal" id="planning-day-modal">
     <div class="header">
         <i class="calendar check outline icon" aria-hidden="true"></i>
@@ -144,19 +158,21 @@
         <p id="planning-day-leads" class="courses-help-text"></p>
         <form action="{{ url_for("coursesDoSetAvailabilityDay") }}" method="post" class="ui form" id="planning-day-form">
             <input type="hidden" name="date" id="planning-day-date"/>
+            <input type="hidden" name="member_id" class="planning-day-member"/>
             <input type="hidden" name="from" value="{{ from }}"/>
             <div class="field">
                 <label for="planning-day-comment">{{ _T("Comment (optional)", "courses") }}</label>
                 <input type="text" name="comment" id="planning-day-comment" maxlength="255"/>
             </div>
             <p class="courses-help-text" id="planning-day-absent-warning">
-                {{ _T("Absent: you will be removed from the sessions you lead that day, and the group managers will be informed if one is left without instructor.", "courses") }}
+                <span class="planning-self">{{ _T("Absent: you will be removed from the sessions you lead that day, and the group managers will be informed if one is left without instructor.", "courses") }}</span>
+                <span class="planning-other">{{ _T("Absent: the instructor will be removed from the sessions they lead that day, and the group managers will be informed if one is left without instructor.", "courses") }}</span>
             </p>
             <button type="submit" name="kind" value="available" class="ui small green button">
-                <i class="check icon" aria-hidden="true"></i>{{ _T("I am available", "courses") }}
+                <i class="check icon" aria-hidden="true"></i><span class="planning-self">{{ _T("I am available", "courses") }}</span><span class="planning-other">{{ _T("Available", "courses") }}</span>
             </button>
             <button type="submit" name="kind" value="absent" class="ui small orange button">
-                <i class="user times icon" aria-hidden="true"></i>{{ _T("I am absent", "courses") }}
+                <i class="user times icon" aria-hidden="true"></i><span class="planning-self">{{ _T("I am absent", "courses") }}</span><span class="planning-other">{{ _T("Absent", "courses") }}</span>
             </button>
             <button type="submit" name="kind" value="clear" class="ui small basic button" id="planning-day-clear">
                 <i class="eraser icon" aria-hidden="true"></i>{{ _T("Nothing declared", "courses") }}
@@ -164,10 +180,17 @@
         </form>
         <form method="post" class="ui form" id="planning-volunteer-form">
             <input type="hidden" name="redirect_to" value="instructor_planning"/>
+            <input type="hidden" name="member_id" class="planning-day-member"/>
             <input type="hidden" name="from" value="{{ from }}"/>
-            <h4 class="ui small dividing header">{{ _T("Lead a session that day", "courses") }}</h4>
+            <h4 class="ui small dividing header">
+                <span class="planning-self">{{ _T("Lead a session that day", "courses") }}</span>
+                <span class="planning-other">{{ _T("Assign a session that day", "courses") }}</span>
+            </h4>
             <div id="planning-volunteer-buttons"></div>
         </form>
+        <p class="courses-help-text" id="planning-day-absent-blocks">
+            {{ _T("Declared absent that day: set the day to available before assigning a session.", "courses") }}
+        </p>
     </div>
     <div class="actions">
         <button type="button" class="ui small cancel button">{{ _T("Close", "courses") }}</button>
@@ -178,23 +201,29 @@
 {% endblock %}
 
 {% block javascripts %}
-{% if can_declare %}
+{% if can_declare or can_fill_in %}
 <script>
 $(function() {
     var leadsLabel = {{ _T("You lead:", "courses")|json_encode|raw }};
+    var otherLeadsLabel = {{ _T("Leads:", "courses")|json_encode|raw }};
     $('#planning-day-modal').modal({ closable: true });
 
     function openDay($cell) {
         var leads = $cell.data('leads') || '';
         var kind = $cell.data('kind') || '';
         var volunteer = $cell.data('volunteer') || [];
+        var other = $cell.data('other') === 1;
+        $('#planning-day-modal .planning-self').toggle(!other);
+        $('#planning-day-modal .planning-other').toggle(other);
+        $('.planning-day-member').val($cell.data('member'));
         $('#planning-day-label').text($cell.data('label'));
         $('#planning-day-date').val($cell.data('date'));
         // attr() et non data() : un commentaire numerique resterait une chaine.
         $('#planning-day-comment').val($cell.attr('data-comment') || '');
-        $('#planning-day-leads').text(leads ? leadsLabel + ' ' + leads : '').toggle(!!leads);
+        $('#planning-day-leads').text(leads ? (other ? otherLeadsLabel : leadsLabel) + ' ' + leads : '').toggle(!!leads);
         $('#planning-day-absent-warning').toggle(!!leads);
         $('#planning-day-clear').toggle(kind !== '');
+        $('#planning-day-absent-blocks').toggle(other && kind === 'absent');
 
         var $buttons = $('#planning-volunteer-buttons').empty();
         $.each(volunteer, function(i, s) {

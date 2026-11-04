@@ -610,6 +610,25 @@ class SessionsController extends AbstractPluginController
         return $response;
     }
 
+    /**
+     * Where an instructor change sends the user back: the page it was made
+     * from when it says so (redirect_to), the session detail page otherwise.
+     * The instructor planning also gives the first day it showed.
+     */
+    private function instructorReturnUrl(mixed $post, int $id): string
+    {
+        $redirectTo = is_array($post) ? (string)($post['redirect_to'] ?? '') : '';
+        if ($redirectTo === 'my_instructor_sessions') {
+            return $this->routeparser->urlFor('coursesMyInstructorSessions');
+        }
+        if ($redirectTo === 'instructor_planning') {
+            $from = (string)($post['from'] ?? '');
+            return $this->routeparser->urlFor('coursesInstructorPlanning')
+                . (InstructorAvailability::isValidDate($from) ? '?from=' . $from : '');
+        }
+        return $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]);
+    }
+
     public function doAssignInstructor(Request $request, Response $response, int $id): Response
     {
         $deny = $this->denyUnlessSessionManager(
@@ -620,6 +639,9 @@ class SessionsController extends AbstractPluginController
         if ($deny !== null) {
             return $deny;
         }
+
+        $post = $request->getParsedBody();
+        $returnUrl = $this->instructorReturnUrl($post, $id);
 
         $session = new Session($this->zdb, $id);
         if ($session->getId() === null) {
@@ -637,7 +659,7 @@ class SessionsController extends AbstractPluginController
             );
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         // Phase 75: this event declared "no instructor needed" — block assignment.
@@ -648,23 +670,22 @@ class SessionsController extends AbstractPluginController
             );
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
-        $post = $request->getParsedBody();
-        $memberId = (int)($post['member_id'] ?? 0);
+        $memberId = is_array($post) ? (int)($post['member_id'] ?? 0) : 0;
         if ($memberId <= 0) {
             $this->flash->addMessage('error_detected', _T('Please select a member.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         if (SessionInstructor::isInstructor($this->zdb, $id, $memberId)) {
             $this->flash->addMessage('warning_detected', _T('This member is already an instructor for this session.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         // Phase 61: block double-booking — an instructor cannot run two
@@ -673,7 +694,7 @@ class SessionsController extends AbstractPluginController
             $this->flash->addMessage('error_detected', _T('This member already runs another session at the same time on this day.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         // A manager cannot overrule a declared absence: the instructor lifts
@@ -682,7 +703,7 @@ class SessionsController extends AbstractPluginController
             $this->flash->addMessage('error_detected', _T('This member is declared absent on that day.', 'courses'));
             return $response
                 ->withStatus(302)
-                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+                ->withHeader('Location', $returnUrl);
         }
 
         $wasWithoutInstructor = !SessionInstructor::hasInstructor($this->zdb, $id);
@@ -718,7 +739,7 @@ class SessionsController extends AbstractPluginController
 
         return $response
             ->withStatus(302)
-            ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+            ->withHeader('Location', $returnUrl);
     }
 
     public function doRemoveInstructor(Request $request, Response $response, int $id): Response
@@ -797,16 +818,8 @@ class SessionsController extends AbstractPluginController
         // The instructor planning sends redirect_to=instructor_planning, with
         // the first day it showed.
         $post = $request->getParsedBody();
+        $returnUrl = $this->instructorReturnUrl($post, $id);
         $redirectTo = is_array($post) ? (string)($post['redirect_to'] ?? '') : '';
-        if ($redirectTo === 'my_instructor_sessions') {
-            $returnUrl = $this->routeparser->urlFor('coursesMyInstructorSessions');
-        } elseif ($redirectTo === 'instructor_planning') {
-            $from = (string)($post['from'] ?? '');
-            $returnUrl = $this->routeparser->urlFor('coursesInstructorPlanning')
-                . (InstructorAvailability::isValidDate($from) ? '?from=' . $from : '');
-        } else {
-            $returnUrl = $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]);
-        }
 
         // A cancelled session will not happen — no instructor can be assigned to it.
         if ($session->getStatus() === Session::STATUS_CANCELLED) {

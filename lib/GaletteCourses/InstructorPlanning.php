@@ -47,7 +47,8 @@ use Throwable;
  *     needs_instructor: bool,
  *     registrations: int,
  *     capacity: ?int,
- *     can_volunteer: bool
+ *     can_volunteer: bool,
+ *     assignable: bool
  * }
  *
  * @author Team CCAG <contact@ccag42.org>
@@ -73,8 +74,9 @@ final class InstructorPlanning
      * Lay out the planning.
      *
      * Days keep only the dates that have sessions. An instructor's cell lists
-     * the sessions they lead that day, and their declared status otherwise.
-     * The viewer's row comes first, then the others by name.
+     * the sessions they lead that day, and their declared status otherwise,
+     * plus the open sessions of the day they do not lead yet, which staff may
+     * assign them to. The viewer's row comes first, then the others by name.
      *
      * @param list<PlanningSession>                                          $sessions
      * @param array<int, int[]>                                              $instructorIds session id => member ids
@@ -82,7 +84,7 @@ final class InstructorPlanning
      * @param array<string, array<int, array{kind: string, comment: ?string}>> $status        date => member id => status
      * @return array{
      *     days: array<string, array{sessions: list<array<string, mixed>>, missing: bool, low: bool}>,
-     *     rows: array<int, array{name: string, is_me: bool, cells: array<string, array{leads: list<array{id: int, label: string}>, kind: ?string, comment: ?string}>}>
+     *     rows: array<int, array{name: string, is_me: bool, cells: array<string, array{leads: list<array{id: int, label: string}>, assignable: list<array{id: int, label: string, missing: bool}>, kind: ?string, comment: ?string}>}>
      * }
      */
     public static function build(array $sessions, array $instructorIds, array $members, array $status, int $viewerId): array
@@ -117,12 +119,23 @@ final class InstructorPlanning
         $rows = [];
         foreach ($members as $mid => $name) {
             $cells = [];
-            foreach (array_keys($days) as $date) {
+            foreach ($days as $date => $day) {
                 $declared = $status[$date][$mid] ?? null;
+                $assignable = [];
+                foreach ($day['sessions'] as $s) {
+                    if ($s['assignable'] && !in_array($mid, $instructorIds[$s['id']] ?? [], true)) {
+                        $assignable[] = [
+                            'id'      => $s['id'],
+                            'label'   => $s['event_name'] . ' ' . substr($s['start'], 0, 5),
+                            'missing' => $s['missing'],
+                        ];
+                    }
+                }
                 $cells[$date] = [
-                    'leads'   => $leads[$mid][$date] ?? [],
-                    'kind'    => $declared['kind'] ?? null,
-                    'comment' => $declared['comment'] ?? null,
+                    'leads'      => $leads[$mid][$date] ?? [],
+                    'assignable' => $assignable,
+                    'kind'       => $declared['kind'] ?? null,
+                    'comment'    => $declared['comment'] ?? null,
                 ];
             }
             $rows[$mid] = ['name' => $name, 'is_me' => $mid === $viewerId, 'cells' => $cells];
@@ -157,6 +170,21 @@ final class InstructorPlanning
             Analog::log('Error loading group managers: ' . $e->getMessage(), Analog::ERROR);
             return [];
         }
+    }
+
+    /**
+     * Whether a member has a row on the planning: a group manager, or anyone
+     * assigned to a session.
+     */
+    public static function isPlanningMember(Db $zdb, int $memberId): bool
+    {
+        if ($memberId <= 0) {
+            return false;
+        }
+        if (SessionInstructor::countSessionsForMember($zdb, $memberId) > 0) {
+            return true;
+        }
+        return in_array($memberId, self::getGroupManagerIds($zdb), true);
     }
 
     /**

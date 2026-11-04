@@ -147,6 +147,33 @@ final class InstructorPlanningTest extends TestCase
         self::assertSame([], $grid['rows'][7]['cells']['2026-11-07']['leads']);
     }
 
+    public function testCellOffersTheOpenSessionsNotLedYet(): void
+    {
+        $grid = InstructorPlanning::build(
+            [
+                $this->session(1, '2026-11-07', '10:00:00', 'Agility'),
+                $this->session(2, '2026-11-07', '14:00:00', 'Obéissance'),
+                $this->session(3, '2026-11-07', '16:00:00', 'Fermé', assignable: false),
+            ],
+            [1 => [7]],
+            [7 => 'Marine B.', 8 => 'Paul D.'],
+            [],
+            0
+        );
+
+        self::assertSame(
+            [['id' => 2, 'label' => 'Obéissance 14:00', 'missing' => true]],
+            $grid['rows'][7]['cells']['2026-11-07']['assignable']
+        );
+        self::assertSame(
+            [
+                ['id' => 1, 'label' => 'Agility 10:00', 'missing' => false],
+                ['id' => 2, 'label' => 'Obéissance 14:00', 'missing' => true],
+            ],
+            $grid['rows'][8]['cells']['2026-11-07']['assignable']
+        );
+    }
+
     public function testViewerComesFirstThenByName(): void
     {
         $grid = InstructorPlanning::build(
@@ -179,7 +206,7 @@ final class InstructorPlanningTest extends TestCase
     }
 
     /**
-     * @return array{id: int, date: string, start: string, end: string, event_name: string, cancelled: bool, needs_instructor: bool, registrations: int, capacity: ?int, can_volunteer: bool}
+     * @return array{id: int, date: string, start: string, end: string, event_name: string, cancelled: bool, needs_instructor: bool, registrations: int, capacity: ?int, can_volunteer: bool, assignable: bool}
      */
     private function session(
         int $id,
@@ -189,7 +216,8 @@ final class InstructorPlanningTest extends TestCase
         bool $cancelled = false,
         bool $needsInstructor = true,
         int $registrations = 6,
-        ?int $capacity = 12
+        ?int $capacity = 12,
+        ?bool $assignable = null
     ): array {
         return [
             'id'               => $id,
@@ -202,6 +230,7 @@ final class InstructorPlanningTest extends TestCase
             'registrations'    => $registrations,
             'capacity'         => $capacity,
             'can_volunteer'    => false,
+            'assignable'       => $assignable ?? (!$cancelled && $needsInstructor),
         ];
     }
 }

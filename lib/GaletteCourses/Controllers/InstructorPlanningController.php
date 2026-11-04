@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace GaletteCourses\Controllers;
 
 use Galette\Controllers\AbstractController;
+use Galette\Core\Login;
 use Galette\Core\PluginControllerTrait;
 use GaletteCourses\Entity\Event;
 use GaletteCourses\Entity\InstructorAvailability;
@@ -37,7 +38,8 @@ use DI\Attribute\Inject;
 
 /**
  * The instructor planning page, see InstructorPlanning: open to every
- * instructor, each one declaring their own days on it.
+ * instructor, each one declaring their own days on it. Staff fill in any
+ * instructor's days in their place.
  *
  * @author Team CCAG <contact@ccag42.org>
  */
@@ -56,9 +58,16 @@ class InstructorPlanningController extends AbstractController
      */
     public function canView(): bool
     {
-        return $this->login->isAdmin()
-            || $this->login->isStaff()
+        return self::canFillInForOthers($this->login)
             || InstructorAvailabilityController::canDeclare($this->zdb, $this->login);
+    }
+
+    /**
+     * Staff declare days and assign sessions on any instructor's line.
+     */
+    public static function canFillInForOthers(Login $login): bool
+    {
+        return $login->isAdmin() || $login->isStaff();
     }
 
     public function show(Request $request, Response $response): Response
@@ -85,6 +94,7 @@ class InstructorPlanningController extends AbstractController
         $viewerId = (int)$this->login->id;
         $instructorIds = InstructorPlanning::getInstructorIds($this->zdb, array_keys($list));
         $canDeclare = InstructorAvailabilityController::canDeclare($this->zdb, $this->login);
+        $canFillIn = self::canFillInForOthers($this->login);
         $canVolunteer = $viewerId > 0
             && ($this->login->isAdmin() || $this->login->isStaff() || $this->login->isGroupManager());
         $managedGroups = $canVolunteer ? $this->login->getManagedGroups() : [];
@@ -100,6 +110,7 @@ class InstructorPlanningController extends AbstractController
             $event = $events[$eid];
             $cancelled = $s->getStatus() === Session::STATUS_CANCELLED;
             $needsInstructor = !$event->isInstructorNotNeeded();
+            $assignable = !$cancelled && $needsInstructor && $s->getSessionDate() >= $today;
             $sessions[] = [
                 'id'               => (int)$sid,
                 'date'             => $s->getSessionDate(),
@@ -111,11 +122,10 @@ class InstructorPlanningController extends AbstractController
                 'registrations'    => $s->getCurrentRegistrations(),
                 'capacity'         => $s->getMaxCapacity(),
                 'can_volunteer'    => $canVolunteer
-                    && !$cancelled
-                    && $needsInstructor
-                    && $s->getSessionDate() >= $today
+                    && $assignable
                     && !in_array($viewerId, $instructorIds[$sid] ?? [], true)
                     && $this->mayLead($event, $managedGroups),
+                'assignable'       => $assignable,
             ];
         }
 
@@ -146,6 +156,7 @@ class InstructorPlanningController extends AbstractController
                 'previous'    => $from > $today ? max($previous, $today) : null,
                 'next'        => date('Y-m-d', (int)strtotime($to . ' +1 day')),
                 'can_declare' => $canDeclare,
+                'can_fill_in' => $canFillIn,
                 'viewer_id'   => $viewerId,
             ]
         );

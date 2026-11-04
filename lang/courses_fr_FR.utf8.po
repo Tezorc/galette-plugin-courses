@@ -2473,3 +2473,36 @@ msgstr "Tous les moniteurs sur huit semaines ; vous pouvez aussi y indiquer vos 
 
 msgid "Nothing is declared on that day any more."
 msgstr "Plus rien n'est indiqué pour ce jour-là."
+
+msgid "As staff, you can also click a day on any instructor's line to fill it in for them."
+msgstr "En tant que membre du bureau, vous pouvez aussi cliquer sur un jour de la ligne de n'importe quel moniteur pour la remplir à sa place."
+
+msgid "Absent: the instructor will be removed from the sessions they lead that day, and the group managers will be informed if one is left without instructor."
+msgstr "Absent : le moniteur sera retiré des séances qu'il encadre ce jour-là, et les responsables seront prévenus si l'une d'elles n'a plus de moniteur."
+
+msgid "Assign a session that day"
+msgstr "Affecter à une séance ce jour-là"
+
+msgid "Declared absent that day: set the day to available before assigning a session."
+msgstr "Absent ce jour-là : indiquez-le disponible avant de l'affecter à une séance."
+
+msgid "Leads:"
+msgstr "Encadre :"
+
+msgid "This member is not an instructor."
+msgstr "Ce membre n'est pas moniteur."
+
+msgid "The absence has been recorded."
+msgstr "L'absence a été enregistrée."
+
+msgid "The availability has been recorded."
+msgstr "La disponibilité a été enregistrée."
+
+msgid "The instructor has been withdrawn from %1$d session(s) during this period; %2$d of them have no instructor any more: the group managers have been informed."
+msgstr "Le moniteur a été retiré de %1$d séance(s) pendant cette période ; %2$d n'ont plus de moniteur : les responsables de groupe ont été prévenus."
+
+msgid "The instructor has been withdrawn from %d session(s) during this period."
+msgstr "Le moniteur a été retiré de %d séance(s) pendant cette période."
+
+msgid "Some sessions of this period could not be updated: remove the instructor from each of them on the session page."
+msgstr "Certaines séances de cette période n'ont pas pu être mises à jour : retirez le moniteur de chacune d'elles depuis la fiche de la séance."

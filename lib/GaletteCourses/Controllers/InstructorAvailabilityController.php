@@ -30,6 +30,7 @@ use Galette\Core\PluginControllerTrait;
 use GaletteCourses\Entity\InstructorAvailability;
 use GaletteCourses\Entity\Session;
 use GaletteCourses\Entity\SessionInstructor;
+use GaletteCourses\InstructorPlanning;
 use GaletteCourses\InstructorWithdrawal;
 use Slim\Psr7\Request;
 use Slim\Psr7\Response;
@@ -119,6 +120,9 @@ class InstructorAvailabilityController extends AbstractController
      * One day set from the instructor planning: available, absent, or
      * nothing declared. The day is taken out of the periods that say
      * otherwise, so the planning shows exactly what was chosen.
+     *
+     * An instructor sets their own days; staff may set any instructor's,
+     * named by member_id.
      */
     public function doSetDay(Request $request, Response $response): Response
     {
@@ -127,12 +131,26 @@ class InstructorAvailabilityController extends AbstractController
         $from = trim((string)($post['from'] ?? ''));
         $returnUrl = $this->routeparser->urlFor('coursesInstructorPlanning')
             . (InstructorAvailability::isValidDate($from) ? '?from=' . $from : '');
-        if (!self::canDeclare($this->zdb, $this->login)) {
+
+        $memberId = (int)($post['member_id'] ?? 0);
+        if ($memberId <= 0) {
+            $memberId = (int)$this->login->id;
+        }
+        $forOther = $memberId !== (int)$this->login->id;
+        if ($forOther) {
+            if (!InstructorPlanningController::canFillInForOthers($this->login)) {
+                $this->flash->addMessage('error_detected', _T('You do not have permission to perform this action.', 'courses'));
+                return $response->withStatus(302)->withHeader('Location', $returnUrl);
+            }
+            if (!InstructorPlanning::isPlanningMember($this->zdb, $memberId)) {
+                $this->flash->addMessage('error_detected', _T('This member is not an instructor.', 'courses'));
+                return $response->withStatus(302)->withHeader('Location', $returnUrl);
+            }
+        } elseif (!self::canDeclare($this->zdb, $this->login)) {
             $this->flash->addMessage('error_detected', _T('You do not have the right to declare availability.', 'courses'));
             return $response->withStatus(302)->withHeader('Location', $returnUrl);
         }
 
-        $memberId = (int)$this->login->id;
         $date = trim((string)($post['date'] ?? ''));
         $kind = (string)($post['kind'] ?? '');
         if (!InstructorAvailability::isValidDate($date)) {
@@ -172,14 +190,18 @@ class InstructorAvailabilityController extends AbstractController
             return $response->withStatus(302)->withHeader('Location', $returnUrl);
         }
 
-        $this->flash->addMessage(
-            'success_detected',
-            $day->isAbsent()
+        if ($forOther) {
+            $message = $day->isAbsent()
+                ? _T('The absence has been recorded.', 'courses')
+                : _T('The availability has been recorded.', 'courses');
+        } else {
+            $message = $day->isAbsent()
                 ? _T('Your absence has been recorded.', 'courses')
-                : _T('Your availability has been recorded.', 'courses')
-        );
+                : _T('Your availability has been recorded.', 'courses');
+        }
+        $this->flash->addMessage('success_detected', $message);
         if ($day->isAbsent()) {
-            $this->withdrawFromCoveredSessions($day);
+            $this->withdrawFromCoveredSessions($day, $forOther);
         }
         return $response->withStatus(302)->withHeader('Location', $returnUrl);
     }
@@ -188,8 +210,10 @@ class InstructorAvailabilityController extends AbstractController
      * An absence period takes the instructor off the upcoming sessions they
      * lead in it, each alerting the managers when left without instructor —
      * as the "I will be absent" button does for one session.
+     *
+     * @param bool $forOther declared by staff in the instructor's place
      */
-    private function withdrawFromCoveredSessions(InstructorAvailability $absence): void
+    private function withdrawFromCoveredSessions(InstructorAvailability $absence, bool $forOther = false): void
     {
         $memberId = $absence->getMemberId();
         $withdrawal = new InstructorWithdrawal($this->zdb, $this->preferences, $this->history);
@@ -224,7 +248,14 @@ class InstructorAvailabilityController extends AbstractController
             }
         }
 
-        if ($withdrawn > 0) {
+        if ($withdrawn > 0 && $forOther) {
+            $this->flash->addMessage(
+                'success_detected',
+                $alerted > 0
+                    ? sprintf(_T('The instructor has been withdrawn from %1$d session(s) during this period; %2$d of them have no instructor any more: the group managers have been informed.', 'courses'), $withdrawn, $alerted)
+                    : sprintf(_T('The instructor has been withdrawn from %d session(s) during this period.', 'courses'), $withdrawn)
+            );
+        } elseif ($withdrawn > 0) {
             $this->flash->addMessage(
                 'success_detected',
                 $alerted > 0
@@ -241,7 +272,9 @@ class InstructorAvailabilityController extends AbstractController
         if ($failed > 0) {
             $this->flash->addMessage(
                 'error_detected',
-                _T('Some sessions of this period could not be updated: use "I will be absent" on each of them.', 'courses')
+                $forOther
+                    ? _T('Some sessions of this period could not be updated: remove the instructor from each of them on the session page.', 'courses')
+                    : _T('Some sessions of this period could not be updated: use "I will be absent" on each of them.', 'courses')
             );
         }
     }
