@@ -251,6 +251,6 @@ CREATE TABLE galette_courses_planning_notes (
     note varchar(255) NOT NULL,
     updated_date timestamp NOT NULL,
     PRIMARY KEY (note_date, member_id),
-    CONSTRAINT fk_courses_pn_member FOREIGN KEY (member_id) REFERENCES galette_adherents (id_adh) ON DELETE CASCADE
+    CONSTRAINT fk_courses_pln_member FOREIGN KEY (member_id) REFERENCES galette_adherents (id_adh) ON DELETE CASCADE
 );
-CREATE INDEX idx_courses_pn_member ON galette_courses_planning_notes (member_id);
+CREATE INDEX idx_courses_pln_member ON galette_courses_planning_notes (member_id);

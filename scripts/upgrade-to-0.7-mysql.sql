@@ -79,6 +79,6 @@ CREATE TABLE IF NOT EXISTS galette_courses_planning_notes (
     note varchar(255) NOT NULL,
     updated_date datetime NOT NULL,
     PRIMARY KEY (note_date, member_id),
-    KEY idx_courses_pn_member (member_id),
-    CONSTRAINT fk_courses_pn_member FOREIGN KEY (member_id) REFERENCES galette_adherents (id_adh) ON DELETE CASCADE
+    KEY idx_courses_pln_member (member_id),
+    CONSTRAINT fk_courses_pln_member FOREIGN KEY (member_id) REFERENCES galette_adherents (id_adh) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
