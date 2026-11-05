@@ -28,6 +28,7 @@ use Galette\Core\Login;
 use Galette\Core\PluginControllerTrait;
 use GaletteCourses\Entity\Event;
 use GaletteCourses\Entity\InstructorAvailability;
+use GaletteCourses\Entity\PlanningNote;
 use GaletteCourses\Entity\Session;
 use GaletteCourses\Filters\SessionsList;
 use GaletteCourses\InstructorPlanning;
@@ -68,6 +69,18 @@ class InstructorPlanningController extends AbstractController
     public static function canFillInForOthers(Login $login): bool
     {
         return $login->isAdmin() || $login->isStaff();
+    }
+
+    /**
+     * Who writes a note under the days: the instructors on the planning and
+     * the staff, each their own note. The super admin has no member record
+     * to sign it with.
+     */
+    private function canWriteNote(): bool
+    {
+        $memberId = (int)$this->login->id;
+        return $memberId > 0
+            && (self::canFillInForOthers($this->login) || InstructorPlanning::isPlanningMember($this->zdb, $memberId));
     }
 
     public function show(Request $request, Response $response): Response
@@ -129,18 +142,26 @@ class InstructorPlanningController extends AbstractController
             ];
         }
 
-        $memberIds = InstructorPlanning::getGroupManagerIds($this->zdb);
-        foreach ($instructorIds as $ids) {
-            $memberIds = array_merge($memberIds, $ids);
-        }
-        if ($canDeclare) {
-            $memberIds[] = $viewerId;
-        }
-        $members = InstructorPlanning::getMemberNames($this->zdb, $memberIds);
+        // Only instructors get a row: a group manager who has never led a
+        // session does not, even when viewing the page.
+        $members = InstructorPlanning::getMemberNames(
+            $this->zdb,
+            InstructorPlanning::getInstructorMemberIds($this->zdb)
+        );
+        $hasOwnRow = isset($members[$viewerId]);
         $dates = array_values(array_unique(array_column($sessions, 'date')));
         $status = InstructorAvailability::getStatusOnDays($this->zdb, array_keys($members), $dates);
 
         $planning = InstructorPlanning::build($sessions, $instructorIds, $members, $status, $viewerId);
+        $notes = PlanningNote::getForDates($this->zdb, $dates);
+        $myNotes = [];
+        foreach ($notes as $date => $dayNotes) {
+            foreach ($dayNotes as $note) {
+                if ($note['member_id'] === $viewerId) {
+                    $myNotes[$date] = $note['note'];
+                }
+            }
+        }
 
         $previous = date('Y-m-d', (int)strtotime($from . ' -' . (InstructorPlanning::WEEKS * 7) . ' days'));
         $this->view->render(
@@ -155,12 +176,52 @@ class InstructorPlanningController extends AbstractController
                 'today'       => $today,
                 'previous'    => $from > $today ? max($previous, $today) : null,
                 'next'        => date('Y-m-d', (int)strtotime($to . ' +1 day')),
-                'can_declare' => $canDeclare,
+                'can_declare' => $canDeclare && $hasOwnRow,
                 'can_fill_in' => $canFillIn,
+                'can_note'    => $this->canWriteNote(),
+                'notes'       => $notes,
+                'my_notes'    => $myNotes,
                 'viewer_id'   => $viewerId,
             ]
         );
         return $response;
+    }
+
+    /**
+     * Save, replace or (empty) remove the viewer's own note on a day.
+     */
+    public function doSetNote(Request $request, Response $response): Response
+    {
+        $post = $request->getParsedBody();
+        $post = is_array($post) ? $post : [];
+        $from = trim((string)($post['from'] ?? ''));
+        $returnUrl = $this->routeparser->urlFor('coursesInstructorPlanning')
+            . (InstructorAvailability::isValidDate($from) ? '?from=' . $from : '');
+
+        if (!$this->canWriteNote()) {
+            $this->flash->addMessage('error_detected', _T('You do not have permission to perform this action.', 'courses'));
+            return $response->withStatus(302)->withHeader('Location', $returnUrl);
+        }
+        $date = trim((string)($post['date'] ?? ''));
+        if (!InstructorAvailability::isValidDate($date)) {
+            $this->flash->addMessage('error_detected', _T('Please enter valid dates.', 'courses'));
+            return $response->withStatus(302)->withHeader('Location', $returnUrl);
+        }
+        if ($date < date('Y-m-d')) {
+            $this->flash->addMessage('error_detected', _T('This period is already over.', 'courses'));
+            return $response->withStatus(302)->withHeader('Location', $returnUrl);
+        }
+
+        $note = PlanningNote::normalize((string)($post['note'] ?? ''));
+        if (!PlanningNote::set($this->zdb, $date, (int)$this->login->id, $note)) {
+            $this->flash->addMessage('error_detected', _T('An error occurred.', 'courses'));
+        } else {
+            $this->flash->addMessage(
+                'success_detected',
+                $note === '' ? _T('Your comment has been removed.', 'courses') : _T('Your comment has been saved.', 'courses')
+            );
+        }
+        return $response->withStatus(302)->withHeader('Location', $returnUrl);
     }
 
     /**

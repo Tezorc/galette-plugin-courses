@@ -307,6 +307,11 @@ $app->post(
 )->setName('coursesDoSetAvailabilityDay')->add(Authenticate::class);
 
 $app->post(
+    '/instructor-planning/note',
+    [InstructorPlanningController::class, 'doSetNote']
+)->setName('coursesDoSetPlanningNote')->add(Authenticate::class);
+
+$app->post(
     '/session/{id:[0-9]+}/solicit-instructor',
     [InstructorSolicitationController::class, 'doSolicit']
 )->setName('coursesDoSolicitInstructor')->add(Authenticate::class);

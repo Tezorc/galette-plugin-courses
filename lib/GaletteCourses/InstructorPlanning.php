@@ -151,40 +151,34 @@ final class InstructorPlanning
     }
 
     /**
-     * Who may lead a session at all: every group manager.
+     * The instructors: everyone ever assigned to a session. A group manager
+     * who has never led one is not an instructor and gets no row.
      *
      * @return int[]
      */
-    public static function getGroupManagerIds(Db $zdb): array
+    public static function getInstructorMemberIds(Db $zdb): array
     {
         try {
-            $select = $zdb->select('groups_managers');
-            $select->columns(['id_adh']);
+            $select = $zdb->select(SessionInstructor::TABLE);
+            $select->columns(['member_id']);
             $select->quantifier('DISTINCT');
             $ids = [];
             foreach ($zdb->execute($select) as $row) {
-                $ids[] = (int)$row->id_adh;
+                $ids[] = (int)$row->member_id;
             }
             return $ids;
         } catch (Throwable $e) {
-            Analog::log('Error loading group managers: ' . $e->getMessage(), Analog::ERROR);
+            Analog::log('Error loading instructors: ' . $e->getMessage(), Analog::ERROR);
             return [];
         }
     }
 
     /**
-     * Whether a member has a row on the planning: a group manager, or anyone
-     * assigned to a session.
+     * Whether a member has a row on the planning, see getInstructorMemberIds().
      */
     public static function isPlanningMember(Db $zdb, int $memberId): bool
     {
-        if ($memberId <= 0) {
-            return false;
-        }
-        if (SessionInstructor::countSessionsForMember($zdb, $memberId) > 0) {
-            return true;
-        }
-        return in_array($memberId, self::getGroupManagerIds($zdb), true);
+        return SessionInstructor::countSessionsForMember($zdb, $memberId) > 0;
     }
 
     /**

@@ -19,6 +19,7 @@
 
 -- Schema for Galette Courses plugin
 
+DROP TABLE IF EXISTS galette_courses_planning_notes;
 DROP TABLE IF EXISTS galette_courses_instructor_solicitations;
 DROP TABLE IF EXISTS galette_courses_instructor_availability;
 DROP TABLE IF EXISTS galette_courses_pending_notifications;
@@ -254,4 +255,17 @@ CREATE TABLE galette_courses_instructor_solicitations (
     CONSTRAINT fk_courses_sol_session FOREIGN KEY (session_id) REFERENCES galette_courses_sessions (id_session) ON DELETE CASCADE,
     CONSTRAINT fk_courses_sol_member FOREIGN KEY (member_id) REFERENCES galette_adherents (id_adh) ON DELETE CASCADE,
     CONSTRAINT fk_courses_sol_requested_by FOREIGN KEY (requested_by) REFERENCES galette_adherents (id_adh) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Planning notes (dbver 0.7): a free note per day of the instructor planning
+-- and per member who writes it, shown with their first name to everyone who
+-- sees the planning.
+CREATE TABLE galette_courses_planning_notes (
+    note_date date NOT NULL,
+    member_id int unsigned NOT NULL,
+    note varchar(255) NOT NULL,
+    updated_date datetime NOT NULL,
+    PRIMARY KEY (note_date, member_id),
+    KEY idx_courses_pn_member (member_id),
+    CONSTRAINT fk_courses_pn_member FOREIGN KEY (member_id) REFERENCES galette_adherents (id_adh) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

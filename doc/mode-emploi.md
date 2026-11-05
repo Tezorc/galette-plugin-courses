@@ -609,9 +609,9 @@ L'encadre apparait si au moins un moniteur eligible a declare quelque chose pour
 
 #### Planning moniteurs
 
-Menu **Gestion inscriptions > Planning moniteurs**, ou bouton **Planning moniteurs** de l'onglet *Mes disponibilites*. La page est ouverte a tous les moniteurs (responsables de groupe, membres affectes a au moins une seance), au staff et aux administrateurs.
+Menu **Gestion inscriptions > Planning moniteurs**, ou bouton **Planning moniteurs** de l'onglet *Mes disponibilites*. La page est ouverte aux responsables de groupe, aux membres affectes a au moins une seance, au staff et aux administrateurs ; seuls les moniteurs y ont une ligne (voir ci-dessous).
 
-- **Une ligne par moniteur** : tous les responsables de groupe, plus les membres affectes a une seance de la periode. La ligne de l'utilisateur (*Moi*) vient en premier, les autres par ordre alphabetique.
+- **Une ligne par moniteur**, c'est-a-dire par membre actif deja affecte a au moins une seance (passee ou a venir). Un responsable de groupe qui n'a jamais encadre de seance **n'a pas de ligne** : il consulte le planning sans y figurer, et sa ligne apparait des sa premiere affectation. La ligne de l'utilisateur (*Moi*) vient en premier, les autres par ordre alphabetique.
 - **Une colonne par jour de cours**, sur **8 semaines** a partir d'aujourd'hui, avec les boutons *Semaines precedentes / suivantes*. Les jours sans seance n'apparaissent pas.
 - **En-tete de chaque jour** : les seances (lien vers la fiche), avec un **⚠ rouge** pour une seance sans moniteur (si l'evenement en requiert un) et le nombre d'inscrits, **en jaune quand il y a peu d'inscrits** (moins d'un tiers de la capacite, ou personne quand la capacite est illimitee). Les seances annulees sont barrees.
 - **Case d'un moniteur** : *Encadre* + seance(s) menee(s) ce jour-la, sinon *Disponible*, *Absent* (commentaire au survol) ou *·* (rien d'indique).
@@ -628,6 +628,8 @@ Le **staff et les administrateurs** remplissent le planning **a la place des mon
 - **Affecter a une seance ce jour-la** : un bouton par seance ouverte du jour (non annulee, qui requiert un moniteur) que ce moniteur n'encadre pas encore. C'est la meme affectation que depuis la fiche de la seance : refusee en cas de chevauchement horaire, et **refusee si le moniteur est declare absent** ce jour-la — dans ce cas la fenetre ne propose aucune seance ; repasser d'abord le jour en *Disponible*.
 
 Les responsables de groupe et les moniteurs ne modifient que leur propre ligne.
+
+**Ligne *Commentaires*, en bas du tableau** : une note libre par jour (« terrain reserve », « je pars a 11 h »…). Chacun **ecrit la sienne** en cliquant sur la case du jour (aujourd'hui ou plus tard) ; elle apparait pour tous, precedee de son **prenom**, et les notes de plusieurs personnes s'**empilent** dans la meme case, de la plus ancienne a la plus recente. Recliquer pre-remplit sa note, qui est alors remplacee ; l'enregistrer vide la retire. Peuvent ecrire : les moniteurs qui ont une ligne au planning, le staff et les administrateurs (sauf le super administrateur, qui n'a pas de fiche adherent). Les autres la lisent. 255 caracteres au plus, sur une ligne. Table `galette_courses_planning_notes` (dbver 0.7).
 
 #### Solliciter un moniteur
 

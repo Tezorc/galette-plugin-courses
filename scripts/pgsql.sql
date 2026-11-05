@@ -19,6 +19,7 @@
 
 -- Schema for Galette Courses plugin (PostgreSQL)
 
+DROP TABLE IF EXISTS galette_courses_planning_notes CASCADE;
 DROP TABLE IF EXISTS galette_courses_instructor_solicitations CASCADE;
 DROP TABLE IF EXISTS galette_courses_instructor_availability CASCADE;
 DROP TABLE IF EXISTS galette_courses_pending_notifications CASCADE;
@@ -240,3 +241,16 @@ CREATE TABLE galette_courses_instructor_solicitations (
     CONSTRAINT fk_courses_sol_requested_by FOREIGN KEY (requested_by) REFERENCES galette_adherents (id_adh) ON DELETE SET NULL
 );
 CREATE INDEX idx_courses_sol_member ON galette_courses_instructor_solicitations (member_id);
+
+-- Planning notes (dbver 0.7): a free note per day of the instructor planning
+-- and per member who writes it, shown with their first name to everyone who
+-- sees the planning.
+CREATE TABLE galette_courses_planning_notes (
+    note_date date NOT NULL,
+    member_id integer NOT NULL,
+    note varchar(255) NOT NULL,
+    updated_date timestamp NOT NULL,
+    PRIMARY KEY (note_date, member_id),
+    CONSTRAINT fk_courses_pn_member FOREIGN KEY (member_id) REFERENCES galette_adherents (id_adh) ON DELETE CASCADE
+);
+CREATE INDEX idx_courses_pn_member ON galette_courses_planning_notes (member_id);

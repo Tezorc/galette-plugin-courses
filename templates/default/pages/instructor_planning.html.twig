@@ -140,8 +140,55 @@
                     {% endfor %}
                 </tr>
             {% endfor %}
+            {# Ligne des commentaires : chacun ecrit le sien pour le jour, ils
+               s'empilent precedes du prenom de leur auteur. #}
+            <tr class="courses-planning-notes">
+                <td class="courses-planning-name">{{ _T("Comments", "courses") }}</td>
+                {% for date, day in days %}
+                    {% set note_editable = can_note and date >= today %}
+                    <td class="courses-planning-cell{% if note_editable %} courses-planning-note-editable{% endif %}"
+                        {% if note_editable %}
+                            tabindex="0" role="button"
+                            data-date="{{ date }}"
+                            data-label="{{ _T(date|date("l"), "courses") }} {{ date|date("d/m/Y") }}"
+                            data-note="{{ my_notes[date] ?? "" }}"
+                        {% endif %}>
+                        {% for n in notes[date] ?? [] %}
+                            <div class="courses-planning-note"><strong>{{ n.name }}</strong> : {{ n.note }}</div>
+                        {% else %}
+                            <span class="courses-planning-none">&middot;</span>
+                        {% endfor %}
+                    </td>
+                {% endfor %}
+            </tr>
         </tbody>
     </table>
+</div>
+{% endif %}
+
+{% if can_note %}
+<div class="ui small modal" id="planning-note-modal">
+    <div class="header">
+        <i class="comment outline icon" aria-hidden="true"></i>
+        <span id="planning-note-label"></span>
+    </div>
+    <div class="content">
+        <form action="{{ url_for("coursesDoSetPlanningNote") }}" method="post" class="ui form" id="planning-note-form">
+            <input type="hidden" name="date" id="planning-note-date"/>
+            <input type="hidden" name="from" value="{{ from }}"/>
+            <div class="field">
+                <label for="planning-note-text">{{ _T("Your comment for that day", "courses") }}</label>
+                <textarea name="note" id="planning-note-text" rows="2" maxlength="255"></textarea>
+            </div>
+            <p class="courses-help-text">{{ _T("Shown to everyone under the day, with your first name. Leave empty to remove it.", "courses") }}</p>
+            <button type="submit" class="ui small primary button">
+                <i class="save icon" aria-hidden="true"></i>{{ _T("Save", "courses") }}
+            </button>
+        </form>
+    </div>
+    <div class="actions">
+        <button type="button" class="ui small cancel button">{{ _T("Close", "courses") }}</button>
+    </div>
 </div>
 {% endif %}
 
@@ -201,6 +248,30 @@
 {% endblock %}
 
 {% block javascripts %}
+{% if can_note %}
+<script>
+$(function() {
+    $('#planning-note-modal').modal({ closable: true });
+
+    function openNote($cell) {
+        $('#planning-note-label').text($cell.data('label'));
+        $('#planning-note-date').val($cell.data('date'));
+        // attr() et non data() : une note numerique resterait une chaine.
+        $('#planning-note-text').val($cell.attr('data-note') || '');
+        $('#planning-note-modal').modal('show');
+    }
+
+    $('.courses-planning-note-editable').on('click', function() {
+        openNote($(this));
+    }).on('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openNote($(this));
+        }
+    });
+});
+</script>
+{% endif %}
 {% if can_declare or can_fill_in %}
 <script>
 $(function() {

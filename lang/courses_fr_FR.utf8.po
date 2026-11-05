@@ -2506,3 +2506,18 @@ msgstr "Le moniteur a été retiré de %d séance(s) pendant cette période."
 
 msgid "Some sessions of this period could not be updated: remove the instructor from each of them on the session page."
 msgstr "Certaines séances de cette période n'ont pas pu être mises à jour : retirez le moniteur de chacune d'elles depuis la fiche de la séance."
+
+msgid "Comments"
+msgstr "Commentaires"
+
+msgid "Your comment for that day"
+msgstr "Votre commentaire pour ce jour"
+
+msgid "Shown to everyone under the day, with your first name. Leave empty to remove it."
+msgstr "Visible de tous sous le jour, précédé de votre prénom. Laissez vide pour le retirer."
+
+msgid "Your comment has been saved."
+msgstr "Votre commentaire a été enregistré."
+
+msgid "Your comment has been removed."
+msgstr "Votre commentaire a été retiré."
