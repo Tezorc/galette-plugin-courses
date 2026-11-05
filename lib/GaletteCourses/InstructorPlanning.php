@@ -151,24 +151,25 @@ final class InstructorPlanning
     }
 
     /**
-     * The instructors: everyone ever assigned to a session. A group manager
-     * who has never led one is not an instructor and gets no row.
+     * Who has a row on the planning: the members of the Galette groups. A
+     * group manager has one only when also a member of a group; managing
+     * alone gives none.
      *
      * @return int[]
      */
     public static function getInstructorMemberIds(Db $zdb): array
     {
         try {
-            $select = $zdb->select(SessionInstructor::TABLE);
-            $select->columns(['member_id']);
+            $select = $zdb->select('groups_members');
+            $select->columns(['id_adh']);
             $select->quantifier('DISTINCT');
             $ids = [];
             foreach ($zdb->execute($select) as $row) {
-                $ids[] = (int)$row->member_id;
+                $ids[] = (int)$row->id_adh;
             }
             return $ids;
         } catch (Throwable $e) {
-            Analog::log('Error loading instructors: ' . $e->getMessage(), Analog::ERROR);
+            Analog::log('Error loading planning members: ' . $e->getMessage(), Analog::ERROR);
             return [];
         }
     }
@@ -178,8 +179,21 @@ final class InstructorPlanning
      */
     public static function isPlanningMember(Db $zdb, int $memberId): bool
     {
-        return SessionInstructor::countSessionsForMember($zdb, $memberId) > 0;
+        if ($memberId <= 0) {
+            return false;
+        }
+        try {
+            $select = $zdb->select('groups_members');
+            $select->columns(['id_adh']);
+            $select->where(['id_adh' => $memberId]);
+            $select->limit(1);
+            return $zdb->execute($select)->count() > 0;
+        } catch (Throwable $e) {
+            Analog::log('Error checking planning member #' . $memberId . ': ' . $e->getMessage(), Analog::ERROR);
+            return false;
+        }
     }
+
 
     /**
      * Instructors of each session, in one query.

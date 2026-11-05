@@ -142,8 +142,8 @@ class InstructorPlanningController extends AbstractController
             ];
         }
 
-        // Only instructors get a row: a group manager who has never led a
-        // session does not, even when viewing the page.
+        // Rows are the group members: a group manager who is member of no
+        // group views the page without appearing on it.
         $members = InstructorPlanning::getMemberNames(
             $this->zdb,
             InstructorPlanning::getInstructorMemberIds($this->zdb)
