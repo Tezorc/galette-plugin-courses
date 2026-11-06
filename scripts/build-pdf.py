@@ -249,7 +249,12 @@ def main() -> int:
 
     if args.expect:
         expected = [x.strip() for x in args.expect.split(',') if x.strip()]
-        missing = [x for x in expected if x not in report['families']]
+        # Prefixe et non egalite : les polices variables de Google Fonts
+        # portent le nom de leur instance par defaut, colle a la famille
+        # ("SignikaLight-Regular", "Newsreader16pt-Regular" depuis novembre
+        # 2026, au lieu de "Signika-Light"), et la coupe au tiret ne rend
+        # plus le nom nu de la famille.
+        missing = [x for x in expected if not any(f.startswith(x) for f in report['families'])]
         if missing:
             sys.exit('POLICES MANQUANTES : %s — le PDF sortirait dans une police de repli.'
                      % ', '.join(missing))

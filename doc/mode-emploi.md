@@ -1589,7 +1589,16 @@ Sur les autres seances, vous restez un membre ou un responsable de groupe ordina
 
 ### Declarer vos disponibilites
 
-Onglet **Mes disponibilites** de **Mes seances comme moniteur** : saisir une periode (du … au …, une seule date pour un jour), choisir **Disponible** ou **Absent**, ajouter un commentaire si utile, puis **"Ajouter cette periode"**. Les responsables de groupe voient votre disponibilite sur la fiche des seances de ces jours-la quand ils cherchent un moniteur. Ne rien declarer ne bloque rien. Une periode d'absence ne vous retire pas des seances que vous encadrez deja : l'onglet vous les signale, et vous utilisez **"Je serai absent"** sur chacune.
+Onglet **Mes disponibilites** de **Mes seances comme moniteur** : saisir une periode (du … au …, une seule date pour un jour), choisir **Disponible** ou **Absent**, ajouter un commentaire si utile, puis **"Ajouter cette periode"**. Les responsables de groupe voient votre disponibilite sur la fiche des seances de ces jours-la quand ils cherchent un moniteur. Ne rien declarer ne bloque rien. Une periode d'**absence vous retire des seances que vous encadrez pendant cette periode**, avec les memes regles que **"Je serai absent"** : les responsables sont prevenus si l'une reste sans moniteur. Si une seance n'a pas pu etre mise a jour, l'onglet vous la signale et vous utilisez **"Je serai absent"** dessus.
+
+### Le planning moniteurs
+
+**Gestion des inscriptions > Planning moniteurs**, ou le bouton **Planning moniteurs** de l'onglet *Mes disponibilites* : qui encadre quoi, qui est disponible et qui est absent, jour par jour, sur 8 semaines.
+
+- **Qui y figure** : les responsables des **groupes de moniteurs** choisis par le staff dans les preferences du plugin. Si vous n'y voyez pas votre ligne, vous n'etes responsable d'aucun de ces groupes : demandez au staff. Vous pouvez quand meme consulter la page.
+- **Votre ligne** (*Moi*, en tete) : cliquez sur un jour (aujourd'hui ou plus tard) pour indiquer **Je suis disponible**, **Je suis absent** ou **Rien d'indique**, avec un commentaire. Une absence vous retire des seances que vous encadrez ce jour-la, comme une periode d'absence. La meme fenetre propose **Encadrer une seance ce jour-la** (memes regles que *Se porter volontaire*).
+- **Ligne Commentaires**, en bas : cliquez sur la case d'un jour pour y laisser **votre** note (« terrain reserve », « je pars a 11 h »…). Elle s'affiche pour tous, precedee de votre prenom ; les notes de plusieurs moniteurs s'empilent. Recliquer la modifie, l'enregistrer vide la retire.
+- **Le staff peut remplir votre ligne a votre place** : vous declarer disponible ou absent (une absence vous retire alors de vos seances du jour), ou vous affecter a une seance. Il ne modifie pas votre commentaire.
 
 ### Repondre a une demande
 
