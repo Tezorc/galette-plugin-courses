@@ -23,12 +23,17 @@ le clone `C:\dev\galette-plugin-courses` vers
 vers `origin` puis un `git pull` dans ce clone, suivi de deux gestes :
 
 - vider le cache Twig, sinon la page peut servir un gabarit compile perime :
-  `MSYS_NO_PATHCONV=1 docker exec galette-nightly rm -rf /var/www/html/galette/data/cache/v1.3-dev/templates` ;
+  `MSYS_NO_PATHCONV=1 docker exec galette-nightly sh -c 'rm -rf /var/www/html/galette/data/cache/v*/templates'` ;
   le prefixe n'est pas decoratif : sans lui, Git Bash reecrit `/var/www/...` en
   `C:/Program Files/Git/var/www/...` avant de passer l'argument au conteneur, et
   `rm -rf` supprime un chemin inexistant en sortant tranquillement en 0. Le cache
-  reste en place et rien ne le signale. Verifier apres coup que `templates/` a
-  bien disparu de `.../cache/v1.3-dev/`.
+  reste en place et rien ne le signale. Le dossier porte la **version du coeur**
+  (`GALETTE_VERSION`, dans `includes/sys_config/versions.inc.php`) et change a
+  chaque mise a jour de l'image : `v1.3-dev`, puis `v1.3.2` en novembre 2026.
+  Vider seulement l'ancien dossier a laisse servir un gabarit perime pendant
+  deux deploiements, d'ou le `sh -c` avec `v*`. Verifier apres coup qu'aucun
+  `.../cache/v*/templates` ne subsiste, et au besoin que la page recue porte le
+  cache-buster CSS attendu (`?v=` de `headers.html.twig`).
 - si `dbver` a bouge, **la migration ne part pas toute seule** : Galette met
   le plugin en *Need update* (`DISABLED_NOT_UP2DATE`), le desactive, et toutes
   ses routes repondent 404. Un administrateur doit lancer la mise a jour de la
