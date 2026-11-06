@@ -48,6 +48,16 @@
     {% endif %}
 </p>
 
+{% if no_instructor_groups %}
+    <div class="ui warning message">
+        <i class="exclamation triangle icon" aria-hidden="true"></i>
+        {{ _T("No instructor group is chosen yet: nobody appears on the planning. Choose the groups whose managers are instructors in the plugin preferences.", "courses") }}
+        {% if can_fill_in %}
+            <a href="{{ url_for("coursesPreferences") }}">{{ _T("Courses plugin preferences", "courses") }}</a>
+        {% endif %}
+    </div>
+{% endif %}
+
 <div class="courses-planning-legend">
     <span class="ui mini teal label"><i class="chalkboard teacher icon" aria-hidden="true"></i>{{ _T("Leads", "courses") }}</span>
     <span class="ui mini green label">{{ _T("Available", "courses") }}</span>

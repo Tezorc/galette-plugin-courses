@@ -41,7 +41,7 @@ Pour un evenement ponctuel, une seance unique est creee automatiquement a la cre
 
 ### Prerequis
 
-- Galette >= 1.3.0 (branche `dev-galette-1.3`, version plugin `0.7.0`). La branche `main`, abandonnee, reste sur Galette 1.2.0.
+- Galette >= 1.3.0 (branche `dev-galette-1.3`, version plugin `0.7.1`). La branche `main`, abandonnee, reste sur Galette 1.2.0.
 - PHP >= 8.2 (compatible 8.2, 8.3, 8.4, 8.5)
 - MySQL / MariaDB
 
@@ -609,9 +609,9 @@ L'encadre apparait si au moins un moniteur eligible a declare quelque chose pour
 
 #### Planning moniteurs
 
-Menu **Gestion inscriptions > Planning moniteurs**, ou bouton **Planning moniteurs** de l'onglet *Mes disponibilites*. Un membre de groupe qui n'a pas le menu de gestion le trouve dans son menu **Mes inscriptions > Planning moniteurs**. La page est ouverte aux membres des groupes, aux responsables de groupe, aux membres affectes a au moins une seance, au staff et aux administrateurs ; seuls les membres des groupes y ont une ligne (voir ci-dessous).
+Menu **Gestion inscriptions > Planning moniteurs**, ou bouton **Planning moniteurs** de l'onglet *Mes disponibilites*. La page est ouverte aux responsables de groupe, aux membres affectes a au moins une seance, au staff et aux administrateurs ; seuls les moniteurs y ont une ligne (voir ci-dessous).
 
-- **Une ligne par membre actif d'un groupe Galette**, quel que soit le groupe, qu'il ait deja encadre ou non. Un **responsable de groupe** a sa ligne **s'il est aussi membre d'un groupe** ; un responsable de groupe **seul** (membre d'aucun groupe) peut ouvrir le planning, mais il n'y figure pas. Un moniteur affecte a une seance sans etre membre d'un groupe n'a pas non plus de ligne ; la seance reste visible dans l'en-tete du jour. La ligne de l'utilisateur (*Moi*) vient en premier, les autres par ordre alphabetique. Un membre de groupe qui a sa ligne peut aussi declarer ses disponibilites (onglet *Mes disponibilites* compris).
+- **Une ligne par moniteur**, c'est-a-dire par **responsable actif d'un des groupes de moniteurs** choisis dans les preferences du plugin (*Groupes de moniteurs*, voir [Preferences du plugin](#preferences-du-plugin-staff--admin)). Les simples membres de ces groupes n'ont pas de ligne, pas plus que les responsables des autres groupes, ni un membre affecte a une seance sans etre responsable d'un groupe de moniteurs (la seance reste visible dans l'en-tete du jour). **Tant qu'aucun groupe n'est choisi, personne n'apparait** et la page l'indique. La ligne de l'utilisateur (*Moi*) vient en premier, les autres par ordre alphabetique.
 - **Une colonne par jour de cours**, sur **8 semaines** a partir d'aujourd'hui, avec les boutons *Semaines precedentes / suivantes*. Les jours sans seance n'apparaissent pas.
 - **En-tete de chaque jour** : les seances (lien vers la fiche), avec un **⚠ rouge** pour une seance sans moniteur (si l'evenement en requiert un) et le nombre d'inscrits, **en jaune quand il y a peu d'inscrits** (moins d'un tiers de la capacite, ou personne quand la capacite est illimitee). Les seances annulees sont barrees.
 - **Case d'un moniteur** : *Encadre* + seance(s) menee(s) ce jour-la, sinon *Disponible*, *Absent* (commentaire au survol) ou *·* (rien d'indique).
@@ -957,11 +957,15 @@ La preference est stockee en base de donnees. Tant qu'un adherent n'a pas decoch
 
 Le menu **Gestion des inscriptions > Preferences** regroupe les parametres de configuration du plugin.
 
-Les sections **Notifications email** et **Generation automatique** sont accessibles aux **administrateurs uniquement**. La section **Dates de fermeture** est accessible au **staff et aux administrateurs**.
+Les sections **Notifications email** et **Generation automatique** sont accessibles aux **administrateurs uniquement**. Les sections **Groupes de moniteurs** et **Dates de fermeture** sont accessibles au **staff et aux administrateurs**.
 
 ### Notifications email (admin uniquement)
 
 Cocher **"Activer les notifications email"** pour activer ou desactiver toutes les notifications automatiques du plugin (soumission, validation, rejet, nouvelles seances, promotion liste d'attente, annulation de seance). Desactive par defaut.
+
+### Groupes de moniteurs (staff / admin)
+
+La section **Groupes de moniteurs** liste les groupes Galette dont les **responsables** sont les moniteurs du club (par exemple les groupes d'education). Seuls ces responsables ont une ligne au [planning moniteurs](#planning-moniteurs) ; leurs simples membres n'y figurent pas. Laisser la liste vide vide le planning. Preference `courses_instructor_groups` (identifiants de groupes separes par des virgules).
 
 ### Dates de fermeture du club (staff / admin)
 

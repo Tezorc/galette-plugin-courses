@@ -32,6 +32,7 @@ use GaletteCourses\Entity\PlanningNote;
 use GaletteCourses\Entity\Session;
 use GaletteCourses\Filters\SessionsList;
 use GaletteCourses\InstructorPlanning;
+use GaletteCourses\PluginPreferences;
 use GaletteCourses\Repository\Sessions;
 use Slim\Psr7\Request;
 use Slim\Psr7\Response;
@@ -142,8 +143,8 @@ class InstructorPlanningController extends AbstractController
             ];
         }
 
-        // Rows are the group members: a group manager who is member of no
-        // group views the page without appearing on it.
+        // Rows are the managers of the instructor groups chosen in the
+        // preferences; anyone else views the page without appearing on it.
         $members = InstructorPlanning::getMemberNames(
             $this->zdb,
             InstructorPlanning::getInstructorMemberIds($this->zdb)
@@ -179,6 +180,7 @@ class InstructorPlanningController extends AbstractController
                 'can_declare' => $canDeclare && $hasOwnRow,
                 'can_fill_in' => $canFillIn,
                 'can_note'    => $this->canWriteNote(),
+                'no_instructor_groups' => empty((new PluginPreferences($this->zdb))->getInstructorGroupIds()),
                 'notes'       => $notes,
                 'my_notes'    => $myNotes,
                 'viewer_id'   => $viewerId,

@@ -83,6 +83,25 @@
     </div>
     {% endif %}
 
+    {# --- Instructor groups --- #}
+    <div class="ui segment">
+        <h3 class="ui header">
+            <i class="chalkboard teacher icon" aria-hidden="true"></i>
+            {{ _T('Instructor groups', 'courses') }}
+        </h3>
+        <div class="field">
+            <label for="instructor_groups">{{ _T('Groups whose managers are instructors', 'courses') }}</label>
+            <select name="instructor_groups[]" id="instructor_groups" class="ui search dropdown" multiple>
+                {% for gid, gname in groups %}
+                    <option value="{{ gid }}"{% if gid in instructor_groups %} selected{% endif %}>{{ gname }}</option>
+                {% endfor %}
+            </select>
+            <p class="ui small grey text courses-help-text">
+                {{ _T('Only the managers of these groups have a row on the instructor planning, not their plain members. Leave empty: nobody appears.', 'courses') }}
+            </p>
+        </div>
+    </div>
+
     {# --- Club closure dates --- #}
     <div class="ui segment">
         <h3 class="ui header">

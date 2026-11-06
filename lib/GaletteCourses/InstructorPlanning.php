@@ -151,18 +151,23 @@ final class InstructorPlanning
     }
 
     /**
-     * Who has a row on the planning: the members of the Galette groups. A
-     * group manager has one only when also a member of a group; managing
-     * alone gives none.
+     * Who has a row on the planning: the managers of the instructor groups
+     * chosen in the plugin preferences. Their plain members do not appear,
+     * and nobody does until groups are chosen.
      *
      * @return int[]
      */
     public static function getInstructorMemberIds(Db $zdb): array
     {
+        $groupIds = (new PluginPreferences($zdb))->getInstructorGroupIds();
+        if (empty($groupIds)) {
+            return [];
+        }
         try {
-            $select = $zdb->select('groups_members');
+            $select = $zdb->select('groups_managers');
             $select->columns(['id_adh']);
             $select->quantifier('DISTINCT');
+            $select->where->in('id_group', $groupIds);
             $ids = [];
             foreach ($zdb->execute($select) as $row) {
                 $ids[] = (int)$row->id_adh;
@@ -179,13 +184,15 @@ final class InstructorPlanning
      */
     public static function isPlanningMember(Db $zdb, int $memberId): bool
     {
-        if ($memberId <= 0) {
+        $groupIds = (new PluginPreferences($zdb))->getInstructorGroupIds();
+        if ($memberId <= 0 || empty($groupIds)) {
             return false;
         }
         try {
-            $select = $zdb->select('groups_members');
+            $select = $zdb->select('groups_managers');
             $select->columns(['id_adh']);
             $select->where(['id_adh' => $memberId]);
+            $select->where->in('id_group', $groupIds);
             $select->limit(1);
             return $zdb->execute($select)->count() > 0;
         } catch (Throwable $e) {

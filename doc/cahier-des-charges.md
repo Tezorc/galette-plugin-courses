@@ -3981,7 +3981,7 @@ La barre laterale contient **deux groupes de menus** distincts :
 
 ### 6.1 Compatibilite
 
-- Galette >= 1.3.0 (`compver: '1.3.0'`). Branche de developpement `dev-galette-1.3`, version plugin `0.7.0`, alignee sur `dbver` depuis novembre 2026.
+- Galette >= 1.3.0 (`compver: '1.3.0'`). Branche de developpement `dev-galette-1.3`, version plugin `0.7.1`, alignee sur `dbver` depuis novembre 2026.
   Galette 1.3.0 desactive (`DISABLED_COMPAT`) tout plugin dont `compver` est inferieur a `GALETTE_COMPAT_VERSION` (1.3.0) : le bump de `compver` est donc obligatoire pour que le plugin se charge.
   Cette branche n'est plus compatible avec Galette < 1.2.2 (migration vers les interfaces de plugin introduites en 1.2.2, cf. 6.2). La branche `main` reste sur la cible 1.2.0.
 - Version de schema : `dbver: 0.7` dans `_define.php` (0.2 a l'introduction de `dbver`). Obligatoire en 1.3 — un plugin qui possede un dossier `scripts/` mais ne declare pas de `dbver` est desactive par le coeur (`DISABLED_DBVERSION`, `Plugins::postRegistrationChecks()`).

@@ -89,19 +89,6 @@ class PluginGaletteCourses extends GalettePlugin implements
             ];
         }
 
-        // Le planning moniteurs liste les membres des groupes : celui qui n'a
-        // pas acces au menu de gestion (ci-dessous) y accede d'ici.
-        $isInstructorAnywhere = $memberId > 0
-            && SessionInstructor::countSessionsForMember($zdb, $memberId) > 0;
-        $hasManagementMenu = $login->isAdmin() || $login->isStaff() || $login->isGroupManager() || $isInstructorAnywhere;
-        if (!$hasManagementMenu && InstructorPlanning::isPlanningMember($zdb, $memberId)) {
-            $memberItems[] = [
-                'label' => _T('Instructor planning', 'courses'),
-                'route' => ['name' => 'coursesInstructorPlanning'],
-                'icon'  => 'calendar alternate outline',
-            ];
-        }
-
         if ($hasMemberAccount) {
             $memberItems[] = [
                 'label' => _T('My notifications', 'courses'),
@@ -122,7 +109,9 @@ class PluginGaletteCourses extends GalettePlugin implements
         // Phase 46 : un membre affecte comme moniteur sur au moins une seance
         // peut creer/editer ses propres evenements. La condition d'affichage du
         // menu reflete cette extension.
-        if ($hasManagementMenu) {
+        $isInstructorAnywhere = $memberId > 0
+            && SessionInstructor::countSessionsForMember($zdb, $memberId) > 0;
+        if ($login->isAdmin() || $login->isStaff() || $login->isGroupManager() || $isInstructorAnywhere) {
             $mgmtItems = [];
 
             $mgmtItems[] = [

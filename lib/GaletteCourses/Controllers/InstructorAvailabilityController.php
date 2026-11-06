@@ -55,8 +55,7 @@ class InstructorAvailabilityController extends AbstractController
     /**
      * Who may declare availability: the potential instructors, i.e. group
      * managers, plus anyone already assigned to a session (staff may appoint
-     * a member who manages no group), plus the group members who have a row
-     * on the instructor planning.
+     * a member who manages no group).
      */
     public static function canDeclare(Db $zdb, Login $login): bool
     {
@@ -65,8 +64,7 @@ class InstructorAvailabilityController extends AbstractController
             return false;
         }
         return $login->isGroupManager()
-            || SessionInstructor::countSessionsForMember($zdb, $memberId) > 0
-            || InstructorPlanning::isPlanningMember($zdb, $memberId);
+            || SessionInstructor::countSessionsForMember($zdb, $memberId) > 0;
     }
 
     public function doAdd(Request $request, Response $response): Response

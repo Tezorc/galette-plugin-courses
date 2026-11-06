@@ -25,6 +25,7 @@ namespace GaletteCourses\Controllers;
 
 use Galette\Controllers\AbstractController;
 use Galette\Core\PluginControllerTrait;
+use Galette\Repository\Groups;
 use GaletteCourses\Entity\Session;
 use GaletteCourses\Entity\Waitlist;
 use GaletteCourses\HistoryLabel;
@@ -69,6 +70,8 @@ class PreferencesController extends AbstractController
             'cron_token'            => $pluginPrefs->getCronToken(),
             'cron_base_url'         => $cronBaseUrl,
             'weekly_digest_day'     => $pluginPrefs->getWeeklyDigestDay(),
+            'groups'                => Groups::getSimpleList(),
+            'instructor_groups'     => $pluginPrefs->getInstructorGroupIds(),
             'is_admin'              => $this->login->isAdmin() || $this->login->isSuperAdmin(),
         ];
 
@@ -99,6 +102,12 @@ class PreferencesController extends AbstractController
                 $weeklyDay = 1;
             }
             $pluginPrefs->set(PluginPreferences::WEEKLY_DIGEST_DAY, (string)$weeklyDay);
+        }
+
+        // Instructor groups: their members are the rows of the instructor planning.
+        $instructorGroups = $post['instructor_groups'] ?? [];
+        if (!$pluginPrefs->setInstructorGroupIds(is_array($instructorGroups) ? $instructorGroups : [])) {
+            $this->flash->addMessage('error_detected', _T('The instructor groups could not be saved.', 'courses'));
         }
 
         // Parse closure date ranges (free-form label used as cancellation comment

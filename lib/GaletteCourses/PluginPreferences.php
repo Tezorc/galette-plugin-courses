@@ -39,6 +39,7 @@ class PluginPreferences
     public const CRON_TOKEN          = 'courses_cron_token';
     public const TEST_EMAIL          = 'courses_test_email';
     public const WEEKLY_DIGEST_DAY   = 'courses_weekly_digest_day';
+    public const INSTRUCTOR_GROUPS   = 'courses_instructor_groups';
 
     /** @var array<string, string> */
     private array $prefs = [];
@@ -190,6 +191,43 @@ class PluginPreferences
         $raw = $this->get(self::WEEKLY_DIGEST_DAY, '1');
         $n   = (int)$raw;
         return ($n >= 1 && $n <= 7) ? $n : 1;
+    }
+
+    /**
+     * The Galette groups whose members are the instructors shown on the
+     * instructor planning. Empty until staff choose them.
+     *
+     * @return int[]
+     */
+    public function getInstructorGroupIds(): array
+    {
+        return self::parseIds($this->get(self::INSTRUCTOR_GROUPS, ''));
+    }
+
+    /**
+     * @param array<int|string> $groupIds
+     */
+    public function setInstructorGroupIds(array $groupIds): bool
+    {
+        return $this->set(self::INSTRUCTOR_GROUPS, implode(',', self::parseIds(implode(',', $groupIds))));
+    }
+
+    /**
+     * Positive ids out of a comma-separated list, deduplicated and sorted.
+     *
+     * @return int[]
+     */
+    public static function parseIds(string $csv): array
+    {
+        $ids = [];
+        foreach (explode(',', $csv) as $part) {
+            $part = trim($part);
+            if ($part !== '' && ctype_digit($part) && (int)$part > 0) {
+                $ids[(int)$part] = (int)$part;
+            }
+        }
+        sort($ids);
+        return $ids;
     }
 
     /**

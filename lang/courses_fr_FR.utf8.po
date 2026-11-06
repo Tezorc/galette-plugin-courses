@@ -2521,3 +2521,18 @@ msgstr "Votre commentaire a été enregistré."
 
 msgid "Your comment has been removed."
 msgstr "Votre commentaire a été retiré."
+
+msgid "Instructor groups"
+msgstr "Groupes de moniteurs"
+
+msgid "Groups whose managers are instructors"
+msgstr "Groupes dont les responsables sont moniteurs"
+
+msgid "Only the managers of these groups have a row on the instructor planning, not their plain members. Leave empty: nobody appears."
+msgstr "Seuls les responsables de ces groupes ont une ligne au planning moniteurs, pas leurs simples membres. Laissé vide : personne n'apparaît."
+
+msgid "The instructor groups could not be saved."
+msgstr "Les groupes de moniteurs n'ont pas pu être enregistrés."
+
+msgid "No instructor group is chosen yet: nobody appears on the planning. Choose the groups whose managers are instructors in the plugin preferences."
+msgstr "Aucun groupe de moniteurs n'est encore choisi : personne n'apparaît au planning. Choisissez dans les préférences du plugin les groupes dont les responsables sont moniteurs."

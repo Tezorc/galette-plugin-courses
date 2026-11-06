@@ -30,7 +30,7 @@ $this->register(
     name: 'Galette Courses',
     desc: 'Courses and events management',
     author: 'ccag42 Team',
-    version: '0.7.0',
+    version: '0.7.1',
     compver: '1.3.0',
     route: 'courses',
     date: '2026-11-06',
