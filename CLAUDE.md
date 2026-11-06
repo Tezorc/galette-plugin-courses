@@ -67,6 +67,15 @@ Le support de Galette 1.2 est abandonne : la production est passee en 1.3.1.
 fonctionnalites. `main` ne recoit plus rien et ne se fusionne plus vers dev ;
 l'ancienne regle (« `main` d'abord, puis fusion vers dev ») est caduque.
 
+### Version du plugin
+
+`version` dans `_define.php` (affichee dans **Configuration › Plugins**) suit
+`dbver` : `0.7.0` pour `dbver: 0.7`. A chaque livraison en production, monter
+`version` et `date` ; un changement de schema monte d'abord `dbver`, puis
+`version` au meme numero (`0.8.0`), une livraison sans changement de schema
+incremente le dernier chiffre (`0.7.1`). Restee a `0.2.0-dev` de juin a
+novembre 2026 : rien ne permettait de savoir quel code tournait en prod.
+
 ### Deployer
 
 **Base de test (1.3)** : le clone `C:\dev\galette-plugin-courses` tire depuis
