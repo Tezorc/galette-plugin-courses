@@ -235,7 +235,7 @@ class InstructorAvailability
      * Declared status of each member on each of the given days, in one query.
      *
      * @param int[]    $memberIds
-     * @param string[] $dates Y-m-d
+     * @param string[] $dates     Y-m-d
      * @return array<string, array<int, array{kind: string, comment: ?string}>> date => member id => status
      */
     public static function getStatusOnDays(Db $zdb, array $memberIds, array $dates): array
@@ -271,7 +271,7 @@ class InstructorAvailability
      * The periods spread over the given days, each day resolved as resolveStatus() does.
      *
      * @param list<array{member_id: int, date_from: string, date_to: string, kind: string, comment: ?string}> $rows
-     * @param string[] $dates Y-m-d
+     * @param string[]                                                                                        $dates Y-m-d
      * @return array<string, array<int, array{kind: string, comment: ?string}>>
      */
     public static function resolveStatusOnDays(array $rows, array $dates): array

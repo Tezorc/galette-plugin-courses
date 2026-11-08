@@ -78,9 +78,9 @@ final class InstructorPlanning
      * plus the open sessions of the day they do not lead yet, which staff may
      * assign them to. The viewer's row comes first, then the others by name.
      *
-     * @param list<PlanningSession>                                          $sessions
-     * @param array<int, int[]>                                              $instructorIds session id => member ids
-     * @param array<int, string>                                             $members       member id => name
+     * @param list<PlanningSession>                                            $sessions
+     * @param array<int, int[]>                                                $instructorIds session id => member ids
+     * @param array<int, string>                                               $members       member id => name
      * @param array<string, array<int, array{kind: string, comment: ?string}>> $status        date => member id => status
      * @return array{
      *     days: array<string, array{sessions: list<array<string, mixed>>, missing: bool, low: bool}>,
