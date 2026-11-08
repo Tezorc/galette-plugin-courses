@@ -2536,3 +2536,6 @@ msgstr "Les groupes de moniteurs n'ont pas pu être enregistrés."
 
 msgid "No instructor group is chosen yet: nobody appears on the planning. Choose the groups whose managers are instructors in the plugin preferences."
 msgstr "Aucun groupe de moniteurs n'est encore choisi : personne n'apparaît au planning. Choisissez dans les préférences du plugin les groupes dont les responsables sont moniteurs."
+
+msgid "Who leads which session, who is available and who is absent, day by day"
+msgstr "Qui encadre quelle séance, qui est disponible et qui est absent, jour par jour"

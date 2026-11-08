@@ -28,6 +28,7 @@ use Galette\Core\Plugins\MenuProviderInterface;
 use Galette\Core\Plugins\DashboardProviderInterface;
 use Galette\Core\Plugins\MemberActionProviderInterface;
 use Galette\Entity\Adherent;
+use GaletteCourses\Controllers\InstructorAvailabilityController;
 use GaletteCourses\Entity\InstructorSolicitation;
 use GaletteCourses\Entity\SessionInstructor;
 
@@ -194,6 +195,7 @@ class PluginGaletteCourses extends GalettePlugin implements
                 ],
                 'icon' => 'mortar_board',
             ];
+            $dashboards[] = self::planningDashboard();
         }
 
         return $dashboards;
@@ -246,9 +248,32 @@ class PluginGaletteCourses extends GalettePlugin implements
                     'icon' => 'clipboard',
                 ];
             }
+
+            // Le staff a la tuile dans "Activites" (getDashboards).
+            if (
+                !$login->isAdmin() && !$login->isStaff()
+                && InstructorAvailabilityController::canDeclare($zdb, $login)
+            ) {
+                $tiles[] = self::planningDashboard();
+            }
         }
 
         return $tiles;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function planningDashboard(): array
+    {
+        return [
+            'label' => _T('Instructor planning', 'courses'),
+            'title' => _T('Who leads which session, who is available and who is absent, day by day', 'courses'),
+            'route' => [
+                'name' => 'coursesInstructorPlanning',
+            ],
+            'icon' => 'date',
+        ];
     }
 
     public function getListActions(Adherent $member): array
